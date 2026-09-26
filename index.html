@@ -1392,7 +1392,7 @@ class Player {
     } else { this.rpm = damp(this.rpm, s.idle + Math.abs(drive) * 2500, 8, dt); }
     if (vf * 3.6 >= s.vmax && F > 0) F = 0; // electronic top-speed limiter
     let a = F / s.mass;
-    let spin = 0; if (a > traction) { spin = (a - traction) / traction; a = traction; }
+    let spin = 0; if (a > traction) { spin = Math.min((a - traction) / traction, s.drive === 'AWD' ? .06 : .14); a = traction; } // traction control keeps launch wheelspin small
     if (this.reverse && drive < 0) a = vf > -9 ? drive * 5 : 0;
     // resistances
     a -= s.drag * vf * Math.abs(vf) / s.mass + (Math.abs(vf) > .1 ? Math.sign(vf) * .15 : 0);
@@ -1989,7 +1989,7 @@ function frame() {
     const marking = player.speed > 2 && (Math.abs(player.vr) > 2.4 || player.spin > .25 || (player.hb && player.speed > 5));
     [-1, 1].forEach((s, k) => {
       const wx = player.x + fx * B.rX + rx * s * (B.W / 2 - .2), wz = player.z + fz * B.rX + rz * s * (B.W / 2 - .2);
-      if (marking) { skids.add(k, wx, wz, fx, fz); if (Math.random() < clamp(player.slip * .9, 0, 1)) smoke.emit(wx, wz, player.vx, player.vz, clamp(player.slip, .3, 1.2)); } else skids.lift(k);
+      if (marking) { skids.add(k, wx, wz, fx, fz); if (Math.random() < clamp((player.slip - .3) * .7, 0, .55) * dt * 60) smoke.emit(wx, wz, player.vx, player.vz, clamp(player.slip - .2, .2, .9)); } else skids.lift(k);
     });
     smoke.update(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
