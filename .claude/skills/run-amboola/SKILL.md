@@ -43,7 +43,9 @@ node .claude/skills/run-amboola/driver.mjs bench
 
 Output is one line per car, for example `911 GT3 RS  0-100 3.18s (spec 3.2)  vmax 296 (spec 296)  brake 100-0 24.1m`. Use it after touching `Player.update`, `derive()` or `torqueCurve()`.
 
-`index.html` exposes a debug handle on `window.amboola` (`player`, `traffic`, `CARS`, `scene`, `gScene`, `audio`, `renderer`). Use it from `page.evaluate` when a check needs internal state.
+Races: from the garage use `{"car":N,"click":"#raceBtn"}` then `{"click":".rcard[data-k=\"0\"]"}` (0 = GP, 1 = Fujimi, 2 = Oval), or `{"eval":"window.amboola.startRace(window.amboola.TRACKS[0])"}` while driving. Real-time racing at about 2 fps is far too slow to finish a race. To simulate one, call `window.amboola.simStep(1/60, {throttle, brake, steer, handbrake})` in an `eval` loop. It runs the same gameplay tick as the frame loop, including physics, AI, laps and results. Steer with `trackNearest(T, x, z, hint)` against `T.x/T.z/T.k`. The results screen appears 1.6 s of *real* time after the finish, so `await` a timeout before reading `#results`.
+
+`index.html` exposes a debug handle on `window.amboola` (`player`, `traffic`, `CARS`, `scene`, `gScene`, `audio`, `renderer`, `TRACKS`, `race`, `startRace`, `simStep`, `trackNearest`). Use it from `page.evaluate` when a check needs internal state.
 
 ## Run (human path)
 
@@ -66,4 +68,5 @@ There is no test suite. The checks are `driver.mjs shots` (must print `no page e
 
 ## Troubleshooting
 
+- **`game never finished loading` printed by the driver**: a syntax error stops the whole module from running, and the page shows no error. Find it with `node --check` on the extracted module script. One real cause: an inline `//` comment in a one-line statement that swallowed a closing `}`.
 - **Loading stuck on "Starting engine…"**: the three.js modules failed to load. Check that `/tmp/amboola-three/package/build/three.module.js` exists, and that the three version in the `index.html` import map matches the cache (delete the cache dir to refetch).

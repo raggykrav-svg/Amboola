@@ -45,7 +45,8 @@ async function open(viewport = { width: 1280, height: 720 }) {
     fs.existsSync(p) ? r.fulfill({ path: p, contentType: MIME[path.extname(p)] || 'application/octet-stream' }) : r.fulfill({ status: 404 });
   });
   await page.goto('http://amboola.test/index.html');
-  await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden') || /Error/.test(document.getElementById('loadmsg').textContent), null, { timeout: 180000 });
+  await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden') || /Error/.test(document.getElementById('loadmsg').textContent), null, { timeout: 180000 })
+    .catch(e => { throw new Error('game never finished loading (a script error stops the module from running at all):\n' + errors.join('\n')); });
   const msg = await page.textContent('#loadmsg');
   if (msg !== 'Ready') throw new Error('load failed: ' + msg + '\n' + errors.join('\n'));
   return { browser, page, errors };

@@ -58,6 +58,25 @@ Each car's physics is built from its real published figures: power, weight, redl
 - The Amboola GT Center showroom, where you start.
 - **30 Amboola boards** to smash, **6 speed traps**, and **skill chains** for drifting, near misses and high speed.
 
+## Races
+
+There are three race tracks just outside the city. You can see them from the city streets.
+
+| Track | Where | Length | Laps |
+|---|---|---|---|
+| **Amboola Grand Prix Circuit** | East of the city | 4.05 km, technical, with lots of corners | 3 |
+| **Fujimi Speedway** | North, under Mt. Fuji | 4.01 km with a 1.4 km main straight | 3 |
+| **Bayside Oval** | West | 2.47 km, flat out | 5 |
+
+**How to start a race:**
+- **From the garage:** pick your car, press **🏁 RACES**, and choose a track.
+- **While driving:** drive into a glowing race marker on the city's edge road (a coloured ring with a light beam and a sign), then press **Enter** or tap the prompt.
+- **From the pause menu:** press **P / Esc → RACES**.
+
+You race against 5 AI rivals whose power-to-weight is close to your car's. The rivals follow a racing line, brake for corners and overtake. There is a start-light countdown, then a live position and lap display, standings, a wrong-way warning, and **R** to reset onto the track.
+
+After the finish you get a results table and skill points: 5,000 for a win, 3,000 for 2nd, 2,000 for 3rd. Your best race time and best lap for each track are saved. **P → LEAVE RACE** takes you back to the city.
+
 ## Graphics
 
 Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
