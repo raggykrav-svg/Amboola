@@ -1,6 +1,6 @@
 # AMBOOLA — Tokyo Open World
 
-A browser driving game: take Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis and Ferraris through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
+A browser driving game: take Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis, Ferraris, McLarens and Bugattis through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
@@ -40,13 +40,17 @@ Gamepads work too: RT/LT for throttle and brake, the left stick steers, A is the
 **SUV:** Cayenne Turbo GT · Cayenne Turbo E-Hybrid · Macan Turbo Electric
 **Lamborghini:** Revuelto · Aventador SVJ · Temerario · Huracán STO · Huracán Sterrato · Urus Performante
 **Ferrari:** SF90 Stradale · LaFerrari · 812 Competizione · 12Cilindri · 296 GTB · F8 Tributo · Purosangue
+**McLaren:** W1 · Senna · P1 · 765LT · 750S · Artura · GTS
+**Bugatti:** Tourbillon · Chiron Super Sport · Chiron Pur Sport · Divo · Veyron Super Sport · Bolide
 **Tesla:** Roadster (next-gen) · Roadster (2008) · Model S Plaid · Model 3 Performance · Model X Plaid · Model Y Performance · Cybertruck Cyberbeast
 
 The Teslas have their own body shapes: glass roofs, smooth grille-less noses, and a flat-panel Cybertruck with a full-width light bar. They also get extra paints: Pearl White, Ultra Red, Stealth Grey, Quicksilver, Deep Blue, and brushed Stainless Steel for the Cybertruck. The next-gen Roadster uses Tesla's announced prototype figures (0–100 km/h in 1.9 s, 400 km/h).
 
 The Lamborghinis have sharp, angular wedge bodies. The Ferraris come in three shapes: curvy mid-engine berlinettas, long-nosed front-engine V12 GTs, and the Purosangue. Both brands get their own paints: Verde Mantis, Arancio Borealis, Viola Pasifae, Rosso Corsa, Giallo Modena and Blu Pozzi.
 
-Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 26 paint colours.
+The McLarens have a low mid-engine body with a teardrop cabin. The Bugattis have a wide, rounded body with the horseshoe grille, and the Bolide is a very low track car. The new paints are Papaya Orange, Volcano Blue, Bugatti Blue and Argent Silver. The Bugatti Tourbillon (2.0 s to 100 km/h, 445 km/h) and the track-only Bolide (500 km/h) are the fastest cars in the game.
+
+Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
 ## The world
 
@@ -60,13 +64,16 @@ Each car's physics is built from its real published figures: power, weight, redl
 
 ## Races
 
-There are three race tracks just outside the city. You can see them from the city streets.
+There are six race tracks just outside the city. You can see them from the city streets.
 
 | Track | Where | Length | Laps |
 |---|---|---|---|
 | **Amboola Grand Prix Circuit** | East of the city | 4.05 km, technical, with lots of corners | 3 |
 | **Fujimi Speedway** | North, under Mt. Fuji | 4.01 km with a 1.4 km main straight | 3 |
 | **Bayside Oval** | West | 2.47 km, flat out | 5 |
+| **Akagi Mountain Pass** | North-east | 3.41 km, narrow, with hairpins and walls right at the edge | 2 |
+| **Kanto Short Circuit** | North-west | 1.93 km, tight club circuit | 4 |
+| **Sakura Ring** | Far east | 8.54 km, flowing endurance loop | 1 |
 
 **How to start a race:**
 - **From the garage:** pick your car, press **🏁 RACES**, and choose a track.
@@ -84,11 +91,11 @@ Three.js with physically based materials: clear-coat car paint and reflective gl
 ## Sound
 
 There are no audio files; all sound is generated live with the Web Audio API.
-- **Combustion engines** are built from individual cylinder firing pulses passed through exhaust resonances. The pulse layers are cross-faded by RPM, so the engines each sound different: Porsche flat-six, V8, the 918's high-revving V8, the Lamborghini and Ferrari V12 shriek, the raspy Huracán V10, flat-plane twin-turbo V8s, and the Ferrari 296's twin-turbo V6. The hybrids (Revuelto, Temerario, SF90, LaFerrari, 296) also have an electric-motor whine.
+- **Combustion engines** are built from individual cylinder firing pulses passed through exhaust resonances. The pulse layers are cross-faded by RPM, so the engines each sound different: Porsche flat-six, V8, the 918's high-revving V8, the Lamborghini and Ferrari V12 shriek, the raspy Huracán V10, flat-plane twin-turbo V8s, the Ferrari 296's and McLaren Artura's twin-turbo V6, Bugatti's deep quad-turbo W16, and the Tourbillon's 9,000 rpm V16. The hybrids (Revuelto, Temerario, SF90, LaFerrari, 296, W1, P1, Artura, Tourbillon) also have an electric-motor whine.
 - On top of that: throttle-dependent tone, a rev-limiter stutter, crackles when you lift off, shift cuts, and turbo whistle with blow-off valve on the turbo cars.
 - **Porsche electric cars** have motor and inverter whine plus a low synthesized drive sound.
 - **Teslas** are almost silent, like the real cars. You hear a clean motor and gear whine that climbs with speed, a regen whine when you lift off, and the low pedestrian-warning hum below 30 km/h.
 - **Around the car:** tyre squeal, road rumble, wind noise, crash sounds and board smashes.
 
 ---
-*Fan-made game. Not affiliated with or endorsed by Porsche AG, Tesla, Inc., Automobili Lamborghini or Ferrari S.p.A. Model names are used only to identify the cars.*
+*Fan-made game. Not affiliated with or endorsed by Porsche, Tesla, Lamborghini, Ferrari, McLaren or Bugatti. Model names are used only to identify the cars.*

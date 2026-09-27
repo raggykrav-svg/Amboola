@@ -41,7 +41,7 @@
   .caritem.sel { border-left-color:var(--accent); background:rgba(255,90,31,.14); }
   .caritem b { display:block; font-size:18px; font-weight:700; letter-spacing:.04em; }
   .caritem span { font-size:12px; color:var(--dim); letter-spacing:.1em; }
-  #stats { position:absolute; right:28px; top:28px; width:330px; background:var(--panel); padding:18px 20px; backdrop-filter:blur(8px);
+  #stats { position:absolute; right:28px; top:28px; bottom:170px; overflow-y:auto; width:330px; background:var(--panel); padding:18px 20px; backdrop-filter:blur(8px);
     border:1px solid rgba(255,255,255,.07); }
   #stats h2 { margin:0; font-family:'Orbitron',sans-serif; font-weight:700; font-size:24px; letter-spacing:.06em; }
   #stats .sub { color:var(--dim); font-size:13px; letter-spacing:.2em; margin-bottom:14px; text-transform:uppercase; }
@@ -50,8 +50,8 @@
   .stat .lbl b { color:var(--ink); font-size:16px; letter-spacing:.05em; }
   .stat .track { height:5px; background:#262a33; margin-top:4px; }
   .stat .track i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .35s; }
-  #paints { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
-  .sw { width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,.15); box-shadow:inset 0 -6px 10px rgba(0,0,0,.35); }
+  #paints { display:flex; flex-wrap:wrap; gap:5px; margin-top:12px; }
+  .sw { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,.15); box-shadow:inset 0 -6px 10px rgba(0,0,0,.35); }
   .sw.sel { border-color:#fff; transform:scale(1.12); }
   #paintname { font-size:13px; color:var(--dim); letter-spacing:.15em; margin-top:6px; text-transform:uppercase; }
   .opts { display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
@@ -135,6 +135,7 @@
     align-items:center; justify-content:center; gap:12px; }
   #races h2, #results h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:36px; letter-spacing:.25em; margin:0 0 8px; text-align:center; }
   #results h2 small { display:block; font-family:'Rajdhani',sans-serif; font-size:16px; letter-spacing:.2em; color:var(--accent2); margin-top:6px; }
+  #raceList { max-height:66vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
   .rcard { width:min(560px,92vw); background:var(--panel); border-left:4px solid var(--accent); padding:12px 16px; cursor:pointer; transition:transform .15s; }
   .rcard:hover { transform:translateX(4px); background:rgba(255,90,31,.14); }
   .rcard b { display:block; font-size:20px; } .rcard span { display:block; color:var(--dim); font-size:14px; letter-spacing:.06em; }
@@ -174,7 +175,7 @@
   </div>
   <button id="raceBtn">🏁 RACES</button>
   <button id="drive">DRIVE</button>
-  <div id="disclaimer">Fan-made game · not affiliated with or endorsed by Porsche, Tesla, Lamborghini or Ferrari · model names used for reference only</div>
+  <div id="disclaimer">Fan-made game · not affiliated with or endorsed by any car maker · model names used for reference only</div>
 </div>
 
 <div id="hud" class="hidden">
@@ -255,6 +256,7 @@ const PAINTS = [
   { n: 'Quicksilver', c: '#8e9297', m: .95 }, { n: 'Deep Blue', c: '#1b2d58', m: .8 }, { n: 'Stainless Steel', c: '#b7bbbf', m: 1, r: .42 },
   { n: 'Verde Mantis', c: '#6fc12a', m: .45 }, { n: 'Arancio Borealis', c: '#f0700f', m: .5 }, { n: 'Viola Pasifae', c: '#4a1d6c', m: .8 },
   { n: 'Rosso Corsa', c: '#c1111b', m: .3 }, { n: 'Giallo Modena', c: '#f6d10f', m: .25 }, { n: 'Blu Pozzi', c: '#1d3a70', m: .8 },
+  { n: 'Papaya Orange', c: '#ff7a00', m: .3 }, { n: 'Volcano Blue', c: '#1f4fa8', m: .7 }, { n: 'Bugatti Blue', c: '#173a8c', m: .65 }, { n: 'Argent Silver', c: '#c4c8cc', m: .95 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: '4.0 flat-six · 9,000 rpm' },
@@ -294,6 +296,21 @@ const CARS = [
   { id: '296gtb', name: 'Ferrari 296 GTB', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 610, redline: 8500, mass: 1470, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 2.9, grip: 1.6, aero: .5, paint: 24, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'V6 plug-in hybrid · 830 CV' },
   { id: 'f8', name: 'Ferrari F8 Tributo', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'duck', kw: 530, redline: 8000, mass: 1435, vmax: 340, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.9, grip: 1.56, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', desc: '3.9 twin-turbo V8 · 720 CV' },
   { id: 'purosangue', name: 'Ferrari Purosangue', brand: 'Ferrari', cat: 'FERRARI', body: 'purosangue', wing: 'none', kw: 533, redline: 8250, mass: 2033, vmax: 310, drive: 'AWD', engine: 'v12na', gears: 8, zero: 3.3, grip: 1.17, aero: .1, paint: 25, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 four-door · 725 CV' },
+  // ---- McLaren
+  { id: 'w1', name: 'McLaren W1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 928, redline: 9200, mass: 1399, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.74, aero: 1.0, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'V8 hybrid hypercar · 1,275 PS' },
+  { id: 'senna', name: 'McLaren Senna', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'rs', kw: 588, redline: 8250, mass: 1198, vmax: 335, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: 1.2, paint: 27, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Track-focused · 800 PS' },
+  { id: 'p1', name: 'McLaren P1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 673, redline: 8500, mass: 1490, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: .9, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'The original hybrid hypercar' },
+  { id: '765lt', name: 'McLaren 765LT', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'duck', kw: 563, redline: 8500, mass: 1339, vmax: 330, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Longtail · 765 PS' },
+  { id: '750s', name: 'McLaren 750S', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'turbo', kw: 552, redline: 8500, mass: 1389, vmax: 332, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .5, paint: 27, rim: '#2a2b2e', caliper: '#1b1b1d', desc: '4.0 twin-turbo V8 · 750 PS' },
+  { id: 'artura', name: 'McLaren Artura', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', hybrid: true, kw: 515, redline: 8500, mass: 1498, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 3.0, grip: 1.56, aero: .3, paint: 29, rim: '#2a2b2e', caliper: '#1b1b1d', desc: 'V6 plug-in hybrid · 700 PS' },
+  { id: 'gts', name: 'McLaren GTS', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', kw: 470, redline: 7500, mass: 1520, vmax: 326, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 3.2, grip: 1.42, aero: .2, paint: 9, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'Grand tourer · 635 PS' },
+  // ---- Bugatti
+  { id: 'tourbillon', name: 'Bugatti Tourbillon', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', hybrid: true, kw: 1320, redline: 9000, mass: 1995, vmax: 445, drive: 'AWD', engine: 'v16na', gears: 8, zero: 2.0, grip: 1.87, aero: .6, paint: 28, rim: '#1b1b1d', caliper: '#173a8c', desc: '8.3 V16 hybrid · 1,800 PS' },
+  { id: 'chironss', name: 'Bugatti Chiron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', kw: 1177, redline: 6900, mass: 1995, vmax: 440, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.49, aero: .5, paint: 7, rim: '#1b1b1d', caliper: '#ff7a00', desc: '8.0 quad-turbo W16 · 1,600 PS' },
+  { id: 'chironps', name: 'Bugatti Chiron Pur Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1935, vmax: 350, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.3, grip: 1.62, aero: 1.0, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Agile W16 · 1,500 PS' },
+  { id: 'divo', name: 'Bugatti Divo', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1960, vmax: 380, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.48, aero: 1.0, paint: 29, rim: '#1b1b1d', caliper: '#173a8c', desc: 'Corner-carving W16' },
+  { id: 'veyronss', name: 'Bugatti Veyron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'none', kw: 882, redline: 6400, mass: 1888, vmax: 431, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.5, grip: 1.43, aero: .3, paint: 12, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'The 431 km/h legend' },
+  { id: 'bolide', name: 'Bugatti Bolide', brand: 'Bugatti', cat: 'BUGATTI', body: 'bolide', wing: 'rs', kw: 1361, redline: 7000, mass: 1450, vmax: 500, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.2, grip: 1.54, aero: 1.4, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Track-only W16 · 1,850 PS' },
 ];
 
 /* =====================================================================
@@ -463,6 +480,10 @@ const ADS = [
   { t: 'HURACÁN STO', maker: 'LAMBORGHINI', jp: 'サーキットから公道へ', en: 'Super Trofeo Omologata.', bg: ['#130a02', '#4a2204'], ac: '#f0700f', car: '#f0700f' },
   { t: 'SF90 STRADALE', maker: 'FERRARI', jp: '跳ね馬、電動化', en: 'The prancing horse, electrified.', bg: ['#1a0203', '#5a0b0e'], ac: '#f6d10f', car: '#c1111b' },
   { t: '812 COMPETIZIONE', maker: 'FERRARI', jp: 'V12 9,500rpm', en: 'Pure V12 emotion.', bg: ['#0c0c0c', '#3a0508'], ac: '#ff2a2a', car: '#c1111b' },
+  { t: 'SENNA', maker: 'McLAREN', jp: 'サーキットの伝説', en: 'Built for the track.', bg: ['#140800', '#4a2200'], ac: '#ff7a00', car: '#ff7a00' },
+  { t: 'W1', maker: 'McLAREN', jp: '次世代ハイパーカー', en: 'The next real supercar.', bg: ['#050608', '#1c2733'], ac: '#ff7a00', car: '#1b1b1d' },
+  { t: 'TOURBILLON', maker: 'BUGATTI', jp: '時を超えて', en: 'Pour l\'éternité.', bg: ['#030a1a', '#0f2a66'], ac: '#8fb4ff', car: '#173a8c' },
+  { t: 'CHIRON SUPER SPORT', maker: 'BUGATTI', jp: '時速440km', en: '440 km/h. Effortlessly.', bg: ['#06070a', '#262a33'], ac: '#ff7a00', car: '#0b0b0d' },
   { t: 'AMBOOLA', jp: '東京を走れ', en: 'Drive Tokyo. Own the night.', bg: ['#120606', '#3d0f06'], ac: '#ff5a1f', car: '#b0101a', brand: true },
 ];
 function adTex(ad) {
@@ -1121,6 +1142,21 @@ Object.assign(BODIES, {
     cabin: [[-2.1, 1.1], [-1.3, 1.38], [-.5, 1.57], [.2, 1.58], [.7, 1.38], [1.25, 1.06], [-2.1, 1.06]], roof: [-1.2, .65],
     head: { x: 2.3, y: .96, z: .72, round: false }, tail: { x: -2.5, y: 1.04 }, deck: { x: -2.3, y: 1.12 } },
 });
+// ---- McLaren & Bugatti bodies
+Object.assign(BODIES, {
+  mclaren: { L: 4.57, W: 1.93, cabW: 1.34, wr: .35, tw: [.26, .32], fX: 1.38, rX: -1.29, yb: .2,
+    lower: [[-2.28, .24], [-2.31, .52], [-2.26, .84], [-2.02, .96], [-1.35, .99], [-.75, .93], [.3, .86], [1.0, .88], [1.42, .92], [1.9, .72], [2.24, .47], [2.3, .32], [2.28, .24]],
+    cabin: [[-1.1, .95], [-.6, 1.13], [-.05, 1.2], [.4, 1.15], [.8, 1.0], [1.3, .87], [-1.1, .87]], roof: [-.55, .35],
+    head: { x: 2.05, y: .7, z: .7, round: false }, tail: { x: -2.31, y: .86 }, deck: { x: -2.1, y: .98 } },
+  bugatti: { L: 4.54, W: 2.04, cabW: 1.4, wr: .37, tw: [.28, .34], fX: 1.4, rX: -1.31, yb: .2, horseshoe: true, noGrille: true,
+    lower: [[-2.27, .24], [-2.3, .55], [-2.25, .86], [-2.0, .97], [-1.3, 1.0], [-.6, .95], [.4, .9], [1.05, .9], [1.45, .95], [1.9, .78], [2.2, .55], [2.28, .35], [2.26, .24]],
+    cabin: [[-1.2, .97], [-.6, 1.15], [-.05, 1.21], [.35, 1.17], [.75, 1.02], [1.25, .88], [-1.2, .88]], roof: [-.55, .3],
+    head: { x: 2.05, y: .74, z: .72, round: false }, tail: { x: -2.3, y: .9 }, deck: { x: -2.1, y: .99 } },
+  bolide: { L: 4.76, W: 1.99, cabW: 1.2, wr: .35, tw: [.28, .34], fX: 1.45, rX: -1.3, yb: .18, horseshoe: true, noGrille: true,
+    lower: [[-2.38, .2], [-2.4, .5], [-2.35, .78], [-2.1, .88], [-1.2, .9], [-.5, .84], [.4, .82], [1.1, .86], [1.5, .9], [1.95, .66], [2.3, .42], [2.38, .28], [2.36, .2]],
+    cabin: [[-1.0, .86], [-.5, .98], [0, 1.01], [.4, .97], [.8, .87], [1.2, .82], [-1.0, .82]], roof: [-.45, .3],
+    head: { x: 2.1, y: .6, z: .7, round: false }, tail: { x: -2.4, y: .76 }, deck: { x: -2.2, y: .9 } },
+});
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .55 });
@@ -1152,7 +1188,10 @@ function extrude(shape, width, bevel, mat, shaper) {
   const bt = bevel, geo = new THREE.ExtrudeGeometry(shape, { depth: width - bt * 2, bevelEnabled: true, bevelThickness: bt, bevelSize: bevel * .6, bevelSegments: 4, curveSegments: 12 });
   geo.translate(0, 0, -(width - bt * 2) / 2);
   if (shaper) { const P = geo.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, P.getZ(i) * shaper(P.getX(i), P.getY(i))); }
-  const m = new THREE.Mesh(toCreasedNormals(geo, Math.PI / 4.2), mat); m.castShadow = true; m.receiveShadow = true; return m;
+  const g2 = toCreasedNormals(geo, Math.PI / 4.2), N = g2.attributes.normal;
+  // degenerate triangles give zero-length normals -> NaN in the shader, which bloom smears over the whole frame
+  for (let i = 0; i < N.count; i++) if (N.getX(i) ** 2 + N.getY(i) ** 2 + N.getZ(i) ** 2 < 1e-12) N.setXYZ(i, 0, 1, 0);
+  const m = new THREE.Mesh(g2, mat); m.castShadow = true; m.receiveShadow = true; return m;
 }
 function chainY(pts, x) { // y of upper chain at x (for cabins)
   const up = pts.slice(0, -1).filter(p => p[1] > pts[pts.length - 1][1] + .01).sort((a, b) => a[0] - b[0]);
@@ -1229,6 +1268,10 @@ function buildCar(spec, paintHex, metal = .4, rough) {
   const tl = new THREE.Mesh(new THREE.BoxGeometry(.05, .05, B.W * .9), tailMat); tl.position.set(B.tail.x + .02, B.tail.y + lift, 0); body.add(tl);
   // front intakes / diffuser / exhausts / mirrors
   const nose = B.lower[B.lower.length - 2];
+  if (B.horseshoe) { // Bugatti horseshoe grille
+    const hs = new THREE.Mesh(new THREE.TorusGeometry(.17, .028, 8, 28), chromeMat); hs.scale.set(1, 1.2, 1); hs.rotation.y = Math.PI / 2; hs.position.set(nose[0] - .05, B.yb + .33 + lift, 0); body.add(hs);
+    const hi = new THREE.Mesh(new THREE.CircleGeometry(.16, 24), blackMat); hi.scale.set(1, 1.2, 1); hi.rotation.y = Math.PI / 2; hi.position.set(nose[0] - .06, B.yb + .33 + lift, 0); body.add(hi);
+  }
   if (B.noGrille) { const g = new THREE.Mesh(new THREE.BoxGeometry(.08, .07, B.W * .5), blackMat); g.position.set(nose[0] - .03, B.yb + .12 + lift, 0); body.add(g); }
   else for (const s of [-1, 0, 1]) { const g = new THREE.Mesh(new THREE.BoxGeometry(.1, .13, s ? .42 : .5), blackMat); g.position.set(nose[0] - .02, B.yb + .15 + lift, s * .6); body.add(g); }
   const dif = new THREE.Mesh(new THREE.BoxGeometry(.25, .16, B.W * .7), blackMat); dif.position.set(B.tail.x + .08, B.yb + .12 + lift, 0); body.add(dif);
@@ -1267,7 +1310,7 @@ const SHADOW_TEX = canvasTex(128, 64, (g, w, h) => { const gr = g.createRadialGr
    PHYSICS DERIVATION
    ===================================================================== */
 function torqueCurve(spec, x) {
-  if (['f6na', 'v8na', 'v12na', 'v10na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
+  if (['f6na', 'v8na', 'v12na', 'v10na', 'v16na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
   return x < .22 ? .45 + 2.5 * x : x < .72 ? 1 : 1 - (x - .72) * 1.5; // turbo: flat plateau
 }
 function derive(spec) {
@@ -1301,6 +1344,9 @@ const ENGINE_TYPES = {
   v10na: { cyl: 10, res: [[190, .0045, 1], [505, .0025, 1.0], [1350, .0012, .72], [3050, .0006, .42]], noise: .36, drive: 3.3, lpMin: 1100, lpMax: 10000, vol: .55, crackle: 1.0, intake: .1 },
   v8ftt: { cyl: 8, res: [[170, .005, 1], [440, .0028, .8], [1150, .0014, .45], [2600, .0007, .2]], noise: .25, drive: 2.4, lpMin: 900, lpMax: 6500, vol: .55, crackle: .7, intake: .05, turbo: true },
   v6tt: { cyl: 6, res: [[205, .0045, 1], [530, .0025, .85], [1420, .0012, .55], [3150, .0006, .3]], noise: .28, drive: 2.5, lpMin: 1000, lpMax: 8000, vol: .5, crackle: .8, intake: .07, turbo: true },
+  // Bugatti: deep quad-turbo W16 whoosh, and the Tourbillon's 9,000 rpm Cosworth V16
+  w16: { cyl: 16, res: [[105, .007, 1], [290, .004, .8], [740, .002, .4], [1750, .0009, .15]], noise: .25, drive: 2.3, lpMin: 600, lpMax: 4600, vol: .62, crackle: .4, intake: .05, turbo: true },
+  v16na: { cyl: 16, res: [[245, .0038, 1], [650, .002, .95], [1720, .001, .72], [3850, .0005, .46]], noise: .25, drive: 2.9, lpMin: 1300, lpMax: 12000, vol: .5, crackle: .7, intake: .12 },
 };
 class AudioSys {
   constructor() { this.ctx = null; this.muted = localStorage.getItem('amboola.mute') === '1'; this.popT = 0; this.boost = 0; this.prevThr = 0; }
@@ -2068,7 +2114,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -2078,7 +2124,7 @@ function buildMenu() {
   $('drive').onclick = startDrive;
   updateMenu();
 }
-const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', ev: 'Electric' };
+const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', ev: 'Electric' };
 function selectCar(i) { carIdx = i; paintIdx = CARS[i].paint; localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
@@ -2107,6 +2153,7 @@ function stadium(len, r) {
   P.push([-h, -r], [-h / 2, -r]);
   return P;
 }
+const RUNOFF = 10; // default distance from track edge to wall
 const TRACKS = [
   { id: 'gp', name: 'Amboola Grand Prix Circuit', jp: 'アンブーラ GP サーキット', cx: HALF + 1300, cz: 0, w: 14, laps: 3, col: '#ff5a1f',
     marker: { x: HALF, z: 0, h: Math.PI / 2 }, desc: 'Technical GP layout · 24 corners',
@@ -2117,6 +2164,15 @@ const TRACKS = [
   { id: 'oval', name: 'Bayside Oval', jp: 'ベイサイド・オーバル', cx: -HALF - 900, cz: -100, w: 18, laps: 5, col: '#c77dff',
     marker: { x: -HALF, z: rc(9), h: -Math.PI / 2 }, desc: 'Flat-out oval · top-speed battle',
     pts: stadium(640, 190) },
+  { id: 'akagi', name: 'Akagi Mountain Pass', jp: '赤城峠', cx: 1900, cz: -1600, w: 11, run: 4, laps: 2, col: '#7ee04c',
+    marker: { x: rc(16), z: -HALF, h: Math.PI }, desc: 'Narrow touge · hairpins · walls close',
+    pts: [[0, 0], [250, -20], [400, 40], [430, 160], [330, 210], [180, 190], [120, 260], [200, 340], [380, 360], [470, 440], [420, 540], [250, 560], [80, 520], [-40, 440], [-160, 480], [-300, 440], [-360, 320], [-260, 240], [-120, 220], [-80, 120], [-200, 60], [-300, -40], [-220, -120], [-80, -80]] },
+  { id: 'kanto', name: 'Kanto Short Circuit', jp: '関東ショートサーキット', cx: -1850, cz: -1150, w: 12, laps: 4, col: '#ffd02d',
+    marker: { x: rc(4), z: -HALF, h: Math.PI }, desc: 'Tight club circuit · braking battles',
+    pts: [[0, 0], [300, 0], [380, 60], [360, 160], [250, 200], [150, 150], [60, 200], [80, 300], [0, 360], [-150, 340], [-250, 260], [-220, 150], [-300, 80], [-260, 0], [-140, -30]] },
+  { id: 'sakura', name: 'Sakura Ring', jp: '桜リンク', cx: 4200, cz: 0, w: 13, run: 6, laps: 1, col: '#ff5fa2',
+    marker: { x: HALF, z: rc(15), h: Math.PI / 2 }, desc: '7 km flowing endurance loop',
+    pts: Array.from({ length: 48 }, (_, k) => { const a = k / 48 * Math.PI * 2, r = 1 + .12 * Math.sin(3 * a) + .08 * Math.sin(7 * a + 1) + .05 * Math.sin(11 * a + 2) + .025 * Math.sin(17 * a + .5); return [900 * r * Math.cos(a), 1400 * r * Math.sin(a)]; }) },
 ];
 function prepTrack(T) {
   const curve = new THREE.CatmullRomCurve3(T.pts.map(([x, z]) => new THREE.Vector3(T.cx + x, 0, T.cz + z)), true, 'centripetal');
@@ -2132,10 +2188,10 @@ function prepTrack(T) {
   for (let i = 0; i < n; i++) { const a = (i - 1 + n) % n, b = (i + 1) % n; raw[i] = ((T.tx[b] - T.tx[a]) * -T.tz[i] + (T.tz[b] - T.tz[a]) * T.tx[i]) / (2 * T.step); }
   for (let i = 0; i < n; i++) { let s = 0; for (let d = -4; d <= 4; d++) s += raw[(i + d + n) % n]; T.k[i] = s / 9; }
   T.bx0 = Math.min(...T.x) - 40; T.bx1 = Math.max(...T.x) + 40; T.bz0 = Math.min(...T.z) - 40; T.bz1 = Math.max(...T.z) + 40;
+  T.run = T.run ?? RUNOFF;
   T.best = JSON.parse(localStorage.getItem('amboola.best.' + T.id) || 'null');
 }
 TRACKS.forEach(prepTrack);
-const RUNOFF = 10;
 const trackPt = (T, i, off, y) => [T.x[i] - T.tz[i] * off, y, T.z[i] + T.tx[i] * off];
 function trackNearest(T, x, z, hint) {
   let best = 1e18, bi = 0;
@@ -2183,8 +2239,8 @@ function buildTracks() {
       const j = (i + 1) % n, s0 = i * T.step, s1 = s0 + T.step;
       road.quad(trackPt(T, i, -hw, .06), trackPt(T, i, hw, .06), trackPt(T, j, hw, .06), trackPt(T, j, -hw, .06), [0, s0 / 16, 1, s1 / 16]);
       if (Math.abs(T.k[i]) > 1 / 220) for (const sd of [-1, 1]) kerb.quad(trackPt(T, i, sd * hw, .075), trackPt(T, i, sd * (hw + 1.4), .075), trackPt(T, j, sd * (hw + 1.4), .075), trackPt(T, j, sd * hw, .075), [0, s0 / 3, 1, s1 / 3]);
-      for (const sd of [-1, 1]) wall.quad(trackPt(T, i, sd * (hw + RUNOFF), 0), trackPt(T, j, sd * (hw + RUNOFF), 0), trackPt(T, j, sd * (hw + RUNOFF), 1.15), trackPt(T, i, sd * (hw + RUNOFF), 1.15), [s0 / 24, 0, s1 / 24, 1]);
-      if (i % 60 === 0) masts.push([...trackPt(T, i, (i % 120 ? 1 : -1) * (hw + RUNOFF + 2.5), 0), Math.atan2(T.tx[i], T.tz[i]) + (i % 120 ? -Math.PI / 2 : Math.PI / 2)]);
+      for (const sd of [-1, 1]) wall.quad(trackPt(T, i, sd * (hw + T.run), 0), trackPt(T, j, sd * (hw + T.run), 0), trackPt(T, j, sd * (hw + T.run), 1.15), trackPt(T, i, sd * (hw + T.run), 1.15), [s0 / 24, 0, s1 / 24, 1]);
+      if (i % 60 === 0) masts.push([...trackPt(T, i, (i % 120 ? 1 : -1) * (hw + T.run + 2.5), 0), Math.atan2(T.tx[i], T.tz[i]) + (i % 120 ? -Math.PI / 2 : Math.PI / 2)]);
     }
     chk.quad(trackPt(T, 0, -hw, .08), trackPt(T, 0, hw, .08), trackPt(T, 1, hw, .08), trackPt(T, 1, -hw, .08), [0, 0, 1, 1]);
     for (let k = 0; k < 6; k++) { const g = gridSlot(T, k), i = g.i; lines.quad(trackPt(T, i, g.lat - 1.2, .08), trackPt(T, i, g.lat + 1.2, .08), trackPt(T, (i + 1) % n, g.lat + 1.2, .08), trackPt(T, (i + 1) % n, g.lat - 1.2, .08), [0, 0, 1, 1]); }
@@ -2207,7 +2263,7 @@ function buildTracks() {
     for (let k = 0; k < 5; k++) { const m = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0xff1a1a, emissiveIntensity: 0 }); const l = new THREE.Mesh(new THREE.SphereGeometry(.32, 12, 8), m); l.position.set((k - 2) * .9, 6.1, -.4); gan.add(l); T.lights.push(m); }
     // grandstand + pit building along the start straight
     const iS = n - 45, hS = Math.atan2(T.tx[iS], T.tz[iS]);
-    const stand = new THREE.Group(); stand.position.set(...trackPt(T, iS, hw + RUNOFF + 9, 0)); stand.rotation.y = hS; scene.add(stand);
+    const stand = new THREE.Group(); stand.position.set(...trackPt(T, iS, hw + T.run + 9, 0)); stand.rotation.y = hS; scene.add(stand);
     const concrete = new THREE.MeshStandardMaterial({ color: 0xb9bcc2, roughness: .85 });
     for (let k = 0; k < 7; k++) { const st = new THREE.Mesh(new THREE.BoxGeometry(2, 1 + k * 1.1, 90), concrete); st.position.set(5 - k * 2, (1 + k * 1.1) / 2, 0); /* seats rise away from the track (-X) */ st.castShadow = st.receiveShadow = true; stand.add(st); }
     const crowdT = CROWD_TEX(); crowdT.repeat.set(6, 1);
@@ -2215,7 +2271,7 @@ function buildTracks() {
     crowd.position.set(-.5, 5.2, 0); crowd.rotation.y = Math.PI / 2; crowd.rotateX(-Math.atan2(12, 7.6)); stand.add(crowd);
     const roof = new THREE.Mesh(new THREE.BoxGeometry(18, .4, 94), new THREE.MeshStandardMaterial({ color: 0xe8e8ea, roughness: .5 })); roof.position.set(-1, 12.5, 0); roof.castShadow = true; stand.add(roof);
     for (const z of [-44, 0, 44]) { const c = new THREE.Mesh(new THREE.BoxGeometry(.5, 12.5, .5), steel); c.position.set(-9.5, 6.25, z); stand.add(c); }
-    const pit = new THREE.Group(); pit.position.set(...trackPt(T, iS, -(hw + RUNOFF + 7), 0)); pit.rotation.y = hS; scene.add(pit);
+    const pit = new THREE.Group(); pit.position.set(...trackPt(T, iS, -(hw + T.run + 7), 0)); pit.rotation.y = hS; scene.add(pit);
     const pb = new THREE.Mesh(new THREE.BoxGeometry(10, 7, 120), new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: .6 })); pb.position.y = 3.5; pb.castShadow = pb.receiveShadow = true; pit.add(pb);
     const pitSign = new THREE.Mesh(new THREE.PlaneGeometry(40, 5), signM); pitSign.position.set(-5.05, 5, 0); pitSign.rotation.y = -Math.PI / 2; pit.add(pitSign);
   }
@@ -2329,7 +2385,7 @@ function raceReset() {
 }
 function trackCollide(p) {
   const T = race.T, nr = trackNearest(T, p.x, p.z, race.p.hint); race.p.hint = nr.i;
-  const lim = T.w / 2 + RUNOFF - 1.15; if (Math.abs(nr.lat) <= lim) return 0;
+  const lim = T.w / 2 + T.run - 1.15; if (Math.abs(nr.lat) <= lim) return 0;
   const sd = Math.sign(nr.lat), nx = -T.tz[nr.i] * sd, nz = T.tx[nr.i] * sd, pen = Math.abs(nr.lat) - lim;
   p.x -= nx * pen; p.z -= nz * pen;
   const vn = p.vx * nx + p.vz * nz; if (vn <= 0) return 0;
