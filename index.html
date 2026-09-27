@@ -141,7 +141,7 @@
     <div class="opts" id="optQ"><div class="opt" data-v="ultra">Ultra</div><div class="opt" data-v="high">High</div><div class="opt" data-v="low">Low</div></div>
   </div>
   <button id="drive">DRIVE</button>
-  <div id="disclaimer">Fan-made game · not affiliated with or endorsed by Porsche AG or Tesla, Inc. · model names used for reference only</div>
+  <div id="disclaimer">Fan-made game · not affiliated with or endorsed by Porsche, Tesla, Lamborghini or Ferrari · model names used for reference only</div>
 </div>
 
 <div id="hud" class="hidden">
@@ -212,6 +212,8 @@ const PAINTS = [
   { n: 'Oak Green', c: '#2c3a2b', m: .85 }, { n: 'Frozen Berry', c: '#c49ab4', m: .55 },
   { n: 'Pearl White', c: '#f0f0ec', m: .35 }, { n: 'Ultra Red', c: '#9c0e1b', m: .6 }, { n: 'Stealth Grey', c: '#3a3d41', m: .55 },
   { n: 'Quicksilver', c: '#8e9297', m: .95 }, { n: 'Deep Blue', c: '#1b2d58', m: .8 }, { n: 'Stainless Steel', c: '#b7bbbf', m: 1, r: .42 },
+  { n: 'Verde Mantis', c: '#6fc12a', m: .45 }, { n: 'Arancio Borealis', c: '#f0700f', m: .5 }, { n: 'Viola Pasifae', c: '#4a1d6c', m: .8 },
+  { n: 'Rosso Corsa', c: '#c1111b', m: .3 }, { n: 'Giallo Modena', c: '#f6d10f', m: .25 }, { n: 'Blu Pozzi', c: '#1d3a70', m: .8 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: '4.0 flat-six · 9,000 rpm' },
@@ -236,6 +238,21 @@ const CARS = [
   { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Tri-motor SUV · falcon wing' },
   { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Dual-motor SUV' },
   { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Tri-motor · stainless steel' },
+  // ---- Lamborghini
+  { id: 'revuelto', name: 'Lamborghini Revuelto', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'turbo', hybrid: true, kw: 747, redline: 9500, mass: 1772, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 20, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 hybrid · 1,015 CV' },
+  { id: 'svj', name: 'Lamborghini Aventador SVJ', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'gt2', kw: 566, redline: 8700, mass: 1525, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 7, zero: 2.8, grip: 1.32, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1f8a5a', desc: '6.5 V12 · 770 CV' },
+  { id: 'temerario', name: 'Lamborghini Temerario', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'turbo', hybrid: true, kw: 677, redline: 10000, mass: 1690, vmax: 343, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.4, aero: .6, paint: 22, rim: '#2a2b2e', caliper: '#e3c11b', desc: 'Twin-turbo V8 hybrid · 10,000 rpm' },
+  { id: 'sto', name: 'Lamborghini Huracán STO', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'gt3', kw: 470, redline: 8500, mass: 1339, vmax: 310, drive: 'RWD', engine: 'v10na', gears: 7, zero: 3.0, grip: 1.5, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1b1b1d', desc: '5.2 V10 · race-bred' },
+  { id: 'sterrato', name: 'Lamborghini Huracán Sterrato', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', dakar: true, wing: 'none', kw: 449, redline: 8000, mass: 1470, vmax: 260, drive: 'AWD', engine: 'v10na', gears: 7, zero: 3.4, grip: 1.15, aero: .1, paint: 20, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Off-road V10 supercar' },
+  { id: 'urusp', name: 'Lamborghini Urus Performante', brand: 'Lamborghini', cat: 'LAMBO', body: 'urus', wing: 'turbo', kw: 490, redline: 6800, mass: 2150, vmax: 306, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.2, aero: .2, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'Super SUV · 666 CV' },
+  // ---- Ferrari
+  { id: 'sf90', name: 'Ferrari SF90 Stradale', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 735, redline: 8000, mass: 1570, vmax: 340, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V8 plug-in hybrid · 1,000 CV' },
+  { id: 'laferrari', name: 'Ferrari LaFerrari', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 708, redline: 9250, mass: 1585, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.9, grip: 1.56, aero: .7, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 hybrid hypercar · 963 CV' },
+  { id: '812c', name: 'Ferrari 812 Competizione', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'duck', kw: 610, redline: 9500, mass: 1487, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.85, grip: 1.59, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', desc: '6.5 V12 · 9,500 rpm' },
+  { id: '12cil', name: 'Ferrari 12Cilindri', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'none', kw: 610, redline: 9500, mass: 1560, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 8, zero: 2.9, grip: 1.61, aero: .2, paint: 25, rim: '#9da1a6', caliper: '#c8141b', desc: 'Front V12 grand tourer' },
+  { id: '296gtb', name: 'Ferrari 296 GTB', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 610, redline: 8500, mass: 1470, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 2.9, grip: 1.6, aero: .5, paint: 24, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'V6 plug-in hybrid · 830 CV' },
+  { id: 'f8', name: 'Ferrari F8 Tributo', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'duck', kw: 530, redline: 8000, mass: 1435, vmax: 340, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.9, grip: 1.56, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', desc: '3.9 twin-turbo V8 · 720 CV' },
+  { id: 'purosangue', name: 'Ferrari Purosangue', brand: 'Ferrari', cat: 'FERRARI', body: 'purosangue', wing: 'none', kw: 533, redline: 8250, mass: 2033, vmax: 310, drive: 'AWD', engine: 'v12na', gears: 8, zero: 3.3, grip: 1.17, aero: .1, paint: 25, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 four-door · 725 CV' },
 ];
 
 /* =====================================================================
@@ -401,6 +418,10 @@ const ADS = [
   { t: 'MODEL S PLAID', maker: 'TESLA', jp: '0-100 km/h 2.1秒', en: 'Beyond ludicrous.', bg: ['#0b0b0e', '#2a1016'], ac: '#e82127', car: '#9c0e1b' },
   { t: 'CYBERTRUCK', maker: 'TESLA', jp: '未来はステンレス', en: 'Built for any planet.', bg: ['#16181b', '#4a4f55'], ac: '#d9dde1', car: '#b7bbbf', suv: true },
   { t: 'ROADSTER', maker: 'TESLA', jp: '史上最速へ', en: 'The quickest car in the world.', bg: ['#10030a', '#43061a'], ac: '#ff3355', car: '#9c0e1b' },
+  { t: 'REVUELTO', maker: 'LAMBORGHINI', jp: '猛牛の咆哮', en: 'The V12 roars on.', bg: ['#0a0a06', '#3a3205'], ac: '#d4af37', car: '#6fc12a' },
+  { t: 'HURACÁN STO', maker: 'LAMBORGHINI', jp: 'サーキットから公道へ', en: 'Super Trofeo Omologata.', bg: ['#130a02', '#4a2204'], ac: '#f0700f', car: '#f0700f' },
+  { t: 'SF90 STRADALE', maker: 'FERRARI', jp: '跳ね馬、電動化', en: 'The prancing horse, electrified.', bg: ['#1a0203', '#5a0b0e'], ac: '#f6d10f', car: '#c1111b' },
+  { t: '812 COMPETIZIONE', maker: 'FERRARI', jp: 'V12 9,500rpm', en: 'Pure V12 emotion.', bg: ['#0c0c0c', '#3a0508'], ac: '#ff2a2a', car: '#c1111b' },
   { t: 'AMBOOLA', jp: '東京を走れ', en: 'Drive Tokyo. Own the night.', bg: ['#120606', '#3d0f06'], ac: '#ff5a1f', car: '#b0101a', brand: true },
 ];
 function adTex(ad) {
@@ -1030,6 +1051,33 @@ Object.assign(BODIES, {
     cabin: [[-1.2, .93], [-.6, 1.15], [-.05, 1.19], [.35, 1.14], [.7, 1.0], [1.2, .84], [-1.2, .84]], roof: [-.55, .3],
     head: { x: 1.95, y: .7, z: .66, round: false }, tail: { x: -2.17, y: .84 }, deck: { x: -1.95, y: .94 } },
 });
+// ---- Lamborghini & Ferrari bodies
+Object.assign(BODIES, {
+  lambo: { L: 4.95, W: 2.03, cabW: 1.4, wr: .37, tw: [.28, .34], fX: 1.5, rX: -1.28, yb: .2, sharp: true,
+    lower: [[-2.47, .24], [-2.5, .55], [-2.45, .86], [-2.2, .98], [-1.3, 1.0], [-.6, .92], [.4, .87], [1.1, .9], [1.55, .94], [2.0, .72], [2.4, .46], [2.47, .3], [2.45, .24]],
+    cabin: [[-1.3, .97], [-.7, 1.1], [-.2, 1.13], [.2, 1.1], [.7, .98], [1.35, .86], [-1.3, .86]], roof: [-.6, .2],
+    head: { x: 2.2, y: .66, z: .74, round: false }, tail: { x: -2.5, y: .82 }, deck: { x: -2.3, y: .99 } },
+  huracan: { L: 4.55, W: 1.93, cabW: 1.36, wr: .35, tw: [.26, .32], fX: 1.38, rX: -1.24, yb: .2, sharp: true,
+    lower: [[-2.27, .24], [-2.3, .55], [-2.25, .86], [-2.0, .98], [-1.2, 1.0], [-.5, .92], [.4, .87], [1.0, .88], [1.4, .92], [1.85, .72], [2.22, .47], [2.28, .3], [2.26, .24]],
+    cabin: [[-1.2, .97], [-.6, 1.13], [-.1, 1.18], [.3, 1.14], [.75, 1.0], [1.25, .87], [-1.2, .87]], roof: [-.55, .25],
+    head: { x: 2.02, y: .66, z: .7, round: false }, tail: { x: -2.3, y: .84 }, deck: { x: -2.1, y: .99 } },
+  urus: { L: 5.12, W: 2.02, cabW: 1.58, wr: .42, tw: [.3, .33], fX: 1.6, rX: -1.4, yb: .38,
+    lower: [[-2.55, .42], [-2.58, .75], [-2.53, 1.06], [-2.3, 1.15], [-1.3, 1.18], [0, 1.12], [1.0, 1.1], [1.7, 1.07], [2.3, .9], [2.56, .66], [2.54, .42]],
+    cabin: [[-2.2, 1.14], [-1.3, 1.42], [-.5, 1.62], [.3, 1.63], [.85, 1.42], [1.45, 1.1], [-2.2, 1.1]], roof: [-1.25, .8],
+    head: { x: 2.4, y: .98, z: .74, round: false }, tail: { x: -2.57, y: 1.08 }, deck: { x: -2.35, y: 1.16 } },
+  ferrari: { L: 4.6, W: 1.98, cabW: 1.38, wr: .35, tw: [.26, .32], fX: 1.36, rX: -1.3, yb: .2,
+    lower: [[-2.3, .24], [-2.33, .52], [-2.28, .84], [-2.05, .96], [-1.4, 1.0], [-.8, .95], [.3, .87], [1.0, .88], [1.4, .92], [1.9, .74], [2.25, .48], [2.31, .32], [2.29, .24]],
+    cabin: [[-1.25, .96], [-.7, 1.12], [-.15, 1.19], [.3, 1.15], [.7, 1.02], [1.2, .87], [-1.25, .87]], roof: [-.65, .3],
+    head: { x: 2.05, y: .7, z: .7, round: false }, tail: { x: -2.33, y: .86 }, deck: { x: -2.12, y: .98 } },
+  fgt: { L: 4.7, W: 1.97, cabW: 1.4, wr: .355, tw: [.27, .32], fX: 1.62, rX: -1.1, yb: .2,
+    lower: [[-2.35, .24], [-2.38, .54], [-2.33, .84], [-2.1, .95], [-1.3, .98], [-.6, .94], [.2, .89], [1.0, .88], [1.62, .92], [2.05, .76], [2.33, .5], [2.36, .34], [2.34, .24]],
+    cabin: [[-1.85, .94], [-1.1, 1.18], [-.5, 1.28], [.0, 1.27], [.35, 1.14], [.85, .88], [-1.85, .88]], roof: [-1.0, .2],
+    head: { x: 2.12, y: .74, z: .7, round: false }, tail: { x: -2.38, y: .86 }, deck: { x: -2.15, y: .96 } },
+  purosangue: { L: 4.97, W: 2.03, cabW: 1.56, wr: .41, tw: [.29, .33], fX: 1.72, rX: -1.3, yb: .34,
+    lower: [[-2.48, .38], [-2.51, .7], [-2.46, 1.0], [-2.25, 1.1], [-1.3, 1.13], [0, 1.07], [1.0, 1.05], [1.72, 1.06], [2.2, .9], [2.48, .66], [2.46, .38]],
+    cabin: [[-2.1, 1.1], [-1.3, 1.38], [-.5, 1.57], [.2, 1.58], [.7, 1.38], [1.25, 1.06], [-2.1, 1.06]], roof: [-1.2, .65],
+    head: { x: 2.3, y: .96, z: .72, round: false }, tail: { x: -2.5, y: 1.04 }, deck: { x: -2.3, y: 1.12 } },
+});
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .55 });
@@ -1176,7 +1224,7 @@ const SHADOW_TEX = canvasTex(128, 64, (g, w, h) => { const gr = g.createRadialGr
    PHYSICS DERIVATION
    ===================================================================== */
 function torqueCurve(spec, x) {
-  if (spec.engine === 'f6na' || spec.engine === 'v8na') return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
+  if (['f6na', 'v8na', 'v12na', 'v10na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
   return x < .22 ? .45 + 2.5 * x : x < .72 ? 1 : 1 - (x - .72) * 1.5; // turbo: flat plateau
 }
 function derive(spec) {
@@ -1205,6 +1253,11 @@ const ENGINE_TYPES = {
   f6tt: { cyl: 6, res: [[135, .0068, 1], [350, .0036, .65], [840, .0018, .3], [1950, .0008, .12]], noise: .22, drive: 2.0, lpMin: 700, lpMax: 4800, vol: .55, crackle: .5, intake: .03, turbo: true },
   v8tt: { cyl: 8, pattern: [1, .62, .92, .55, 1, .68, .86, .6], res: [[92, .009, 1], [255, .005, .75], [640, .0024, .35], [1550, .001, .12]], noise: .25, drive: 2.4, lpMin: 600, lpMax: 4200, vol: .6, crackle: .7, intake: .03, turbo: true },
   v8na: { cyl: 8, res: [[205, .0045, 1], [530, .0025, .95], [1420, .0012, .65], [3300, .0006, .4]], noise: .3, drive: 2.8, lpMin: 1200, lpMax: 10500, vol: .5, crackle: .8, intake: .1, hybrid: true },
+  // Lamborghini / Ferrari: V12 shriek, raspy V10, flat-plane twin-turbo V8, "piccolo V12" twin-turbo V6
+  v12na: { cyl: 12, res: [[235, .004, 1], [620, .0022, .95], [1650, .0011, .72], [3700, .0005, .48]], noise: .26, drive: 2.9, lpMin: 1300, lpMax: 11500, vol: .5, crackle: .8, intake: .12 },
+  v10na: { cyl: 10, res: [[190, .0045, 1], [505, .0025, 1.0], [1350, .0012, .72], [3050, .0006, .42]], noise: .36, drive: 3.3, lpMin: 1100, lpMax: 10000, vol: .55, crackle: 1.0, intake: .1 },
+  v8ftt: { cyl: 8, res: [[170, .005, 1], [440, .0028, .8], [1150, .0014, .45], [2600, .0007, .2]], noise: .25, drive: 2.4, lpMin: 900, lpMax: 6500, vol: .55, crackle: .7, intake: .05, turbo: true },
+  v6tt: { cyl: 6, res: [[205, .0045, 1], [530, .0025, .85], [1420, .0012, .55], [3150, .0006, .3]], noise: .28, drive: 2.5, lpMin: 1000, lpMax: 8000, vol: .5, crackle: .8, intake: .07, turbo: true },
 };
 class AudioSys {
   constructor() { this.ctx = null; this.muted = localStorage.getItem('amboola.mute') === '1'; this.popT = 0; this.boost = 0; this.prevThr = 0; }
@@ -1300,7 +1353,7 @@ class AudioSys {
       eng.whistle = { o, g }; eng.nodes.push(o, g);
       eng.spool = this.loopNoise(this.white, [['bandpass', 3200, 4]], 0); eng.nodes.push(eng.spool.src);
     }
-    if (T.hybrid) { const o = ctx.createOscillator(); o.type = 'sine'; const g = ctx.createGain(); g.gain.value = 0; o.connect(g).connect(this.master); o.start(); eng.hyb = { o, g }; eng.nodes.push(o, g); }
+    if (T.hybrid || spec.hybrid) { const o = ctx.createOscillator(); o.type = 'sine'; const g = ctx.createGain(); g.gain.value = 0; o.connect(g).connect(this.master); o.start(); eng.hyb = { o, g }; eng.nodes.push(o, g); }
     eng.out.gain.setTargetAtTime(T.vol, ctx.currentTime, .3);
   }
   burst(opts) {
@@ -1383,7 +1436,7 @@ class AudioSys {
       if (thr < .15 && this.prevThr > .6 && this.boostPeak > .45) this.burst({ type: 'highpass', freq: 1800, q: .6, gain: .35 * this.boostPeak, dur: .45, attack: .01 });
       this.boostPeak = thr > .5 ? Math.max(this.boost, (this.boostPeak || 0) * .99) : 0;
     }
-    if (T.hybrid) { eng.hyb.o.frequency.setTargetAtTime(s.speed * 40 + 100, t, .03); eng.hyb.g.gain.setTargetAtTime(clamp(s.speed / 30, 0, 1) * .012 * (.3 + thr), t, .05); }
+    if (eng.hyb) { eng.hyb.o.frequency.setTargetAtTime(s.speed * 40 + 100, t, .03); eng.hyb.g.gain.setTargetAtTime(clamp(s.speed / 30, 0, 1) * .012 * (.3 + thr), t, .05); }
     this.prevThr = thr;
   }
 }
@@ -1963,7 +2016,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -1973,12 +2026,13 @@ function buildMenu() {
   $('drive').onclick = startDrive;
   updateMenu();
 }
+const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', ev: 'Electric' };
 function selectCar(i) { carIdx = i; paintIdx = CARS[i].paint; localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => d.classList.toggle('sel', +d.dataset.i === carIdx));
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
-  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${c.engine === 'ev' ? 'Electric' : c.engine.startsWith('v8') ? 'V8' : 'Flat-six'} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : c.gears + '-speed ' + (c.manual ? 'manual' : 'PDK')}`;
+  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK')}`;
   $('vPow').textContent = `${Math.round(c.kw * 1.36)} PS`; $('bPow').style.width = clamp(c.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${c.vmax} km/h`; $('bTop').style.width = clamp((c.vmax - 180) / 1.7, 5, 100) + '%';
   $('vAcc').textContent = `${c.zero.toFixed(1)} s`; $('bAcc').style.width = clamp((4.5 - c.zero) / 2.4 * 100, 5, 100) + '%';

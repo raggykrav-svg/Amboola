@@ -1,6 +1,6 @@
 # AMBOOLA — Tokyo Open World
 
-A browser driving game: take Porsche GT cars and SUVs, plus the whole Tesla lineup, through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
+A browser driving game: take Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis and Ferraris through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
@@ -38,11 +38,15 @@ Gamepads work too: RT/LT for throttle and brake, the left stick steers, A is the
 **Hypercar:** 918 Spyder
 **Electric:** Taycan Turbo GT
 **SUV:** Cayenne Turbo GT · Cayenne Turbo E-Hybrid · Macan Turbo Electric
+**Lamborghini:** Revuelto · Aventador SVJ · Temerario · Huracán STO · Huracán Sterrato · Urus Performante
+**Ferrari:** SF90 Stradale · LaFerrari · 812 Competizione · 12Cilindri · 296 GTB · F8 Tributo · Purosangue
 **Tesla:** Roadster (next-gen) · Roadster (2008) · Model S Plaid · Model 3 Performance · Model X Plaid · Model Y Performance · Cybertruck Cyberbeast
 
 The Teslas have their own body shapes: glass roofs, smooth grille-less noses, and a flat-panel Cybertruck with a full-width light bar. They also get extra paints: Pearl White, Ultra Red, Stealth Grey, Quicksilver, Deep Blue, and brushed Stainless Steel for the Cybertruck. The next-gen Roadster uses Tesla's announced prototype figures (0–100 km/h in 1.9 s, 400 km/h).
 
-Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 20 paint colours.
+The Lamborghinis have sharp, angular wedge bodies. The Ferraris come in three shapes: curvy mid-engine berlinettas, long-nosed front-engine V12 GTs, and the Purosangue. Both brands get their own paints: Verde Mantis, Arancio Borealis, Viola Pasifae, Rosso Corsa, Giallo Modena and Blu Pozzi.
+
+Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 26 paint colours.
 
 ## The world
 
@@ -61,11 +65,11 @@ Three.js with physically based materials: clear-coat car paint and reflective gl
 ## Sound
 
 There are no audio files; all sound is generated live with the Web Audio API.
-- **Combustion engines** are built from individual cylinder firing pulses passed through exhaust resonances. The pulse layers are cross-faded by RPM, so a flat-six, a V8 and the 918's high-revving V8 each sound different.
+- **Combustion engines** are built from individual cylinder firing pulses passed through exhaust resonances. The pulse layers are cross-faded by RPM, so the engines each sound different: Porsche flat-six, V8, the 918's high-revving V8, the Lamborghini and Ferrari V12 shriek, the raspy Huracán V10, flat-plane twin-turbo V8s, and the Ferrari 296's twin-turbo V6. The hybrids (Revuelto, Temerario, SF90, LaFerrari, 296) also have an electric-motor whine.
 - On top of that: throttle-dependent tone, a rev-limiter stutter, crackles when you lift off, shift cuts, and turbo whistle with blow-off valve on the turbo cars.
 - **Porsche electric cars** have motor and inverter whine plus a low synthesized drive sound.
 - **Teslas** are almost silent, like the real cars. You hear a clean motor and gear whine that climbs with speed, a regen whine when you lift off, and the low pedestrian-warning hum below 30 km/h.
 - **Around the car:** tyre squeal, road rumble, wind noise, crash sounds and board smashes.
 
 ---
-*Fan-made game. Not affiliated with or endorsed by Porsche AG or Tesla, Inc. Model names are used only to identify the cars.*
+*Fan-made game. Not affiliated with or endorsed by Porsche AG, Tesla, Inc., Automobili Lamborghini or Ferrari S.p.A. Model names are used only to identify the cars.*
