@@ -19,7 +19,7 @@ node .claude/skills/run-amboola/driver.mjs shots /tmp/amboola-shots
 
 It prints each screenshot path, the final player state (`{"kmh":20.7,"gear":1,...}`) and either `no page errors` (exit 0) or the page errors (exit 1). Screenshots land in `/tmp/amboola-shots/{garage,drive,accel,drift,hood,pause}.png`. Look at them.
 
-Custom flow: pass a JSON step list as the 3rd argument. Each step is processed in this order: `car` → `click` → `key`/`ms` → `press` → `wait` (default 400 ms) → `shot`.
+Custom flow: pass a JSON step list as the 3rd argument. Each step is processed in this order: `car` → `click` → `key`/`ms` → `press` → `eval` → `wait` (default 400 ms) → `shot`.
 
 ```bash
 node .claude/skills/run-amboola/driver.mjs shots /tmp/amboola-shots '[{"car":12,"wait":2000,"shot":"garage-cayenne"},{"click":"#drive","wait":2000},{"press":"KeyT","wait":1500,"shot":"cayenne-night"}]'
@@ -31,6 +31,7 @@ node .claude/skills/run-amboola/driver.mjs shots /tmp/amboola-shots '[{"car":12,
 | `click: "#sel"` | click a DOM element (`#drive`, `#bResume`, `#bGarage`, `#bTime`, `#bMute`) |
 | `key: ["KeyW",…], ms` | hold the keys for `ms` |
 | `press: "KeyC"` | tap one key (C camera, T time of day, M gearbox, R reset, Escape pause, H help) |
+| `eval: "js"` or `"@file.js"` | evaluate JS in the page (value of the last expression is printed as `eval <json>`); use `window.amboola.*` for internals |
 | `wait: ms` | sleep before the screenshot |
 | `shot: "name"` | save `<outDir>/name.png` |
 

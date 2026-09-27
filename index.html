@@ -141,7 +141,7 @@
     <div class="opts" id="optQ"><div class="opt" data-v="ultra">Ultra</div><div class="opt" data-v="high">High</div><div class="opt" data-v="low">Low</div></div>
   </div>
   <button id="drive">DRIVE</button>
-  <div id="disclaimer">Fan-made game · not affiliated with or endorsed by Porsche AG · model names used for reference only</div>
+  <div id="disclaimer">Fan-made game · not affiliated with or endorsed by Porsche AG or Tesla, Inc. · model names used for reference only</div>
 </div>
 
 <div id="hud" class="hidden">
@@ -210,6 +210,8 @@ const PAINTS = [
   { n: 'Chalk', c: '#cfcec4', m: .05 }, { n: 'Jet Black', c: '#0b0b0d', m: .7 }, { n: 'Carrara White', c: '#eceeed', m: .3 },
   { n: 'Gentian Blue', c: '#16295c', m: .8 }, { n: 'Ruby Star', c: '#c0165a', m: .3 }, { n: 'Miami Blue', c: '#16a3cc', m: .3 },
   { n: 'Oak Green', c: '#2c3a2b', m: .85 }, { n: 'Frozen Berry', c: '#c49ab4', m: .55 },
+  { n: 'Pearl White', c: '#f0f0ec', m: .35 }, { n: 'Ultra Red', c: '#9c0e1b', m: .6 }, { n: 'Stealth Grey', c: '#3a3d41', m: .55 },
+  { n: 'Quicksilver', c: '#8e9297', m: .95 }, { n: 'Deep Blue', c: '#1b2d58', m: .8 }, { n: 'Stainless Steel', c: '#b7bbbf', m: 1, r: .42 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: '4.0 flat-six · 9,000 rpm' },
@@ -226,6 +228,14 @@ const CARS = [
   { id: 'macanev', name: 'Macan Turbo Electric', cat: 'SUV', body: 'macan', wing: 'none', kw: 470, redline: 16000, mass: 2405, vmax: 260, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.3, grip: 1.12, aero: .1, paint: 10, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Electric SUV · 639 PS' },
   { id: 'cayennegt', name: 'Cayenne Turbo GT', cat: 'SUV', body: 'cayenne', wing: 'turbo', kw: 485, redline: 6800, mass: 2220, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.18, aero: .2, paint: 2, rim: '#2a2b2e', caliper: '#e3c11b', desc: '4.0 twin-turbo V8 · SUV coupé' },
   { id: 'cayenneeh', name: 'Cayenne Turbo E-Hybrid', cat: 'SUV', body: 'cayenne', wing: 'none', kw: 544, redline: 6800, mass: 2535, vmax: 295, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.7, grip: 1.12, aero: .1, paint: 8, rim: '#9da1a6', caliper: '#1f8a5a', desc: 'V8 plug-in hybrid · 739 PS' },
+  // ---- Tesla (all electric, single-speed; "brand" switches on the Tesla sound profile)
+  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Next-gen · prototype claims' },
+  { id: 'roadster08', name: 'Tesla Roadster (2008)', brand: 'Tesla', cat: 'TESLA', body: 'roadster08', wing: 'none', kw: 185, redline: 14000, mass: 1235, vmax: 201, drive: 'RWD', engine: 'ev', gears: 1, zero: 3.9, grip: 1.15, aero: .1, paint: 0, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'The original · 248 hp' },
+  { id: 'modelsplaid', name: 'Tesla Model S Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelS', wing: 'turbo', kw: 760, redline: 20000, mass: 2162, vmax: 322, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: .2, paint: 16, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Tri-motor · 1,020 hp' },
+  { id: 'model3p', name: 'Tesla Model 3 Performance', brand: 'Tesla', cat: 'TESLA', body: 'model3', wing: 'turbo', kw: 460, redline: 18000, mass: 1836, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.1, grip: 1.12, aero: .15, paint: 14, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Dual-motor · 510 hp' },
+  { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Tri-motor SUV · falcon wing' },
+  { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Dual-motor SUV' },
+  { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Tri-motor · stainless steel' },
 ];
 
 /* =====================================================================
@@ -388,6 +398,9 @@ const ADS = [
   { t: '911 GT2 RS', jp: '700馬力の衝撃', en: '700 PS. No compromise.', bg: ['#000', '#2c2c2c'], ac: '#ff2a2a', car: '#0b0b0d' },
   { t: '918 SPYDER', jp: '伝説は続く', en: 'The legend continues.', bg: ['#07140f', '#14392a'], ac: '#34d399', car: '#c49ab4' },
   { t: '911 DAKAR', jp: '道の終わりから始まる', en: 'Where the road ends.', bg: ['#2b2217', '#6b5236'], ac: '#ffcf7a', car: '#eceeed' },
+  { t: 'MODEL S PLAID', maker: 'TESLA', jp: '0-100 km/h 2.1秒', en: 'Beyond ludicrous.', bg: ['#0b0b0e', '#2a1016'], ac: '#e82127', car: '#9c0e1b' },
+  { t: 'CYBERTRUCK', maker: 'TESLA', jp: '未来はステンレス', en: 'Built for any planet.', bg: ['#16181b', '#4a4f55'], ac: '#d9dde1', car: '#b7bbbf', suv: true },
+  { t: 'ROADSTER', maker: 'TESLA', jp: '史上最速へ', en: 'The quickest car in the world.', bg: ['#10030a', '#43061a'], ac: '#ff3355', car: '#9c0e1b' },
   { t: 'AMBOOLA', jp: '東京を走れ', en: 'Drive Tokyo. Own the night.', bg: ['#120606', '#3d0f06'], ac: '#ff5a1f', car: '#b0101a', brand: true },
 ];
 function adTex(ad) {
@@ -399,7 +412,7 @@ function adTex(ad) {
     drawCar(g, w * .36, h * (ad.suv ? .5 : .56), 600, ad.car, ad.suv);
     g.fillStyle = ad.ac; g.fillRect(48, 52, 6, 150);
     g.fillStyle = '#fff'; g.font = `700 26px ${OR}`; g.letterSpacing = '12px';
-    g.fillText(ad.brand ? 'AMBOOLA · OPEN WORLD' : 'PORSCHE', 72, 78); g.letterSpacing = '0px';
+    g.fillText(ad.brand ? 'AMBOOLA · OPEN WORLD' : ad.maker || 'PORSCHE', 72, 78); g.letterSpacing = '0px';
     let fs = 78; g.font = `900 ${fs}px ${OR}`; while (g.measureText(ad.t).width > w - 120 && fs > 30) { fs -= 4; g.font = `900 ${fs}px ${OR}`; }
     g.fillStyle = ad.ac; g.shadowColor = ad.ac; g.shadowBlur = 16; g.fillText(ad.t, 70, 78 + fs + 8); g.shadowBlur = 0;
     g.fillStyle = '#fff'; g.font = `900 40px ${JP}`; g.fillText(ad.jp, 72, 78 + fs + 64);
@@ -986,6 +999,38 @@ const BODIES = {
     cabin: [[-2.05, 1.07], [-1.25, 1.38], [-.45, 1.58], [.3, 1.58], [.78, 1.41], [1.32, 1.05], [-2.05, 1.05]], roof: [-1.2, .72],
     head: { x: 2.2, y: .94, z: .68, round: false }, tail: { x: -2.4, y: 1.03 }, deck: { x: -2.15, y: 1.1 } },
 };
+// ---- Tesla bodies (flags: glassRoof = no painted roof panel, noGrille = smooth nose, sharp = no smoothing, bar = full-width light bar)
+Object.assign(BODIES, {
+  model3: { L: 4.72, W: 1.85, cabW: 1.4, wr: .345, tw: [.26, .28], fX: 1.42, rX: -1.46, yb: .2, glassRoof: true, noGrille: true,
+    lower: [[-2.36, .24], [-2.39, .55], [-2.34, .85], [-2.15, .95], [-1.3, .98], [0, .92], [1.0, .9], [1.7, .85], [2.2, .7], [2.37, .5], [2.35, .24]],
+    cabin: [[-2.0, .94], [-1.2, 1.22], [-.4, 1.44], [.3, 1.44], [.85, 1.2], [1.35, .9], [-2.0, .9]], roof: [-1.1, .7],
+    head: { x: 2.2, y: .76, z: .66, round: false }, tail: { x: -2.38, y: .88 }, deck: { x: -2.2, y: .96 } },
+  modelS: { L: 4.97, W: 1.96, cabW: 1.46, wr: .36, tw: [.27, .29], fX: 1.5, rX: -1.46, yb: .2, noGrille: true,
+    lower: [[-2.48, .24], [-2.51, .56], [-2.46, .86], [-2.25, .97], [-1.3, 1.0], [0, .94], [1.0, .92], [1.8, .87], [2.3, .72], [2.49, .5], [2.47, .24]],
+    cabin: [[-2.1, .96], [-1.3, 1.24], [-.45, 1.43], [.3, 1.43], [.85, 1.2], [1.4, .9], [-2.1, .9]], roof: [-1.2, .75],
+    head: { x: 2.3, y: .78, z: .7, round: false }, tail: { x: -2.5, y: .9 }, deck: { x: -2.3, y: .98 } },
+  modelY: { L: 4.75, W: 1.92, cabW: 1.5, wr: .37, tw: [.27, .29], fX: 1.42, rX: -1.47, yb: .28, glassRoof: true, noGrille: true,
+    lower: [[-2.37, .32], [-2.4, .66], [-2.35, .98], [-2.15, 1.07], [-1.3, 1.1], [0, 1.03], [1.0, 1.0], [1.7, .95], [2.2, .8], [2.38, .58], [2.36, .32]],
+    cabin: [[-2.02, 1.06], [-1.25, 1.4], [-.4, 1.62], [.3, 1.62], [.85, 1.36], [1.35, 1.0], [-2.02, 1.0]], roof: [-1.2, .75],
+    head: { x: 2.2, y: .88, z: .68, round: false }, tail: { x: -2.39, y: 1.0 }, deck: { x: -2.2, y: 1.08 } },
+  modelX: { L: 5.05, W: 2.0, cabW: 1.56, wr: .39, tw: [.28, .3], fX: 1.5, rX: -1.47, yb: .3, glassRoof: true, noGrille: true,
+    lower: [[-2.52, .34], [-2.55, .7], [-2.5, 1.02], [-2.3, 1.12], [-1.3, 1.15], [0, 1.08], [1.0, 1.05], [1.8, .99], [2.3, .84], [2.53, .6], [2.51, .34]],
+    cabin: [[-2.2, 1.1], [-1.3, 1.45], [-.4, 1.68], [.4, 1.68], [.95, 1.4], [1.45, 1.04], [-2.2, 1.04]], roof: [-1.3, .9],
+    head: { x: 2.32, y: .92, z: .72, round: false }, tail: { x: -2.54, y: 1.04 }, deck: { x: -2.35, y: 1.13 } },
+  cybertruck: { L: 5.68, W: 2.2, cabW: 1.9, wr: .43, tw: [.3, .3], fX: 1.82, rX: -1.78, yb: .45, sharp: true, noGrille: true, bar: true, steelCabin: true,
+    lower: [[-2.84, .5], [-2.86, 1.12], [-1.0, 1.14], [1.0, 1.14], [2.84, 1.06], [2.84, .5]],
+    cabin: [[-2.7, 1.12], [.15, 1.93], [2.55, 1.1], [-2.7, 1.1]], roof: [-1.9, 1.3],
+    head: { x: 2.86, y: 1.02, z: 0 }, tail: { x: -2.87, y: 1.06 }, deck: { x: -2.7, y: 1.14 } },
+  roadster08: { L: 3.95, W: 1.85, cabW: 1.25, wr: .32, tw: [.24, .28], fX: 1.12, rX: -1.24, yb: .18, noGrille: true,
+    lower: [[-1.97, .22], [-2.0, .5], [-1.95, .78], [-1.7, .88], [-1.1, .9], [-.4, .86], [.6, .82], [1.2, .84], [1.7, .7], [1.95, .52], [1.97, .35], [1.95, .22]],
+    cabin: [[-.9, .86], [-.55, 1.08], [-.05, 1.13], [.3, 1.1], [.55, 1.0], [.95, .8], [-.9, .8]], roof: [-.5, .35],
+    head: { x: 1.72, y: .7, z: .6, round: false }, tail: { x: -1.99, y: .8 }, deck: { x: -1.8, y: .88 } },
+  roadster: { L: 4.3, W: 2.0, cabW: 1.3, wr: .36, tw: [.27, .32], fX: 1.35, rX: -1.3, yb: .2, glassRoof: true, noGrille: true,
+    lower: [[-2.15, .22], [-2.18, .5], [-2.13, .8], [-1.9, .92], [-1.2, .96], [-.4, .9], [.6, .86], [1.35, .9], [1.85, .72], [2.15, .5], [2.17, .36], [2.15, .22]],
+    cabin: [[-1.2, .93], [-.6, 1.15], [-.05, 1.19], [.35, 1.14], [.7, 1.0], [1.2, .84], [-1.2, .84]], roof: [-.55, .3],
+    head: { x: 1.95, y: .7, z: .66, round: false }, tail: { x: -2.17, y: .84 }, deck: { x: -1.95, y: .94 } },
+});
+for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .55 });
 const carbonMat = new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: .35, metalness: .3, clearcoat: 1, clearcoatRoughness: .1 });
@@ -1000,7 +1045,7 @@ function smoothChain(P, n) {
 function profileShape(pts, B, lift, withArches) {
   const s = new THREE.Shape(); let P = pts.map(([x, y]) => [x, y + lift]);
   // lower body: smooth whole top chain; cabin: smooth the upper chain, keep the flat base
-  P = withArches ? smoothChain(P, 72) : [...smoothChain(P.slice(0, -1), 48), P[P.length - 1]];
+  if (!B.sharp) P = withArches ? smoothChain(P, 72) : [...smoothChain(P.slice(0, -1), 48), P[P.length - 1]];
   s.moveTo(P[0][0], P[0][1]); for (let i = 1; i < P.length; i++) s.lineTo(P[i][0], P[i][1]);
   if (withArches) {
     const yb = B.yb + lift, ar = B.wr + .11 + lift * .6;
@@ -1033,7 +1078,7 @@ function buildWheel(B, spec, front, side, lift) {
   const face = side * (tw / 2 - .03);
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(R * .72, R * .72, tw * .9, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a2a2c, roughness: .5, metalness: .8, side: THREE.DoubleSide }));
   barrel.rotation.x = Math.PI / 2; spin.add(barrel);
-  const spokes = spec.cat === 'SUV' || spec.cat === 'ELECTRIC' ? 5 : 10;
+  const spokes = spec.cat === 'SUV' || spec.cat === 'ELECTRIC' || spec.cat === 'TESLA' ? 5 : 10;
   const sg = []; for (let k = 0; k < spokes; k++) { const b = new THREE.BoxGeometry(spokes === 5 ? .07 : .035, R * .62, .03); b.translate(0, R * .36, 0); b.rotateZ(k / spokes * Math.PI * 2); sg.push(b); }
   const hub = new THREE.CylinderGeometry(R * .14, R * .16, .06, 12); hub.rotateX(Math.PI / 2); sg.push(hub);
   const ring = new THREE.TorusGeometry(R * .7, .018, 6, 32); sg.push(ring);
@@ -1045,26 +1090,31 @@ function buildWheel(B, spec, front, side, lift) {
   pivot.position.set(front ? B.fX : B.rX, R, side * (B.W / 2 - tw / 2 - .015 + (front ? 0 : .01)));
   return { pivot, spin, front, R };
 }
-function buildCar(spec, paintHex, metal = .4) {
+function buildCar(spec, paintHex, metal = .4, rough) {
   const B = BODIES[spec.body];
   const lift = spec.dakar ? .07 : 0;
-  const paint = new THREE.MeshPhysicalMaterial({ color: paintHex, metalness: metal, roughness: metal > .6 ? .3 : .36, clearcoat: 1, clearcoatRoughness: .07 });
+  const paint = new THREE.MeshPhysicalMaterial({ color: paintHex, metalness: metal, roughness: rough ?? (metal > .6 ? .3 : .36), clearcoat: rough ? 0 : 1, clearcoatRoughness: .07 });
   const group = new THREE.Group(); const orient = new THREE.Group(); orient.rotation.y = -Math.PI / 2; group.add(orient);
   const body = new THREE.Group(); orient.add(body);
   // lower body
   // plan-view rounding at nose/tail + tumblehome above the beltline
   const half = B.L / 2, top = Math.max(...B.lower.map(p => p[1])) + lift;
-  const lowerShaper = (x, y) => { const e = clamp((Math.abs(x) - (half - .75)) / .8, 0, 1); return (1 - .16 * e * e) * (1 - clamp((y - (top - .3)) / .3, 0, 1) * .07); };
+  const taper = B.sharp ? .04 : .16;
+  const lowerShaper = (x, y) => { const e = clamp((Math.abs(x) - (half - .75)) / .8, 0, 1); return (1 - taper * e * e) * (1 - clamp((y - (top - .3)) / .3, 0, 1) * .07); };
   body.add(extrude(profileShape(B.lower, B, lift, true), B.W, .1, paint, lowerShaper));
   // cabin
   if (!spec.open) {
     const cb = B.cabin[B.cabin.length - 1][1] + lift, ct = Math.max(...B.cabin.map(p => p[1])) + lift;
     const cabShaper = (x, y) => 1 - clamp((y - cb) / (ct - cb), 0, 1) * .2;
-    body.add(extrude(profileShape(B.cabin, B, lift, false), B.cabW, .12, glassMat, cabShaper));
+    body.add(extrude(profileShape(B.cabin, B, lift, false), B.cabW, B.sharp ? .05 : .12, B.steelCabin ? paint : glassMat, cabShaper));
+    if (B.steelCabin) { // window band that pokes through the steel cabin (side windows + windscreen)
+      const wb = new THREE.Shape(); [[-1.2, 1.36], [.15, 1.76], [1.8, 1.3], [1.4, 1.22], [-1.2, 1.25]].forEach(([x, y], i) => i ? wb.lineTo(x, y + lift) : wb.moveTo(x, y + lift)); wb.closePath();
+      body.add(extrude(wb, B.cabW * .97, .03, glassMat));
+    }
     const [r0, r1] = B.roof; const top = [], bot = [];
     for (let k = 0; k <= 10; k++) { const x = lerp(r0, r1, k / 10); const y = chainY(B.cabin, x) + lift; top.push([x, y + .085]); bot.push([x, y - .03]); }
     const rs = new THREE.Shape(); rs.moveTo(...top[0]); top.slice(1).forEach(p => rs.lineTo(...p)); bot.reverse().forEach(p => rs.lineTo(...p)); rs.closePath();
-    const roof = extrude(rs, (B.cabW - .1) * .82, .06, spec.id === 'gt3rs' || spec.id === 'gt2rs' ? carbonMat : paint); body.add(roof);
+    if (!B.glassRoof && !B.steelCabin) { const roof = extrude(rs, (B.cabW - .1) * .82, .06, spec.id === 'gt3rs' || spec.id === 'gt2rs' ? carbonMat : paint); body.add(roof); }
     if (spec.dakar) { const rack = new THREE.Mesh(new THREE.BoxGeometry(1.0, .06, 1.2), blackMat); rack.position.set(-.15, chainY(B.cabin, -.1) + lift + .16, 0); body.add(rack); }
   } else {
     // open-top: windscreen + roll hoops
@@ -1077,7 +1127,8 @@ function buildCar(spec, paintHex, metal = .4) {
   const headMat = new THREE.MeshStandardMaterial({ color: 0xdfe8f0, emissive: 0xffffff, emissiveIntensity: 0, roughness: .1, metalness: .3 });
   const tailMat = new THREE.MeshStandardMaterial({ color: 0x3a0000, emissive: 0xff1010, emissiveIntensity: 1.5, roughness: .2 });
   const H = B.head;
-  for (const s of [-1, 1]) {
+  if (B.bar) { const hb = new THREE.Mesh(new THREE.BoxGeometry(.04, .04, B.W * .94), headMat); hb.position.set(H.x, H.y + lift, 0); body.add(hb); }
+  else for (const s of [-1, 1]) {
     let hl;
     if (H.round) { hl = new THREE.Mesh(new THREE.SphereGeometry(.13, 20, 14), headMat); hl.scale.set(1.25, .75, 1); hl.rotation.z = -.35; }
     else { hl = new THREE.Mesh(new THREE.BoxGeometry(.16, .07, .36), headMat); hl.rotation.z = -.4; }
@@ -1087,7 +1138,8 @@ function buildCar(spec, paintHex, metal = .4) {
   const tl = new THREE.Mesh(new THREE.BoxGeometry(.05, .05, B.W * .9), tailMat); tl.position.set(B.tail.x + .02, B.tail.y + lift, 0); body.add(tl);
   // front intakes / diffuser / exhausts / mirrors
   const nose = B.lower[B.lower.length - 2];
-  for (const s of [-1, 0, 1]) { const g = new THREE.Mesh(new THREE.BoxGeometry(.1, .13, s ? .42 : .5), blackMat); g.position.set(nose[0] - .02, B.yb + .15 + lift, s * .6); body.add(g); }
+  if (B.noGrille) { const g = new THREE.Mesh(new THREE.BoxGeometry(.08, .07, B.W * .5), blackMat); g.position.set(nose[0] - .03, B.yb + .12 + lift, 0); body.add(g); }
+  else for (const s of [-1, 0, 1]) { const g = new THREE.Mesh(new THREE.BoxGeometry(.1, .13, s ? .42 : .5), blackMat); g.position.set(nose[0] - .02, B.yb + .15 + lift, s * .6); body.add(g); }
   const dif = new THREE.Mesh(new THREE.BoxGeometry(.25, .16, B.W * .7), blackMat); dif.position.set(B.tail.x + .08, B.yb + .12 + lift, 0); body.add(dif);
   const exX = B.tail.x + .03; const exh = spec.engine === 'ev' ? [] : (spec.body === '911' && spec.engine === 'f6na' ? [-.09, .09] : spec.engine === 'v8tt' ? [-.72, -.6, .6, .72] : [-.55, .55]);
   for (const z of exh) { const e = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .2, 14), chromeMat); e.rotation.z = Math.PI / 2; e.position.set(exX, B.yb + .15 + lift, z); body.add(e); }
@@ -1275,6 +1327,19 @@ class AudioSys {
     this.squealN.g.gain.setTargetAtTime(sq * .22, t, .04); this.squealO.gain.setTargetAtTime(sq * .05, t, .04);
     this.squealN.f[0].frequency.setTargetAtTime(900 + s.slip * 250 + Math.sin(t * 13) * 40, t, .05);
     this.squealOsc.frequency.setTargetAtTime(480 + s.slip * 120, t, .05);
+    if (spec.engine === 'ev' && spec.brand === 'Tesla') {
+      // Tesla: near-silent, pure motor/gear whine that rises with speed, regen whine off-throttle,
+      // and the low pedestrian-warning hum below 30 km/h. No synthetic "sport" drone.
+      const f = s.rpm / 60, load = Math.max(s.throttle, kmh > 8 ? .35 : 0);
+      eng.w1.o.frequency.setTargetAtTime(Math.max(30, f * 4), t, tc); eng.w1.gn.gain.setTargetAtTime(clamp(kmh / 35, 0, 1) * (.02 + .07 * load), t, tc);
+      eng.w2.o.frequency.setTargetAtTime(Math.max(30, f * 6.02), t, tc); eng.w2.gn.gain.setTargetAtTime(clamp(kmh / 50, 0, 1) * .03 * s.throttle, t, tc);
+      eng.w3.o.frequency.setTargetAtTime(Math.max(30, f * 1.5), t, tc); eng.w3.gn.gain.setTargetAtTime(.012 * s.throttle, t, tc);
+      const avas = kmh < 30 ? (1 - kmh / 30) : 0;
+      eng.hum1.o.frequency.setTargetAtTime(110 + kmh * 5, t, .05); eng.hum2.o.frequency.setTargetAtTime(165 + kmh * 7.5, t, .05);
+      eng.hum1.gn.gain.setTargetAtTime(avas * .06, t, .05); eng.hum2.gn.gain.setTargetAtTime(avas * .03, t, .05);
+      eng.hiss.g.gain.setTargetAtTime(clamp(kmh / 150, 0, 1) * .02 * (.3 + s.throttle), t, .1);
+      return;
+    }
     if (spec.engine === 'ev') {
       const m = s.rpm, f = m / 60;
       eng.w1.o.frequency.setTargetAtTime(Math.max(30, f * 5.5), t, tc); eng.w1.gn.gain.setTargetAtTime(clamp(kmh / 60, 0, 1) * (.03 + .05 * s.throttle), t, tc);
@@ -1331,7 +1396,7 @@ let player = null;
 class Player {
   constructor(spec, paintIdx) {
     this.spec = spec; const p = PAINTS[paintIdx];
-    this.car = buildCar(spec, p.c, p.m);
+    this.car = buildCar(spec, p.c, p.m, p.r);
     scene.add(this.car.group);
     this.x = -LANES[1]; this.z = 150; this.heading = Math.PI; this.vx = 0; this.vz = 0; this.yawRate = 0;
     this.steer = 0; this.gear = 1; this.rpm = spec.idle || 0; this.reverse = false; this.shiftT = 0; this.manual = !!spec.manual;
@@ -1453,7 +1518,7 @@ class Player {
    ===================================================================== */
 function collideWorld(p) {
   const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
-  const r = p.spec.body === 'cayenne' || p.spec.body === 'macan' ? 1.1 : 1.02;
+  const r = BODIES[p.spec.body].W > 1.95 ? 1.1 : 1.02;
   let hit = 0;
   for (const off of [p.spec.L * .3, -p.spec.L * .3]) {
     let cx = p.x + fx * off, cz = p.z + fz * off;
@@ -1791,15 +1856,15 @@ function updateCamera(dt, p) {
     const vx = p.speed > 3 ? p.vx / p.speed : fx, vz = p.speed > 3 ? p.vz / p.speed : fz;
     const bl = p.reverse ? 0 : .35;
     let dx = lerp(fx, vx, bl), dz = lerp(fz, vz, bl); const dl = Math.hypot(dx, dz); dx /= dl; dz /= dl;
-    const dist = (camMode ? 8.8 : 5.9) + (B.L - 4.5) + p.speed * .022, h = (camMode ? 2.9 : 1.75) + (B.cabin[3][1] - 1.3);
+    const dist = (camMode ? 8.8 : 5.9) + (B.L - 4.5) + p.speed * .022, h = (camMode ? 2.9 : 1.75) + (B.roofY - 1.3);
     const tx = p.x - dx * dist, tz = p.z - dz * dist, ty = h;
     camPos.x = damp(camPos.x, tx, 7, dt); camPos.z = damp(camPos.z, tz, 7, dt); camPos.y = damp(camPos.y, ty, 5, dt);
     // keep distance stable (prevents lag at speed)
     const ox = camPos.x - p.x, oz = camPos.z - p.z, od = Math.hypot(ox, oz); if (od > dist * 1.08) { camPos.x = p.x + ox / od * dist * 1.08; camPos.z = p.z + oz / od * dist * 1.08; }
-    camLook.set(p.x + fx * 2.5, .95 + (B.cabin[3][1] - 1.3) * .7, p.z + fz * 2.5);
+    camLook.set(p.x + fx * 2.5, .95 + (B.roofY - 1.3) * .7, p.z + fz * 2.5);
     camera.position.copy(camPos);
   } else {
-    const off = camMode === 2 ? [.1, B.cabin[3][1] + .05, .35] : [0, .45, B.L / 2 + .15];
+    const off = camMode === 2 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
     const o = off[2]; camera.position.set(p.x + fx * o, off[1], p.z + fz * o);
     camLook.set(p.x + fx * 30, off[1] - .6, p.z + fz * 30);
     camPos.copy(camera.position);
@@ -1889,7 +1954,7 @@ function buildGarage() {
 }
 function showGarageCar() {
   if (gCar) gScene.remove(gCar.group);
-  const p = PAINTS[paintIdx]; gCar = buildCar(CARS[carIdx], p.c, p.m); gCar.group.position.y = .08;
+  const p = PAINTS[paintIdx]; gCar = buildCar(CARS[carIdx], p.c, p.m, p.r); gCar.group.position.y = .08;
   gCar.headMat.emissiveIntensity = 2.5; gCar.tailMat.emissiveIntensity = 2;
   gCar.group.traverse(o => { if (o.isMesh) o.castShadow = true; });
   gScene.add(gCar.group);
@@ -1898,7 +1963,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'GT · 911 / 718', HYPER: 'HYPERCAR', ELECTRIC: 'ELECTRIC GT', SUV: 'SUV' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -1913,7 +1978,7 @@ function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => d.classList.toggle('sel', +d.dataset.i === carIdx));
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
-  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${c.engine === 'ev' ? 'Electric' : c.engine.startsWith('v8') ? 'V8' : 'Flat-six'} · ${c.engine === 'ev' ? '2-speed' : c.gears + '-speed ' + (c.manual ? 'manual' : 'PDK')}`;
+  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${c.engine === 'ev' ? 'Electric' : c.engine.startsWith('v8') ? 'V8' : 'Flat-six'} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : c.gears + '-speed ' + (c.manual ? 'manual' : 'PDK')}`;
   $('vPow').textContent = `${Math.round(c.kw * 1.36)} PS`; $('bPow').style.width = clamp(c.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${c.vmax} km/h`; $('bTop').style.width = clamp((c.vmax - 180) / 1.7, 5, 100) + '%';
   $('vAcc').textContent = `${c.zero.toFixed(1)} s`; $('bAcc').style.width = clamp((4.5 - c.zero) / 2.4 * 100, 5, 100) + '%';

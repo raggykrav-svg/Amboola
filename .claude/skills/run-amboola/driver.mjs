@@ -67,6 +67,7 @@ if (mode === 'shots') {
     if (st.click) await page.click(st.click);
     if (st.key) { for (const k of st.key) await page.keyboard.down(k); await page.waitForTimeout(st.ms || 1000); for (const k of st.key) await page.keyboard.up(k); }
     if (st.press) await page.keyboard.press(st.press);
+    if (st.eval) console.log('eval', JSON.stringify(await page.evaluate(src => (0, eval)(src), st.eval.startsWith('@') ? fs.readFileSync(st.eval.slice(1), 'utf8') : st.eval)));
     await page.waitForTimeout(st.wait ?? 400);
     if (st.shot) { const f = path.join(out, st.shot + '.png'); await page.screenshot({ path: f }); console.log('shot', f); }
   }
