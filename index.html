@@ -343,17 +343,23 @@ const gScene = new THREE.Scene();
 const gCamera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 200);
 
 let composer, renderPass, bloomPass, smaaPass, quality = localStorage.getItem('amboola.q') || (isTouch ? 'low' : 'high');
+const qualityPR = () => quality === 'ultra' ? Math.min(devicePixelRatio, 2) : quality === 'high' ? Math.min(devicePixelRatio, 1.25) : Math.min(devicePixelRatio, 1);
 function setupComposer() {
-  const pr = quality === 'ultra' ? Math.min(devicePixelRatio, 2) : quality === 'high' ? Math.min(devicePixelRatio, 1.25) : Math.min(devicePixelRatio, 1);
+  const pr = qualityPR();
   renderer.setPixelRatio(pr);
   renderer.setSize(innerWidth, innerHeight, false);
+  if (composer) composer.dispose();
   composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth * pr, innerHeight * pr, { type: THREE.HalfFloatType, samples: quality === 'ultra' ? 4 : 0 }));
+  // EffectComposer takes a supplied target's size as the *CSS* size and multiplies by the pixel ratio again, so on
+  // high-DPI screens every pass came out pr× too big (picture squeezed into a corner). Re-size it from CSS pixels.
+  composer.setPixelRatio(pr);
   renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
   bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.55, 0.85);
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
   if (quality !== 'low') { smaaPass = new SMAAPass(innerWidth * pr, innerHeight * pr); composer.addPass(smaaPass); }
+  composer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = quality !== 'low';
   if (sun) { sun.shadow.mapSize.setScalar(quality === 'ultra' ? 4096 : 2048); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   scene.traverse(o => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; });
@@ -362,8 +368,10 @@ let sun = null;
 addEventListener('resize', () => {
   camera.aspect = gCamera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix(); gCamera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight, false);
-  composer.setSize(innerWidth, innerHeight);
+  const pr = qualityPR(); // browser zoom / moving to another monitor changes devicePixelRatio
+  renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false);
+  composer.setPixelRatio(pr); composer.setSize(innerWidth, innerHeight);
+  if (smoke) smoke.mat.uniforms.scale.value = innerHeight * pr;
 });
 
 /* =====================================================================
@@ -1917,7 +1925,7 @@ class Smoke {
   constructor(n = 260) {
     this.n = n; this.p = []; const pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n);
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('size', new THREE.BufferAttribute(size, 1)); g.setAttribute('alpha', new THREE.BufferAttribute(alpha, 1));
-    this.mat = new THREE.ShaderMaterial({ uniforms: { map: { value: SMOKE_TEX() }, scale: { value: innerHeight }, tint: { value: new THREE.Color(1, 1, 1) } }, transparent: true, depthWrite: false,
+    this.mat = new THREE.ShaderMaterial({ uniforms: { map: { value: SMOKE_TEX() }, scale: { value: innerHeight * renderer.getPixelRatio() }, tint: { value: new THREE.Color(1, 1, 1) } }, transparent: true, depthWrite: false,
       vertexShader: `attribute float size; attribute float alpha; varying float vA; uniform float scale; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.); gl_PointSize = size * scale / -mv.z; gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform sampler2D map; uniform vec3 tint; varying float vA; void main(){ vec4 c = texture2D(map, gl_PointCoord); gl_FragColor = vec4(tint * .85, c.a * vA); }` });
     this.pts = new THREE.Points(g, this.mat); this.pts.frustumCulled = false; scene.add(this.pts);
@@ -2803,7 +2811,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

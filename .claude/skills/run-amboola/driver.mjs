@@ -31,7 +31,7 @@ if (!fs.existsSync(path.join(THREE_DIR, 'build/three.module.js'))) {
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png', '.json': 'application/json' };
 async function open(viewport = { width: 1280, height: 720 }) {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
-  const page = await (await browser.newContext({ viewport })).newPage();
+  const page = await (await browser.newContext({ viewport, deviceScaleFactor: +(process.env.AMBOOLA_DPR || 1) })).newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console.error: ' + m.text()); });

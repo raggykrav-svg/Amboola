@@ -59,6 +59,8 @@ There is no test suite. The checks are `driver.mjs shots` (must print `no page e
 
 ## Gotchas
 
+- **Test on a high-DPI screen too:** `AMBOOLA_DPR=2 node .claude/skills/run-amboola/driver.mjs shots …` emulates a Retina/HiDPI display (deviceScaleFactor 2). One real bug only showed up there. Handing `EffectComposer` a pre-sized render target makes it treat that size as CSS pixels and multiply by the pixel ratio again, so the SMAA and bloom passes came out pr× too large and the 3D picture was squeezed into the top-left corner of users' screens. `setupComposer()` now calls `composer.setPixelRatio(pr)` then `composer.setSize(innerWidth, innerHeight)`. To check it, read `window.amboola.composer.renderTarget1` against `renderer.domElement.width/height`. Ultra at 2× (2560×1440 with MSAA) is too heavy for SwiftShader to click through, so test High at 2×.
+
 - **The CDN fails through the sandbox proxy.** Chromium reports `ERR_CERT_AUTHORITY_INVALID`, or with `ignoreHTTPSErrors` it reports `ERR_TOO_MANY_RETRIES`, and the loading screen sticks on "Starting engine…" forever. The driver routes `cdn.jsdelivr.net/npm/three@X/**` to the local `npm pack` copy and aborts Google Fonts. `curl` to the CDN does work, so don't be misled by it.
 - **The driver needs no web server.** It fulfills `http://amboola.test/*` straight from the repo, so there's no port to clean up.
 - **SwiftShader renders at about 0.5–2 fps.** Game `dt` is clamped to 1/20 s, so 15 s of held throttle only reaches about 20 km/h. Never judge acceleration or handling from screenshots; use `bench`. Also expect about 600 ms per frame, which is normal.
