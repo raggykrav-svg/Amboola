@@ -2564,25 +2564,29 @@ function makeTaxiMarker(col) {
   beam.position.y = 70; g.add(beam); g.userData.ring = ring;
   scene.add(g); return g;
 }
-const TAXI_SIGN_TEX = () => canvasTex(256, 128, (g, w, h) => {
-  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#ffe45a'); gr.addColorStop(1, '#f0b400'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-  g.fillStyle = '#111'; g.font = `900 54px ${OR}`; g.textAlign = 'center'; g.fillText('TAXI', w / 2, 62); g.font = `900 34px ${JP}`; g.fillText('タクシー', w / 2, 108);
-});
-let taxiSignTex = null;
-function addTaxiSign(car) {
-  taxiSignTex = taxiSignTex || TAXI_SIGN_TEX();
-  const B = car.B, m = new THREE.MeshStandardMaterial({ map: taxiSignTex, emissiveMap: taxiSignTex, emissive: 0xffffff, emissiveIntensity: 1.4, roughness: .4 });
-  const sign = new THREE.Mesh(new THREE.BoxGeometry(.28, .26, .62), m); sign.position.set(-.15, B.roofY + .2, 0); sign.castShadow = true;
-  car.body.add(sign); car.taxiSign = sign;
+// route guidance painted on the road: glowing chevrons that flow along the route from the car to the target
+const ROAD_ARROWS = 30, ARROW_STEP = 8;
+function buildRoadArrows() {
+  const sh = new THREE.Shape(); sh.moveTo(0, 1.1); sh.lineTo(1.3, -.2); sh.lineTo(.8, -.6); sh.lineTo(0, .2); sh.lineTo(-.8, -.6); sh.lineTo(-1.3, -.2); sh.closePath();
+  const geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2); geo.rotateY(Math.PI); // chevron lying flat, pointing +Z
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffd02d, transparent: true, opacity: .9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6 });
+  const im = new THREE.InstancedMesh(geo, mat, ROAD_ARROWS); im.count = 0; im.frustumCulled = false; scene.add(im); return im;
 }
-function buildTaxiArrow() {
-  const s = new THREE.Shape(); s.moveTo(0, 1.3); s.lineTo(.95, .1); s.lineTo(.38, .1); s.lineTo(.38, -1); s.lineTo(-.38, -1); s.lineTo(-.38, .1); s.lineTo(-.95, .1); s.closePath();
-  const geo = new THREE.ExtrudeGeometry(s, { depth: .22, bevelEnabled: false }); geo.translate(0, 0, -.11); geo.rotateX(-Math.PI / 2); // point along -Z… flipped below
-  geo.rotateY(Math.PI);
-  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc21a).multiplyScalar(.85), transparent: true, opacity: .92 }));
-  // outer group follows the car and leans back towards the chase camera; the inner group turns the arrow within that plane
-  const inner = new THREE.Group(); inner.add(m); const g = new THREE.Group(); g.add(inner); g.userData.inner = inner;
-  g.rotation.order = 'YXZ'; g.scale.setScalar(.75); scene.add(g); return g;
+const _am = new THREE.Matrix4(), _aq = new THREE.Quaternion(), _ay = new THREE.Vector3(0, 1, 0), _ap = new THREE.Vector3(), _as = new THREE.Vector3(1.15, 1, 2.1); // wide and stretched along the road so they read at a shallow viewing angle
+function updateRoadArrows(im, pts, flow, colour) {
+  im.material.color.set(colour).multiplyScalar(1.6);
+  let n = 0, travelled = 0, next = 5 + flow;
+  for (let k = 0; k < pts.length - 1 && n < ROAD_ARROWS; k++) {
+    const [ax, az] = pts[k], [bx, bz] = pts[k + 1], L = Math.hypot(bx - ax, bz - az); if (L < .01) continue;
+    const dx = (bx - ax) / L, dz = (bz - az) / L, yaw = Math.atan2(dx, dz);
+    while (next <= travelled + L && n < ROAD_ARROWS) {
+      const u = next - travelled; // keep left (Japan): shift into the left lane
+      _ap.set(ax + dx * u + dz * LANES[0], .13, az + dz * u - dx * LANES[0]);
+      _am.compose(_ap, _aq.setFromAxisAngle(_ay, yaw), _as); im.setMatrixAt(n++, _am); next += ARROW_STEP;
+    }
+    travelled += L;
+  }
+  im.count = n; im.instanceMatrix.needsUpdate = true;
 }
 // shortest route over the city grid (all roads connect at every intersection)
 function roadSeg(x, z) {
@@ -2611,8 +2615,7 @@ function startTaxi() {
   if (race) endRace(false);
   if (taxi) endTaxi();
   taxi = { phase: 'pickup', earnings: 0, fares: 0, total: +(localStorage.getItem('amboola.taxi.total') || 0), route: [], routeT: 0, crashes: 0, anim: 0 };
-  addTaxiSign(player.car);
-  taxi.arrow = buildTaxiArrow();
+  taxi.arrows = buildRoadArrows();
   $('taxihud').classList.remove('hidden');
   newTaxiJob(true);
 }
@@ -2630,14 +2633,12 @@ function updateTaxi(dt) {
   const p = player, s = taxi.spot;
   taxi.routeT -= dt; if (taxi.routeT <= 0) { taxi.route = taxiRoute(p.x, p.z, s.x, s.z); taxi.routeT = .4; }
   const dist = Math.hypot(p.x - s.x, p.z - s.z);
-  // arrow: towards the next route point that is not right under us
-  let tgt = taxi.route.find(([a, b]) => Math.hypot(a - p.x, b - p.z) > 14) || [s.x, s.z];
-  if (dist < 40) tgt = [s.x, s.z];
-  const B = BODIES[p.spec.body], ar = taxi.arrow; taxi.anim += dt;
-  const hx = Math.sin(p.heading), hz = Math.cos(p.heading); // float just ahead of the bonnet, tilted up towards the chase camera
-  ar.position.set(p.x + hx * 5.5, B.roofY + .55 + Math.sin(taxi.anim * 4) * .08, p.z + hz * 5.5);
-  ar.rotation.y = p.heading; ar.rotation.x = -.9; ar.userData.inner.rotation.y = Math.atan2(tgt[0] - ar.position.x, tgt[1] - ar.position.z) - p.heading;
-  ar.visible = camMode < 2 && dist > 7;
+  taxi.anim += dt;
+  const path = [[p.x, p.z], ...(dist < 40 ? [[s.x, s.z]] : taxi.route)];
+  updateRoadArrows(taxi.arrows, path, (taxi.anim * 9) % ARROW_STEP, taxi.phase === 'pickup' ? '#ffd02d' : '#34d399');
+  // the road arrows start behind the car -> say so, since they are out of view
+  const nx = path[1][0] - p.x, nz = path[1][1] - p.z;
+  if (Math.hypot(nx, nz) > 12 && (nx * Math.sin(p.heading) + nz * Math.cos(p.heading)) / Math.hypot(nx, nz) < -.5 && toastT <= 0 && dist > 20) toast('TURN AROUND', 'Uターン · follow the arrows');
   taxi.marker.userData.ring.material.opacity = .55 + Math.sin(taxi.anim * 5) * .3;
   if (taxi.person && taxi.phase === 'pickup') taxi.person.userData.wave.rotation.z = Math.PI + Math.sin(taxi.anim * 9) * .5 - .2;
   if (taxi.walker) { const w = taxi.walker; w.t += dt; w.g.position.x += Math.sin(w.g.rotation.y) * 1.3 * dt; w.g.position.z += Math.cos(w.g.rotation.y) * 1.3 * dt; if (w.t > 3) { scene.remove(w.g); taxi.walker = null; } }
@@ -2673,8 +2674,7 @@ function updateTaxi(dt) {
 }
 function endTaxi() {
   if (!taxi) return;
-  for (const o of [taxi.person, taxi.marker, taxi.arrow, taxi.walker?.g]) if (o) scene.remove(o);
-  if (player?.car.taxiSign) { player.car.body.remove(player.car.taxiSign); player.car.taxiSign = null; }
+  for (const o of [taxi.person, taxi.marker, taxi.arrows, taxi.walker?.g]) if (o) scene.remove(o);
   if (taxi.fares) toast(`SHIFT OVER · ${fmtYen(taxi.earnings)}`, `${taxi.fares} FARES · TOTAL ${fmtYen(taxi.total)}`);
   taxi = null; $('taxihud').classList.add('hidden');
 }

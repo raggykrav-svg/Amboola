@@ -86,11 +86,11 @@ After the finish you get a results table and skill points: 5,000 for a win, 3,00
 
 ## Taxi jobs
 
-In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI JOB** while driving. Your car becomes a taxi, with a lit TAXI / タクシー sign on the roof.
+In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI JOB** while driving. Your car stays exactly as it is.
 
 1. **Find the passenger.** A passenger waits at the roadside, waving, under a yellow ring and light beam.
    - The minimap draws the route along the streets in yellow.
-   - The yellow arrow in front of your car points the way: up means straight on, left or right means turn, and down means turn around.
+   - Glowing arrows on the road show the way, lane by lane. If the route starts behind you, the game says **TURN AROUND**.
 2. **Pick them up** by stopping next to them. They get in and tell you where to go, for example Ginza, Shibuya, Akihabara, Odaiba Harbor or near Tokyo Tower. The route turns green and a timer starts.
 3. **Drop them off** by stopping at the green marker. You get a fare based on the distance, plus a tip for arriving early. Crashes shrink the tip, and arriving late means no tip and a lower fare.
 4. **Keep going.** The next passenger appears right away. The job bar at the top shows the task, distance, time left, money earned and number of fares. Your all-time earnings are saved. **P → END TAXI SHIFT** stops.
