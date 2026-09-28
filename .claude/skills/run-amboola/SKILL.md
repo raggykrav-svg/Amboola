@@ -45,6 +45,8 @@ Output is one line per car, for example `911 GT3 RS  0-100 3.18s (spec 3.2)  vma
 
 Races: from the garage use `{"car":N,"click":"#raceBtn"}` then `{"click":".rcard[data-k=\"0\"]"}` (0 = GP, 1 = Fujimi, 2 = Oval, 3 = Akagi, 4 = Kanto, 5 = Sakura Ring), or `{"eval":"window.amboola.startRace(window.amboola.TRACKS[0])"}` while driving. Real-time racing at about 2 fps is far too slow to finish a race. To simulate one, call `window.amboola.simStep(1/60, {throttle, brake, steer, handbrake})` in an `eval` loop. It runs the same gameplay tick as the frame loop, including physics, AI, laps and results. Steer with `trackNearest(T, x, z, hint)` against `T.x/T.z/T.k`. The results screen appears 1.6 s of *real* time after the finish, so `await` a timeout before reading `#results`.
 
+Taxi: in the garage use `{"car":N,"click":"#taxiBtn"}`, or call `window.amboola.startTaxi()` while driving. State is in `window.amboola.taxi` (`phase` is `'pickup'` or `'dropoff'`; also `spot`, `route` waypoints, `fares`, `earnings`). To simulate a shift, steer toward `taxi.route` in a `simStep` loop and brake to a stop within about 8 m of `taxi.spot`. Park the traffic first (`traffic.update = () => {}` and move the cars away), because a naive autopilot gets stuck nose-to-nose with traffic that stops for it.
+
 `index.html` exposes a debug handle on `window.amboola` (`player`, `traffic`, `CARS`, `scene`, `gScene`, `audio`, `renderer`, `TRACKS`, `race`, `startRace`, `simStep`, `trackNearest`). Use it from `page.evaluate` when a check needs internal state.
 
 ## Run (human path)

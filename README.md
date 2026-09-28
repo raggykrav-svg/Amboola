@@ -84,6 +84,17 @@ You race against 5 AI rivals whose power-to-weight is close to your car's. The r
 
 After the finish you get a results table and skill points: 5,000 for a win, 3,000 for 2nd, 2,000 for 3rd. Your best race time and best lap for each track are saved. **P → LEAVE RACE** takes you back to the city.
 
+## Taxi jobs
+
+In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI JOB** while driving. Your car becomes a taxi, with a lit TAXI / タクシー sign on the roof.
+
+1. **Find the passenger.** A passenger waits at the roadside, waving, under a yellow ring and light beam.
+   - The minimap draws the route along the streets in yellow.
+   - The yellow arrow in front of your car points the way: up means straight on, left or right means turn, and down means turn around.
+2. **Pick them up** by stopping next to them. They get in and tell you where to go, for example Ginza, Shibuya, Akihabara, Odaiba Harbor or near Tokyo Tower. The route turns green and a timer starts.
+3. **Drop them off** by stopping at the green marker. You get a fare based on the distance, plus a tip for arriving early. Crashes shrink the tip, and arriving late means no tip and a lower fare.
+4. **Keep going.** The next passenger appears right away. The job bar at the top shows the task, distance, time left, money earned and number of fares. Your all-time earnings are saved. **P → END TAXI SHIFT** stops.
+
 ## Graphics
 
 Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.

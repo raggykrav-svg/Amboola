@@ -62,9 +62,11 @@
     letter-spacing:.3em; color:#111; border:none; cursor:pointer; background:linear-gradient(90deg,var(--accent),var(--accent2));
     clip-path:polygon(6% 0,100% 0,94% 100%,0 100%); transition:filter .15s; }
   #drive:hover { filter:brightness(1.15); }
-  #raceBtn { position:absolute; right:28px; bottom:98px; width:330px; padding:13px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:17px;
-    letter-spacing:.3em; color:#fff; cursor:pointer; background:rgba(10,12,18,.8); border:2px solid var(--accent); backdrop-filter:blur(6px);
-    clip-path:polygon(6% 0,100% 0,94% 100%,0 100%); transition:background .15s; }
+  #raceBtn, #taxiBtn { position:absolute; bottom:98px; width:162px; padding:13px 6px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:15px;
+    letter-spacing:.2em; color:#fff; cursor:pointer; background:rgba(10,12,18,.8); border:2px solid var(--accent); backdrop-filter:blur(6px);
+    clip-path:polygon(8% 0,100% 0,92% 100%,0 100%); transition:background .15s; }
+  #raceBtn { right:196px; } #taxiBtn { right:28px; border-color:#ffd02d; }
+  #taxiBtn:hover { background:rgba(255,208,45,.3); }
   #raceBtn:hover { background:rgba(255,90,31,.3); }
   #disclaimer { position:absolute; left:50%; transform:translateX(-50%); bottom:10px; font-size:11px; color:#6b7280; letter-spacing:.1em; text-align:center; pointer-events:none; }
 
@@ -112,7 +114,8 @@
     #stats { left:12px; right:12px; width:auto; top:auto; bottom:320px; padding:10px 14px; }
     #stats .stat, #stats .optlbl, #stats .opts { display:none; }
     #drive { left:12px; right:12px; width:auto; bottom:110px; }
-    #raceBtn { left:12px; right:12px; width:auto; bottom:44px; padding:10px; font-size:15px; }
+    #raceBtn, #taxiBtn { width:auto; bottom:44px; padding:10px; font-size:13px; }
+    #raceBtn { left:12px; right:calc(50% + 4px); } #taxiBtn { left:calc(50% + 4px); right:12px; }
     #brand { left:14px; top:12px; }
     #tacho { width:180px; height:180px; } #minimap { width:140px; height:140px; bottom:auto; top:70px; left:auto; right:12px; }
     #scorebox { display:none; }
@@ -128,6 +131,12 @@
   #rBoard b { display:inline-block; width:20px; color:var(--accent2); }
   #count { position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); font-family:'Orbitron',sans-serif; font-weight:900; font-size:64px;
     color:#ff2a2a; text-shadow:0 0 30px rgba(255,40,40,.8); opacity:0; transition:opacity .3s; letter-spacing:.2em; }
+  #taxihud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:20px; align-items:center; background:var(--panel);
+    padding:6px 18px; border-bottom:2px solid #ffd02d; backdrop-filter:blur(6px); text-align:center; }
+  #taxihud small { display:block; font-size:11px; letter-spacing:.25em; color:var(--dim); }
+  #taxihud b { font-family:'Orbitron',sans-serif; font-size:18px; }
+  #taxihud .job { text-align:left; min-width:190px; } #taxihud .job b { color:#ffd02d; font-size:15px; letter-spacing:.08em; }
+  #taxihud .job span { display:block; font-size:15px; letter-spacing:.04em; }
   #raceprompt { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:12; background:var(--panel); border:2px solid var(--accent);
     padding:10px 26px; text-align:center; font-size:18px; letter-spacing:.08em; cursor:pointer; backdrop-filter:blur(6px); }
   #raceprompt small { color:var(--dim); letter-spacing:.25em; font-size:12px; }
@@ -174,6 +183,7 @@
     <div class="opts" id="optQ"><div class="opt" data-v="ultra">Ultra</div><div class="opt" data-v="high">High</div><div class="opt" data-v="low">Low</div></div>
   </div>
   <button id="raceBtn">🏁 RACES</button>
+  <button id="taxiBtn">🚕 TAXI</button>
   <button id="drive">DRIVE</button>
   <div id="disclaimer">Fan-made game · not affiliated with or endorsed by any car maker · model names used for reference only</div>
 </div>
@@ -196,6 +206,7 @@
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
   <div id="count"></div>
+  <div id="taxihud" class="hidden"><div class="job"><b id="txTask">-</b><span id="txWhere">-</span></div><div><small>DISTANCE</small><b id="txDist">-</b></div><div><small>TIME</small><b id="txTime">-</b></div><div><small>EARNED</small><b id="txMoney">¥0</b></div><div><small>FARES</small><b id="txFares">0</b></div></div>
 </div>
 <div id="raceprompt" class="hidden"></div>
 <div id="races" class="hidden"><h2>RACES</h2><div id="raceList"></div><button id="racesClose">BACK</button></div>
@@ -207,6 +218,7 @@
   <button id="bTime">TIME OF DAY</button>
   <button id="bRaces">RACES</button>
   <button id="bLeave" class="hidden">LEAVE RACE</button>
+  <button id="bTaxi">TAXI JOB</button>
   <button id="bGarage">GARAGE · CHANGE CAR</button>
   <button id="bMute">SOUND: ON</button>
 </div>
@@ -1794,7 +1806,7 @@ class Traffic {
       if (d < R && d > 1e-4) {
         dx /= d; dz /= d; const pen = R - d; p.x += dx * pen; p.z += dz * pen;
         const tvx = tfx * c.speed * c.dir * 0, vn = (p.vx - tvx) * dx + p.vz * dz;
-        if (vn < 0) { p.vx -= 1.4 * vn * dx; p.vz -= 1.4 * vn * dz; p.vx *= .85; p.vz *= .85; if (-vn > 2) { audio.crash(-vn); skillCrash(); } c.stun = 2.5; c.speed = 0; c.mesh.position.x -= dx * pen * .5; c.mesh.position.z -= dz * pen * .5; }
+        if (vn < 0) { p.vx -= 1.4 * vn * dx; p.vz -= 1.4 * vn * dz; p.vx *= .85; p.vz *= .85; if (-vn > 2) { audio.crash(-vn); skillCrash(); taxiCrash(); } c.stun = 2.5; c.speed = 0; c.mesh.position.x -= dx * pen * .5; c.mesh.position.z -= dz * pen * .5; }
         return;
       }
     }
@@ -1957,6 +1969,7 @@ function drawMinimap(p) {
     for (let i = 0; i <= T.n; i += 4) { const k = i % T.n; i ? g.lineTo(T.x[k], T.z[k]) : g.moveTo(T.x[k], T.z[k]); } g.closePath(); g.stroke();
     g.strokeStyle = '#fff'; g.lineWidth = 6; g.beginPath(); g.moveTo(...trackPt(T, 0, -T.w, 0).filter((_, k) => k !== 1)); g.lineTo(...trackPt(T, 0, T.w, 0).filter((_, k) => k !== 1)); g.stroke();
   }
+  drawTaxiRoute(g);
   if (race) { g.fillStyle = '#ff3b3b'; for (const a of race.ais) { g.beginPath(); g.arc(a.x, a.z, 9, 0, 7); g.fill(); } }
   if (traffic && !race) { g.fillStyle = '#e8edf5'; for (const t of traffic.cars) { g.beginPath(); g.arc(t.mesh.position.x, t.mesh.position.z, 4, 0, 7); g.fill(); } }
   g.restore(); g.setTransform(1, 0, 0, 1, 0, 0);
@@ -2364,6 +2377,7 @@ function pickRivals(spec, n) {
 }
 function startRace(T) {
   if (race) endRace(false);
+  if (taxi) endTaxi();
   $('pause').classList.add('hidden'); $('races').classList.add('hidden'); $('results').classList.add('hidden'); $('raceprompt').classList.add('hidden');
   if (audio.ctx) audio.ctx.resume();
   const rivals = pickRivals(player.spec, isTouch ? 3 : 5), pSlot = rivals.length - 1;
@@ -2502,6 +2516,179 @@ $('resRestart').onclick = () => { const T = race.T; endRace(false); state = 'dri
 $('resLeave').onclick = () => { endRace(true); $('results').classList.add('hidden'); state = 'drive'; if (audio.ctx) audio.ctx.resume(); };
 
 /* =====================================================================
+   TAXI JOBS — any car becomes a taxi: pick up passengers at the kerb,
+   follow the route arrow / minimap line, drop them off, get paid, repeat
+   ===================================================================== */
+const TAXI_NAMES = ['Yuki', 'Haruto', 'Sakura', 'Ren', 'Aoi', 'Sota', 'Hina', 'Kaito', 'Mei', 'Riku', 'Yui', 'Takumi', 'Emi', 'Kenji', 'Nanami', 'Daichi', 'Airi', 'Hiro'];
+const DISTRICTS = [['Ikebukuro', 'Shinjuku', 'Ueno'], ['Shibuya', 'Tokyo Station', 'Akihabara'], ['Meguro', 'Roppongi', 'Ginza']];
+let taxi = null;
+function placeName(x, z) {
+  for (const l of landmarks) if (Math.hypot(l.x - x, l.z - z) < 170 && !TRACKS.some(T => T.name === l.n)) return `near ${l.n === 'Tower' ? 'Tokyo Tower' : l.n}`;
+  if (Math.abs(x) < 40 && Math.abs(z) < 40) return 'Scramble Crossing';
+  if (z > HALF - 170) return 'Odaiba Harbor';
+  const c = clamp(Math.floor((x + HALF) / (HALF * 2 / 3)), 0, 2), r = clamp(Math.floor((z + HALF) / (HALF * 2 / 3)), 0, 2);
+  return DISTRICTS[r][c];
+}
+function taxiSpot(fx, fz, minD, maxD) {
+  let best = null;
+  for (let t = 0; t < 80; t++) {
+    const axisZ = Math.random() < .5, line = 1 + Math.floor(Math.random() * (N - 1)), j = Math.floor(Math.random() * N);
+    const along = rc(j) + 22 + Math.random() * 36, sd = Math.random() < .5 ? 1 : -1, c = rc(line);
+    const s = axisZ ? { x: c + sd * LANES[1], z: along, px: c + sd * 9.6, pz: along, ry: sd > 0 ? -Math.PI / 2 : Math.PI / 2 }
+      : { x: along, z: c + sd * LANES[1], px: along, pz: c + sd * 9.6, ry: sd > 0 ? Math.PI : 0 };
+    if (axisZ && Math.abs(c) < 1 && along > 60 && along < 180) continue; // keep clear of the GT Center frontage
+    const d = Math.hypot(s.x - fx, s.z - fz); best = s;
+    if (d > minD && d < maxD) break;
+  }
+  best.name = placeName(best.x, best.z);
+  return best;
+}
+function makePerson() {
+  const g = new THREE.Group(), skin = new THREE.MeshStandardMaterial({ color: pick(['#f1c9a5', '#e0ac85', '#c68863', '#f6d7bd']), roughness: .7 });
+  const cloth = new THREE.MeshStandardMaterial({ color: pick(['#c8141b', '#1d5fc4', '#2a2b2e', '#f2f2f2', '#e0a030', '#4aa83a', '#8a3fbf', '#e36b9a']), roughness: .8 });
+  const pants = new THREE.MeshStandardMaterial({ color: pick(['#1c2233', '#2a2b2e', '#5a4a3a', '#39424f']), roughness: .9 });
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(.16, .85, .18), pants); leg.position.set(s * .11, .43, 0); g.add(leg); }
+  const body = new THREE.Mesh(new THREE.BoxGeometry(.46, .62, .26), cloth); body.position.y = 1.17; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 10), skin); head.position.y = 1.64; g.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(.15, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), pants); hair.position.y = 1.66; g.add(hair);
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(.12, .6, .14), cloth); armL.position.set(-.3, 1.15, 0); g.add(armL);
+  const armR = new THREE.Group(); armR.position.set(.3, 1.45, 0); const a = new THREE.Mesh(new THREE.BoxGeometry(.12, .6, .14), cloth); a.position.y = .28; armR.add(a); g.add(armR);
+  g.userData.wave = armR; g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+function makeTaxiMarker(col) {
+  const g = new THREE.Group(), c = new THREE.Color(col);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(4.2, 5, 40), new THREE.MeshBasicMaterial({ color: c.clone().multiplyScalar(2.2), side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = .13; g.add(ring);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 140, 14, 1, true), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .2, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.y = 70; g.add(beam); g.userData.ring = ring;
+  scene.add(g); return g;
+}
+const TAXI_SIGN_TEX = () => canvasTex(256, 128, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#ffe45a'); gr.addColorStop(1, '#f0b400'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#111'; g.font = `900 54px ${OR}`; g.textAlign = 'center'; g.fillText('TAXI', w / 2, 62); g.font = `900 34px ${JP}`; g.fillText('タクシー', w / 2, 108);
+});
+let taxiSignTex = null;
+function addTaxiSign(car) {
+  taxiSignTex = taxiSignTex || TAXI_SIGN_TEX();
+  const B = car.B, m = new THREE.MeshStandardMaterial({ map: taxiSignTex, emissiveMap: taxiSignTex, emissive: 0xffffff, emissiveIntensity: 1.4, roughness: .4 });
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(.28, .26, .62), m); sign.position.set(-.15, B.roofY + .2, 0); sign.castShadow = true;
+  car.body.add(sign); car.taxiSign = sign;
+}
+function buildTaxiArrow() {
+  const s = new THREE.Shape(); s.moveTo(0, 1.3); s.lineTo(.95, .1); s.lineTo(.38, .1); s.lineTo(.38, -1); s.lineTo(-.38, -1); s.lineTo(-.38, .1); s.lineTo(-.95, .1); s.closePath();
+  const geo = new THREE.ExtrudeGeometry(s, { depth: .22, bevelEnabled: false }); geo.translate(0, 0, -.11); geo.rotateX(-Math.PI / 2); // point along -Z… flipped below
+  geo.rotateY(Math.PI);
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffc21a).multiplyScalar(.85), transparent: true, opacity: .92 }));
+  // outer group follows the car and leans back towards the chase camera; the inner group turns the arrow within that plane
+  const inner = new THREE.Group(); inner.add(m); const g = new THREE.Group(); g.add(inner); g.userData.inner = inner;
+  g.rotation.order = 'YXZ'; g.scale.setScalar(.75); scene.add(g); return g;
+}
+// shortest route over the city grid (all roads connect at every intersection)
+function roadSeg(x, z) {
+  const i = clamp(Math.round((x + HALF) / CELL), 0, N), j = clamp(Math.round((z + HALF) / CELL), 0, N);
+  if (Math.abs(x - rc(i)) <= Math.abs(z - rc(j))) { const j0 = clamp(Math.floor((z + HALF) / CELL), 0, N - 1); return { axis: 'z', ends: [[rc(i), rc(j0)], [rc(i), rc(j0 + 1)]] }; }
+  const i0 = clamp(Math.floor((x + HALF) / CELL), 0, N - 1); return { axis: 'x', ends: [[rc(i0), rc(j)], [rc(i0 + 1), rc(j)]] };
+}
+function taxiRoute(px, pz, tx, tz) {
+  const A = roadSeg(px, pz), B = roadSeg(tx, tz);
+  const sameSeg = A.axis === B.axis && A.ends[0][0] === B.ends[0][0] && A.ends[0][1] === B.ends[0][1];
+  if (sameSeg) return [[tx, tz]];
+  let best = null;
+  for (const s of A.ends) for (const e of B.ends) {
+    const cost = Math.hypot(px - s[0], pz - s[1]) + Math.abs(s[0] - e[0]) + Math.abs(s[1] - e[1]) + Math.hypot(tx - e[0], tz - e[1]);
+    if (!best || cost < best.cost) best = { cost, s, e };
+  }
+  const { s, e } = best;
+  const corner = A.axis === 'z' ? [s[0], e[1]] : [e[0], s[1]]; // keep going along the road you are on first
+  const pts = [s]; if (corner[0] !== s[0] || corner[1] !== s[1]) if (corner[0] !== e[0] || corner[1] !== e[1]) pts.push(corner);
+  if (e[0] !== s[0] || e[1] !== s[1]) pts.push(e);
+  pts.push([tx, tz]); return pts;
+}
+const routeLen = (px, pz, pts) => { let L = 0, x = px, z = pz; for (const [a, b] of pts) { L += Math.hypot(a - x, b - z); x = a; z = b; } return L; };
+const fmtYen = v => '¥' + Math.round(v).toLocaleString();
+function startTaxi() {
+  if (race) endRace(false);
+  if (taxi) endTaxi();
+  taxi = { phase: 'pickup', earnings: 0, fares: 0, total: +(localStorage.getItem('amboola.taxi.total') || 0), route: [], routeT: 0, crashes: 0, anim: 0 };
+  addTaxiSign(player.car);
+  taxi.arrow = buildTaxiArrow();
+  $('taxihud').classList.remove('hidden');
+  newTaxiJob(true);
+}
+function newTaxiJob(first) {
+  const s = taxiSpot(player.x, player.z, first ? 120 : 180, first ? 380 : 650);
+  taxi.phase = 'pickup'; taxi.spot = s; taxi.who = pick(TAXI_NAMES);
+  taxi.person = makePerson(); taxi.person.position.set(s.px, 0, s.pz); taxi.person.rotation.y = s.ry; scene.add(taxi.person);
+  if (taxi.marker) scene.remove(taxi.marker);
+  taxi.marker = makeTaxiMarker('#ffd02d'); taxi.marker.position.set(s.x, 0, s.z);
+  taxi.timer = null; taxi.crashes = 0; taxi.routeT = 0;
+  toast(`PASSENGER WAITING`, `${taxi.who} · ${s.name}`);
+}
+function taxiCrash() { if (taxi && taxi.phase === 'dropoff') taxi.crashes++; }
+function updateTaxi(dt) {
+  const p = player, s = taxi.spot;
+  taxi.routeT -= dt; if (taxi.routeT <= 0) { taxi.route = taxiRoute(p.x, p.z, s.x, s.z); taxi.routeT = .4; }
+  const dist = Math.hypot(p.x - s.x, p.z - s.z);
+  // arrow: towards the next route point that is not right under us
+  let tgt = taxi.route.find(([a, b]) => Math.hypot(a - p.x, b - p.z) > 14) || [s.x, s.z];
+  if (dist < 40) tgt = [s.x, s.z];
+  const B = BODIES[p.spec.body], ar = taxi.arrow; taxi.anim += dt;
+  const hx = Math.sin(p.heading), hz = Math.cos(p.heading); // float just ahead of the bonnet, tilted up towards the chase camera
+  ar.position.set(p.x + hx * 5.5, B.roofY + .55 + Math.sin(taxi.anim * 4) * .08, p.z + hz * 5.5);
+  ar.rotation.y = p.heading; ar.rotation.x = -.9; ar.userData.inner.rotation.y = Math.atan2(tgt[0] - ar.position.x, tgt[1] - ar.position.z) - p.heading;
+  ar.visible = camMode < 2 && dist > 7;
+  taxi.marker.userData.ring.material.opacity = .55 + Math.sin(taxi.anim * 5) * .3;
+  if (taxi.person && taxi.phase === 'pickup') taxi.person.userData.wave.rotation.z = Math.PI + Math.sin(taxi.anim * 9) * .5 - .2;
+  if (taxi.walker) { const w = taxi.walker; w.t += dt; w.g.position.x += Math.sin(w.g.rotation.y) * 1.3 * dt; w.g.position.z += Math.cos(w.g.rotation.y) * 1.3 * dt; if (w.t > 3) { scene.remove(w.g); taxi.walker = null; } }
+  const stopped = dist < 8.5 && p.speed < 2.6;
+  if (taxi.phase === 'pickup') {
+    $('txTask').textContent = `PICK UP ${taxi.who.toUpperCase()}`; $('txWhere').textContent = s.name;
+    $('txTime').textContent = '--';
+    if (stopped) {
+      scene.remove(taxi.person); taxi.person = null; audio.beep(660, .12); setTimeout(() => audio.beep(990, .15), 120);
+      const d = taxiSpot(s.x, s.z, 420, 1250), L = routeLen(s.x, s.z, taxiRoute(s.x, s.z, d.x, d.z));
+      taxi.phase = 'dropoff'; taxi.from = s; taxi.spot = d; taxi.routeLen = L; taxi.limit = L / 12.5 + 20; taxi.timer = taxi.limit; taxi.routeT = 0;
+      scene.remove(taxi.marker); taxi.marker = makeTaxiMarker('#34d399'); taxi.marker.position.set(d.x, 0, d.z);
+      toast(`${taxi.who.toUpperCase()} GOT IN`, `TAKE ME TO ${d.name.toUpperCase()} · ${Math.round(L)} m`);
+    } else if (dist < 35 && toastT <= 0) toast('STOP NEXT TO THE PASSENGER', 'ブレーキ');
+  } else {
+    taxi.timer -= dt;
+    $('txTask').textContent = `DROP OFF ${taxi.who.toUpperCase()}`; $('txWhere').textContent = s.name;
+    $('txTime').textContent = taxi.timer > 0 ? `${Math.ceil(taxi.timer)} s` : 'LATE';
+    $('txTime').style.color = taxi.timer < 10 ? '#ff4b4b' : '';
+    if (stopped) {
+      const base = 500 + taxi.routeLen * 1.6, speedTip = taxi.timer > 0 ? taxi.timer * 25 : 0, late = taxi.timer > 0 ? 1 : .7;
+      const tip = Math.max(0, speedTip * (1 - Math.min(taxi.crashes, 4) * .25)), pay = Math.round((base * late + tip) / 10) * 10;
+      taxi.earnings += pay; taxi.fares++; taxi.total += pay; localStorage.setItem('amboola.taxi.total', taxi.total);
+      skill.bank += Math.round(pay / 4); localStorage.setItem('amboola.skill', skill.bank);
+      const w = makePerson(); w.position.set(s.px, 0, s.pz); w.rotation.y = s.ry + Math.PI / 2; scene.add(w); taxi.walker = { g: w, t: 0 };
+      audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+      toast(`FARE ${fmtYen(pay)}`, `${taxi.crashes ? 'BUMPY RIDE · ' : ''}${taxi.timer > 0 ? 'TIP ' + fmtYen(tip) : 'LATE · NO TIP'} · ありがとう!`);
+      newTaxiJob(false);
+    }
+  }
+  $('txDist').textContent = `${Math.round(routeLen(p.x, p.z, taxi.route))} m`;
+  $('txMoney').textContent = fmtYen(taxi.earnings); $('txFares').textContent = taxi.fares;
+}
+function endTaxi() {
+  if (!taxi) return;
+  for (const o of [taxi.person, taxi.marker, taxi.arrow, taxi.walker?.g]) if (o) scene.remove(o);
+  if (player?.car.taxiSign) { player.car.body.remove(player.car.taxiSign); player.car.taxiSign = null; }
+  if (taxi.fares) toast(`SHIFT OVER · ${fmtYen(taxi.earnings)}`, `${taxi.fares} FARES · TOTAL ${fmtYen(taxi.total)}`);
+  taxi = null; $('taxihud').classList.add('hidden');
+}
+function drawTaxiRoute(g) {
+  if (!taxi) return;
+  g.strokeStyle = taxi.phase === 'pickup' ? '#ffd02d' : '#34d399'; g.lineWidth = 9; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(player.x, player.z); for (const [a, b] of taxi.route) g.lineTo(a, b); g.stroke();
+  g.fillStyle = g.strokeStyle; g.beginPath(); g.arc(taxi.spot.x, taxi.spot.z, 20, 0, 7); g.fill();
+  g.fillStyle = '#111'; g.beginPath(); g.arc(taxi.spot.x, taxi.spot.z, 9, 0, 7); g.fill();
+}
+$('taxiBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); startTaxi(); };
+$('bTaxi').onclick = () => { if (taxi) endTaxi(); else { if (race) endRace(true); startTaxi(); } setPause(false); };
+
+/* =====================================================================
    GAME STATE
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
@@ -2522,7 +2709,7 @@ function startDrive() {
   if (!localStorage.getItem('amboola.helped')) { $('help').classList.remove('hidden'); localStorage.setItem('amboola.helped', '1'); setTimeout(() => $('help').classList.add('hidden'), 9000); }
 }
 function setPause(on) {
-  if (on && state === 'drive') { state = 'pause'; $('pause').classList.remove('hidden'); $('bLeave').classList.toggle('hidden', !race); if (audio.ctx) audio.ctx.suspend(); }
+  if (on && state === 'drive') { state = 'pause'; $('pause').classList.remove('hidden'); $('bLeave').classList.toggle('hidden', !race); $('bTaxi').textContent = taxi ? 'END TAXI SHIFT' : 'TAXI JOB'; if (audio.ctx) audio.ctx.suspend(); }
   else if (!on && state === 'pause') { state = 'drive'; $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); }
 }
 function cycleTime() { const n = TIME_ORDER[(TIME_ORDER.indexOf(timeName) + 1) % 3]; applyTime(n); toast(n.toUpperCase(), 'TIME OF DAY'); }
@@ -2530,7 +2717,7 @@ $('bResume').onclick = () => setPause(false);
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
 $('bLeave').onclick = () => { endRace(true); setPause(false); };
-$('bGarage').onclick = () => { endRace(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
+$('bGarage').onclick = () => { endRace(true); endTaxi(); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
@@ -2547,11 +2734,11 @@ function simStep(dt, inp) {
   const sub = 3; for (let k = 0; k < sub; k++) {
     player.update(dt / sub, inp);
     const hit = collideWorld(player);
-    if (hit > 3) { audio.crash(hit); skillCrash(); shakeT += 1; }
+    if (hit > 3) { audio.crash(hit); skillCrash(); taxiCrash(); shakeT += 1; }
   }
   if (race && race.state === 'countdown') raceHold();
   player.sync(dt);
-  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); }
+  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); }
   updateBoards(dt, player); updateTraps(dt, player); updateSkill(dt, player);
 }
 const clock = new THREE.Clock();
@@ -2616,7 +2803,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get race() { return race; } };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
