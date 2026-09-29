@@ -875,6 +875,7 @@ async function buildWorld() {
     const a = rand() * Math.PI * 2; const r = rr(HALF + 150, HALF + 1400);
     const x = Math.cos(a) * r, z = Math.sin(a) * r * .9 - 200;
     if (z > HALF + 30) continue;
+    if (x > MTN.cx - MTN.R - 120 && x < -HALF - 40 && z > MTN.cz - MTN.R - 120 && z < MTN.cz + MTN.R + 120) continue;
     if (TRACKS.some(T => x > T.bx0 - 90 && x < T.bx1 + 90 && z > T.bz0 - 90 && z < T.bz1 + 90)) continue;
     const w = rr(20, 50), d = rr(20, 50), h = r < HALF + 600 ? rr(20, 120) : rr(40, 220);
     facadeGB[pick([0, 1, 2, 3, 4])].box(x, 0, z, w, h, d, 16, 32, 0, tint(), roofGB);
@@ -961,6 +962,7 @@ async function buildWorld() {
   buildBoards();
   buildSpeedTraps();
   buildTracks();
+  buildMountain();
   buildMinimapImage();
 }
 
@@ -1060,15 +1062,15 @@ function buildExpressway() {
   for (const x of [-500, -100, 300, 650]) { const sgn = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshStandardMaterial({ map: signT, roughness: .6 })); sgn.position.set(x, y + 6, EXPRESS_Z); sgn.rotation.y = Math.PI / 2; scene.add(sgn); }
 }
 function buildFuji() {
-  const geo = new THREE.ConeGeometry(3000, 1500, 96, 12, true);
+  const geo = new THREE.ConeGeometry(3000, 1500, 160, 30, true);
   const pos = geo.attributes.position, colors = [];
   const snow = new THREE.Color(0xf4f7fb), rock = new THREE.Color(0x4a5566), c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const y = pos.getY(i); const t = (y + 750) / 1500; const a = Math.atan2(pos.getZ(i), pos.getX(i));
     const r = 1 + (Math.sin(a * 9) * .02 + Math.sin(a * 23) * .01) * (1 - t);
     pos.setX(i, pos.getX(i) * r * (t > .92 ? .9 : 1)); pos.setZ(i, pos.getZ(i) * r * (t > .92 ? .9 : 1));
-    const sn = t > .62 + Math.sin(a * 14) * .05;
-    c.copy(sn ? snow : rock); colors.push(c.r, c.g, c.b);
+    const line = .62 + Math.sin(a * 14) * .05 + Math.sin(a * 37) * .015, sn = clamp((t - line) / .05 + .5, 0, 1); // soft snow line
+    c.copy(rock).lerp(snow, sn * sn * (3 - 2 * sn)); colors.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, fog: false, transparent: true, opacity: .75 }));
@@ -1563,7 +1565,7 @@ class Player {
     scene.add(this.car.group);
     this.x = -LANES[1]; this.z = 150; this.heading = Math.PI; this.vx = 0; this.vz = 0; this.yawRate = 0;
     this.steer = 0; this.gear = 1; this.rpm = spec.idle || 0; this.reverse = false; this.shiftT = 0; this.manual = !!spec.manual;
-    this.accel = 0; this.latAcc = 0; this.slip = 0; this.limiter = false; this.throttle = 0;
+    this.accel = 0; this.latAcc = 0; this.slip = 0; this.limiter = false; this.throttle = 0; this.y = 0; this.slope = 0; this.pitchG = 0;
     this.pitch = 0; this.roll = 0; this.lastShiftDir = 0;
     this.head = new THREE.SpotLight(0xfff1dc, 0, 110, .5, .45, 1.4);
     this.head.position.set(0, .8, 2.2); this.head.target.position.set(0, 0, 25);
@@ -1573,6 +1575,7 @@ class Player {
   setLights(T) { this.head.intensity = T.head * 6; this.car.headMat.emissiveIntensity = T.head ? 6 : .6; this.baseTail = T.lamps ? 2.5 : 1.2; }
   dispose() { scene.remove(this.car.group); }
   resetToRoad() {
+    if (inMountain(this)) return mountainReset(this);
     const snap = v => rc(clamp(Math.round((v + HALF) / CELL), 0, N));
     const sx = snap(this.x), sz = snap(this.z);
     if (Math.abs(this.x - sx) < Math.abs(this.z - sz)) { const d = Math.cos(this.heading) >= 0 ? 1 : -1; this.x = sx + d * LANES[1]; this.heading = d > 0 ? 0 : Math.PI; }
@@ -1624,6 +1627,7 @@ class Player {
     if (this.reverse && drive < 0) a = vf > -9 ? drive * 5 : 0;
     // resistances
     a -= s.drag * vf * Math.abs(vf) / s.mass + (Math.abs(vf) > .1 ? Math.sign(vf) * .15 : 0);
+    a -= (this.slope || 0) * 9.81; // gravity along the road (mountain)
     // brakes
     const brakeDecel = brake * (g * s.grip * 1.08 + down);
     let nvf = vf + a * dt;
@@ -1662,7 +1666,8 @@ class Player {
   }
   sync(dt) {
     const c = this.car;
-    c.group.position.set(this.x, 0, this.z); c.group.rotation.y = this.heading;
+    this.pitchG = damp(this.pitchG, -Math.atan(this.slope || 0), 10, dt);
+    c.group.position.set(this.x, this.y || 0, this.z); c.group.rotation.order = 'YXZ'; c.group.rotation.y = this.heading; c.group.rotation.x = this.pitchG;
     this.pitch = damp(this.pitch, clamp(this.accel * .0045, -.045, .035), 7, dt);
     this.roll = damp(this.roll, clamp(this.vf * this.yawRate * .0055, -.06, .06), 7, dt);
     c.body.rotation.z = this.pitch; c.body.rotation.x = this.roll;
@@ -1701,9 +1706,12 @@ function collideWorld(p) {
       }
     }
   }
-  if (race) return Math.max(hit, trackCollide(p));
+  if (race) { p.y = 0; p.slope = 0; return Math.max(hit, trackCollide(p)); }
+  if (inMountain(p)) return Math.max(hit, mountainCollide(p));
+  p.y = 0; p.slope = 0; mtnHint = -1;
   const lim = HALF + 7;
-  if (Math.abs(p.x) > lim) { p.x = Math.sign(p.x) * lim; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.3; }
+  const toMountain = p.x < 0 && Math.abs(p.z - MTN.gateZ) < 6.5; // the west gate: the road out to Mt. Amboola
+  if (Math.abs(p.x) > lim && !toMountain) { p.x = Math.sign(p.x) * lim; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.3; }
   if (Math.abs(p.z) > lim) { p.z = Math.sign(p.z) * lim; hit = Math.max(hit, Math.abs(p.vz)); p.vz *= -.3; }
   return hit;
 }
@@ -1912,9 +1920,9 @@ class Skids {
     this.mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x050505, transparent: true, opacity: .55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8, side: THREE.DoubleSide }));
     this.mesh.frustumCulled = false; scene.add(this.mesh); this.last = [null, null]; this.count = 0;
   }
-  add(k, x, z, dx, dz) {
+  add(k, x, z, dx, dz, gy = 0) {
     const l = this.last[k]; this.last[k] = [x, z];
-    if (!l) return; const w = .15, y = .11; const px = -dz * w, pz = dx * w;
+    if (!l) return; const w = .15, y = .11 + gy; const px = -dz * w, pz = dx * w;
     const q = [l[0] + px, y, l[1] + pz, l[0] - px, y, l[1] - pz, x - px, y, z - pz, l[0] + px, y, l[1] + pz, x - px, y, z - pz, x + px, y, z + pz];
     this.pos.set(q, this.i * 18); this.i = (this.i + 1) % this.max; this.count = Math.min(this.count + 1, this.max);
     this.mesh.geometry.attributes.position.needsUpdate = true; this.mesh.geometry.setDrawRange(0, this.count * 6);
@@ -1931,7 +1939,7 @@ class Smoke {
     this.pts = new THREE.Points(g, this.mat); this.pts.frustumCulled = false; scene.add(this.pts);
     for (let i = 0; i < n; i++) this.p.push({ life: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, s: 1 }); this.k = 0;
   }
-  emit(x, z, vx, vz, a) { const q = this.p[this.k = (this.k + 1) % this.n]; Object.assign(q, { life: 1, max: rr(1.2, 2.2), x: x + rr(-.2, .2), y: .35, z: z + rr(-.2, .2), vx: vx * .25 + rr(-.6, .6), vy: rr(.4, 1.2), vz: vz * .25 + rr(-.6, .6), s: rr(1.2, 2), a }); }
+  emit(x, z, vx, vz, a, gy = 0) { const q = this.p[this.k = (this.k + 1) % this.n]; Object.assign(q, { life: 1, max: rr(1.2, 2.2), x: x + rr(-.2, .2), y: .35 + gy, z: z + rr(-.2, .2), vx: vx * .25 + rr(-.6, .6), vy: rr(.4, 1.2), vz: vz * .25 + rr(-.6, .6), s: rr(1.2, 2), a }); }
   update(dt) {
     const g = this.pts.geometry, P = g.attributes.position.array, S = g.attributes.size.array, A = g.attributes.alpha.array;
     this.p.forEach((q, i) => {
@@ -1972,6 +1980,7 @@ function drawMinimap(p) {
   g.fillStyle = '#ffb01f'; for (const bd of boards) if (!bd.hit) { g.beginPath(); g.arc(bd.x, bd.z, 7, 0, 7); g.fill(); }
   g.fillStyle = '#c77dff'; for (const t of traps) { g.fillRect(t.x - 8, t.z - 8, 16, 16); }
   for (const l of landmarks) { g.fillStyle = l.c; g.beginPath(); g.arc(l.x, l.z, 16, 0, 7); g.fill(); }
+  drawMountainMap(g);
   for (const T of TRACKS) {
     g.strokeStyle = race && race.T === T ? '#9aa3b2' : 'rgba(154,163,178,.6)'; g.lineWidth = T.w * 1.6; g.lineJoin = 'round'; g.beginPath();
     for (let i = 0; i <= T.n; i += 4) { const k = i % T.n; i ? g.lineTo(T.x[k], T.z[k]) : g.moveTo(T.x[k], T.z[k]); } g.closePath(); g.stroke();
@@ -2020,7 +2029,27 @@ function drawTacho(p) {
 let camMode = 0; const CAM_NAMES = ['CHASE', 'FAR CHASE', 'HOOD', 'BUMPER'];
 const camPos = new THREE.Vector3(0, 5, 20), camLook = new THREE.Vector3();
 let shakeT = 0;
+// scenic camera at the summit: stop on the plaza and the camera glides out over the railing to look down on Tokyo
+const vp = { t: 0, on: false, blend: 0, age: 0 };
+function updateViewpoint(dt, inp) {
+  const M = MTN, onPlaza = !race && (player.y || 0) > M.plazaY - 1 && Math.hypot(player.x - M.cx, player.z - M.cz) < M.plazaR;
+  const idle = !inp.throttle && !inp.brake && !inp.handbrake && Math.abs(inp.steer) < .05 && player.speed < 1.5;
+  if (vp.on && (!idle || !onPlaza)) { vp.on = false; camPos.set(player.x - Math.sin(player.heading) * 7, (player.y || 0) + 3, player.z - Math.cos(player.heading) * 7); }
+  vp.t = onPlaza && idle ? vp.t + dt : 0;
+  if (!vp.on && vp.t > 2.2) { vp.on = true; vp.age = 0; toast('VIEWPOINT · 展望台', 'TOKYO FROM MT. AMBOOLA · PRESS ANY DRIVE KEY TO CONTINUE'); }
+  vp.blend = damp(vp.blend, vp.on ? 1 : 0, 1.2, dt); if (vp.on) vp.age += dt;
+}
+function viewpointCamera(dt) {
+  const M = MTN, a = Math.atan2(-M.cz, -M.cx) + Math.sin(vp.age * .07) * .22, r = M.plazaR + 18;
+  const tx = M.cx + Math.cos(a) * r, tz = M.cz + Math.sin(a) * r, ty = M.plazaY + 16;
+  const k = 1 - Math.exp(-1.2 * dt);
+  camera.position.x += (tx - camera.position.x) * k; camera.position.y += (ty - camera.position.y) * k; camera.position.z += (tz - camera.position.z) * k;
+  const lookX = Math.sin(vp.age * .09) * 260, lookZ = Math.cos(vp.age * .06) * 120;
+  camLook.x += (lookX - camLook.x) * k; camLook.y += (30 - camLook.y) * k; camLook.z += (lookZ - camLook.z) * k;
+  camera.lookAt(camLook); camera.fov = damp(camera.fov, 40, 1.5, dt); camera.updateProjectionMatrix();
+}
 function updateCamera(dt, p) {
+  if (vp.on) return viewpointCamera(dt);
   const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
   const B = BODIES[p.spec.body];
   if (camMode <= 1) {
@@ -2028,16 +2057,17 @@ function updateCamera(dt, p) {
     const bl = p.reverse ? 0 : .35;
     let dx = lerp(fx, vx, bl), dz = lerp(fz, vz, bl); const dl = Math.hypot(dx, dz); dx /= dl; dz /= dl;
     const dist = (camMode ? 8.8 : 5.9) + (B.L - 4.5) + p.speed * .022, h = (camMode ? 2.9 : 1.75) + (B.roofY - 1.3);
-    const tx = p.x - dx * dist, tz = p.z - dz * dist, ty = h;
+    const py = p.y || 0, tx = p.x - dx * dist, tz = p.z - dz * dist, ty = h + py;
     camPos.x = damp(camPos.x, tx, 7, dt); camPos.z = damp(camPos.z, tz, 7, dt); camPos.y = damp(camPos.y, ty, 5, dt);
     // keep distance stable (prevents lag at speed)
     const ox = camPos.x - p.x, oz = camPos.z - p.z, od = Math.hypot(ox, oz); if (od > dist * 1.08) { camPos.x = p.x + ox / od * dist * 1.08; camPos.z = p.z + oz / od * dist * 1.08; }
-    camLook.set(p.x + fx * 2.5, .95 + (B.roofY - 1.3) * .7, p.z + fz * 2.5);
+    camLook.set(p.x + fx * 2.5, .95 + (B.roofY - 1.3) * .7 + py + (p.slope || 0) * 2.5, p.z + fz * 2.5);
+    if (py > 0 || camPos.x < -HALF - 9) camPos.y = Math.max(camPos.y, mtnHeight(camPos.x, camPos.z) + 1.4); // don't dip into the hillside
     camera.position.copy(camPos);
   } else {
     const off = camMode === 2 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
-    const o = off[2]; camera.position.set(p.x + fx * o, off[1], p.z + fz * o);
-    camLook.set(p.x + fx * 30, off[1] - .6, p.z + fz * 30);
+    const o = off[2], py = p.y || 0, sl = p.slope || 0; camera.position.set(p.x + fx * o, off[1] + py + sl * o, p.z + fz * o);
+    camLook.set(p.x + fx * 30, off[1] - .6 + py + sl * 30, p.z + fz * 30);
     camPos.copy(camera.position);
   }
   shakeT += dt;
@@ -2697,6 +2727,204 @@ $('taxiBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); 
 $('bTaxi').onclick = () => { if (taxi) endTaxi(); else { if (race) endRace(true); startTaxi(); } setPause(false); };
 
 /* =====================================================================
+   MT. AMBOOLA — a mountain on the bay, reached through the west gate at
+   z = rc(17). A road spirals twice round it up to a viewpoint plaza.
+   The only place in the game with height: the car follows the road's
+   elevation (slope pulls on the car), everything else stays at y = 0.
+   ===================================================================== */
+const MTN = { cx: -1500, cz: 600, R: 380, H: 260, w: 11, rail: .8, gateZ: rc(17), plazaR: 44 };
+const mtnCone = r => r >= MTN.R ? 0 : MTN.H * Math.pow(1 - r / MTN.R, 1.25);
+MTN.plazaY = mtnCone(62);
+function prepMountain() {
+  const M = MTN, P = [[-HALF + 4, M.gateZ], [-900, M.gateZ], [-1000, M.gateZ + 2], [-1085, M.gateZ + 6]];
+  // spiral that climbs the cone at a constant grade G: with y = cone(r), ds = sqrt(r²dθ² + dr²) and dy = cone'(r)·dr,
+  // a steady dy/ds = G needs dr = G·r·dθ / sqrt(cone'(r)² − G²)
+  const G = .085, dCone = r => (mtnCone(r - .5) - mtnCone(r + .5));
+  let th = Math.atan2(M.gateZ + 6 - M.cz, -1085 - M.cx) + .05, r = 368, acc = 0;
+  while (r > 64) {
+    const c = dCone(r), dth = .004, dr = G * r * dth / Math.sqrt(Math.max(c * c - G * G, 1e-4));
+    acc += Math.hypot(r * dth, dr); th += dth; r -= dr;
+    if (acc > 22) { acc = 0; P.push([M.cx + Math.cos(th) * r, M.cz + Math.sin(th) * r]); }
+  }
+  const thE = th; P.push([M.cx + Math.cos(thE + .25) * 38, M.cz + Math.sin(thE + .25) * 38], [M.cx + Math.cos(thE + .6) * 16, M.cz + Math.sin(thE + .6) * 16]);
+  const curve = new THREE.CatmullRomCurve3(P.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal');
+  M.L = curve.getLength(); const n = Math.round(M.L / 2), S = curve.getSpacedPoints(n); M.n = S.length; M.step = M.L / (M.n - 1);
+  const F = () => new Float32Array(M.n); M.x = F(); M.z = F(); M.y = F(); M.tx = F(); M.tz = F();
+  const raw = F();
+  for (let i = 0; i < M.n; i++) { M.x[i] = S[i].x; M.z[i] = S[i].z; raw[i] = Math.min(mtnCone(Math.hypot(S[i].x - M.cx, S[i].z - M.cz)), M.plazaY); }
+  for (let i = 0; i < M.n; i++) { let s = 0, c = 0; for (let d = -6; d <= 6; d++) { const j = clamp(i + d, 0, M.n - 1); s += raw[j]; c++; } M.y[i] = s / c; }
+  M.y[0] = 0;
+  for (let i = 1; i < M.n; i++) M.y[i] = Math.min(M.y[i], M.y[i - 1] + .1 * M.step); // never steeper than 10% (the foot of the hill)
+  for (let i = 0; i < M.n; i++) { const a = Math.max(0, i - 1), b = Math.min(M.n - 1, i + 1), dx = M.x[b] - M.x[a], dz = M.z[b] - M.z[a], l = Math.hypot(dx, dz) || 1; M.tx[i] = dx / l; M.tz[i] = dz / l; }
+  // spatial hash of road samples for terrain carving / nearest queries
+  M.hash = new Map(); const key = (a, b) => a * 10000 + b;
+  for (let i = 0; i < M.n; i++) { const k = key(Math.floor(M.x[i] / 20), Math.floor(M.z[i] / 20)); if (!M.hash.has(k)) M.hash.set(k, []); M.hash.get(k).push(i); }
+  M.near = (x, z, rad) => { let best = 1e18, bi = -1; const cx = Math.floor(x / 20), cz = Math.floor(z / 20), rc2 = Math.ceil(rad / 20);
+    for (let a = -rc2; a <= rc2; a++) for (let b = -rc2; b <= rc2; b++) { const l = M.hash.get(key(cx + a, cz + b)); if (!l) continue; for (const i of l) { const d = (M.x[i] - x) ** 2 + (M.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } }
+    return bi < 0 ? null : { i: bi, d: Math.sqrt(best) }; };
+  M.bx0 = M.cx - M.R - 20; M.bx1 = -HALF; M.bz0 = M.cz - M.R - 20; M.bz1 = M.cz + M.R + 20;
+}
+prepMountain();
+// terrain height field (natural cone + ridges, with a bench carved for the road and a flat summit plaza)
+const MTN_GRID = 4, MTN_SIZE = 2 * (MTN.R + 24), MTN_RES = Math.round(MTN_SIZE / MTN_GRID);
+let mtnHeights = null;
+function mtnNatural(x, z) {
+  const dx = x - MTN.cx, dz = z - MTN.cz, r = Math.hypot(dx, dz), a = Math.atan2(dz, dx);
+  if (r > MTN.R + 6) return -3;
+  const ridge = (Math.sin(a * 7 + r * .02) * 5 + Math.sin(a * 13 - r * .035) * 3 + Math.sin(r * .09) * 2) * clamp(r / 120, 0, 1) * clamp((MTN.R - r) / 60, 0, 1);
+  return mtnCone(r) + ridge - (r > MTN.R ? 3 : 0);
+}
+function buildMountain() {
+  const M = MTN, res = MTN_RES, g = new THREE.PlaneGeometry(MTN_SIZE, MTN_SIZE, res, res); g.rotateX(-Math.PI / 2); g.translate(M.cx, 0, M.cz);
+  const pos = g.attributes.position, cols = new Float32Array(pos.count * 3); mtnHeights = new Float32Array(pos.count);
+  const cGrass = new THREE.Color(0x3d6a2c), cForest = new THREE.Color(0x24401f), cRock = new THREE.Color(0x6e6a62), cDirt = new THREE.Color(0x7a6448), c = new THREE.Color();
+  for (let v = 0; v < pos.count; v++) {
+    const x = pos.getX(v), z = pos.getZ(v), rC = Math.hypot(x - M.cx, z - M.cz);
+    let h = mtnNatural(x, z), carve = 0;
+    if (rC < M.R + 20) {
+      const nr = M.near(x, z, 40);
+      if (nr) { const ry = M.y[nr.i] - .35, t = 1 - clamp((nr.d - (M.w / 2 + 2.5)) / 26, 0, 1), s = t * t * (3 - 2 * t); if (s > 0) { h = lerp(h, ry, s); carve = s; } }
+      if (rC < M.plazaR + 30) { const t = 1 - clamp((rC - M.plazaR - 2) / 28, 0, 1), s = t * t * (3 - 2 * t); h = lerp(h, M.plazaY - .6, s); carve = Math.max(carve, s); }
+    }
+    pos.setY(v, h); mtnHeights[v] = h;
+    const steep = clamp((mtnCone(Math.max(0, rC - 4)) - mtnCone(rC + 4)) / 8 - .45, 0, 1);
+    c.copy(h > 60 ? cForest : cGrass).lerp(cForest, clamp(h / 90, 0, 1) * .6).lerp(cRock, Math.max(steep * .8, clamp((h - 150) / 60, 0, 1) * .7)).lerp(cDirt, carve * .55);
+    c.multiplyScalar(.85 + Math.sin(x * .13) * Math.sin(z * .11) * .08); cols.set([c.r, c.g, c.b], v * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); g.computeVertexNormals();
+  const terr = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, flatShading: false }));
+  terr.receiveShadow = true; terr.castShadow = true; scene.add(terr);
+  // road ribbon + guard rails
+  const road = new GB(), rail = new GB(), posts = [];
+  const pt = (i, off, dy) => [M.x[i] - M.tz[i] * off, M.y[i] + dy, M.z[i] + M.tx[i] * off];
+  for (let i = 0; i < M.n - 1; i++) {
+    const j = i + 1, s0 = i * M.step, s1 = j * M.step;
+    road.quad(pt(i, -M.w / 2, .06), pt(i, M.w / 2, .06), pt(j, M.w / 2, .06), pt(j, -M.w / 2, .06), [0, s0 / 12, 1, s1 / 12]);
+    const inPlaza = Math.hypot(M.x[i] - M.cx, M.z[i] - M.cz) < M.plazaR + 2, onConnector = M.x[i] > -HALF - 14;
+    if (!inPlaza && !onConnector) for (const sd of [-1, 1]) {
+      rail.quad(pt(i, sd * (M.w / 2 + M.rail), .45), pt(j, sd * (M.w / 2 + M.rail), .45), pt(j, sd * (M.w / 2 + M.rail), .8), pt(i, sd * (M.w / 2 + M.rail), .8), [0, 0, 1, 1]);
+      if (i % 5 === 0) posts.push(pt(i, sd * (M.w / 2 + M.rail + .05), 0));
+    }
+  }
+  const roadMat = new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
+  const rm = new THREE.Mesh(road.build(), roadMat); rm.receiveShadow = true; scene.add(rm);
+  const railM = new THREE.Mesh(rail.build(), new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: .8, roughness: .35, side: THREE.DoubleSide })); railM.castShadow = true; scene.add(railM);
+  const postGeo = new THREE.BoxGeometry(.12, .85, .12); postGeo.translate(0, .42, 0);
+  const pim = new THREE.InstancedMesh(postGeo, new THREE.MeshStandardMaterial({ color: 0x8a8d92, metalness: .6, roughness: .5 }), posts.length);
+  const Mx = new THREE.Matrix4(); posts.forEach(([x, y, z], k) => { Mx.makeTranslation(x, y, z); pim.setMatrixAt(k, Mx); }); scene.add(pim);
+  // pine forest
+  const trees = [], rnd = mulberry32(777);
+  for (let k = 0; k < 5000 && trees.length < 1400; k++) {
+    const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * (M.R - 15), x = M.cx + Math.cos(a) * r, z = M.cz + Math.sin(a) * r;
+    if (r < M.plazaR + 30) continue; const nr = M.near(x, z, 20); if (nr && nr.d < M.w / 2 + 6) continue;
+    trees.push([x, mtnHeight(x, z) - .2, z, .8 + rnd() * .9]);
+  }
+  const trunkG = new THREE.CylinderGeometry(.18, .28, 2.4, 6); trunkG.translate(0, 1.2, 0);
+  const pineG = mergeGeometries([new THREE.ConeGeometry(2.2, 4.2, 8).translate(0, 4, 0), new THREE.ConeGeometry(1.7, 3.4, 8).translate(0, 6, 0), new THREE.ConeGeometry(1.1, 2.6, 8).translate(0, 7.8, 0)]);
+  const tI = new THREE.InstancedMesh(trunkG, new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), trees.length);
+  const pI = new THREE.InstancedMesh(pineG, new THREE.MeshStandardMaterial({ roughness: .9, flatShading: true }), trees.length);
+  const col = new THREE.Color(), q = new THREE.Quaternion(), sv = new THREE.Vector3(), pv = new THREE.Vector3();
+  trees.forEach(([x, y, z, s], k) => { Mx.compose(pv.set(x, y, z), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * 6), sv.set(s, s * (.9 + rnd() * .3), s)); tI.setMatrixAt(k, Mx); pI.setMatrixAt(k, Mx); pI.setColorAt(k, col.setHSL(.28 + rnd() * .06, .45, .16 + rnd() * .1)); });
+  tI.castShadow = pI.castShadow = true; pI.receiveShadow = true; scene.add(tI, pI);
+  buildSummit(); buildMountainGate();
+  landmarks.push({ x: M.cx, z: M.cz, c: '#7ee04c', n: 'Mt. Amboola Viewpoint' });
+}
+const MTN_ROAD_TEX = () => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#2d2e31'; g.fillRect(0, 0, w, h); noise(g, w, h, 24);
+  g.fillStyle = '#e9e9e2'; g.fillRect(w * .03, 0, w * .03, h); g.fillRect(w * .94, 0, w * .03, h);
+  g.fillStyle = '#e3b62e'; g.fillRect(w * .485, 0, w * .03, h * .5);
+}, { repeat: true });
+function mtnHeight(x, z) { // bilinear lookup in the terrain grid (y of the ground at x,z)
+  const u = (x - (MTN.cx - MTN_SIZE / 2)) / MTN_GRID, v = (z - (MTN.cz - MTN_SIZE / 2)) / MTN_GRID;
+  if (!mtnHeights || u < 0 || v < 0 || u >= MTN_RES || v >= MTN_RES) return -3;
+  const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, W = MTN_RES + 1, H = k => mtnHeights[k];
+  return lerp(lerp(H(j * W + i), H(j * W + i + 1), fu), lerp(H((j + 1) * W + i), H((j + 1) * W + i + 1), fu), fv);
+}
+function buildSummit() {
+  const M = MTN, y = M.plazaY, g = new THREE.Group(); g.position.set(M.cx, 0, M.cz); scene.add(g);
+  const conc = new THREE.MeshStandardMaterial({ color: 0xb8b4ab, roughness: .85 });
+  const deck = new THREE.Mesh(new THREE.CylinderGeometry(M.plazaR, M.plazaR + 1.5, 4, 64), conc); deck.position.y = y - 1.94; deck.receiveShadow = true; g.add(deck);
+  const rail = new THREE.Mesh(new THREE.TorusGeometry(M.plazaR - .4, .06, 6, 128), new THREE.MeshStandardMaterial({ color: 0xd9dade, metalness: .8, roughness: .3 })); rail.rotation.x = Math.PI / 2; rail.position.y = y + 1.05; g.add(rail);
+  const postG = new THREE.CylinderGeometry(.05, .05, 1.05, 6); postG.translate(0, .52, 0);
+  const posts = new THREE.InstancedMesh(postG, rail.material, 90), Mx = new THREE.Matrix4();
+  const aIn = Math.atan2(M.z[M.n - 30] - M.cz, M.x[M.n - 30] - M.cx); // leave a gap where the road comes in
+  let k = 0; for (let i = 0; i < 90; i++) { const a = i / 90 * Math.PI * 2; if (Math.abs(Math.atan2(Math.sin(a - aIn), Math.cos(a - aIn))) < .2) continue; Mx.makeTranslation(Math.cos(a) * (M.plazaR - .4), y, Math.sin(a) * (M.plazaR - .4)); posts.setMatrixAt(k++, Mx); }
+  posts.count = k; g.add(posts);
+  // telescopes facing the city
+  const toCity = Math.atan2(0 - M.cz, 0 - M.cx), tMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd0, metalness: .5, roughness: .4 });
+  for (const off of [-.25, 0, .25]) {
+    const a = toCity + off, t = new THREE.Group(); t.position.set(Math.cos(a) * (M.plazaR - 3), y, Math.sin(a) * (M.plazaR - 3)); t.rotation.y = -a + Math.PI / 2;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(.08, .12, 1.2, 8), tMat); post.position.y = .6; t.add(post);
+    const scope = new THREE.Mesh(new THREE.CylinderGeometry(.14, .2, .7, 10), tMat); scope.rotation.x = Math.PI / 2 - .15; scope.position.set(0, 1.3, .1); t.add(scope);
+    g.add(t);
+  }
+  // shelter with a Japanese roof on the far side (so it never blocks the view), benches, torii at the entrance
+  const back = toCity + Math.PI, shelter = new THREE.Group(); shelter.position.set(Math.cos(back) * 26, y, Math.sin(back) * 26); shelter.rotation.y = -back + Math.PI / 2; g.add(shelter);
+  const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a2f, roughness: .8 }), tile = new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: .6 });
+  for (const [sx, sz] of [[-4, -3], [4, -3], [-4, 3], [4, 3]]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.35, 3.2, .35), wood); p.position.set(sx, 1.6, sz); shelter.add(p); }
+  const roofG = new GB(); roofG.gable(0, 3.2, 0, 10, 8, 2.2, 1.2, [1, 1, 1]); const roof = new THREE.Mesh(roofG.build(), tile); roof.material.side = THREE.DoubleSide; roof.castShadow = true; shelter.add(roof);
+  for (const bz of [-1.2, 1.2]) { const b = new THREE.Mesh(new THREE.BoxGeometry(6, .12, .6), wood); b.position.set(0, .5, bz); shelter.add(b); }
+  const signT = canvasTex(1024, 256, (c, W, H) => { c.fillStyle = '#1d1712'; c.fillRect(0, 0, W, H); c.strokeStyle = '#d4af37'; c.lineWidth = 10; c.strokeRect(8, 8, W - 16, H - 16); c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = `900 84px ${JP}`; c.fillText('展望台', W / 2, 110); c.font = `700 44px ${OR}`; c.fillStyle = '#d4af37'; c.fillText(`MT. AMBOOLA VIEWPOINT · ${Math.round(MTN.plazaY)} m`, W / 2, 200); });
+  const sm = new THREE.MeshBasicMaterial({ map: signT }); dynMats.neon.push(sm);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(8, 2), sm); sign.position.set(0, 4.3, 4.21); shelter.add(sign);
+  const sign2 = sign.clone(); sign2.rotation.y = Math.PI; sign2.position.z = -4.21; shelter.add(sign2);
+  const red = new THREE.MeshStandardMaterial({ color: 0xc8301c, roughness: .5 }), dark = new THREE.MeshStandardMaterial({ color: 0x1c1c1e });
+  const torii = new THREE.Group(); torii.position.set(Math.cos(aIn) * (M.plazaR - 2), y, Math.sin(aIn) * (M.plazaR - 2)); torii.rotation.y = -aIn + Math.PI / 2; g.add(torii);
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.3, .35, 7, 12), red); p.position.set(s * 6.5, 3.5, 0); torii.add(p); }
+  const kasagi = new THREE.Mesh(new THREE.BoxGeometry(16, .7, 1), dark); kasagi.position.y = 7.2; torii.add(kasagi);
+  const nuki = new THREE.Mesh(new THREE.BoxGeometry(14, .45, .5), red); nuki.position.y = 5.8; torii.add(nuki);
+  // lamps round the plaza for sunset/night
+  const lampMat = new THREE.MeshBasicMaterial({ color: 0xffd9a0 }); dynMats.lamps.push(lampMat);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + .13, l = new THREE.Mesh(new THREE.SphereGeometry(.25, 10, 8), lampMat); l.position.set(Math.cos(a) * (M.plazaR - 1.5), y + 3, Math.sin(a) * (M.plazaR - 1.5)); g.add(l); const p = new THREE.Mesh(new THREE.CylinderGeometry(.06, .08, 3, 6), dark); p.position.set(l.position.x, y + 1.5, l.position.z); g.add(p); }
+}
+function buildMountainGate() {
+  const M = MTN, x = -HALF - 14, z = M.gateZ, g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = Math.PI / 2; scene.add(g);
+  const red = new THREE.MeshStandardMaterial({ color: 0xc8301c, roughness: .5 }), dark = new THREE.MeshStandardMaterial({ color: 0x1c1c1e });
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.35, .42, 8.5, 12), red); p.position.set(s * 8.2, 4.25, 0); p.castShadow = true; g.add(p); }
+  const top = new THREE.Mesh(new THREE.BoxGeometry(20, .8, 1.2), dark); top.position.y = 8.6; g.add(top);
+  const nuki = new THREE.Mesh(new THREE.BoxGeometry(17.5, .5, .6), red); nuki.position.y = 7.2; g.add(nuki);
+  const t = canvasTex(1024, 256, (c, W, H) => { c.fillStyle = '#10140f'; c.fillRect(0, 0, W, H); c.strokeStyle = '#7ee04c'; c.lineWidth = 10; c.strokeRect(8, 8, W - 16, H - 16); c.textAlign = 'center'; c.fillStyle = '#fff'; c.font = `900 80px ${JP}`; c.fillText('アンブーラ山 展望台', W / 2, 105); c.fillStyle = '#7ee04c'; c.font = `700 46px ${OR}`; c.fillText(`MOUNTAIN ROAD · VIEWPOINT ${(M.L / 1000).toFixed(1)} KM`, W / 2, 195); });
+  const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
+  for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), sm); p.position.set(0, 10.6, s * .02); p.rotation.y = s > 0 ? 0 : Math.PI; g.add(p); }
+  const board = new THREE.Mesh(new THREE.BoxGeometry(12.4, 3.4, .1), dark); board.position.y = 10.6; g.add(board);
+}
+// physics: keep the car on the mountain road (or plaza) and give it the road's height and slope
+const inMountain = p => p.x < -HALF - 9 && !(Math.abs(p.z - MTN.gateZ) > 40 && p.x > -HALF - 60);
+let mtnHint = -1, summitSeen = false;
+function mountainCollide(p) {
+  const M = MTN, rC = Math.hypot(p.x - M.cx, p.z - M.cz);
+  if (rC < M.plazaR - 1.6) { // on the viewpoint plaza
+    p.y = M.plazaY; p.slope = 0;
+    if (!summitSeen) { summitSeen = true; skill.bank += 2000; localStorage.setItem('amboola.skill', skill.bank); toast('SUMMIT · 展望台', `MT. AMBOOLA ${Math.round(M.plazaY)} m · BEST VIEW OF TOKYO +2000`); }
+    return 0;
+  }
+  let best = 1e18, bi = 0; const test = i => { const d = (p.x - M.x[i]) ** 2 + (p.z - M.z[i]) ** 2; if (d < best) { best = d; bi = i; } };
+  if (mtnHint >= 0) for (let d = -40; d <= 40; d++) test(clamp(mtnHint + d, 0, M.n - 1));
+  if (mtnHint < 0 || best > 30 * 30) { const nr = M.near(p.x, p.z, 60); if (nr) { bi = nr.i; best = nr.d ** 2; } else { best = 1e18; for (let i = 0; i < M.n; i++) test(i); } }
+  mtnHint = bi;
+  const i = bi, j = Math.min(i + 1, M.n - 1), nx = -M.tz[i], nz = M.tx[i];
+  const dx = p.x - M.x[i], dz = p.z - M.z[i], lat = dx * nx + dz * nz, along = dx * M.tx[i] + dz * M.tz[i];
+  const dyds = (M.y[j] - M.y[Math.max(0, i - 1)]) / (M.step * (j - Math.max(0, i - 1)) || 1);
+  p.y = Math.max(0, M.y[i] + dyds * along);
+  p.slope = dyds * (Math.sin(p.heading) * M.tx[i] + Math.cos(p.heading) * M.tz[i]);
+  if (rC < M.plazaR + 1) return 0; // crossing from the road onto the plaza
+  const lim = M.w / 2 + M.rail - 1.05; if (Math.abs(lat) <= lim) return 0;
+  const sd = Math.sign(lat), pen = Math.abs(lat) - lim; p.x -= nx * sd * pen; p.z -= nz * sd * pen;
+  const vn = (p.vx * nx + p.vz * nz) * sd; if (vn <= 0) return 0;
+  p.vx -= 1.3 * vn * nx * sd; p.vz -= 1.3 * vn * nz * sd; p.vx *= .93; p.vz *= .93;
+  return vn;
+}
+function mountainReset(p) {
+  const M = MTN, nr = M.near(p.x, p.z, 400) || { i: 0 }, i = nr.i, fwd = Math.sin(p.heading) * M.tx[i] + Math.cos(p.heading) * M.tz[i] >= 0 ? 1 : -1;
+  Object.assign(p, { x: M.x[i], z: M.z[i], y: M.y[i], heading: Math.atan2(M.tx[i] * fwd, M.tz[i] * fwd), vx: 0, vz: 0, yawRate: 0 });
+}
+function drawMountainMap(g) {
+  const M = MTN; g.fillStyle = 'rgba(52,70,40,.95)'; g.beginPath(); g.arc(M.cx, M.cz, M.R, 0, 7); g.fill();
+  g.strokeStyle = '#b8a07a'; g.lineWidth = 12; g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i < M.n; i += 3) i ? g.lineTo(M.x[i], M.z[i]) : g.moveTo(M.x[i], M.z[i]); g.stroke();
+  g.fillStyle = '#d8c7a0'; g.beginPath(); g.arc(M.cx, M.cz, M.plazaR, 0, 7); g.fill();
+}
+
+/* =====================================================================
    GAME STATE
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
@@ -2761,20 +2989,21 @@ function frame() {
     return;
   }
   if (state === 'drive') {
-    simStep(dt, readInput());
+    const inp = readInput(); simStep(dt, inp); updateViewpoint(dt, inp);
     if (state !== 'drive') return;
     // fx
     const fx = Math.sin(player.heading), fz = Math.cos(player.heading), rx = -fz, rz = fx; const B = BODIES[player.spec.body];
     const marking = player.speed > 2 && (Math.abs(player.vr) > 2.4 || player.spin > .25 || (player.hb && player.speed > 5));
     [-1, 1].forEach((s, k) => {
       const wx = player.x + fx * B.rX + rx * s * (B.W / 2 - .2), wz = player.z + fz * B.rX + rz * s * (B.W / 2 - .2);
-      if (marking) { skids.add(k, wx, wz, fx, fz); if (Math.random() < clamp((player.slip - .3) * .7, 0, .55) * dt * 60) smoke.emit(wx, wz, player.vx, player.vz, clamp(player.slip - .2, .2, .9)); } else skids.lift(k);
+      if (marking) { skids.add(k, wx, wz, fx, fz, player.y || 0); if (Math.random() < clamp((player.slip - .3) * .7, 0, .55) * dt * 60) smoke.emit(wx, wz, player.vx, player.vz, clamp(player.slip - .2, .2, .9), player.y || 0); } else skids.lift(k);
     });
     smoke.update(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
     updateCamera(dt, player);
     // shadows follow player
-    sun.position.set(player.x + sunDir.x * 400, sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, 0, player.z);
+    const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
+    scene.fog.density = TIMES[timeName].fogD * lerp(1, .28, clamp(py / 170, 0, 1)); // above the haze: the city view clears up
     sky.position.copy(camera.position);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 });
     // big screens cycle
@@ -2811,7 +3040,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

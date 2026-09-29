@@ -62,6 +62,16 @@ Each car's physics is built from its real published figures: power, weight, redl
 - The Amboola GT Center showroom, where you start.
 - **30 Amboola boards** to smash, **6 speed traps**, and **skill chains** for drifting, near misses and high speed.
 
+## Mt. Amboola
+
+There's a big forested mountain on the bay, south-west of the city. You can see it from the streets.
+
+- **Getting there:** drive west to the red torii gate at the end of the west-edge road; the minimap shows it. Through the gate, a 2.8 km road winds twice around the mountain as it climbs, with guardrails and pine forest on both sides.
+- **Driving it:** hills feel real. Climbing slows the car and going downhill speeds it up, and the car tilts with the road.
+- **The top:** a viewpoint plaza at 208 m with railings, telescopes, a Japanese shelter, a torii gate and lamps. The haze clears as you climb, so the whole city and the sea are in view. You get +2,000 skill points the first time you reach the summit.
+- **The scenic view:** stop on the plaza and wait about 2 seconds. The camera glides out over the railing and slowly pans across Tokyo. It's especially good at sunset and at night. Press any drive key to carry on.
+- **Getting back:** drive back down and through the gate, and you're in the city again. **R** puts you back on the mountain road.
+
 ## Races
 
 There are six race tracks just outside the city. You can see them from the city streets.
