@@ -62,6 +62,18 @@ Each car's physics is built from its real published figures: power, weight, redl
 - The Amboola GT Center showroom, where you start.
 - **30 Amboola boards** to smash, **6 speed traps**, and **skill chains** for drifting, near misses and high speed.
 
+## Map, search and GPS
+
+**Click the minimap**, or press **N** (also P → MAP · SEARCH, or the gamepad Back button), to open the full map of the city, the mountain and all six race tracks.
+
+- **Search** by typing in the box, in English or Japanese: districts (Shibuya 渋谷, Ginza 銀座, Akihabara…), landmarks (Tokyo Tower, Sensō-ji Temple, Scramble Crossing, Amboola GT Center), the Mt. Amboola viewpoint (展望台), race tracks and speed traps. Press **Enter** to pick the first result.
+- **Drop a pin** by clicking anywhere on the map. Pins snap to the nearest road, the mountain road or a track.
+- **Move around:** drag to pan, use the mouse wheel or **+ / −** to zoom, **◎** centres on your car and **⤢** shows the whole map.
+- Each place shows its distance by road, and three choices:
+  - **SET ROUTE:** blue arrows on the road and a blue line on the minimap guide you there, including over the mountain. A bar at the top shows the distance left, **TURN AROUND** tells you when you're facing the wrong way, and **ARRIVED · 到着** shows when you get there.
+  - **TRAVEL HERE:** fast travel. You appear there straight away.
+  - **🏁 RACE** (for tracks): starts that race.
+
 ## Mt. Amboola
 
 There's a big forested mountain on the bay, south-west of the city. You can see it from the streets.

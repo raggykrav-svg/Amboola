@@ -73,7 +73,39 @@
   /* ---------- HUD ---------- */
   #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
   #tacho { position:absolute; right:18px; bottom:14px; width:260px; height:260px; }
-  #minimap { position:absolute; left:18px; bottom:18px; width:210px; height:210px; }
+  #minimap { position:absolute; left:18px; bottom:18px; width:210px; height:210px; pointer-events:auto; cursor:pointer; border-radius:50%; }
+  #minimap:hover { filter:brightness(1.2); }
+  #maptag { position:absolute; left:18px; bottom:232px; width:210px; text-align:center; font-size:12px; letter-spacing:.25em; color:var(--dim); text-shadow:0 1px 4px #000; }
+  #navhud { position:absolute; left:50%; top:10px; transform:translateX(-50%); background:var(--panel); padding:7px 20px; border-bottom:2px solid #2fe0ff;
+    backdrop-filter:blur(6px); text-align:center; font-size:15px; letter-spacing:.06em; }
+  #navhud b { color:#2fe0ff; font-family:'Orbitron',sans-serif; } #navhud small { color:var(--dim); letter-spacing:.2em; margin-right:8px; }
+  #bigmap { position:fixed; inset:0; z-index:40; background:#0c2233; }
+  #bmCanvas { position:absolute; inset:0; width:100%; height:100%; cursor:grab; touch-action:none; }
+  #bmPanel { position:absolute; left:18px; top:18px; bottom:18px; width:340px; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+  #bmPanel > * { pointer-events:auto; }
+  .bmTitle { font-family:'Orbitron',sans-serif; font-weight:900; font-size:22px; letter-spacing:.25em; text-shadow:0 2px 8px #000; }
+  #bmSearch { width:100%; padding:12px 14px 12px 38px; font-size:16px; font-family:'Rajdhani',sans-serif; color:#fff; background:rgba(10,12,18,.88) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ffb01f' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E") no-repeat 11px center;
+    border:1px solid #3a3f4b; border-left:3px solid var(--accent); outline:none; user-select:text; -webkit-user-select:text; }
+  #bmSearch:focus { border-color:var(--accent); }
+  #bmResults { overflow-y:auto; max-height:34vh; flex:none; background:rgba(10,12,18,.8); backdrop-filter:blur(6px); }
+  .bmRes { padding:7px 12px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.06); }
+  .bmRes:hover { background:rgba(255,90,31,.18); }
+  .bmRes i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
+  .bmRes b { font-size:16px; } .bmRes span { display:block; font-size:13px; color:var(--dim); margin-left:18px; }
+  .bmNone { padding:12px; color:var(--dim); font-size:14px; }
+  #bmSel { background:rgba(10,12,18,.9); border-left:3px solid #ffd02d; padding:12px 14px; backdrop-filter:blur(6px); }
+  #bmSel b { display:block; font-size:20px; } #bmSel span { display:block; color:var(--dim); font-size:14px; margin:2px 0 10px; }
+  .bmBtns { display:flex; gap:6px; flex-wrap:wrap; }
+  #bmClearRoute { flex:none; }
+  .bmBtns button, #bmClearRoute { flex:1; padding:10px 8px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.15em; color:#fff; background:#1a1e27; border:1px solid #3a3f4b; cursor:pointer; }
+  .bmBtns button:hover, #bmClearRoute:hover { border-color:var(--accent); background:rgba(255,90,31,.25); }
+  #bmRoute { border-color:#2fe0ff !important; } #bmRace { border-color:var(--accent) !important; }
+  .bmHint { font-size:12px; color:var(--dim); letter-spacing:.08em; text-shadow:0 1px 3px #000; margin-top:auto; }
+  #bmZoom { position:absolute; right:18px; top:70px; display:flex; flex-direction:column; gap:6px; }
+  #bmZoom button, #bmClose { width:44px; height:44px; font-size:20px; color:#fff; background:rgba(10,12,18,.85); border:1px solid #3a3f4b; cursor:pointer; }
+  #bmZoom button:hover, #bmClose:hover { border-color:var(--accent); }
+  #bmClose { position:absolute; right:18px; top:18px; }
+  @media (max-width: 760px) { #bmPanel { right:18px; width:auto; bottom:auto; } #bmResults { max-height:28vh; } #maptag { display:none; } }
   #carname { position:absolute; left:22px; top:18px; font-family:'Orbitron',sans-serif; font-weight:700; font-size:16px; letter-spacing:.14em;
     text-shadow:0 2px 8px #000; }
   #carname small { display:block; font-family:'Rajdhani'; color:var(--dim); font-size:13px; letter-spacing:.3em; }
@@ -195,14 +227,16 @@
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
     <div><kbd>SPACE</kbd>Handbrake (drift)</div><div><kbd>C</kbd>Camera view</div><div><kbd>M</kbd>Auto / Manual gearbox</div>
     <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>R</kbd>Reset car to road</div>
-    <div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
+    <div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
   <div id="scorebox"><div class="big" id="skill">0</div><div class="row">SKILL POINTS</div>
     <div class="row">BOARDS <b id="boardsN">0/0</b></div><div class="row">TOP SPEED <b id="topN">0</b></div></div>
   <div id="chain"><div class="lbl" id="chainLbl"></div><div class="pts" id="chainPts"></div></div>
   <div id="toast"></div>
   <canvas id="tacho" width="520" height="520"></canvas>
-  <canvas id="minimap" width="420" height="420"></canvas>
+  <canvas id="minimap" width="420" height="420" title="Open map (N)"></canvas>
+  <div id="maptag">🗺 MAP · CLICK / N</div>
+  <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
   <div id="count"></div>
@@ -212,12 +246,27 @@
 <div id="races" class="hidden"><h2>RACES</h2><div id="raceList"></div><button id="racesClose">BACK</button></div>
 <div id="results" class="hidden"><h2 id="resTitle"></h2><table id="resTable"></table><div class="rbtns"><button id="resRestart">RACE AGAIN</button><button id="resLeave">BACK TO CITY</button></div></div>
 
+<div id="bigmap" class="hidden">
+  <canvas id="bmCanvas"></canvas>
+  <div id="bmPanel">
+    <div class="bmTitle">MAP · 地図</div>
+    <input id="bmSearch" type="search" placeholder="Search places… 検索" autocomplete="off" spellcheck="false">
+    <div id="bmResults"></div>
+    <div id="bmSel" class="hidden"><b id="bmSelName"></b><span id="bmSelInfo"></span>
+      <div class="bmBtns"><button id="bmRoute">SET ROUTE</button><button id="bmTravel">TRAVEL HERE</button><button id="bmRace" class="hidden">🏁 RACE</button></div></div>
+    <button id="bmClearRoute" class="hidden">CLEAR CURRENT ROUTE</button>
+    <div class="bmHint">Click the map to drop a pin · drag to move · wheel or +/− to zoom · Esc / N to close</div>
+  </div>
+  <div id="bmZoom"><button id="bmIn" title="Zoom in">+</button><button id="bmOut" title="Zoom out">−</button><button id="bmMe" title="Centre on my car">◎</button><button id="bmAll" title="Whole map">⤢</button></div>
+  <button id="bmClose" title="Close (Esc)">✕</button>
+</div>
 <div id="pause" class="hidden">
   <h2>PAUSED</h2>
   <button id="bResume">RESUME</button>
   <button id="bTime">TIME OF DAY</button>
   <button id="bRaces">RACES</button>
   <button id="bLeave" class="hidden">LEAVE RACE</button>
+  <button id="bMap">MAP · SEARCH</button>
   <button id="bTaxi">TAXI JOB</button>
   <button id="bGarage">GARAGE · CHANGE CAR</button>
   <button id="bMute">SOUND: ON</button>
@@ -1986,7 +2035,7 @@ function drawMinimap(p) {
     for (let i = 0; i <= T.n; i += 4) { const k = i % T.n; i ? g.lineTo(T.x[k], T.z[k]) : g.moveTo(T.x[k], T.z[k]); } g.closePath(); g.stroke();
     g.strokeStyle = '#fff'; g.lineWidth = 6; g.beginPath(); g.moveTo(...trackPt(T, 0, -T.w, 0).filter((_, k) => k !== 1)); g.lineTo(...trackPt(T, 0, T.w, 0).filter((_, k) => k !== 1)); g.stroke();
   }
-  drawTaxiRoute(g);
+  drawTaxiRoute(g); if (!race && !taxi) drawNavRoute(g);
   if (race) { g.fillStyle = '#ff3b3b'; for (const a of race.ais) { g.beginPath(); g.arc(a.x, a.z, 9, 0, 7); g.fill(); } }
   if (traffic && !race) { g.fillStyle = '#e8edf5'; for (const t of traffic.cars) { g.beginPath(); g.arc(t.mesh.position.x, t.mesh.position.z, 4, 0, 7); g.fill(); } }
   g.restore(); g.setTransform(1, 0, 0, 1, 0, 0);
@@ -2082,6 +2131,8 @@ function updateCamera(dt, p) {
    ===================================================================== */
 const keys = {}; const touchState = { l: 0, r: 0, g: 0, b: 0, h: 0 };
 addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
+  if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
   if (keys[e.code]) return; keys[e.code] = true;
   if (state === 'drive') {
     if (e.code === 'KeyC') { camMode = (camMode + 1) % 4; toast(CAM_NAMES[camMode], 'CAMERA'); }
@@ -2092,6 +2143,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyR') race ? raceReset() : player.resetToRoad();
     if (e.code === 'Enter' && nearMarker && !race) startRace(nearMarker);
     if (e.code === 'KeyH') $('help').classList.toggle('hidden');
+    if (e.code === 'KeyN') openMap();
     if (e.code === 'Escape' || e.code === 'KeyP') setPause(true);
   } else if (state === 'pause' && (e.code === 'Escape' || e.code === 'KeyP')) setPause(false);
   else if (state === 'garage') {
@@ -2116,7 +2168,7 @@ function readInput() {
     const rt = gp.buttons[7]?.value || 0, lt = gp.buttons[6]?.value || 0; if (rt > .05) thr = rt; if (lt > .05) brk = lt;
     if (gp.buttons[0]?.pressed) hb = 1;
     const pr = n => gp.buttons[n]?.pressed && !padPrev[gp.index + ':' + n];
-    if (pr(3)) { camMode = (camMode + 1) % 4; } if (pr(9)) setPause(state === 'drive'); if (pr(5) && player?.manual) player.doShift(1); if (pr(4) && player?.manual) player.doShift(-1); if (pr(2) && player) race ? raceReset() : player.resetToRoad(); if (pr(1) && nearMarker && !race) startRace(nearMarker);
+    if (pr(3)) { camMode = (camMode + 1) % 4; } if (pr(9)) setPause(state === 'drive'); if (pr(5) && player?.manual) player.doShift(1); if (pr(4) && player?.manual) player.doShift(-1); if (pr(2) && player) race ? raceReset() : player.resetToRoad(); if (pr(1) && nearMarker && !race) startRace(nearMarker); if (pr(8)) openMap();
     gp.buttons.forEach((b, n) => padPrev[gp.index + ':' + n] = b.pressed);
   }
   return { throttle: thr, brake: brk, steer: clamp(st, -1, 1), handbrake: hb };
@@ -2414,6 +2466,7 @@ function pickRivals(spec, n) {
   return CARS.filter(c => c.id !== spec.id).map(c => ({ c, d: Math.abs(Math.log((c.kw / c.mass) / pw)) + Math.random() * .3 })).sort((a, b) => a.d - b.d).slice(0, n).map(o => o.c);
 }
 function startRace(T) {
+  clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false);
   if (taxi) endTaxi();
   $('pause').classList.add('hidden'); $('races').classList.add('hidden'); $('results').classList.add('hidden'); $('raceprompt').classList.add('hidden');
@@ -2619,7 +2672,7 @@ function updateRoadArrows(im, pts, flow, colour) {
     const dx = (bx - ax) / L, dz = (bz - az) / L, yaw = Math.atan2(dx, dz);
     while (next <= travelled + L && n < ROAD_ARROWS) {
       const u = next - travelled; // keep left (Japan): shift into the left lane
-      _ap.set(ax + dx * u + dz * LANES[0], .13, az + dz * u - dx * LANES[0]);
+      const qx = ax + dx * u + dz * LANES[0], qz = az + dz * u - dx * LANES[0]; _ap.set(qx, navGroundY(qx, qz), qz);
       _am.compose(_ap, _aq.setFromAxisAngle(_ay, yaw), _as); im.setMatrixAt(n++, _am); next += ARROW_STEP;
     }
     travelled += L;
@@ -2650,6 +2703,7 @@ function taxiRoute(px, pz, tx, tz) {
 const routeLen = (px, pz, pts) => { let L = 0, x = px, z = pz; for (const [a, b] of pts) { L += Math.hypot(a - x, b - z); x = a; z = b; } return L; };
 const fmtYen = v => '¥' + Math.round(v).toLocaleString();
 function startTaxi() {
+  clearNav(true);
   if (race) endRace(false);
   if (taxi) endTaxi();
   taxi = { phase: 'pickup', earnings: 0, fares: 0, total: +(localStorage.getItem('amboola.taxi.total') || 0), route: [], routeT: 0, crashes: 0, anim: 0 };
@@ -2925,6 +2979,203 @@ function drawMountainMap(g) {
 }
 
 /* =====================================================================
+   BIG MAP + SEARCH + GPS — click the minimap (or press N): search places,
+   drop a pin, set a route (road arrows + minimap line) or travel there
+   ===================================================================== */
+const DISTRICT_JP = { Ikebukuro: '池袋', Shinjuku: '新宿', Ueno: '上野', Shibuya: '渋谷', 'Tokyo Station': '東京駅', Akihabara: '秋葉原', Meguro: '目黒', Roppongi: '六本木', Ginza: '銀座' };
+let PLACES = [];
+function buildPlaces() {
+  const P = [], third = HALF * 2 / 3;
+  DISTRICTS.forEach((row, r) => row.forEach((n, c) => P.push({ n, jp: DISTRICT_JP[n], type: 'District', kind: 'city', x: -HALF + (c + .5) * third, z: -HALF + (r + .5) * third, col: '#9aa3b2' })));
+  P.push({ n: 'Scramble Crossing', jp: 'スクランブル交差点', type: 'Landmark', kind: 'city', x: 0, z: 0, col: '#ff5a1f' });
+  P.push({ n: 'Odaiba Harbor', jp: 'お台場', type: 'District', kind: 'city', x: 0, z: HALF - 60, col: '#2fa6ff' });
+  for (const l of landmarks) {
+    const T = TRACKS.find(t => t.name === l.n);
+    if (T) { P.push({ n: T.name, jp: T.jp, type: `Race track · ${(T.L / 1000).toFixed(2)} km · ${T.laps} laps`, kind: 'track', track: T, x: T.marker.x, z: T.marker.z, mapX: T.x[0], mapZ: T.z[0], col: T.col }); continue; }
+    if (l.n === 'Mt. Amboola Viewpoint') { P.push({ n: 'Mt. Amboola Viewpoint', jp: 'アンブーラ山 展望台', type: `Mountain summit · ${Math.round(MTN.plazaY)} m`, kind: 'mountain', idx: MTN.n - 1, x: MTN.cx, z: MTN.cz, col: '#7ee04c' }); continue; }
+    const names = { 'GT Center': ['Amboola GT Center', 'GTセンター', 'Car showroom'], Tower: ['Tokyo Tower', '東京タワー', 'Landmark'], Temple: ['Sensō-ji Temple', '浅草寺', 'Temple & pagoda'] }[l.n] || [l.n, '', 'Landmark'];
+    P.push({ n: names[0], jp: names[1], type: names[2], kind: 'city', x: l.x, z: l.z, col: l.c });
+  }
+  P.push({ n: 'Mountain Gate', jp: '山門', type: 'Road to Mt. Amboola', kind: 'city', x: -HALF, z: MTN.gateZ, col: '#c8301c' });
+  traps.forEach((t, k) => P.push({ n: `Speed Trap ${k + 1}`, jp: '速度計測', type: 'Speed trap', kind: 'city', x: t.x, z: t.z, col: '#c77dff' }));
+  PLACES = P;
+}
+// snap a city point to the nearest road centreline (so routes and travel land on tarmac)
+function snapToRoad(x, z) {
+  x = clamp(x, -HALF, HALF); z = clamp(z, -HALF, HALF);
+  const i = clamp(Math.round((x + HALF) / CELL), 0, N), j = clamp(Math.round((z + HALF) / CELL), 0, N);
+  return Math.abs(x - rc(i)) <= Math.abs(z - rc(j)) ? { x: rc(i), z, axis: 'z' } : { x, z: rc(j), axis: 'x' };
+}
+function navGroundY(x, z) {
+  if (x < -HALF - 9) {
+    if (Math.hypot(x - MTN.cx, z - MTN.cz) < MTN.plazaR) return MTN.plazaY + .12;
+    const nr = MTN.near(x, z, 30); if (nr) return MTN.y[nr.i] + .15;
+  }
+  return .13;
+}
+function mtnPath(a, b) { const out = [], s = a <= b ? 1 : -1; for (let i = a; s > 0 ? i < b : i > b; i += 6 * s) out.push([MTN.x[i], MTN.z[i]]); out.push([MTN.x[b], MTN.z[b]]); return out; }
+function mtnIndex(x, z) { const nr = MTN.near(x, z, 60); if (nr) return nr.i; let best = 1e18, bi = 0; for (let i = 0; i < MTN.n; i++) { const d = (MTN.x[i] - x) ** 2 + (MTN.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } return bi; }
+function navRoute(px, pz, d) {
+  const onM = px < -HALF - 9, gate = [-HALF, MTN.gateZ];
+  if (d.kind === 'mountain') {
+    const target = mtnPath(onM ? mtnIndex(px, pz) : 0, d.idx);
+    if (d.idx === MTN.n - 1) target.push([MTN.cx, MTN.cz]);
+    return onM ? target : [...taxiRoute(px, pz, gate[0], gate[1]), ...target];
+  }
+  const t = snapToRoad(d.x, d.z);
+  return onM ? [...mtnPath(mtnIndex(px, pz), 0), ...taxiRoute(gate[0], gate[1], t.x, t.z)] : taxiRoute(px, pz, t.x, t.z);
+}
+let nav = null;
+function setNav(d) {
+  clearNav(true);
+  if (taxi) { toast('TAXI SHIFT ACTIVE', 'END THE SHIFT TO USE THE MAP ROUTE'); return; }
+  const t = d.kind === 'mountain' ? { x: d.idx === MTN.n - 1 ? MTN.cx : MTN.x[d.idx], z: d.idx === MTN.n - 1 ? MTN.cz : MTN.z[d.idx] } : snapToRoad(d.x, d.z);
+  nav = { d, tx: t.x, tz: t.z, route: [], routeT: 0, anim: 0, arrows: buildRoadArrows(), marker: makeTaxiMarker('#2fe0ff') };
+  nav.marker.position.set(t.x, navGroundY(t.x, t.z) - .13, t.z);
+  $('navhud').classList.remove('hidden'); $('nvName').textContent = d.n;
+  toast('ROUTE SET', d.n.toUpperCase());
+}
+function clearNav(silent) {
+  if (!nav) return;
+  scene.remove(nav.arrows); scene.remove(nav.marker); nav = null; $('navhud').classList.add('hidden');
+  if (!silent) toast('ROUTE CLEARED', '');
+}
+function updateNav(dt) {
+  if (!nav) return;
+  const p = player, dist = Math.hypot(p.x - nav.tx, p.z - nav.tz);
+  nav.routeT -= dt; if (nav.routeT <= 0) { nav.route = navRoute(p.x, p.z, nav.d); nav.routeT = .4; }
+  nav.anim += dt;
+  const path = [[p.x, p.z], ...(dist < 40 && (p.x < -HALF - 9) === (nav.tx < -HALF - 9) ? [[nav.tx, nav.tz]] : nav.route)];
+  updateRoadArrows(nav.arrows, path, (nav.anim * 9) % ARROW_STEP, '#2fe0ff');
+  nav.marker.userData.ring.material.opacity = .55 + Math.sin(nav.anim * 5) * .3;
+  const L = routeLen(p.x, p.z, nav.route); $('nvDist').textContent = L > 1000 ? `${(L / 1000).toFixed(1)} km` : `${Math.round(L)} m`;
+  const nx = path[1][0] - p.x, nz = path[1][1] - p.z;
+  if (Math.hypot(nx, nz) > 12 && (nx * Math.sin(p.heading) + nz * Math.cos(p.heading)) / Math.hypot(nx, nz) < -.5 && toastT <= 0 && dist > 25) toast('TURN AROUND', 'Uターン · follow the arrows');
+  if (dist < 14) { const n = nav.d.n; clearNav(true); toast('ARRIVED', n.toUpperCase() + ' · 到着'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); }
+}
+function drawNavRoute(g) {
+  if (!nav) return;
+  g.strokeStyle = '#2fe0ff'; g.lineWidth = 9; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(player.x, player.z); for (const [a, b] of nav.route) g.lineTo(a, b); g.stroke();
+  g.fillStyle = '#2fe0ff'; g.beginPath(); g.arc(nav.tx, nav.tz, 20, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(nav.tx, nav.tz, 9, 0, 7); g.fill();
+}
+function travelTo(d) {
+  if (taxi) { toast('TAXI SHIFT ACTIVE', 'NO FAST TRAVEL DURING A SHIFT'); return false; }
+  const p = player;
+  if (d.kind === 'mountain') {
+    if (d.idx === MTN.n - 1) { const a = Math.atan2(-MTN.cz, -MTN.cx); Object.assign(p, { x: MTN.cx + Math.cos(a) * 20, z: MTN.cz + Math.sin(a) * 20, y: MTN.plazaY, heading: Math.atan2(Math.cos(a), Math.sin(a)) }); }
+    else { const i = d.idx; Object.assign(p, { x: MTN.x[i], z: MTN.z[i], y: MTN.y[i], heading: Math.atan2(MTN.tx[i], MTN.tz[i]) }); }
+  } else {
+    let x = d.x, z = d.z;
+    if (d.kind === 'track') { const h = d.track.marker.h + Math.PI; x = d.track.marker.x + Math.sin(h) * 28; z = d.track.marker.z + Math.cos(h) * 28; }
+    const t = snapToRoad(x, z);
+    if (t.axis === 'z') { const dir = d.kind === 'track' ? Math.sign(Math.cos(d.track.marker.h)) || 1 : 1; p.x = t.x + dir * LANES[1]; p.z = clamp(t.z, -HALF + 10, HALF - 10); p.heading = dir > 0 ? 0 : Math.PI; }
+    else { const dir = d.kind === 'track' ? Math.sign(Math.sin(d.track.marker.h)) || 1 : 1; p.z = t.z - dir * LANES[1]; p.x = clamp(t.x, -HALF + 10, HALF - 10); p.heading = dir * Math.PI / 2; }
+    p.y = 0;
+  }
+  Object.assign(p, { vx: 0, vz: 0, yawRate: 0, reverse: false, slope: 0 }); mtnHint = -1;
+  camPos.set(p.x - Math.sin(p.heading) * 8, (p.y || 0) + 3, p.z - Math.cos(p.heading) * 8);
+  skids.lift(0); skids.lift(1); if (nav) clearNav(true);
+  toast('ARRIVED', d.n.toUpperCase() + ' · 到着');
+  return true;
+}
+/* ---------- the big map overlay ---------- */
+const bm = { cx: 0, cz: 0, s: .4, drag: null, sel: null, moved: 0 };
+function openMap() {
+  if (state !== 'drive' && state !== 'pause') return;
+  if (!PLACES.length) buildPlaces();
+  $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.suspend();
+  state = 'map'; $('bigmap').classList.remove('hidden');
+  const cv = $('bmCanvas'); bm.cx = player.x; bm.cz = player.z; bm.s = Math.min(innerWidth, innerHeight) / 1900;
+  bm.sel = null; $('bmSel').classList.add('hidden'); $('bmSearch').value = ''; renderResults(''); $('bmClearRoute').classList.toggle('hidden', !nav);
+  resizeMap(); setTimeout(() => { if (!isTouch) $('bmSearch').focus(); }, 30);
+}
+function closeMap() { if (state !== 'map') return; $('bigmap').classList.add('hidden'); $('bmSearch').blur(); state = 'drive'; if (audio.ctx) audio.ctx.resume(); for (const k in keys) keys[k] = false; }
+function resizeMap() { const cv = $('bmCanvas'), pr = Math.min(devicePixelRatio, 2); cv.width = innerWidth * pr; cv.height = innerHeight * pr; }
+const bmToWorld = (sx, sy) => [bm.cx + (sx - innerWidth / 2) / bm.s, bm.cz + (sy - innerHeight / 2) / bm.s];
+function drawBigMap() {
+  const cv = $('bmCanvas'), g = cv.getContext('2d'), pr = cv.width / innerWidth, W = innerWidth, H = innerHeight, s = bm.s;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0c2233'; g.fillRect(0, 0, cv.width, cv.height);
+  const k = pr * s; g.setTransform(k, 0, 0, k, pr * (W / 2 - bm.cx * s), pr * (H / 2 - bm.cz * s));
+  g.fillStyle = '#1b2029'; g.fillRect(-9000, -9000, 18000, 9000 + HALF + 40); // land north of the shore
+  g.fillStyle = '#1f2a1f'; for (const T of TRACKS) g.fillRect(T.bx0, T.bz0, T.bx1 - T.bx0, T.bz1 - T.bz0);
+  const sc = mapImg.sc, o = mapImg.o; g.drawImage(mapImg, -o, -o, mapImg.width / sc, mapImg.height / sc);
+  drawMountainMap(g);
+  for (const T of TRACKS) { g.strokeStyle = '#9aa3b2'; g.lineWidth = Math.max(T.w * 1.4, 3 / s); g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i <= T.n; i += 3) { const q = i % T.n; i ? g.lineTo(T.x[q], T.z[q]) : g.moveTo(T.x[q], T.z[q]); } g.closePath(); g.stroke(); }
+  if (nav) { g.save(); const lw = Math.max(9, 5 / s); g.strokeStyle = '#2fe0ff'; g.lineWidth = lw; g.lineJoin = g.lineCap = 'round'; g.beginPath(); g.moveTo(player.x, player.z); for (const [a, b] of nav.route) g.lineTo(a, b); g.stroke(); g.restore(); }
+  if (taxi) drawTaxiRoute(g);
+  g.setTransform(pr, 0, 0, pr, 0, 0);
+  const toS = (x, z) => [W / 2 + (x - bm.cx) * s, H / 2 + (z - bm.cz) * s];
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const pl of PLACES) {
+    if (pl.type === 'Speed trap' && s < .5) continue;
+    const [x, y] = toS(pl.mapX ?? pl.x, pl.mapZ ?? pl.z), isD = pl.type === 'District';
+    if (x < -80 || y < -40 || x > W + 80 || y > H + 40) continue;
+    if (!isD) { g.fillStyle = pl.col; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); g.strokeStyle = '#000'; g.lineWidth = 2; g.stroke(); }
+    g.font = isD ? `700 ${clamp(13 + s * 12, 13, 22)}px ${OR}` : `700 13px Rajdhani, sans-serif`;
+    g.fillStyle = isD ? 'rgba(255,255,255,.55)' : '#fff'; g.shadowColor = '#000'; g.shadowBlur = 4;
+    g.fillText(isD ? pl.n.toUpperCase() : pl.n, x, isD ? y : y - 15); g.shadowBlur = 0;
+  }
+  // destination pin + selection
+  const pin = (x, z, col) => { const [sx, sy] = toS(x, z); g.fillStyle = col; g.beginPath(); g.arc(sx, sy - 22, 11, Math.PI, 0); g.lineTo(sx, sy); g.closePath(); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(sx, sy - 22, 4.5, 0, 7); g.fill(); };
+  if (nav) pin(nav.tx, nav.tz, '#2fe0ff');
+  if (bm.sel) pin(bm.sel.mapX ?? bm.sel.x, bm.sel.mapZ ?? bm.sel.z, '#ffd02d');
+  // player arrow
+  const [px, py] = toS(player.x, player.z); g.save(); g.translate(px, py); g.rotate(Math.PI - player.heading);
+  g.fillStyle = '#ff5a1f'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -13); g.lineTo(9, 10); g.lineTo(0, 5); g.lineTo(-9, 10); g.closePath(); g.fill(); g.stroke(); g.restore();
+  // compass + scale bar
+  g.fillStyle = '#fff'; g.font = `900 18px ${OR}`; g.fillText('N ▲', W - 60, H - 90);
+  const m = [100, 250, 500, 1000, 2000].find(v => v * s > 70) || 2000; g.fillRect(W - 60 - m * s / 2, H - 60, m * s, 3); g.font = `700 12px ${OR}`; g.fillText(m >= 1000 ? `${m / 1000} km` : `${m} m`, W - 60, H - 46);
+}
+function selectPlace(pl, center) {
+  bm.sel = pl; if (center) { bm.cx = pl.mapX ?? pl.x; bm.cz = pl.mapZ ?? pl.z; bm.s = Math.max(bm.s, .55); }
+  const d = Math.round(routeLen(player.x, player.z, navRoute(player.x, player.z, pl)));
+  $('bmSelName').textContent = pl.n; $('bmSelInfo').textContent = `${pl.jp ? pl.jp + ' · ' : ''}${pl.type} · ${d > 1000 ? (d / 1000).toFixed(1) + ' km' : d + ' m'} by road`;
+  $('bmRace').classList.toggle('hidden', pl.kind !== 'track'); $('bmSel').classList.remove('hidden');
+}
+function renderResults(q) {
+  q = q.trim().toLowerCase();
+  const list = q ? PLACES.filter(p => (p.n + ' ' + (p.jp || '') + ' ' + p.type).toLowerCase().includes(q)) : PLACES.filter(p => p.type !== 'Speed trap');
+  $('bmResults').innerHTML = list.length ? list.slice(0, 40).map(p => `<div class="bmRes" data-i="${PLACES.indexOf(p)}"><i style="background:${p.col}"></i><b>${p.n}</b><span>${p.jp ? p.jp + ' · ' : ''}${p.type}</span></div>`).join('') : `<div class="bmNone">No place called “${q}”. Try a district, landmark or track.</div>`;
+  document.querySelectorAll('.bmRes').forEach(el => el.onclick = () => selectPlace(PLACES[+el.dataset.i], true));
+}
+function pickOnMap(wx, wz) {
+  if (Math.hypot(wx - MTN.cx, wz - MTN.cz) < MTN.R) {
+    const top = Math.hypot(wx - MTN.cx, wz - MTN.cz) < MTN.plazaR + 30, idx = top ? MTN.n - 1 : mtnIndex(wx, wz);
+    return { n: top ? 'Mt. Amboola Viewpoint' : 'Mt. Amboola road', jp: 'アンブーラ山', type: `Mountain · ${Math.round(top ? MTN.plazaY : MTN.y[idx])} m`, kind: 'mountain', idx, x: top ? MTN.cx : MTN.x[idx], z: top ? MTN.cz : MTN.z[idx], col: '#7ee04c' };
+  }
+  const T = TRACKS.find(t => wx > t.bx0 && wx < t.bx1 && wz > t.bz0 && wz < t.bz1);
+  if (T) return PLACES.find(p => p.track === T);
+  if (Math.abs(wx) <= HALF + 20 && Math.abs(wz) <= HALF + 20) { const t = snapToRoad(wx, wz); return { n: `Pin · ${placeName(t.x, t.z)}`, jp: '', type: 'Dropped pin', kind: 'city', x: t.x, z: t.z, col: '#ffd02d' }; }
+  return null;
+}
+(() => {
+  const cv = $('bmCanvas');
+  cv.addEventListener('pointerdown', e => { bm.drag = [e.clientX, e.clientY, bm.cx, bm.cz]; bm.moved = 0; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (!bm.drag) return; const dx = e.clientX - bm.drag[0], dy = e.clientY - bm.drag[1]; bm.moved = Math.max(bm.moved, Math.hypot(dx, dy)); bm.cx = bm.drag[2] - dx / bm.s; bm.cz = bm.drag[3] - dy / bm.s; });
+  cv.addEventListener('pointerup', e => {
+    const wasClick = bm.drag && bm.moved < 6; bm.drag = null; if (!wasClick) return;
+    const [wx, wz] = bmToWorld(e.clientX, e.clientY), pl = pickOnMap(wx, wz);
+    if (pl) selectPlace(pl, false); else { bm.sel = null; $('bmSel').classList.add('hidden'); toast('NO ROAD THERE', 'PICK A SPOT IN THE CITY, THE MOUNTAIN OR A TRACK'); }
+  });
+  const zoom = (f, sx = innerWidth / 2, sy = innerHeight / 2) => { const [wx, wz] = bmToWorld(sx, sy); bm.s = clamp(bm.s * f, .08, 3); bm.cx = wx - (sx - innerWidth / 2) / bm.s; bm.cz = wz - (sy - innerHeight / 2) / bm.s; };
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.18 : 1 / 1.18, e.clientX, e.clientY); }, { passive: false });
+  $('bmIn').onclick = () => zoom(1.4); $('bmOut').onclick = () => zoom(1 / 1.4);
+  $('bmMe').onclick = () => { bm.cx = player.x; bm.cz = player.z; };
+  $('bmAll').onclick = () => { bm.cx = 1400; bm.cz = -200; bm.s = Math.min(innerWidth / 8600, innerHeight / 3800); };
+  $('bmSearch').addEventListener('input', e => renderResults(e.target.value));
+  $('bmSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const first = document.querySelector('.bmRes'); if (first) first.click(); } if (e.key === 'Escape') closeMap(); e.stopPropagation(); });
+  $('bmClose').onclick = closeMap;
+  $('bmRoute').onclick = () => { if (bm.sel) { setNav(bm.sel); closeMap(); } };
+  $('bmTravel').onclick = () => { if (bm.sel && travelTo(bm.sel)) closeMap(); };
+  $('bmRace').onclick = () => { if (bm.sel?.track) { const T = bm.sel.track; closeMap(); startRace(T); } };
+  $('bmClearRoute').onclick = () => { clearNav(); $('bmClearRoute').classList.add('hidden'); };
+  $('minimap').addEventListener('click', () => openMap());
+  $('bMap').onclick = () => openMap();
+  addEventListener('resize', () => { if (state === 'map') resizeMap(); });
+})();
+
+/* =====================================================================
    GAME STATE
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
@@ -2974,7 +3225,7 @@ function simStep(dt, inp) {
   }
   if (race && race.state === 'countdown') raceHold();
   player.sync(dt);
-  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); }
+  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); else updateNav(dt); }
   updateBoards(dt, player); updateTraps(dt, player); updateSkill(dt, player);
 }
 const clock = new THREE.Clock();
@@ -3013,6 +3264,7 @@ function frame() {
     $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   }
+  if (state === 'map') { drawBigMap(); return; }
   if (state === 'drive' || state === 'pause' || state === 'overlay') composer.render(dt);
   fpsAcc += dt; fpsN++;
   if (fpsAcc > 4 && quality !== 'low' && state === 'drive') { const fps = fpsN / fpsAcc; if (fps < 22 && !window.__lowWarned) { window.__lowWarned = true; toast('LOW FPS', 'TRY GRAPHICS: LOW IN GARAGE'); } fpsAcc = 0; fpsN = 0; }
@@ -3040,7 +3292,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
