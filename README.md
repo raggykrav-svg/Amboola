@@ -74,6 +74,17 @@ Each car's physics is built from its real published figures: power, weight, redl
   - **TRAVEL HERE:** fast travel. You appear there straight away.
   - **🏁 RACE** (for tracks): starts that race.
 
+## Outlaw
+
+Pick any car in the garage and press **💰 OUTLAW**, or choose **P → OUTLAW** while driving.
+
+- **Steal:** green money safes are hidden all over the city, with light beams and green squares on the minimap. Drive through one to crack it for ¥3,000–12,000.
+- **The police come for you:** every theft alerts them. Police cars with flashing light bars and sirens chase you through the streets, and more come as you carry more cash (up to 3).
+- **Don't get caught:** if a police car pins you while you're stopped or crawling, the **BUSTED** bar fills and they take everything you're carrying. Get more than 450 m away to lose them.
+- **Take it to a hideout:** press **G** or the **🏠 HIDEOUT ROUTE** button, and purple arrows on the road lead you to the nearest hideout (隠れ家). Stop there to stash the money for good. The police can't arrest you at a hideout.
+
+Your stashed total is saved. **P → END OUTLAW** stops.
+
 ## Mt. Amboola
 
 There's a big forested mountain on the bay, south-west of the city. You can see it from the streets.
