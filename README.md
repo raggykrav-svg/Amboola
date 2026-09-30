@@ -89,6 +89,17 @@ Pick any car in the garage and press **💰 OUTLAW**, or choose **P → OUTLAW**
 
 Your stashed total is saved. **P → END OUTLAW** stops.
 
+## Police
+
+Pick any car in the garage and press **🚓 POLICE**, or choose **P → POLICE** while driving. Now you're the one doing the chasing.
+
+- **Find the outlaw:** an AI outlaw in a fast sports car (a 911 Turbo S, McLaren W1, Ferrari and so on) is cracking the money safes around the city. Red arrows on the road and a flashing red-and-white dot on the minimap lead you to him. The bar at the top shows his car, his distance, how much money he has, and whether he's **LOOTING**, **FLEEING** or **ESCAPING**.
+- **He runs:** when you get close he flees. Once he has enough money he races to a hideout.
+- **Catch him:** stay right next to him, or ram him to slow him down, and the **ARREST** bar fills. When it's full he's arrested and **you get all the money he had**, plus a ¥5,000 reward.
+- **Hideouts are safe for him:** you **can't arrest him at a hideout** (隠れ家). If he gets there with the money, he stashes it and gets away. Then a new outlaw appears somewhere in the city.
+
+Your police rewards are saved. **P → END POLICE DUTY** stops.
+
 ## Mt. Amboola
 
 There's a big forested mountain on the bay, south-west of the city. You can see it from the streets.
