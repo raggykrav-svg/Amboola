@@ -11,7 +11,9 @@ const { chromium } = require('playwright');
 const OUT = path.resolve(process.argv[2] || '/tmp/amboola-trailer.mp4'), FPS = +(process.env.FPS || 24), FRAMES = '/tmp/amboola-frames';
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), V = html.match(/three@([\d.]+)\/build/)[1], THREE_DIR = `/tmp/amboola-three/package`;
 if (!fs.existsSync(THREE_DIR)) execSync(`mkdir -p /tmp/amboola-three && cd /tmp/amboola-three && npm pack three@${V} --silent && tar xzf three-${V}.tgz`);
-fs.rmSync(FRAMES, { recursive: true, force: true }); fs.mkdirSync(FRAMES, { recursive: true });
+// SCENE=i re-records only scene i onwards over an existing frame folder (e.g. to fix one shot)
+const SCENE = +(process.env.SCENE || 0);
+if (!SCENE) fs.rmSync(FRAMES, { recursive: true, force: true }); fs.mkdirSync(FRAMES, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
 const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
 page.on('pageerror', e => console.log('PAGEERROR', e.message));
@@ -22,9 +24,9 @@ await page.route(/fonts\.(googleapis|gstatic)\.com/, r => { try { const body = e
 await page.route('http://amboola.test/**', r => r.fulfill({ path: path.join(ROOT, 'index.html'), contentType: 'text/html' }));
 await page.goto('http://amboola.test/index.html');
 await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden'), null, { timeout: 180000 });
-await page.evaluate(fps => { window.__FPS = fps; window.__manualFrames = true; }, FPS);
+await page.evaluate(([fps, sc]) => { window.__FPS = fps; window.__manualFrames = true; window.__startScene = sc; }, [FPS, SCENE]);
 await page.addScriptTag({ path: path.join(HERE, 'trailer-director.js') });
-const total = await page.evaluate(() => window.__trailerTotal); let n = 0; const t0 = Date.now();
+const total = await page.evaluate(() => window.__trailerTotal); let n = SCENE ? await page.evaluate(i => window.__sceneStart(i), SCENE) : 0; const t0 = Date.now();
 for (;;) {
   const r = await page.evaluate(() => window.__trailerStep()); if (r.done || (process.env.MAXF && n >= +process.env.MAXF)) break;
   await page.screenshot({ path: `${FRAMES}/${String(n++).padStart(5, '0')}.jpg`, type: 'jpeg', quality: 92 });

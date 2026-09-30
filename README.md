@@ -2,6 +2,10 @@
 
 A browser driving game: take Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis, Ferraris, McLarens and Bugattis through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
 
+**▶ Watch the trailer:** [media/amboola-trailer.mp4](media/amboola-trailer.mp4) (54 s, recorded from the real game)
+
+[![Amboola trailer](media/amboola-trailer-poster.jpg)](media/amboola-trailer.mp4)
+
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
 ## How to play

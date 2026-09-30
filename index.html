@@ -3316,7 +3316,7 @@ function endCrime(silent) {
   for (const r of crime.police) r.dispose();
   scene.remove(crime.arrows); audio.siren(0);
   if (!silent) toast('OUTLAW OVER', `STASHED IN TOTAL ${fmtYen(crime.bank)}`);
-  crime = null; $('crimehud').classList.add('hidden');
+  crime = null; $('crimehud').classList.add('hidden'); $('crMeter').classList.add('hidden');
 }
 const nearestHideout = (x, z) => HIDEOUTS.reduce((b, h) => routeLen(x, z, taxiRoute(x, z, h.x, h.z)) < routeLen(x, z, taxiRoute(x, z, b.x, b.z)) ? h : b);
 function collectSafe(s, byAI) {

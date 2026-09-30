@@ -57,6 +57,16 @@ Double-click `index.html`, or run `npx http-server -p 8765 -s .` and open `http:
 
 There is no test suite. The checks are `driver.mjs shots` (must print `no page errors`) and `driver.mjs bench` (numbers near spec).
 
+## Record the trailer video
+
+```bash
+FFMPEG=/path/to/ffmpeg-with-libx264 node .claude/skills/run-amboola/trailer.mjs /tmp/amboola-trailer.mp4
+```
+
+This takes about 18 minutes for 1,288 frames at 1280×720, 24 fps. It steps the game one frame at a time (`window.__manualFrames` plus `amboola.tick(1/24)`), so SwiftShader's low frame rate doesn't matter. The scenes live in `trailer-director.js`: garage, city, night, drift, mountain, summit, race, taxi, outlaw, map and end card. `SCENE=i` re-records only scene *i* onward over the existing frames in `/tmp/amboola-frames`; scene indices count each car shot separately, and the end card is 18.
+
+Playwright's bundled ffmpeg has only VP8. For H.264, `pip download imageio-ffmpeg --no-deps` and use the static binary inside the wheel. Google Fonts are fetched with `curl` in a route handler, because the browser can't reach them through the proxy but curl can. The video is silent: headless Chromium's Web Audio output isn't captured.
+
 ## Gotchas
 
 - **Test on a high-DPI screen too:** `AMBOOLA_DPR=2 node .claude/skills/run-amboola/driver.mjs shots …` emulates a Retina/HiDPI display (deviceScaleFactor 2). One real bug only showed up there. Handing `EffectComposer` a pre-sized render target makes it treat that size as CSS pixels and multiply by the pixel ratio again, so the SMAA and bloom passes came out pr× too large and the 3D picture was squeezed into the top-left corner of users' screens. `setupComposer()` now calls `composer.setPixelRatio(pr)` then `composer.setSize(innerWidth, innerHeight)`. To check it, read `window.amboola.composer.renderTarget1` against `renderer.domElement.width/height`. Ultra at 2× (2560×1440 with MSAA) is too heavy for SwiftShader to click through, so test High at 2×.

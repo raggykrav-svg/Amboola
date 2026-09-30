@@ -42,7 +42,7 @@
     ...[['gt3rs', 'PORSCHE 911 GT3 RS'], ['revuelto', 'LAMBORGHINI REVUELTO'], ['sf90', 'FERRARI SF90 STRADALE'], ['senna', 'McLAREN SENNA'], ['tourbillon', 'BUGATTI TOURBILLON'], ['cyberbeast', 'TESLA CYBERTRUCK'], ['cayennegt', 'PORSCHE CAYENNE TURBO GT'], ['918', 'PORSCHE 918 SPYDER']]
       .map(([id, name], i) => ({ n: 22, enter() { garageCar(id); setCap(name, i === 0 ? '47 CARS · 6 BRANDS' : 'PORSCHE · FERRARI · LAMBORGHINI · McLAREN · BUGATTI · TESLA'); } })),
     { n: 120, enter() { $('menu').style.display = ''; A.applyTime('sunset'); drive('gt3rs'); place(-5.7, 150, Math.PI, 8); A.camMode = 0; setCap('OPEN-WORLD TOKYO', 'NEON · TRAFFIC · SCRAMBLE CROSSING'); }, frame() { input = followRoute(-5.7, -700, 42); } },
-    { n: 96, enter() { A.applyTime('night'); A.camMode = 1; place(-5.7, -60, Math.PI, 22); rt.t = 0; setCap('DAY · SUNSET · NIGHT', 'THE CITY LIGHTS UP'); }, frame() { input = followRoute(-5.7, -760, 40); } },
+    { n: 96, enter() { if (!A.player) drive('gt3rs'); A.applyTime('night'); A.camMode = 1; place(-5.7, -60, Math.PI, 22); rt.t = 0; setCap('DAY · SUNSET · NIGHT', 'THE CITY LIGHTS UP'); }, frame() { input = followRoute(-5.7, -760, 40); } },
     { n: 80, enter() { A.applyTime('sunset'); A.camMode = 1; place(-2, 90, Math.PI, 24); setCap('DRIFT', 'SKILL CHAINS · SMOKE · SKID MARKS'); },
       frame(k) { input = k < 14 ? { throttle: 1, brake: 0, steer: 0, handbrake: 0 } : k < 34 ? { throttle: .7, brake: 0, steer: 1, handbrake: 1 } : { throttle: 1, brake: 0, steer: -.55, handbrake: 0 }; } },
     { n: 84, enter() { const M = A.MTN, i = Math.round(M.n * .45); A.applyTime('sunset'); A.camMode = 0; place(M.x[i], M.z[i], Math.atan2(M.tx[i], M.tz[i]), 20); P().y = M.y[i]; setCap('MT. AMBOOLA', 'DRIVE THE MOUNTAIN ROAD'); },
@@ -62,13 +62,13 @@
     { n: 84, enter() { A.applyTime('sunset'); place(-5.7, 150, Math.PI); input = idle; A.openMap(); window.__q = 'shibuya'; setCap('MAP · SEARCH · GPS', 'FIND ANYWHERE · FAST TRAVEL'); },
       frame(k) { const i = $('bmSearch'); if (k % 5 === 0 && k / 5 <= window.__q.length) { i.value = window.__q.slice(0, k / 5); i.dispatchEvent(new Event('input')); } if (k === 55) document.querySelector('.bmRes')?.click(); },
       exit() { A.closeMap(); } },
-    { n: 96, enter() { A.applyTime('night'); A.camMode = 1; place(-5.7, -40, Math.PI, 26); rt.t = 0; setCap('AMBOOLA', 'PLAY FREE IN YOUR BROWSER', true); }, frame() { input = followRoute(-5.7, -760, 40); } },
+    { n: 96, enter() { if (!A.player) drive('gt3rs'); A.applyTime('night'); A.camMode = 1; place(-5.7, -40, Math.PI, 26); rt.t = 0; setCap('AMBOOLA', 'PLAY FREE IN YOUR BROWSER', true); }, frame() { input = followRoute(-5.7, -760, 40); } },
   ];
   window.__endRace = () => { if (A.race) { const b = document.getElementById('bLeave'); A.race && b && b.onclick && b.onclick(); } };
-  let si = -1, k = 0; const total = S.reduce((a, s) => a + s.n, 0);
-  window.__trailerTotal = total;
+  let si = (window.__startScene || 0) - 1, k = 0, jumped = si >= 0; const total = S.reduce((a, s) => a + s.n, 0);
+  window.__trailerTotal = total; window.__sceneStart = i => S.slice(0, i).reduce((a, s) => a + s.n, 0); window.__sceneCount = S.length;
   window.__trailerStep = () => {
-    if (si < 0 || k >= S[si].n) { if (si >= 0 && S[si].exit) S[si].exit(); si++; k = 0; if (si >= S.length) return { done: true }; S[si].enter(); }
+    if (jumped || si < 0 || k >= S[si].n) { if (!jumped && si >= 0 && S[si].exit) S[si].exit(); jumped = false; si++; k = 0; if (si >= S.length) return { done: true }; S[si].enter(); }
     const sc = S[si]; if (sc.frame) sc.frame(k);
     // fade from/to black at the very start and end, captions fade in per scene
     const g = S.slice(0, si).reduce((a, s) => a + s.n, 0) + k; fade.style.opacity = g < 10 ? 1 - g / 10 : g > total - 14 ? (g - (total - 14)) / 14 : 0;
