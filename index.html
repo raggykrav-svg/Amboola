@@ -3317,7 +3317,7 @@ function startCrime(role) {
   $('crRole').textContent = role === 'outlaw' ? 'OUTLAW · 無法者' : 'POLICE · 警察';
   $('crCashL').textContent = role === 'outlaw' ? 'CARRYING' : 'OUTLAW HAS'; $('crBankL').textContent = role === 'outlaw' ? 'STASHED' : 'REWARDS';
   $('crBtn').classList.toggle('hidden', role !== 'outlaw');
-  toast(role === 'outlaw' ? 'OUTLAW' : 'POLICE', role === 'outlaw' ? 'GRAB THE MONEY SAFES · WATCH OUT FOR THE POLICE · G = ROUTE TO A HIDEOUT' : 'CATCH THE OUTLAW BEFORE HE REACHES A HIDEOUT');
+  toast(role === 'outlaw' ? 'OUTLAW' : 'POLICE', role === 'outlaw' ? 'GRAB THE MONEY SAFES · WATCH OUT FOR THE POLICE · G = ROUTE TO A HIDEOUT' : 'TOUCH THE OUTLAW TO ARREST HIM · NOT AT A HIDEOUT');
 }
 function endCrime(silent) {
   if (!crime) return;
@@ -3404,9 +3404,10 @@ function updateCrime(dt) {
         if (o.mode === 'stash' && oSafe && Math.hypot(o.x - o.target.x, o.z - o.target.z) < 8) {
           toast('THE OUTLAW GOT AWAY', `HE STASHED ${fmtYen(o.cash)} AT ${o.target.n.toUpperCase()}`); o.cash = 0; o.mode = 'gone'; o.goneT = 3; o.v = 0;
         }
-        if (inCity && crimeBump(o) && !oSafe) o.stun = 1.1;
-        c.meter = oSafe ? 0 : clamp(c.meter + (d < 8 ? dt / (o.v < 8 ? 1.2 : 2.4) : -dt / 1.5), 0, 1);
-        if (c.meter >= 1) {
+        // touch him = arrested (but never inside a hideout)
+        const touched = inCity && crimeBump(o); c.meter = 0;
+        if (touched && oSafe && toastT <= 0) toast('SAFE ZONE · 隠れ家', 'HE IS AT A HIDEOUT · YOU CAN\'T ARREST HIM HERE');
+        if (touched && !oSafe) {
           const reward = o.cash + 5000; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward / 5); localStorage.setItem('amboola.skill', skill.bank);
           toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtYen(o.cash)} + ${fmtYen(5000)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
           o.cash = 0; o.mode = 'gone'; o.goneT = 4; o.v = 0; c.meter = 0;
