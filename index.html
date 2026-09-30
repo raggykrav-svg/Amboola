@@ -41,7 +41,7 @@
   .caritem.sel { border-left-color:var(--accent); background:rgba(255,90,31,.14); }
   .caritem b { display:block; font-size:18px; font-weight:700; letter-spacing:.04em; }
   .caritem span { font-size:12px; color:var(--dim); letter-spacing:.1em; }
-  #stats { position:absolute; right:28px; top:28px; bottom:170px; overflow-y:auto; width:330px; background:var(--panel); padding:18px 20px; backdrop-filter:blur(8px);
+  #stats { position:absolute; right:28px; top:28px; bottom:222px; overflow-y:auto; width:330px; background:var(--panel); padding:18px 20px; backdrop-filter:blur(8px);
     border:1px solid rgba(255,255,255,.07); }
   #stats h2 { margin:0; font-family:'Orbitron',sans-serif; font-weight:700; font-size:24px; letter-spacing:.06em; }
   #stats .sub { color:var(--dim); font-size:13px; letter-spacing:.2em; margin-bottom:14px; text-transform:uppercase; }
@@ -67,6 +67,21 @@
     clip-path:polygon(8% 0,100% 0,92% 100%,0 100%); transition:background .15s; }
   #raceBtn { right:196px; } #taxiBtn { right:28px; border-color:#ffd02d; }
   #taxiBtn:hover { background:rgba(255,208,45,.3); }
+  #raceBtn, #taxiBtn, #outlawBtn, #policeBtn { position:absolute; width:162px; padding:13px 6px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:15px;
+    letter-spacing:.2em; color:#fff; cursor:pointer; background:rgba(10,12,18,.8); border:2px solid var(--accent); backdrop-filter:blur(6px); clip-path:polygon(8% 0,100% 0,92% 100%,0 100%); }
+  #outlawBtn { right:196px; bottom:150px; border-color:#c77dff; } #policeBtn { right:28px; bottom:150px; border-color:#2a6bff; }
+  #outlawBtn:hover { background:rgba(199,125,255,.3); } #policeBtn:hover { background:rgba(42,107,255,.3); }
+  #crimehud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:18px; align-items:center; background:var(--panel);
+    padding:6px 16px; border-bottom:2px solid #c77dff; backdrop-filter:blur(6px); text-align:center; }
+  #crimehud[data-role="police"] { border-bottom-color:#2a6bff; }
+  #crimehud small { display:block; font-size:11px; letter-spacing:.25em; color:var(--dim); } #crimehud b { font-family:'Orbitron',sans-serif; font-size:17px; }
+  #crimehud .job { text-align:left; min-width:230px; } #crimehud .job b { color:#c77dff; font-size:15px; letter-spacing:.1em; } #crimehud[data-role="police"] .job b { color:#6d9bff; }
+  #crimehud .job span { display:block; font-size:14px; letter-spacing:.03em; }
+  #crBtn { pointer-events:auto; padding:8px 12px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.12em; color:#fff; background:rgba(199,125,255,.25); border:1px solid #c77dff; cursor:pointer; }
+  #crBtn:hover { background:rgba(199,125,255,.5); }
+  #crMeter { position:absolute; left:50%; top:74px; transform:translateX(-50%); width:260px; height:10px; background:rgba(0,0,0,.6); border:1px solid #ff3b3b; }
+  #crMeter i { display:block; height:100%; width:0; background:linear-gradient(90deg,#ff3b3b,#2a6bff); }
+  #crMeterL { position:absolute; top:-18px; left:0; right:0; text-align:center; font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:.3em; color:#ff6b6b; }
   #raceBtn:hover { background:rgba(255,90,31,.3); }
   #disclaimer { position:absolute; left:50%; transform:translateX(-50%); bottom:10px; font-size:11px; color:#6b7280; letter-spacing:.1em; text-align:center; pointer-events:none; }
 
@@ -113,7 +128,7 @@
   #scorebox .big { font-family:'Orbitron',sans-serif; font-weight:900; font-size:26px; }
   #scorebox .row { font-size:14px; letter-spacing:.2em; color:var(--dim); }
   #scorebox .row b { color:var(--accent2); }
-  #chain { position:absolute; left:50%; top:70px; transform:translateX(-50%); text-align:center; transition:opacity .3s; opacity:0; }
+  #chain { position:absolute; left:50%; top:100px; transform:translateX(-50%); text-align:center; transition:opacity .3s; opacity:0; }
   #chain .lbl { font-family:'Orbitron',sans-serif; font-weight:900; font-size:26px; letter-spacing:.2em; color:#fff; text-shadow:0 0 18px rgba(255,120,40,.8); }
   #chain .pts { font-family:'Orbitron',sans-serif; font-size:20px; color:var(--accent2); }
   #toast { position:absolute; left:50%; top:30%; transform:translate(-50%,-50%); font-family:'Orbitron',sans-serif; font-weight:900; font-size:30px;
@@ -145,8 +160,9 @@
     .cat { display:none; } .caritem { min-width:150px; }
     #stats { left:12px; right:12px; width:auto; top:auto; bottom:320px; padding:10px 14px; }
     #stats .stat, #stats .optlbl, #stats .opts { display:none; }
-    #drive { left:12px; right:12px; width:auto; bottom:110px; }
-    #raceBtn, #taxiBtn { width:auto; bottom:44px; padding:10px; font-size:13px; }
+    #drive { left:12px; right:12px; width:auto; bottom:104px; }
+    #raceBtn, #taxiBtn, #outlawBtn, #policeBtn { width:auto; bottom:58px; padding:10px; font-size:13px; } #outlawBtn, #policeBtn { bottom:12px; }
+    #outlawBtn { left:12px; right:calc(50% + 4px); } #policeBtn { left:calc(50% + 4px); right:12px; }
     #raceBtn { left:12px; right:calc(50% + 4px); } #taxiBtn { left:calc(50% + 4px); right:12px; }
     #brand { left:14px; top:12px; }
     #tacho { width:180px; height:180px; } #minimap { width:140px; height:140px; bottom:auto; top:70px; left:auto; right:12px; }
@@ -216,6 +232,8 @@
   </div>
   <button id="raceBtn">🏁 RACES</button>
   <button id="taxiBtn">🚕 TAXI</button>
+  <button id="outlawBtn">💰 OUTLAW</button>
+  <button id="policeBtn">🚓 POLICE</button>
   <button id="drive">DRIVE</button>
   <div id="disclaimer">Fan-made game · not affiliated with or endorsed by any car maker · model names used for reference only</div>
 </div>
@@ -227,7 +245,7 @@
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
     <div><kbd>SPACE</kbd>Handbrake (drift)</div><div><kbd>C</kbd>Camera view</div><div><kbd>M</kbd>Auto / Manual gearbox</div>
     <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>R</kbd>Reset car to road</div>
-    <div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
+    <div><kbd>G</kbd>Outlaw: route to a hideout</div><div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
   <div id="scorebox"><div class="big" id="skill">0</div><div class="row">SKILL POINTS</div>
     <div class="row">BOARDS <b id="boardsN">0/0</b></div><div class="row">TOP SPEED <b id="topN">0</b></div></div>
@@ -240,6 +258,8 @@
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
   <div id="count"></div>
+  <div id="crimehud" class="hidden"><div class="job"><b id="crRole">OUTLAW</b><span id="crInfo">-</span></div><div><small id="crCashL">CARRYING</small><b id="crCash">¥0</b></div><div><small id="crBankL">STASHED</small><b id="crBank">¥0</b></div><div><small>POLICE</small><b id="crHeat">—</b></div><button id="crBtn">🏠 HIDEOUT ROUTE [G]</button></div>
+  <div id="crMeter" class="hidden"><div id="crMeterL">BUSTED</div><i></i></div>
   <div id="taxihud" class="hidden"><div class="job"><b id="txTask">-</b><span id="txWhere">-</span></div><div><small>DISTANCE</small><b id="txDist">-</b></div><div><small>TIME</small><b id="txTime">-</b></div><div><small>EARNED</small><b id="txMoney">¥0</b></div><div><small>FARES</small><b id="txFares">0</b></div></div>
 </div>
 <div id="raceprompt" class="hidden"></div>
@@ -268,6 +288,8 @@
   <button id="bLeave" class="hidden">LEAVE RACE</button>
   <button id="bMap">MAP · SEARCH</button>
   <button id="bTaxi">TAXI JOB</button>
+  <button id="bOutlaw">OUTLAW</button>
+  <button id="bPolice">POLICE</button>
   <button id="bGarage">GARAGE · CHANGE CAR</button>
   <button id="bMute">SOUND: ON</button>
 </div>
@@ -1525,6 +1547,13 @@ class AudioSys {
     if (opts.thump) { const o = ctx.createOscillator(); o.frequency.setValueAtTime(opts.thump, t); o.frequency.exponentialRampToValueAtTime(opts.thump * .5, t + opts.dur); const og = ctx.createGain(); og.gain.setValueAtTime(opts.gain * 1.2, t); og.gain.exponentialRampToValueAtTime(.0001, t + opts.dur); o.connect(og).connect(this.master); o.start(t); o.stop(t + opts.dur + .05); }
   }
   pop(strength) { this.burst({ freq: 900 + Math.random() * 1800, q: .9, gain: (.25 + Math.random() * .45) * strength, dur: .025 + Math.random() * .06, thump: 60 + Math.random() * 40 }); }
+  siren(level) {
+    if (!this.ctx) return;
+    if (!this.sir) { const c = this.ctx, o = c.createOscillator(), lfo = c.createOscillator(), lg = c.createGain(), bp = c.createBiquadFilter(), g = c.createGain();
+      o.type = 'sawtooth'; o.frequency.value = 900; lfo.frequency.value = .32; lg.gain.value = 320; lfo.connect(lg).connect(o.frequency);
+      bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 1.3; g.gain.value = 0; o.connect(bp).connect(g).connect(this.master); o.start(); lfo.start(); this.sir = { g }; }
+    this.sir.g.gain.setTargetAtTime(level * .07, this.ctx.currentTime, .15);
+  }
   beep(f, dur) { if (!this.ctx) return; const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(this.master); o.start(t); o.stop(t + dur + .02); }
   crash(v) { this.burst({ type: 'lowpass', freq: 900, q: .5, gain: clamp(v / 12, .15, 1.2), dur: .35, thump: 55 }); this.burst({ type: 'highpass', freq: 2500, q: .5, gain: clamp(v / 25, .05, .4), dur: .25 }); }
   whack() { this.burst({ type: 'bandpass', freq: 700, q: .7, gain: .9, dur: .22, thump: 90 }); this.burst({ type: 'highpass', freq: 3000, q: .7, gain: .25, dur: .4 }); }
@@ -2035,7 +2064,7 @@ function drawMinimap(p) {
     for (let i = 0; i <= T.n; i += 4) { const k = i % T.n; i ? g.lineTo(T.x[k], T.z[k]) : g.moveTo(T.x[k], T.z[k]); } g.closePath(); g.stroke();
     g.strokeStyle = '#fff'; g.lineWidth = 6; g.beginPath(); g.moveTo(...trackPt(T, 0, -T.w, 0).filter((_, k) => k !== 1)); g.lineTo(...trackPt(T, 0, T.w, 0).filter((_, k) => k !== 1)); g.stroke();
   }
-  drawTaxiRoute(g); if (!race && !taxi) drawNavRoute(g);
+  drawTaxiRoute(g); drawCrimeMap(g); if (!race && !taxi && !crime) drawNavRoute(g);
   if (race) { g.fillStyle = '#ff3b3b'; for (const a of race.ais) { g.beginPath(); g.arc(a.x, a.z, 9, 0, 7); g.fill(); } }
   if (traffic && !race) { g.fillStyle = '#e8edf5'; for (const t of traffic.cars) { g.beginPath(); g.arc(t.mesh.position.x, t.mesh.position.z, 4, 0, 7); g.fill(); } }
   g.restore(); g.setTransform(1, 0, 0, 1, 0, 0);
@@ -2144,6 +2173,7 @@ addEventListener('keydown', e => {
     if (e.code === 'Enter' && nearMarker && !race) startRace(nearMarker);
     if (e.code === 'KeyH') $('help').classList.toggle('hidden');
     if (e.code === 'KeyN') openMap();
+    if (e.code === 'KeyG' && crime?.role === 'outlaw') { crime.showRoute = !crime.showRoute; crime.routeT = 0; toast(crime.showRoute ? 'HIDEOUT ROUTE ON' : 'HIDEOUT ROUTE OFF', crime.showRoute ? 'FOLLOW THE PURPLE ARROWS' : ''); }
     if (e.code === 'Escape' || e.code === 'KeyP') setPause(true);
   } else if (state === 'pause' && (e.code === 'Escape' || e.code === 'KeyP')) setPause(false);
   else if (state === 'garage') {
@@ -2466,6 +2496,7 @@ function pickRivals(spec, n) {
   return CARS.filter(c => c.id !== spec.id).map(c => ({ c, d: Math.abs(Math.log((c.kw / c.mass) / pw)) + Math.random() * .3 })).sort((a, b) => a.d - b.d).slice(0, n).map(o => o.c);
 }
 function startRace(T) {
+  endCrime(true);
   clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -2703,6 +2734,7 @@ function taxiRoute(px, pz, tx, tz) {
 const routeLen = (px, pz, pts) => { let L = 0, x = px, z = pz; for (const [a, b] of pts) { L += Math.hypot(a - x, b - z); x = a; z = b; } return L; };
 const fmtYen = v => '¥' + Math.round(v).toLocaleString();
 function startTaxi() {
+  endCrime(true);
   clearNav(true);
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -3060,6 +3092,7 @@ function drawNavRoute(g) {
   g.fillStyle = '#2fe0ff'; g.beginPath(); g.arc(nav.tx, nav.tz, 20, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(nav.tx, nav.tz, 9, 0, 7); g.fill();
 }
 function travelTo(d) {
+  if (crime) { toast('NO FAST TRAVEL', 'NOT DURING OUTLAW / POLICE'); return false; }
   if (taxi) { toast('TAXI SHIFT ACTIVE', 'NO FAST TRAVEL DURING A SHIFT'); return false; }
   const p = player;
   if (d.kind === 'mountain') {
@@ -3104,6 +3137,7 @@ function drawBigMap() {
   for (const T of TRACKS) { g.strokeStyle = '#9aa3b2'; g.lineWidth = Math.max(T.w * 1.4, 3 / s); g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i <= T.n; i += 3) { const q = i % T.n; i ? g.lineTo(T.x[q], T.z[q]) : g.moveTo(T.x[q], T.z[q]); } g.closePath(); g.stroke(); }
   if (nav) { g.save(); const lw = Math.max(9, 5 / s); g.strokeStyle = '#2fe0ff'; g.lineWidth = lw; g.lineJoin = g.lineCap = 'round'; g.beginPath(); g.moveTo(player.x, player.z); for (const [a, b] of nav.route) g.lineTo(a, b); g.stroke(); g.restore(); }
   if (taxi) drawTaxiRoute(g);
+  drawCrimeMap(g);
   g.setTransform(pr, 0, 0, pr, 0, 0);
   const toS = (x, z) => [W / 2 + (x - bm.cx) * s, H / 2 + (z - bm.cz) * s];
   g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -3176,6 +3210,239 @@ function pickOnMap(wx, wz) {
 })();
 
 /* =====================================================================
+   OUTLAW & POLICE
+   OUTLAW: grab money safes around the city, police chase you, press G for
+   road arrows to a hideout and bank the cash there (no arrests at a hideout).
+   POLICE: an AI outlaw loots the safes; catch him before he reaches a
+   hideout to take all his money (he can't be arrested inside a hideout).
+   ===================================================================== */
+const HIDEOUT_R = 28, SAFE_COUNT = 10;
+function laneSpot(axis, c, along, sd) {
+  return axis === 'z' ? { x: c + sd * LANES[1], z: along, px: c + sd * 9.6, pz: along, ry: sd > 0 ? -Math.PI / 2 : Math.PI / 2 }
+    : { x: along, z: c + sd * LANES[1], px: along, pz: c + sd * 9.6, ry: sd > 0 ? Math.PI : 0 };
+}
+const HIDEOUTS = [
+  { ...laneSpot('z', rc(3), rc(18) + 40, 1), n: 'Harbor Warehouse' },
+  { ...laneSpot('z', rc(17), rc(2) + 40, 1), n: 'Ueno Rail Yard' },
+  { ...laneSpot('x', rc(11), rc(19) + 40, 1), n: 'East Side Garage' },
+];
+const inHideout = (x, z) => HIDEOUTS.some(h => Math.hypot(x - h.x, z - h.z) < HIDEOUT_R);
+let hideoutsBuilt = false;
+function buildHideouts() {
+  if (hideoutsBuilt) return; hideoutsBuilt = true;
+  const t = canvasTex(512, 256, (c, W, H) => { c.fillStyle = '#12081c'; c.fillRect(0, 0, W, H); c.strokeStyle = '#c77dff'; c.lineWidth = 10; c.shadowColor = '#c77dff'; c.shadowBlur = 20; c.strokeRect(8, 8, W - 16, H - 16); c.shadowBlur = 0; c.textAlign = 'center'; c.fillStyle = '#fff'; c.font = `900 96px ${JP}`; c.fillText('隠れ家', W / 2, 120); c.fillStyle = '#c77dff'; c.font = `900 52px ${OR}`; c.fillText('HIDEOUT', W / 2, 205); });
+  const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
+  for (const h of HIDEOUTS) {
+    const g = new THREE.Group(); g.position.set(h.px, 0, h.pz); g.rotation.y = h.ry; scene.add(g);
+    const shed = new THREE.Mesh(new THREE.BoxGeometry(9, 5, 6), new THREE.MeshStandardMaterial({ color: 0x3a3440, roughness: .8 })); shed.position.set(0, 2.5, -4.2); shed.castShadow = true; g.add(shed);
+    const door = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.6), new THREE.MeshStandardMaterial({ color: 0x777b82, metalness: .6, roughness: .5 })); door.position.set(0, 1.8, -1.18); g.add(door);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 2.5), sm); sign.position.set(0, 6.2, -1.1); g.add(sign);
+    h.marker = null;
+  }
+}
+function makeSafe(s) {
+  const g = new THREE.Group(); g.position.set(s.x, 0, s.z);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1, .9), new THREE.MeshStandardMaterial({ color: 0x1f5a3a, metalness: .8, roughness: .3, emissive: 0x34d399, emissiveIntensity: .25 }));
+  box.position.y = 1.4; g.add(box);
+  const dial = new THREE.Mesh(new THREE.CylinderGeometry(.18, .18, .06, 16), chromeMat); dial.rotation.x = Math.PI / 2; dial.position.set(0, 1.4, .47); g.add(dial);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.4, 3, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x34d399).multiplyScalar(2), side: THREE.DoubleSide, transparent: true, opacity: .8, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = .14; g.add(ring);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, 90, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0x34d399, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.y = 45; g.add(beam);
+  g.userData.box = box; scene.add(g); return g;
+}
+function newSafe(avoidX, avoidZ) {
+  const s = taxiSpot(avoidX ?? 0, avoidZ ?? 0, avoidX == null ? 0 : 150, 99999);
+  s.amount = Math.round((3000 + Math.random() * 9000) / 100) * 100; s.mesh = makeSafe(s); return s;
+}
+function buildPoliceCar() {
+  const g = buildTrafficCar(TRAFFIC_TYPES[2]);
+  g.children[0].material.color.set(0xf4f4f4);
+  const H = TRAFFIC_TYPES[2].H, red = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue = new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 });
+  const bar = new THREE.Group(); bar.position.y = H + .13;
+  const l = new THREE.Mesh(new THREE.BoxGeometry(.6, .14, .3), red); l.position.x = -.33; const r = new THREE.Mesh(new THREE.BoxGeometry(.6, .14, .3), blue); r.position.x = .33; bar.add(l, r); g.add(bar);
+  const doorBand = new THREE.Mesh(new THREE.BoxGeometry(1.84, .32, 2.6), new THREE.MeshStandardMaterial({ color: 0x0b0b0d, roughness: .4 })); doorBand.position.y = .62; g.add(doorBand);
+  g.userData.flash = [red, blue]; return g;
+}
+// an AI car that follows the street grid to a moving target (police cars and the AI outlaw)
+class Runner {
+  constructor(mesh, o) { Object.assign(this, { mesh, v: 0, vmax: o.vmax, acc: o.acc, corner: o.corner || 12, pts: [], repath: 0, stun: 0, car: o.car || null, x: 0, z: 0, h: 0 }); scene.add(mesh); }
+  place(x, z, h) { this.x = x; this.z = z; this.h = h; this.v = 0; this.repath = 0; this.sync(0); }
+  update(dt, tx, tz, direct, vmax = this.vmax) {
+    this.repath -= dt;
+    if (this.repath <= 0) { this.pts = taxiRoute(this.x, this.z, tx, tz); this.repath = .5; }
+    let k = this.pts.findIndex(([a, b]) => Math.hypot(a - this.x, b - this.z) > 4);
+    let aim = direct || k < 0 ? [tx, tz] : this.pts[k];
+    const dAim = Math.hypot(aim[0] - this.x, aim[1] - this.z);
+    let vT = vmax;
+    if (!direct && k >= 0 && k + 1 < this.pts.length) {
+      const n = this.pts[k + 1], a1 = Math.atan2(aim[0] - this.x, aim[1] - this.z), a2 = Math.atan2(n[0] - aim[0], n[1] - aim[1]);
+      if (Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1))) > .5) vT = Math.min(vT, Math.sqrt(this.corner ** 2 + 2 * 9 * Math.max(0, dAim - 7)));
+    }
+    let dh = Math.atan2(aim[0] - this.x, aim[1] - this.z) - this.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+    if (Math.abs(dh) > 1.1) vT = Math.min(vT, 9);
+    if (this.stun > 0) { this.stun -= dt; vT = Math.min(vT, 3); }
+    this.v = this.v < vT ? Math.min(vT, this.v + this.acc * dt) : Math.max(vT, this.v - 14 * dt);
+    const turn = 2.6 * dt * clamp(this.v / 6, .4, 1); this.h += clamp(dh, -turn, turn);
+    this.x = clamp(this.x + Math.sin(this.h) * this.v * dt, -HALF - 6, HALF + 6); this.z = clamp(this.z + Math.cos(this.h) * this.v * dt, -HALF - 6, HALF + 6);
+    this.sync(dt);
+  }
+  sync(dt) {
+    this.mesh.position.set(this.x, 0, this.z); this.mesh.rotation.y = this.h;
+    if (this.car) for (const w of this.car.wheels) w.spin.rotation.z -= this.v / w.R * dt;
+    const f = this.mesh.userData.flash; if (f) { const on = (performance.now() / 130 | 0) % 2; f[0].emissiveIntensity = on ? 7 : .4; f[1].emissiveIntensity = on ? .4 : 7; }
+  }
+  dispose() { scene.remove(this.mesh); }
+}
+function crimeBump(r) {
+  const dx = player.x - r.x, dz = player.z - r.z, d = Math.hypot(dx, dz), R = 2.7;
+  if (d >= R || d < 1e-3) return false;
+  const nx = dx / d, nz = dz / d; player.x += nx * (R - d); player.z += nz * (R - d);
+  const vn = (player.vx - Math.sin(r.h) * r.v) * nx + (player.vz - Math.cos(r.h) * r.v) * nz;
+  if (vn < 0) { player.vx -= 1.3 * vn * nx; player.vz -= 1.3 * vn * nz; r.v *= .5; if (-vn > 3) { audio.crash(-vn * .6); r.stun = .9; } }
+  return true;
+}
+let crime = null;
+function startCrime(role) {
+  if (race) endRace(false);
+  if (taxi) endTaxi();
+  endCrime(true); clearNav(true); buildHideouts();
+  crime = { role, carry: 0, bank: +(localStorage.getItem('amboola.' + role + '.bank') || 0), safes: [], police: [], outlaw: null, meter: 0, showRoute: role === 'police', route: [], routeT: 0, anim: 0, lostT: 0, cool: 0, fleeT: 0 };
+  for (let i = 0; i < SAFE_COUNT; i++) crime.safes.push(newSafe());
+  crime.arrows = buildRoadArrows();
+  if (role === 'police') spawnOutlaw(true);
+  $('crimehud').classList.remove('hidden'); $('crimehud').dataset.role = role;
+  $('crRole').textContent = role === 'outlaw' ? 'OUTLAW · 無法者' : 'POLICE · 警察';
+  $('crCashL').textContent = role === 'outlaw' ? 'CARRYING' : 'OUTLAW HAS'; $('crBankL').textContent = role === 'outlaw' ? 'STASHED' : 'REWARDS';
+  $('crBtn').classList.toggle('hidden', role !== 'outlaw');
+  toast(role === 'outlaw' ? 'OUTLAW' : 'POLICE', role === 'outlaw' ? 'GRAB THE MONEY SAFES · G = ROUTE TO A HIDEOUT' : 'CATCH THE OUTLAW BEFORE HE REACHES A HIDEOUT');
+}
+function endCrime(silent) {
+  if (!crime) return;
+  for (const s of crime.safes) scene.remove(s.mesh);
+  for (const r of crime.police) r.dispose(); if (crime.outlaw) crime.outlaw.dispose();
+  scene.remove(crime.arrows); audio.siren(0);
+  if (!silent) toast(crime.role === 'outlaw' ? 'OUTLAW OVER' : 'OFF DUTY', `TOTAL ${fmtYen(crime.bank)}`);
+  crime = null; $('crimehud').classList.add('hidden');
+}
+function spawnOutlaw(first) {
+  const fast = CARS.filter(c => c.cat !== 'SUV' && c.engine !== 'ev' && c.vmax >= 300);
+  const spec = pick(fast), car = buildCar(spec, pick(['#0b0b0d', '#16295c', '#2c3a2b', '#3a3d41']), .7);
+  const s = taxiSpot(player.x, player.z, first ? 300 : 450, 900);
+  const o = new Runner(car.group, { vmax: 30, acc: 9, corner: 12, car }); o.place(s.x, s.z, Math.atan2(player.x - s.x, player.z - s.z) + Math.PI);
+  o.spec = spec; o.cash = 0; o.mode = 'loot'; o.target = null; crime.outlaw = o;
+  if (!first) toast('NEW OUTLAW SPOTTED', `${spec.name.toUpperCase()} · FOLLOW THE RED ARROWS`);
+}
+const nearestHideout = (x, z) => HIDEOUTS.reduce((b, h) => routeLen(x, z, taxiRoute(x, z, h.x, h.z)) < routeLen(x, z, taxiRoute(x, z, b.x, b.z)) ? h : b);
+function collectSafe(s, byAI) {
+  const i = crime.safes.indexOf(s); scene.remove(s.mesh); crime.safes.splice(i, 1);
+  crime.safes.push(newSafe(player.x, player.z));
+  if (!byAI) { crime.carry += s.amount; audio.beep(1200, .1); setTimeout(() => audio.beep(1600, .15), 90); toast(`+${fmtYen(s.amount)}`, 'MONEY SAFE CRACKED · POLICE ALERTED'); }
+}
+function updateCrime(dt) {
+  const c = crime, p = player; c.anim += dt; c.cool -= dt;
+  for (const s of c.safes) { s.mesh.userData.box.rotation.y += dt * 1.5; s.mesh.userData.box.position.y = 1.4 + Math.sin(c.anim * 3 + s.x) * .15; }
+  const inCity = p.x > -HALF - 9, pSafe = inHideout(p.x, p.z);
+  let routeTo = null, routeCol = '#c77dff';
+  if (c.role === 'outlaw') {
+    for (const s of [...c.safes]) if (Math.hypot(p.x - s.x, p.z - s.z) < 5.5) collectSafe(s);
+    // police pressure grows with the cash you carry
+    const want = c.carry > 0 ? Math.min(3, 1 + Math.floor(c.carry / 15000)) : 0;
+    if (c.police.length < want && c.cool <= 0 && inCity) {
+      const s = taxiSpot(p.x, p.z, 220, 420), r = new Runner(buildPoliceCar(), { vmax: 52, acc: 11, corner: 14 });
+      r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); c.police.push(r); c.cool = 4; toast('POLICE · 警察', c.police.length > 1 ? 'BACKUP IS COMING' : 'THEY ARE ON YOUR TAIL · LOSE THEM OR HIDE');
+    }
+    let near = false, far = true;
+    for (const r of c.police) {
+      const d = Math.hypot(p.x - r.x, p.z - r.z);
+      const t = inCity ? snapToRoad(p.x, p.z) : { x: -HALF, z: MTN.gateZ };
+      r.update(dt, inCity && d < 45 ? p.x : t.x, inCity && d < 45 ? p.z : t.z, inCity && d < 45, pSafe ? 16 : r.vmax);
+      if (inCity) crimeBump(r);
+      if (d < 9) near = true; if (d < 450) far = false;
+    }
+    c.lostT = c.police.length && far ? c.lostT + dt : 0;
+    if (c.lostT > 8) { c.police.forEach(r => r.dispose()); c.police = []; c.lostT = 0; c.cool = 25; toast('YOU LOST THE POLICE', 'THEY WILL BE BACK IF YOU GRAB MORE MONEY'); }
+    // busted meter: police right next to you while you are (almost) stopped
+    if (pSafe) c.meter = 0; else c.meter = clamp(c.meter + (near && p.speed < 6 ? dt / 2.2 : -dt / 1.2), 0, 1);
+    if (c.meter >= 1) {
+      toast('BUSTED · 逮捕', `THE POLICE TOOK ${fmtYen(c.carry)}`); c.carry = 0; c.meter = 0;
+      c.police.forEach(r => r.dispose()); c.police = []; c.cool = 12; audio.crash(8);
+    }
+    c.hideT = (c.hideT || 0) - dt; if (!c.hide || c.hideT <= 0) { c.hide = nearestHideout(p.x, p.z); c.hideT = 1; }
+    const hide = c.hide;
+    if (c.showRoute && hide) routeTo = hide;
+    if (pSafe && c.carry > 0 && p.speed < 4) {
+      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry / 5); localStorage.setItem('amboola.skill', skill.bank);
+      toast(`STASHED ${fmtYen(c.carry)}`, 'SAFE AT THE HIDEOUT · 隠れ家'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+      c.carry = 0; c.police.forEach(r => r.dispose()); c.police = []; c.cool = 6; c.showRoute = false;
+    }
+    const nearest = c.police.reduce((m, r) => Math.min(m, Math.hypot(p.x - r.x, p.z - r.z)), 1e9);
+    audio.siren(c.police.length ? clamp(1 - nearest / 260, 0, 1) : 0);
+    $('crInfo').textContent = pSafe ? 'SAFE AT A HIDEOUT · no arrests here' : c.carry ? (c.showRoute ? `Hideout: ${hide.n}` : 'Press G for the way to a hideout') : 'Find the green money safes';
+    $('crHeat').textContent = c.police.length ? '🚨'.repeat(c.police.length) : '—';
+    $('crCash').textContent = fmtYen(c.carry);
+  } else {
+    const o = c.outlaw;
+    if (o) {
+      const d = Math.hypot(p.x - o.x, p.z - o.z), oSafe = inHideout(o.x, o.z);
+      if (o.mode === 'gone') { o.goneT -= dt; if (o.goneT <= 0) { o.dispose(); spawnOutlaw(false); } }
+      else {
+        if (d < 120 && o.mode !== 'stash') o.mode = 'flee';
+        else if (o.mode === 'flee' && d > 320) o.mode = 'loot';
+        if (o.cash >= 20000 || (o.mode === 'flee' && o.cash >= 6000)) o.mode = 'stash';
+        o.retarget = (o.retarget || 0) - dt;
+        if (!o.target || o.retarget <= 0 || Math.hypot(o.x - o.target.x, o.z - o.target.z) < 6) {
+          o.retarget = o.mode === 'flee' ? 2.5 : 6;
+          if (o.mode === 'loot') o.target = c.safes.reduce((b, s) => Math.hypot(s.x - o.x, s.z - o.z) < Math.hypot(b.x - o.x, b.z - o.z) ? s : b);
+          else if (o.mode === 'stash') o.target = nearestHideout(o.x, o.z);
+          else { let best = null, bs = -1e9; for (let k = 0; k < 8; k++) { const q = taxiSpot(o.x, o.z, 150, 700), sc = Math.hypot(q.x - p.x, q.z - p.z) - .6 * Math.hypot(q.x - o.x, q.z - o.z); if (sc > bs) { bs = sc; best = q; } } o.target = best; }
+        }
+        o.update(dt, o.target.x, o.target.z, false, o.mode === 'loot' ? 30 : 46);
+        for (const s of [...c.safes]) if (Math.hypot(o.x - s.x, o.z - s.z) < 6) { o.cash += s.amount; collectSafe(s, true); o.target = null; }
+        if (o.mode === 'stash' && oSafe && Math.hypot(o.x - o.target.x, o.z - o.target.z) < 8) {
+          toast('THE OUTLAW GOT AWAY', `HE STASHED ${fmtYen(o.cash)} AT ${o.target.n.toUpperCase()}`); o.cash = 0; o.mode = 'gone'; o.goneT = 3; o.v = 0;
+        }
+        if (inCity && crimeBump(o) && !oSafe) o.stun = 1.1;
+        c.meter = oSafe ? 0 : clamp(c.meter + (d < 8 ? dt / (o.v < 8 ? 1.2 : 2.4) : -dt / 1.5), 0, 1);
+        if (c.meter >= 1) {
+          const reward = o.cash + 5000; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward / 5); localStorage.setItem('amboola.skill', skill.bank);
+          toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtYen(o.cash)} + ${fmtYen(5000)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+          o.cash = 0; o.mode = 'gone'; o.goneT = 4; o.v = 0; c.meter = 0;
+        }
+        routeTo = o; routeCol = '#ff3b3b';
+        $('crInfo').textContent = oSafe ? 'HE IS AT A HIDEOUT · CAN\'T ARREST HERE' : `${o.spec.name} · ${Math.round(d)} m · ${o.mode === 'stash' ? 'heading to a hideout!' : o.mode === 'flee' ? 'fleeing' : 'looting safes'}`;
+      }
+      $('crCash').textContent = fmtYen(o.cash);
+      $('crHeat').textContent = o.mode === 'stash' ? 'ESCAPING' : o.mode === 'flee' ? 'FLEEING' : o.mode === 'gone' ? '—' : 'LOOTING';
+    }
+    audio.siren(p.speed > 2 ? .55 : 0);
+  }
+  $('crBank').textContent = fmtYen(c.bank);
+  $('crMeter').firstElementChild.style.width = (c.meter * 100) + '%';
+  $('crMeter').classList.toggle('hidden', c.meter <= 0);
+  $('crMeterL').textContent = c.role === 'outlaw' ? 'BUSTED' : 'ARREST';
+  // road arrows
+  c.routeT -= dt;
+  if (routeTo && inCity) {
+    if (c.routeT <= 0) { c.route = taxiRoute(p.x, p.z, routeTo.x, routeTo.z); c.routeT = .4; }
+    updateRoadArrows(c.arrows, [[p.x, p.z], ...c.route], (c.anim * 9) % ARROW_STEP, routeCol); c.routeCol = routeCol;
+  } else { c.arrows.count = 0; c.route = []; if (c.routeT <= 0) c.routeT = .4; }
+}
+function drawCrimeMap(g) {
+  if (!crime) return; const t = performance.now() / 1000;
+  if (crime.route.length) { g.strokeStyle = crime.routeCol; g.lineWidth = 9; g.lineJoin = g.lineCap = 'round'; g.beginPath(); g.moveTo(player.x, player.z); for (const [a, b] of crime.route) g.lineTo(a, b); g.stroke(); }
+  g.fillStyle = '#34d399'; for (const s of crime.safes) g.fillRect(s.x - 10, s.z - 10, 20, 20);
+  for (const h of HIDEOUTS) { g.fillStyle = '#c77dff'; g.beginPath(); g.moveTo(h.x, h.z - 22); g.lineTo(h.x + 20, h.z); g.lineTo(h.x + 13, h.z); g.lineTo(h.x + 13, h.z + 16); g.lineTo(h.x - 13, h.z + 16); g.lineTo(h.x - 13, h.z); g.lineTo(h.x - 20, h.z); g.closePath(); g.fill(); }
+  for (const r of crime.police) { g.fillStyle = (t * 4 | 0) % 2 ? '#ff2a2a' : '#2a6bff'; g.beginPath(); g.arc(r.x, r.z, 12, 0, 7); g.fill(); }
+  const o = crime.outlaw; if (o && o.mode !== 'gone') { g.fillStyle = (t * 3 | 0) % 2 ? '#ff2a2a' : '#ffffff'; g.beginPath(); g.arc(o.x, o.z, 15, 0, 7); g.fill(); }
+}
+$('outlawBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); startCrime('outlaw'); };
+$('policeBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); startCrime('police'); };
+$('bOutlaw').onclick = () => { if (crime?.role === 'outlaw') endCrime(); else startCrime('outlaw'); setPause(false); };
+$('bPolice').onclick = () => { if (crime?.role === 'police') endCrime(); else startCrime('police'); setPause(false); };
+$('crBtn').onclick = () => { if (crime) { crime.showRoute = !crime.showRoute; crime.routeT = 0; } };
+
+/* =====================================================================
    GAME STATE
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
@@ -3196,7 +3463,7 @@ function startDrive() {
   if (!localStorage.getItem('amboola.helped')) { $('help').classList.remove('hidden'); localStorage.setItem('amboola.helped', '1'); setTimeout(() => $('help').classList.add('hidden'), 9000); }
 }
 function setPause(on) {
-  if (on && state === 'drive') { state = 'pause'; $('pause').classList.remove('hidden'); $('bLeave').classList.toggle('hidden', !race); $('bTaxi').textContent = taxi ? 'END TAXI SHIFT' : 'TAXI JOB'; if (audio.ctx) audio.ctx.suspend(); }
+  if (on && state === 'drive') { state = 'pause'; $('pause').classList.remove('hidden'); $('bLeave').classList.toggle('hidden', !race); $('bOutlaw').textContent = crime?.role === 'outlaw' ? 'END OUTLAW' : 'OUTLAW'; $('bPolice').textContent = crime?.role === 'police' ? 'END POLICE DUTY' : 'POLICE'; $('bTaxi').textContent = taxi ? 'END TAXI SHIFT' : 'TAXI JOB'; if (audio.ctx) audio.ctx.suspend(); }
   else if (!on && state === 'pause') { state = 'drive'; $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); }
 }
 function cycleTime() { const n = TIME_ORDER[(TIME_ORDER.indexOf(timeName) + 1) % 3]; applyTime(n); toast(n.toUpperCase(), 'TIME OF DAY'); }
@@ -3204,7 +3471,7 @@ $('bResume').onclick = () => setPause(false);
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
 $('bLeave').onclick = () => { endRace(true); setPause(false); };
-$('bGarage').onclick = () => { endRace(true); endTaxi(); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
+$('bGarage').onclick = () => { endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
@@ -3225,7 +3492,7 @@ function simStep(dt, inp) {
   }
   if (race && race.state === 'countdown') raceHold();
   player.sync(dt);
-  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); else updateNav(dt); }
+  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); else if (crime) updateCrime(dt); else updateNav(dt); }
   updateBoards(dt, player); updateTraps(dt, player); updateSkill(dt, player);
 }
 const clock = new THREE.Clock();
@@ -3292,7 +3559,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, startTaxi, endTaxi, taxiRoute };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
