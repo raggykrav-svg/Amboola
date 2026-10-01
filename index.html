@@ -124,6 +124,16 @@
   #carname { position:absolute; left:22px; top:18px; font-family:'Orbitron',sans-serif; font-weight:700; font-size:16px; letter-spacing:.14em;
     text-shadow:0 2px 8px #000; }
   #carname small { display:block; font-family:'Rajdhani'; color:var(--dim); font-size:13px; letter-spacing:.3em; }
+  #scorebox .wallet { color:#ffd02d; font-size:26px; margin-bottom:4px; transition:transform .2s; } #scorebox .wallet.pop { animation:pop .5s; }
+  @keyframes pop { 30% { transform:scale(1.25); color:#fff; } }
+  #walletG { position:absolute; left:470px; top:36px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:20px; color:#ffd02d; letter-spacing:.06em; text-shadow:0 2px 8px #000; }
+  #walletG small { display:block; font-family:'Rajdhani',sans-serif; font-size:11px; color:var(--dim); letter-spacing:.25em; font-weight:700; }
+  .caritem i { float:right; font-style:normal; font-size:12px; font-weight:700; color:#ffd02d; letter-spacing:.04em; margin-top:4px; }
+  .caritem i.own { color:#5cd67a; } .caritem.locked b { color:#b9bcc4; }
+  #price { font-family:'Orbitron',sans-serif; font-weight:900; font-size:17px; color:#ffd02d; margin:6px 0 2px; letter-spacing:.05em; }
+  #price.own { color:#5cd67a; }
+  #drive.buy { background:linear-gradient(90deg,#ffd02d,#ffb300); font-size:17px; letter-spacing:.12em; }
+  #drive.locked { background:#3a3d44; color:#cfd2d8; font-size:15px; letter-spacing:.08em; cursor:not-allowed; }
   #scorebox { position:absolute; right:22px; top:18px; text-align:right; text-shadow:0 2px 8px #000; }
   #scorebox .big { font-family:'Orbitron',sans-serif; font-weight:900; font-size:26px; }
   #scorebox .row { font-size:14px; letter-spacing:.2em; color:var(--dim); }
@@ -282,9 +292,10 @@
 
 <div id="menu" class="hidden">
   <div id="brand"><h1>AMBOOLA</h1><p>Tokyo Open World · 東京</p></div>
+  <div id="walletG"><small>WALLET · 財布</small><span id="walletV">¥0</span></div>
   <div id="carlist"></div>
   <div id="stats">
-    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div>
+    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div>
     <div class="stat"><div class="lbl">Power <b id="vPow"></b></div><div class="track"><i id="bPow"></i></div></div>
     <div class="stat"><div class="lbl">Top speed <b id="vTop"></b></div><div class="track"><i id="bTop"></i></div></div>
     <div class="stat"><div class="lbl">0–100 km/h <b id="vAcc"></b></div><div class="track"><i id="bAcc"></i></div></div>
@@ -312,7 +323,7 @@
     <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>R</kbd>Reset car to road</div>
     <div><kbd>G</kbd>Outlaw: route to a hideout</div><div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
-  <div id="scorebox"><div class="big" id="skill">0</div><div class="row">SKILL POINTS</div>
+  <div id="scorebox"><div class="big wallet" id="walletHud">¥0</div><div class="big" id="skill">0</div><div class="row">SKILL POINTS</div>
     <div class="row">BOARDS <b id="boardsN">0/0</b></div><div class="row">TOP SPEED <b id="topN">0</b></div></div>
   <div id="chain"><div class="lbl" id="chainLbl"></div><div class="pts" id="chainPts"></div></div>
   <div id="toast"></div>
@@ -410,72 +421,72 @@ const PAINTS = [
   { n: 'Tang Orange', c: '#ff6a13', m: .35 }, { n: 'Naked Carbon', c: '#1a1c1f', m: .9, r: .22 }, { n: 'Emotional Red', c: '#b3121e', m: .45 }, { n: 'Nitro Yellow', c: '#f0cc00', m: .2 }, { n: 'Precious Metal', c: '#6d7176', m: .9 },
 ];
 const CARS = [
-  { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: '4.0 flat-six · 9,000 rpm' },
-  { id: 'gt3', name: '911 GT3', cat: 'GT', body: '911', wing: 'gt3', kw: 375, redline: 9000, mass: 1420, vmax: 311, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .6, paint: 1, rim: '#2a2b2e', caliper: '#c8141b', desc: '4.0 flat-six · naturally aspirated' },
-  { id: 'gt3t', name: '911 GT3 Touring', cat: 'GT', body: '911', wing: 'duck', kw: 375, redline: 9000, mass: 1420, vmax: 313, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.3, aero: .2, paint: 5, rim: '#9da1a6', caliper: '#c8141b', desc: 'The subtle GT3' },
-  { id: 'st', name: '911 S/T', cat: 'GT', body: '911', wing: 'duck', kw: 386, redline: 9000, mass: 1380, vmax: 300, drive: 'RWD', engine: 'f6na', gears: 6, zero: 3.7, grip: 1.3, aero: .2, paint: 12, rim: '#8a6a3a', caliper: '#e3c11b', desc: 'Lightweight · 6-speed manual', manual: true },
-  { id: 'gt2rs', name: '911 GT2 RS', cat: 'GT', body: '911', wing: 'gt2', kw: 515, redline: 7200, mass: 1470, vmax: 340, drive: 'RWD', engine: 'f6tt', gears: 7, zero: 2.8, grip: 1.4, aero: .9, paint: 7, rim: '#d9dadc', caliper: '#e3c11b', desc: '3.8 twin-turbo flat-six · 700 PS' },
-  { id: 'turbos', name: '911 Turbo S', cat: 'GT', body: '911', wing: 'turbo', kw: 478, redline: 7200, mass: 1640, vmax: 330, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 2.7, grip: 1.36, aero: .4, paint: 9, rim: '#2a2b2e', caliper: '#e3c11b', desc: 'Twin-turbo · all-wheel drive' },
-  { id: 'gt4rs', name: '718 Cayman GT4 RS', cat: 'GT', body: '718', wing: 'gt3', kw: 368, redline: 9000, mass: 1415, vmax: 315, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.38, aero: .8, paint: 11, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Mid-engine · 9,000 rpm' },
-  { id: 'spyrs', name: '718 Spyder RS', cat: 'GT', body: '718', wing: 'duck', open: true, kw: 368, redline: 9000, mass: 1410, vmax: 308, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .3, paint: 6, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Open-top · mid-engine' },
-  { id: 'dakar', name: '911 Dakar', cat: 'GT', body: '911', dakar: true, wing: 'turbo', kw: 353, redline: 7500, mass: 1605, vmax: 240, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 3.4, grip: 1.12, aero: .1, paint: 8, rim: '#e8e8e8', caliper: '#c8141b', desc: 'Rally-raised 911 · all-terrain' },
-  { id: '918', name: '918 Spyder', cat: 'HYPER', body: '918', wing: 'turbo', kw: 652, redline: 9150, mass: 1675, vmax: 345, drive: 'AWD', engine: 'v8na', gears: 7, zero: 2.6, grip: 1.45, aero: .7, paint: 13, rim: '#1b1b1d', caliper: '#1f8a5a', desc: 'V8 hybrid hypercar · 887 PS' },
-  { id: 'taycangt', name: 'Taycan Turbo GT', cat: 'ELECTRIC', body: 'taycan', wing: 'turbo', kw: 700, redline: 16000, mass: 2220, vmax: 305, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.2, grip: 1.3, aero: .4, paint: 3, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'Dual-motor EV · 1,034 PS overboost' },
-  { id: 'macanev', name: 'Macan Turbo Electric', cat: 'SUV', body: 'macan', wing: 'none', kw: 470, redline: 16000, mass: 2405, vmax: 260, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.3, grip: 1.12, aero: .1, paint: 10, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Electric SUV · 639 PS' },
-  { id: 'cayennegt', name: 'Cayenne Turbo GT', cat: 'SUV', body: 'cayenne', wing: 'turbo', kw: 485, redline: 6800, mass: 2220, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.18, aero: .2, paint: 2, rim: '#2a2b2e', caliper: '#e3c11b', desc: '4.0 twin-turbo V8 · SUV coupé' },
-  { id: 'cayenneeh', name: 'Cayenne Turbo E-Hybrid', cat: 'SUV', body: 'cayenne', wing: 'none', kw: 544, redline: 6800, mass: 2535, vmax: 295, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.7, grip: 1.12, aero: .1, paint: 8, rim: '#9da1a6', caliper: '#1f8a5a', desc: 'V8 plug-in hybrid · 739 PS' },
+  { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', yen: 36200000, desc: '4.0 flat-six · 9,000 rpm' },
+  { id: 'gt3', name: '911 GT3', cat: 'GT', body: '911', wing: 'gt3', kw: 375, redline: 9000, mass: 1420, vmax: 311, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .6, paint: 1, rim: '#2a2b2e', caliper: '#c8141b', yen: 33300000, desc: '4.0 flat-six · naturally aspirated' },
+  { id: 'gt3t', name: '911 GT3 Touring', cat: 'GT', body: '911', wing: 'duck', kw: 375, redline: 9000, mass: 1420, vmax: 313, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.3, aero: .2, paint: 5, rim: '#9da1a6', caliper: '#c8141b', yen: 33300000, desc: 'The subtle GT3' },
+  { id: 'st', name: '911 S/T', cat: 'GT', body: '911', wing: 'duck', kw: 386, redline: 9000, mass: 1380, vmax: 300, drive: 'RWD', engine: 'f6na', gears: 6, zero: 3.7, grip: 1.3, aero: .2, paint: 12, rim: '#8a6a3a', caliper: '#e3c11b', yen: 43500000, desc: 'Lightweight · 6-speed manual', manual: true },
+  { id: 'gt2rs', name: '911 GT2 RS', cat: 'GT', body: '911', wing: 'gt2', kw: 515, redline: 7200, mass: 1470, vmax: 340, drive: 'RWD', engine: 'f6tt', gears: 7, zero: 2.8, grip: 1.4, aero: .9, paint: 7, rim: '#d9dadc', caliper: '#e3c11b', yen: 44000000, desc: '3.8 twin-turbo flat-six · 700 PS' },
+  { id: 'turbos', name: '911 Turbo S', cat: 'GT', body: '911', wing: 'turbo', kw: 478, redline: 7200, mass: 1640, vmax: 330, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 2.7, grip: 1.36, aero: .4, paint: 9, rim: '#2a2b2e', caliper: '#e3c11b', yen: 40800000, desc: 'Twin-turbo · all-wheel drive' },
+  { id: 'gt4rs', name: '718 Cayman GT4 RS', cat: 'GT', body: '718', wing: 'gt3', kw: 368, redline: 9000, mass: 1415, vmax: 315, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.38, aero: .8, paint: 11, rim: '#1b1b1d', caliper: '#c8141b', yen: 24200000, desc: 'Mid-engine · 9,000 rpm' },
+  { id: 'spyrs', name: '718 Spyder RS', cat: 'GT', body: '718', wing: 'duck', open: true, kw: 368, redline: 9000, mass: 1410, vmax: 308, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .3, paint: 6, rim: '#1b1b1d', caliper: '#c8141b', yen: 24200000, desc: 'Open-top · mid-engine' },
+  { id: 'dakar', name: '911 Dakar', cat: 'GT', body: '911', dakar: true, wing: 'turbo', kw: 353, redline: 7500, mass: 1605, vmax: 240, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 3.4, grip: 1.12, aero: .1, paint: 8, rim: '#e8e8e8', caliper: '#c8141b', yen: 33300000, desc: 'Rally-raised 911 · all-terrain' },
+  { id: '918', name: '918 Spyder', cat: 'HYPER', body: '918', wing: 'turbo', kw: 652, redline: 9150, mass: 1675, vmax: 345, drive: 'AWD', engine: 'v8na', gears: 7, zero: 2.6, grip: 1.45, aero: .7, paint: 13, rim: '#1b1b1d', caliper: '#1f8a5a', yen: 126800000, desc: 'V8 hybrid hypercar · 887 PS' },
+  { id: 'taycangt', name: 'Taycan Turbo GT', cat: 'ELECTRIC', body: 'taycan', wing: 'turbo', kw: 700, redline: 16000, mass: 2220, vmax: 305, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.2, grip: 1.3, aero: .4, paint: 3, rim: '#1b1b1d', caliper: '#e3c11b', yen: 34500000, desc: 'Dual-motor EV · 1,034 PS overboost' },
+  { id: 'macanev', name: 'Macan Turbo Electric', cat: 'SUV', body: 'macan', wing: 'none', kw: 470, redline: 16000, mass: 2405, vmax: 260, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.3, grip: 1.12, aero: .1, paint: 10, rim: '#2a2b2e', caliper: '#c8141b', yen: 15800000, desc: 'Electric SUV · 639 PS' },
+  { id: 'cayennegt', name: 'Cayenne Turbo GT', cat: 'SUV', body: 'cayenne', wing: 'turbo', kw: 485, redline: 6800, mass: 2220, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.18, aero: .2, paint: 2, rim: '#2a2b2e', caliper: '#e3c11b', yen: 29400000, desc: '4.0 twin-turbo V8 · SUV coupé' },
+  { id: 'cayenneeh', name: 'Cayenne Turbo E-Hybrid', cat: 'SUV', body: 'cayenne', wing: 'none', kw: 544, redline: 6800, mass: 2535, vmax: 295, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.7, grip: 1.12, aero: .1, paint: 8, rim: '#9da1a6', caliper: '#1f8a5a', yen: 23000000, desc: 'V8 plug-in hybrid · 739 PS' },
   // ---- Tesla (all electric, single-speed; "brand" switches on the Tesla sound profile)
-  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Next-gen · prototype claims' },
-  { id: 'roadster08', name: 'Tesla Roadster (2008)', brand: 'Tesla', cat: 'TESLA', body: 'roadster08', wing: 'none', kw: 185, redline: 14000, mass: 1235, vmax: 201, drive: 'RWD', engine: 'ev', gears: 1, zero: 3.9, grip: 1.15, aero: .1, paint: 0, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'The original · 248 hp' },
-  { id: 'modelsplaid', name: 'Tesla Model S Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelS', wing: 'turbo', kw: 760, redline: 20000, mass: 2162, vmax: 322, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: .2, paint: 16, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Tri-motor · 1,020 hp' },
-  { id: 'model3p', name: 'Tesla Model 3 Performance', brand: 'Tesla', cat: 'TESLA', body: 'model3', wing: 'turbo', kw: 460, redline: 18000, mass: 1836, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.1, grip: 1.12, aero: .15, paint: 14, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Dual-motor · 510 hp' },
-  { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Tri-motor SUV · falcon wing' },
-  { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', desc: 'Dual-motor SUV' },
-  { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Tri-motor · stainless steel' },
+  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', yen: 30000000, desc: 'Next-gen · prototype claims' },
+  { id: 'roadster08', name: 'Tesla Roadster (2008)', brand: 'Tesla', cat: 'TESLA', body: 'roadster08', wing: 'none', kw: 185, redline: 14000, mass: 1235, vmax: 201, drive: 'RWD', engine: 'ev', gears: 1, zero: 3.9, grip: 1.15, aero: .1, paint: 0, rim: '#9da1a6', caliper: '#1b1b1d', yen: 16400000, desc: 'The original · 248 hp' },
+  { id: 'modelsplaid', name: 'Tesla Model S Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelS', wing: 'turbo', kw: 760, redline: 20000, mass: 2162, vmax: 322, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: .2, paint: 16, rim: '#2a2b2e', caliper: '#c8141b', yen: 14300000, desc: 'Tri-motor · 1,020 hp' },
+  { id: 'model3p', name: 'Tesla Model 3 Performance', brand: 'Tesla', cat: 'TESLA', body: 'model3', wing: 'turbo', kw: 460, redline: 18000, mass: 1836, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.1, grip: 1.12, aero: .15, paint: 14, rim: '#2a2b2e', caliper: '#c8141b', yen: 8300000, desc: 'Dual-motor · 510 hp' },
+  { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', yen: 15800000, desc: 'Tri-motor SUV · falcon wing' },
+  { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', yen: 8600000, desc: 'Dual-motor SUV' },
+  { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 17300000, desc: 'Tri-motor · stainless steel' },
   // ---- Lamborghini
-  { id: 'revuelto', name: 'Lamborghini Revuelto', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'turbo', hybrid: true, kw: 747, redline: 9500, mass: 1772, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 20, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 hybrid · 1,015 CV' },
-  { id: 'svj', name: 'Lamborghini Aventador SVJ', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'gt2', kw: 566, redline: 8700, mass: 1525, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 7, zero: 2.8, grip: 1.32, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1f8a5a', desc: '6.5 V12 · 770 CV' },
-  { id: 'temerario', name: 'Lamborghini Temerario', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'turbo', hybrid: true, kw: 677, redline: 10000, mass: 1690, vmax: 343, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.4, aero: .6, paint: 22, rim: '#2a2b2e', caliper: '#e3c11b', desc: 'Twin-turbo V8 hybrid · 10,000 rpm' },
-  { id: 'sto', name: 'Lamborghini Huracán STO', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'gt3', kw: 470, redline: 8500, mass: 1339, vmax: 310, drive: 'RWD', engine: 'v10na', gears: 7, zero: 3.0, grip: 1.5, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1b1b1d', desc: '5.2 V10 · race-bred' },
-  { id: 'sterrato', name: 'Lamborghini Huracán Sterrato', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', dakar: true, wing: 'none', kw: 449, redline: 8000, mass: 1470, vmax: 260, drive: 'AWD', engine: 'v10na', gears: 7, zero: 3.4, grip: 1.15, aero: .1, paint: 20, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Off-road V10 supercar' },
-  { id: 'urusp', name: 'Lamborghini Urus Performante', brand: 'Lamborghini', cat: 'LAMBO', body: 'urus', wing: 'turbo', kw: 490, redline: 6800, mass: 2150, vmax: 306, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.2, aero: .2, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'Super SUV · 666 CV' },
+  { id: 'revuelto', name: 'Lamborghini Revuelto', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'turbo', hybrid: true, kw: 747, redline: 9500, mass: 1772, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 20, rim: '#1b1b1d', caliper: '#e3c11b', yen: 91200000, desc: 'V12 hybrid · 1,015 CV' },
+  { id: 'svj', name: 'Lamborghini Aventador SVJ', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'gt2', kw: 566, redline: 8700, mass: 1525, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 7, zero: 2.8, grip: 1.32, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1f8a5a', yen: 77600000, desc: '6.5 V12 · 770 CV' },
+  { id: 'temerario', name: 'Lamborghini Temerario', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'turbo', hybrid: true, kw: 677, redline: 10000, mass: 1690, vmax: 343, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.4, aero: .6, paint: 22, rim: '#2a2b2e', caliper: '#e3c11b', yen: 49500000, desc: 'Twin-turbo V8 hybrid · 10,000 rpm' },
+  { id: 'sto', name: 'Lamborghini Huracán STO', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'gt3', kw: 470, redline: 8500, mass: 1339, vmax: 310, drive: 'RWD', engine: 'v10na', gears: 7, zero: 3.0, grip: 1.5, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 49200000, desc: '5.2 V10 · race-bred' },
+  { id: 'sterrato', name: 'Lamborghini Huracán Sterrato', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', dakar: true, wing: 'none', kw: 449, redline: 8000, mass: 1470, vmax: 260, drive: 'AWD', engine: 'v10na', gears: 7, zero: 3.4, grip: 1.15, aero: .1, paint: 20, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 41000000, desc: 'Off-road V10 supercar' },
+  { id: 'urusp', name: 'Lamborghini Urus Performante', brand: 'Lamborghini', cat: 'LAMBO', body: 'urus', wing: 'turbo', kw: 490, redline: 6800, mass: 2150, vmax: 306, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.2, aero: .2, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', yen: 39200000, desc: 'Super SUV · 666 CV' },
   // ---- Ferrari
-  { id: 'sf90', name: 'Ferrari SF90 Stradale', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 735, redline: 8000, mass: 1570, vmax: 340, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V8 plug-in hybrid · 1,000 CV' },
-  { id: 'laferrari', name: 'Ferrari LaFerrari', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 708, redline: 9250, mass: 1585, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.9, grip: 1.56, aero: .7, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 hybrid hypercar · 963 CV' },
-  { id: '812c', name: 'Ferrari 812 Competizione', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'duck', kw: 610, redline: 9500, mass: 1487, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.85, grip: 1.59, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', desc: '6.5 V12 · 9,500 rpm' },
-  { id: '12cil', name: 'Ferrari 12Cilindri', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'none', kw: 610, redline: 9500, mass: 1560, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 8, zero: 2.9, grip: 1.61, aero: .2, paint: 25, rim: '#9da1a6', caliper: '#c8141b', desc: 'Front V12 grand tourer' },
-  { id: '296gtb', name: 'Ferrari 296 GTB', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 610, redline: 8500, mass: 1470, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 2.9, grip: 1.6, aero: .5, paint: 24, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'V6 plug-in hybrid · 830 CV' },
-  { id: 'f8', name: 'Ferrari F8 Tributo', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'duck', kw: 530, redline: 8000, mass: 1435, vmax: 340, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.9, grip: 1.56, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', desc: '3.9 twin-turbo V8 · 720 CV' },
-  { id: 'purosangue', name: 'Ferrari Purosangue', brand: 'Ferrari', cat: 'FERRARI', body: 'purosangue', wing: 'none', kw: 533, redline: 8250, mass: 2033, vmax: 310, drive: 'AWD', engine: 'v12na', gears: 8, zero: 3.3, grip: 1.17, aero: .1, paint: 25, rim: '#1b1b1d', caliper: '#e3c11b', desc: 'V12 four-door · 725 CV' },
+  { id: 'sf90', name: 'Ferrari SF90 Stradale', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 735, redline: 8000, mass: 1570, vmax: 340, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', yen: 78800000, desc: 'V8 plug-in hybrid · 1,000 CV' },
+  { id: 'laferrari', name: 'Ferrari LaFerrari', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 708, redline: 9250, mass: 1585, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.9, grip: 1.56, aero: .7, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', yen: 210000000, desc: 'V12 hybrid hypercar · 963 CV' },
+  { id: '812c', name: 'Ferrari 812 Competizione', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'duck', kw: 610, redline: 9500, mass: 1487, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.85, grip: 1.59, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', yen: 90000000, desc: '6.5 V12 · 9,500 rpm' },
+  { id: '12cil', name: 'Ferrari 12Cilindri', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'none', kw: 610, redline: 9500, mass: 1560, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 8, zero: 2.9, grip: 1.61, aero: .2, paint: 25, rim: '#9da1a6', caliper: '#c8141b', yen: 63500000, desc: 'Front V12 grand tourer' },
+  { id: '296gtb', name: 'Ferrari 296 GTB', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 610, redline: 8500, mass: 1470, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 2.9, grip: 1.6, aero: .5, paint: 24, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 48300000, desc: 'V6 plug-in hybrid · 830 CV' },
+  { id: 'f8', name: 'Ferrari F8 Tributo', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'duck', kw: 530, redline: 8000, mass: 1435, vmax: 340, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.9, grip: 1.56, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', yen: 41400000, desc: '3.9 twin-turbo V8 · 720 CV' },
+  { id: 'purosangue', name: 'Ferrari Purosangue', brand: 'Ferrari', cat: 'FERRARI', body: 'purosangue', wing: 'none', kw: 533, redline: 8250, mass: 2033, vmax: 310, drive: 'AWD', engine: 'v12na', gears: 8, zero: 3.3, grip: 1.17, aero: .1, paint: 25, rim: '#1b1b1d', caliper: '#e3c11b', yen: 60000000, desc: 'V12 four-door · 725 CV' },
   // ---- McLaren
-  { id: 'w1', name: 'McLaren W1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 928, redline: 9200, mass: 1399, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.74, aero: 1.0, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'V8 hybrid hypercar · 1,275 PS' },
-  { id: 'senna', name: 'McLaren Senna', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'rs', kw: 588, redline: 8250, mass: 1198, vmax: 335, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: 1.2, paint: 27, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Track-focused · 800 PS' },
-  { id: 'p1', name: 'McLaren P1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 673, redline: 8500, mass: 1490, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: .9, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'The original hybrid hypercar' },
-  { id: '765lt', name: 'McLaren 765LT', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'duck', kw: 563, redline: 8500, mass: 1339, vmax: 330, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Longtail · 765 PS' },
-  { id: '750s', name: 'McLaren 750S', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'turbo', kw: 552, redline: 8500, mass: 1389, vmax: 332, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .5, paint: 27, rim: '#2a2b2e', caliper: '#1b1b1d', desc: '4.0 twin-turbo V8 · 750 PS' },
-  { id: 'artura', name: 'McLaren Artura', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', hybrid: true, kw: 515, redline: 8500, mass: 1498, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 3.0, grip: 1.56, aero: .3, paint: 29, rim: '#2a2b2e', caliper: '#1b1b1d', desc: 'V6 plug-in hybrid · 700 PS' },
-  { id: 'gts', name: 'McLaren GTS', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', kw: 470, redline: 7500, mass: 1520, vmax: 326, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 3.2, grip: 1.42, aero: .2, paint: 9, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'Grand tourer · 635 PS' },
+  { id: 'w1', name: 'McLaren W1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 928, redline: 9200, mass: 1399, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.74, aero: 1.0, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 315000000, desc: 'V8 hybrid hypercar · 1,275 PS' },
+  { id: 'senna', name: 'McLaren Senna', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'rs', kw: 588, redline: 8250, mass: 1198, vmax: 335, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: 1.2, paint: 27, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 150000000, desc: 'Track-focused · 800 PS' },
+  { id: 'p1', name: 'McLaren P1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 673, redline: 8500, mass: 1490, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: .9, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 172500000, desc: 'The original hybrid hypercar' },
+  { id: '765lt', name: 'McLaren 765LT', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'duck', kw: 563, redline: 8500, mass: 1339, vmax: 330, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 53700000, desc: 'Longtail · 765 PS' },
+  { id: '750s', name: 'McLaren 750S', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'turbo', kw: 552, redline: 8500, mass: 1389, vmax: 332, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .5, paint: 27, rim: '#2a2b2e', caliper: '#1b1b1d', yen: 48600000, desc: '4.0 twin-turbo V8 · 750 PS' },
+  { id: 'artura', name: 'McLaren Artura', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', hybrid: true, kw: 515, redline: 8500, mass: 1498, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 3.0, grip: 1.56, aero: .3, paint: 29, rim: '#2a2b2e', caliper: '#1b1b1d', yen: 37500000, desc: 'V6 plug-in hybrid · 700 PS' },
+  { id: 'gts', name: 'McLaren GTS', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', kw: 470, redline: 7500, mass: 1520, vmax: 326, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 3.2, grip: 1.42, aero: .2, paint: 9, rim: '#9da1a6', caliper: '#1b1b1d', yen: 30900000, desc: 'Grand tourer · 635 PS' },
   // ---- Bugatti
-  { id: 'tourbillon', name: 'Bugatti Tourbillon', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', hybrid: true, kw: 1320, redline: 9000, mass: 1995, vmax: 445, drive: 'AWD', engine: 'v16na', gears: 8, zero: 2.0, grip: 1.87, aero: .6, paint: 28, rim: '#1b1b1d', caliper: '#173a8c', desc: '8.3 V16 hybrid · 1,800 PS' },
-  { id: 'chironss', name: 'Bugatti Chiron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', kw: 1177, redline: 6900, mass: 1995, vmax: 440, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.49, aero: .5, paint: 7, rim: '#1b1b1d', caliper: '#ff7a00', desc: '8.0 quad-turbo W16 · 1,600 PS' },
-  { id: 'chironps', name: 'Bugatti Chiron Pur Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1935, vmax: 350, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.3, grip: 1.62, aero: 1.0, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Agile W16 · 1,500 PS' },
-  { id: 'divo', name: 'Bugatti Divo', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1960, vmax: 380, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.48, aero: 1.0, paint: 29, rim: '#1b1b1d', caliper: '#173a8c', desc: 'Corner-carving W16' },
-  { id: 'veyronss', name: 'Bugatti Veyron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'none', kw: 882, redline: 6400, mass: 1888, vmax: 431, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.5, grip: 1.43, aero: .3, paint: 12, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'The 431 km/h legend' },
-  { id: 'bolide', name: 'Bugatti Bolide', brand: 'Bugatti', cat: 'BUGATTI', body: 'bolide', wing: 'rs', kw: 1361, redline: 7000, mass: 1450, vmax: 500, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.2, grip: 1.54, aero: 1.4, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Track-only W16 · 1,850 PS' },
+  { id: 'tourbillon', name: 'Bugatti Tourbillon', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', hybrid: true, kw: 1320, redline: 9000, mass: 1995, vmax: 445, drive: 'AWD', engine: 'v16na', gears: 8, zero: 2.0, grip: 1.87, aero: .6, paint: 28, rim: '#1b1b1d', caliper: '#173a8c', yen: 600000000, desc: '8.3 V16 hybrid · 1,800 PS' },
+  { id: 'chironss', name: 'Bugatti Chiron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', kw: 1177, redline: 6900, mass: 1995, vmax: 440, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.49, aero: .5, paint: 7, rim: '#1b1b1d', caliper: '#ff7a00', yen: 585000000, desc: '8.0 quad-turbo W16 · 1,600 PS' },
+  { id: 'chironps', name: 'Bugatti Chiron Pur Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1935, vmax: 350, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.3, grip: 1.62, aero: 1.0, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 540000000, desc: 'Agile W16 · 1,500 PS' },
+  { id: 'divo', name: 'Bugatti Divo', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1960, vmax: 380, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.48, aero: 1.0, paint: 29, rim: '#1b1b1d', caliper: '#173a8c', yen: 870000000, desc: 'Corner-carving W16' },
+  { id: 'veyronss', name: 'Bugatti Veyron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'none', kw: 882, redline: 6400, mass: 1888, vmax: 431, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.5, grip: 1.43, aero: .3, paint: 12, rim: '#9da1a6', caliper: '#1b1b1d', yen: 360000000, desc: 'The 431 km/h legend' },
+  { id: 'bolide', name: 'Bugatti Bolide', brand: 'Bugatti', cat: 'BUGATTI', body: 'bolide', wing: 'rs', kw: 1361, redline: 7000, mass: 1450, vmax: 500, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.2, grip: 1.54, aero: 1.4, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 690000000, desc: 'Track-only W16 · 1,850 PS' },
   // ---- Koenigsegg
-  { id: 'jesko', name: 'Koenigsegg Jesko Absolut', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1195, redline: 8500, mass: 1390, vmax: 480, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: .4, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed LST', desc: 'Twin-turbo V8 · 1,600 hp' },
-  { id: 'jeskoattack', name: 'Koenigsegg Jesko Attack', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 1195, redline: 8500, mass: 1420, vmax: 360, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: 1.3, paint: 31, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', desc: 'Track attack · 1,000 kg downforce' },
-  { id: 'regera', name: 'Koenigsegg Regera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'turbo', hybrid: true, kw: 1100, redline: 8250, mass: 1590, vmax: 410, drive: 'RWD', engine: 'v8ftt', gears: 2, zero: 2.8, grip: 1.55, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#c8141b', box: 'Direct Drive', desc: 'Hybrid V8 · no gearbox' },
-  { id: 'gemera', name: 'Koenigsegg Gemera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'gemera', wing: 'none', hybrid: true, kw: 1270, redline: 8000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'v8ftt', gears: 9, zero: 1.9, grip: 1.9, aero: .4, paint: 9, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', desc: 'Four-seat mega-GT · 1,700 hp' },
-  { id: 'cc850', name: 'Koenigsegg CC850', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1020, redline: 8500, mass: 1385, vmax: 400, drive: 'RWD', engine: 'v8ftt', gears: 6, manual: true, zero: 2.7, grip: 1.5, aero: .3, paint: 14, rim: '#9da1a6', caliper: '#c8141b', desc: 'Engage shift · 6-speed manual' },
-  { id: 'agerars', name: 'Koenigsegg Agera RS', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 865, redline: 8250, mass: 1395, vmax: 447, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.55, aero: .8, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', desc: '447 km/h record car' },
+  { id: 'jesko', name: 'Koenigsegg Jesko Absolut', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1195, redline: 8500, mass: 1390, vmax: 480, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: .4, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed LST', yen: 450000000, desc: 'Twin-turbo V8 · 1,600 hp' },
+  { id: 'jeskoattack', name: 'Koenigsegg Jesko Attack', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 1195, redline: 8500, mass: 1420, vmax: 360, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: 1.3, paint: 31, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', yen: 450000000, desc: 'Track attack · 1,000 kg downforce' },
+  { id: 'regera', name: 'Koenigsegg Regera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'turbo', hybrid: true, kw: 1100, redline: 8250, mass: 1590, vmax: 410, drive: 'RWD', engine: 'v8ftt', gears: 2, zero: 2.8, grip: 1.55, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#c8141b', box: 'Direct Drive', yen: 285000000, desc: 'Hybrid V8 · no gearbox' },
+  { id: 'gemera', name: 'Koenigsegg Gemera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'gemera', wing: 'none', hybrid: true, kw: 1270, redline: 8000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'v8ftt', gears: 9, zero: 1.9, grip: 1.9, aero: .4, paint: 9, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', yen: 255000000, desc: 'Four-seat mega-GT · 1,700 hp' },
+  { id: 'cc850', name: 'Koenigsegg CC850', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1020, redline: 8500, mass: 1385, vmax: 400, drive: 'RWD', engine: 'v8ftt', gears: 6, manual: true, zero: 2.7, grip: 1.5, aero: .3, paint: 14, rim: '#9da1a6', caliper: '#c8141b', yen: 547500000, desc: 'Engage shift · 6-speed manual' },
+  { id: 'agerars', name: 'Koenigsegg Agera RS', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 865, redline: 8250, mass: 1395, vmax: 447, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.55, aero: .8, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', yen: 375000000, desc: '447 km/h record car' },
   // ---- Toyota (GAZOO Racing)
-  { id: 'grsupra', name: 'Toyota GR Supra', brand: 'Toyota', cat: 'TOYOTA', body: 'supra', wing: 'duck', kw: 285, redline: 7000, mass: 1540, vmax: 263, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 3.9, grip: 1.27, aero: .2, paint: 33, rim: '#2a2b2e', caliper: '#c8141b', box: '8-speed auto', desc: '3.0 turbo straight-six' },
-  { id: 'gr86', name: 'Toyota GR86', brand: 'Toyota', cat: 'TOYOTA', body: 'gr86', wing: 'duck', kw: 172, redline: 7400, mass: 1275, vmax: 226, drive: 'RWD', engine: 'f4na', gears: 6, manual: true, zero: 6.3, grip: 0.9, aero: .1, paint: 32, rim: '#2a2b2e', caliper: '#c8141b', desc: '2.4 boxer · drift toy' },
-  { id: 'gryaris', name: 'Toyota GR Yaris', brand: 'Toyota', cat: 'TOYOTA', body: 'yaris', wing: 'none', kw: 206, redline: 7000, mass: 1280, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.2, grip: 0.98, aero: .2, paint: 8, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Rally homologation hot hatch' },
-  { id: 'grcorolla', name: 'Toyota GR Corolla', brand: 'Toyota', cat: 'TOYOTA', body: 'corolla', wing: 'none', kw: 224, redline: 7000, mass: 1470, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.0, grip: 0.98, aero: .2, paint: 32, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Three-pipe turbo hatch' },
-  { id: 'lc300', name: 'Toyota Land Cruiser GR Sport', brand: 'Toyota', cat: 'TOYOTA', body: 'landcruiser', dakar: true, wing: 'none', kw: 305, redline: 6000, mass: 2630, vmax: 210, drive: 'AWD', engine: 'v6tt', gears: 10, zero: 6.7, grip: 0.82, aero: .1, paint: 7, rim: '#2a2b2e', caliper: '#1b1b1d', box: '10-speed auto', desc: 'Twin-turbo V6 · goes anywhere' },
-  { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', desc: 'Front-mid V8 hybrid flagship' },
+  { id: 'grsupra', name: 'Toyota GR Supra', brand: 'Toyota', cat: 'TOYOTA', body: 'supra', wing: 'duck', kw: 285, redline: 7000, mass: 1540, vmax: 263, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 3.9, grip: 1.27, aero: .2, paint: 33, rim: '#2a2b2e', caliper: '#c8141b', box: '8-speed auto', yen: 8600000, desc: '3.0 turbo straight-six' },
+  { id: 'gr86', name: 'Toyota GR86', brand: 'Toyota', cat: 'TOYOTA', body: 'gr86', wing: 'duck', kw: 172, redline: 7400, mass: 1275, vmax: 226, drive: 'RWD', engine: 'f4na', gears: 6, manual: true, zero: 6.3, grip: 0.9, aero: .1, paint: 32, rim: '#2a2b2e', caliper: '#c8141b', yen: 4500000, desc: '2.4 boxer · drift toy' },
+  { id: 'gryaris', name: 'Toyota GR Yaris', brand: 'Toyota', cat: 'TOYOTA', body: 'yaris', wing: 'none', kw: 206, redline: 7000, mass: 1280, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.2, grip: 0.98, aero: .2, paint: 8, rim: '#1b1b1d', caliper: '#c8141b', yen: 5300000, desc: 'Rally homologation hot hatch' },
+  { id: 'grcorolla', name: 'Toyota GR Corolla', brand: 'Toyota', cat: 'TOYOTA', body: 'corolla', wing: 'none', kw: 224, redline: 7000, mass: 1470, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.0, grip: 0.98, aero: .2, paint: 32, rim: '#1b1b1d', caliper: '#c8141b', yen: 6000000, desc: 'Three-pipe turbo hatch' },
+  { id: 'lc300', name: 'Toyota Land Cruiser GR Sport', brand: 'Toyota', cat: 'TOYOTA', body: 'landcruiser', dakar: true, wing: 'none', kw: 305, redline: 6000, mass: 2630, vmax: 210, drive: 'AWD', engine: 'v6tt', gears: 10, zero: 6.7, grip: 0.82, aero: .1, paint: 7, rim: '#2a2b2e', caliper: '#1b1b1d', box: '10-speed auto', yen: 8000000, desc: 'Twin-turbo V6 · goes anywhere' },
+  { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', yen: 45000000, desc: 'Front-mid V8 hybrid flagship' },
 ];
 
 /* =====================================================================
@@ -2133,11 +2144,25 @@ function updateSkill(dt, p) {
     box.style.opacity = 1; $('chainLbl').textContent = skill.label + (skill.mult > 1 ? `  x${skill.mult}` : '');
     $('chainPts').textContent = skill.broken ? '' : Math.floor(skill.chain * skill.mult).toLocaleString();
   } else {
-    if (skill.chain > 0) { const tot = Math.floor(skill.chain * skill.mult); skill.bank += tot; localStorage.setItem('amboola.skill', skill.bank); toast(`+${tot.toLocaleString()}`, 'SKILL CHAIN BANKED'); }
+    if (skill.chain > 0) { const tot = Math.floor(skill.chain * skill.mult); skill.bank += tot; localStorage.setItem('amboola.skill', skill.bank); earn(tot * 20); toast(`+${fmtYen(tot * 20)}`, `${skill.label === 'DRIFT' ? 'DRIFT' : 'SKILL'} CHAIN BANKED · ${tot.toLocaleString()} PTS`); }
     skill.chain = 0; skill.count = 0; skill.mult = 1; skill.broken = false; box.style.opacity = 0;
   }
 }
 let toastT = 0;
+/* =====================================================================
+   MONEY — real car prices in yen; earn from races, taxi, outlaw, police and drift/skill chains
+   ===================================================================== */
+const wallet = { yen: +(localStorage.getItem('amboola.yen') ?? 3000000), owned: new Set(JSON.parse(localStorage.getItem('amboola.owned') || '["gr86"]')) };
+function saveWallet() { localStorage.setItem('amboola.yen', Math.round(wallet.yen)); localStorage.setItem('amboola.owned', JSON.stringify([...wallet.owned])); }
+function earn(yen, why) {
+  yen = Math.round(yen); if (yen <= 0) return; wallet.yen += yen; saveWallet();
+  const w = $('walletHud'); if (w) { w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); }
+}
+const owns = c => wallet.owned.has(c.id);
+function buyCar(c) {
+  if (owns(c) || wallet.yen < c.yen) return false;
+  wallet.yen -= c.yen; wallet.owned.add(c.id); saveWallet(); return true;
+}
 function toast(a, b) { const t = $('toast'); t.innerHTML = `${a}<small>${b || ''}</small>`; t.style.opacity = 1; toastT = 2.4; }
 
 /* =====================================================================
@@ -2330,7 +2355,7 @@ addEventListener('keydown', e => {
     if (e.code === 'Escape' || e.code === 'KeyP') setPause(true);
   } else if (state === 'pause' && (e.code === 'Escape' || e.code === 'KeyP')) setPause(false);
   else if (state === 'garage') {
-    if (e.code === 'Enter') startDrive();
+    if (e.code === 'Enter') garageGo();
     if (e.code === 'ArrowDown' || e.code === 'ArrowRight') selectCar((carIdx + 1) % CARS.length);
     if (e.code === 'ArrowUp' || e.code === 'ArrowLeft') selectCar((carIdx - 1 + CARS.length) % CARS.length);
   }
@@ -2368,7 +2393,7 @@ $('tpause').addEventListener('pointerdown', () => setPause(true));
 /* =====================================================================
    GARAGE (menu)
    ===================================================================== */
-let carIdx = +(localStorage.getItem('amboola.car') || 0), paintIdx = CARS[carIdx]?.paint ?? 0, gCar = null, gAngle = .6, gDrag = null, gDist = 8.5;
+let carIdx = +(localStorage.getItem('amboola.car') ?? CARS.findIndex(c => c.id === 'gr86')), paintIdx = CARS[carIdx]?.paint ?? 0, gCar = null, gAngle = .6, gDrag = null, gDist = 8.5;
 if (!CARS[carIdx]) carIdx = 0;
 function buildGarage() {
   gScene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
@@ -2402,20 +2427,37 @@ function buildMenu() {
   let lastCat = '';
   CARS.forEach((c, i) => {
     if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
-    const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
+    const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
   PAINTS.forEach((p, i) => { const s = document.createElement('div'); s.className = 'sw'; s.style.background = `radial-gradient(circle at 35% 30%, #fff8, ${p.c} 45%, #000 120%)`; s.title = p.n; s.onclick = () => { paintIdx = i; updateMenu(); showGarageCar(); }; pw.appendChild(s); });
   document.querySelectorAll('#optTime .opt').forEach(o => o.onclick = () => { applyTime(o.dataset.v); updateMenu(); });
   document.querySelectorAll('#optQ .opt').forEach(o => o.onclick = () => { quality = o.dataset.v; localStorage.setItem('amboola.q', quality); setupComposer(); applyTime(timeName); updateMenu(); });
-  $('drive').onclick = startDrive;
+  $('drive').onclick = garageGo;
   updateMenu();
 }
 const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
+// garage DRIVE button: drive an owned car, buy one you can afford, otherwise explain what's missing
+function garageGo() {
+  const c = CARS[carIdx];
+  if (owns(c)) return startDrive();
+  if (buyCar(c)) { audio.init(); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); updateMenu(); }
+}
+// garage mode buttons only work with a car you own
+const ownedOnly = fn => () => { if (!owns(CARS[carIdx])) { const d = $('drive'); d.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; } fn(); };
 function selectCar(i) { carIdx = i; paintIdx = CARS[i].paint; localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
-  document.querySelectorAll('.caritem').forEach(d => d.classList.toggle('sel', +d.dataset.i === carIdx));
+  document.querySelectorAll('.caritem').forEach(d => {
+    const cc = CARS[+d.dataset.i], own = owns(cc); d.classList.toggle('sel', +d.dataset.i === carIdx); d.classList.toggle('locked', !own);
+    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : fmtYen(cc.yen);
+  });
+  $('walletV').textContent = fmtYen(wallet.yen);
+  const own = owns(c), pr = $('price'), dv = $('drive');
+  pr.className = own ? 'own' : ''; pr.textContent = own ? 'OWNED · 所有' : `PRICE ${fmtYen(c.yen)}`;
+  dv.className = own ? '' : wallet.yen >= c.yen ? 'buy' : 'locked';
+  dv.textContent = own ? 'DRIVE' : wallet.yen >= c.yen ? `BUY ${fmtYen(c.yen)}` : `NEED ${fmtYen(c.yen - wallet.yen)} MORE`;
+  for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn']) $(b).style.opacity = own ? 1 : .35;
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
   $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
   $('vPow').textContent = `${Math.round(c.kw * 1.36)} PS`; $('bPow').style.width = clamp(c.kw / 7.6, 5, 100) + '%';
@@ -2740,6 +2782,7 @@ function finishRace() {
   const order = [...race.order].sort((a, b) => (a.me ? P.finish : a.finish ?? 1e9) - (b.me ? P.finish : b.finish ?? 1e9));
   const pos = order.findIndex(e => e.me) + 1;
   const prize = [5000, 3000, 2000][pos - 1] || 800; skill.bank += prize; localStorage.setItem('amboola.skill', skill.bank);
+  const cash = Math.round(Math.max([1500000, 800000, 500000][pos - 1] || 200000, (player.spec.yen || 0) * ([.05, .03, .02][pos - 1] || .005)) / 10000) * 10000; earn(cash);
   const best = T.best || {}; const nbRace = !best.race || P.finish < best.race, nbLap = !best.lap || P.best < best.lap;
   T.best = { race: nbRace ? P.finish : best.race, lap: nbLap ? P.best : best.lap, car: nbRace ? player.spec.name : best.car };
   localStorage.setItem('amboola.best.' + T.id, JSON.stringify(T.best));
@@ -2749,7 +2792,7 @@ function finishRace() {
     const rows = race.ais.map(a => ({ name: a.name, t: a.finish ?? (race.t + (race.laps * T.L - a.prog) / Math.max(a.v, 20)), est: a.finish == null }));
     rows.push({ name: 'YOU · ' + player.spec.name, t: P.finish, me: true }); rows.sort((a, b) => a.t - b.t);
     const place = rows.findIndex(r => r.me) + 1;
-    $('resTitle').innerHTML = `${place === 1 ? 'VICTORY' : 'FINISHED'} · P${place}<small>${T.name} · BEST LAP ${fmtTime(P.best)}${nbLap ? ' · TRACK RECORD' : ''} · +${prize.toLocaleString()} SKILL</small>`;
+    $('resTitle').innerHTML = `${place === 1 ? 'VICTORY' : 'FINISHED'} · P${place}<small>${T.name} · BEST LAP ${fmtTime(P.best)}${nbLap ? ' · TRACK RECORD' : ''} · +${fmtYen(cash)} · +${prize.toLocaleString()} SKILL</small>`;
     $('resTable').innerHTML = rows.map((r, k) => `<tr class="${r.me ? 'me' : ''}"><td>${k + 1}</td><td>${r.name}</td><td>${r.est ? '~' : ''}${fmtTime(r.t)}</td></tr>`).join('');
     $('results').classList.remove('hidden'); state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
   }, 1600);
@@ -2787,7 +2830,7 @@ function checkMarkers() {
 }
 $('raceprompt').onclick = () => { if (nearMarker) startRace(nearMarker); };
 $('racesClose').onclick = () => { $('races').classList.add('hidden'); if (racesFrom === 'pause') $('pause').classList.remove('hidden'); };
-$('raceBtn').onclick = () => openRaces('garage');
+$('raceBtn').onclick = ownedOnly(() => openRaces('garage'));
 $('resRestart').onclick = () => { const T = race.T; endRace(false); state = 'drive'; startRace(T); };
 $('resLeave').onclick = () => { endRace(true); $('results').classList.add('hidden'); state = 'drive'; if (audio.ctx) audio.ctx.resume(); };
 
@@ -2937,10 +2980,10 @@ function updateTaxi(dt) {
     $('txTime').textContent = taxi.timer > 0 ? `${Math.ceil(taxi.timer)} s` : 'LATE';
     $('txTime').style.color = taxi.timer < 10 ? '#ff4b4b' : '';
     if (stopped) {
-      const base = 500 + taxi.routeLen * 1.6, speedTip = taxi.timer > 0 ? taxi.timer * 25 : 0, late = taxi.timer > 0 ? 1 : .7;
-      const tip = Math.max(0, speedTip * (1 - Math.min(taxi.crashes, 4) * .25)), pay = Math.round((base * late + tip) / 10) * 10;
+      const base = 50000 + taxi.routeLen * 160, speedTip = taxi.timer > 0 ? taxi.timer * 2500 : 0, late = taxi.timer > 0 ? 1 : .7;
+      const tip = Math.max(0, speedTip * (1 - Math.min(taxi.crashes, 4) * .25)), pay = Math.round((base * late + tip) / 1000) * 1000;
       taxi.earnings += pay; taxi.fares++; taxi.total += pay; localStorage.setItem('amboola.taxi.total', taxi.total);
-      skill.bank += Math.round(pay / 4); localStorage.setItem('amboola.skill', skill.bank);
+      skill.bank += Math.round(pay / 400); localStorage.setItem('amboola.skill', skill.bank); earn(pay);
       const w = makePerson(); w.position.set(s.px, 0, s.pz); w.rotation.y = s.ry + Math.PI / 2; scene.add(w); taxi.walker = { g: w, t: 0 };
       audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
       toast(`FARE ${fmtYen(pay)}`, `${taxi.crashes ? 'BUMPY RIDE · ' : ''}${taxi.timer > 0 ? 'TIP ' + fmtYen(tip) : 'LATE · NO TIP'} · ありがとう!`);
@@ -2963,7 +3006,7 @@ function drawTaxiRoute(g) {
   g.fillStyle = g.strokeStyle; g.beginPath(); g.arc(taxi.spot.x, taxi.spot.z, 20, 0, 7); g.fill();
   g.fillStyle = '#111'; g.beginPath(); g.arc(taxi.spot.x, taxi.spot.z, 9, 0, 7); g.fill();
 }
-$('taxiBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); startTaxi(); };
+$('taxiBtn').onclick = ownedOnly(() => { $('menu').classList.add('hidden'); startDrive(); startTaxi(); });
 $('bTaxi').onclick = () => { if (taxi) endTaxi(); else { if (race) endRace(true); startTaxi(); } setPause(false); };
 
 /* =====================================================================
@@ -3407,7 +3450,7 @@ function makeSafe(s) {
 }
 function newSafe(avoidX, avoidZ) {
   const s = taxiSpot(avoidX ?? 0, avoidZ ?? 0, avoidX == null ? 0 : 150, 99999);
-  s.amount = Math.round((3000 + Math.random() * 9000) / 100) * 100; s.mesh = makeSafe(s); return s;
+  s.amount = Math.round((300000 + Math.random() * 900000) / 10000) * 10000; s.mesh = makeSafe(s); return s;
 }
 function buildPoliceCar() {
   const g = buildTrafficCar(TRAFFIC_TYPES[2]);
@@ -3526,7 +3569,7 @@ function updateCrime(dt) {
     const hide = c.hide;
     if (c.showRoute && hide) routeTo = hide;
     if (pSafe && c.carry > 0 && p.speed < 4) {
-      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry / 5); localStorage.setItem('amboola.skill', skill.bank);
+      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry / 500); localStorage.setItem('amboola.skill', skill.bank); earn(c.carry);
       toast(`STASHED ${fmtYen(c.carry)}`, 'SAFE AT THE HIDEOUT · 隠れ家'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
       c.carry = 0; c.police.forEach(r => r.dispose()); c.police = []; c.cool = 6; c.showRoute = false;
     }
@@ -3543,7 +3586,7 @@ function updateCrime(dt) {
       else {
         if (d < 120 && o.mode !== 'stash') o.mode = 'flee';
         else if (o.mode === 'flee' && d > 320) o.mode = 'loot';
-        if (o.cash >= 20000 || (o.mode === 'flee' && o.cash >= 6000)) o.mode = 'stash';
+        if (o.cash >= 2000000 || (o.mode === 'flee' && o.cash >= 600000)) o.mode = 'stash';
         o.retarget = (o.retarget || 0) - dt;
         if (!o.target || o.retarget <= 0 || Math.hypot(o.x - o.target.x, o.z - o.target.z) < 6) {
           o.retarget = o.mode === 'flee' ? 2.5 : 6;
@@ -3560,8 +3603,8 @@ function updateCrime(dt) {
         const touched = inCity && crimeBump(o); c.meter = 0;
         if (touched && oSafe && toastT <= 0) toast('SAFE ZONE · 隠れ家', 'HE IS AT A HIDEOUT · YOU CAN\'T ARREST HIM HERE');
         if (touched && !oSafe) {
-          const reward = o.cash + 5000; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward / 5); localStorage.setItem('amboola.skill', skill.bank);
-          toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtYen(o.cash)} + ${fmtYen(5000)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+          const reward = o.cash + 500000; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward / 500); localStorage.setItem('amboola.skill', skill.bank); earn(reward);
+          toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtYen(o.cash)} + ${fmtYen(500000)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
           o.cash = 0; o.mode = 'gone'; o.goneT = 4; o.v = 0; c.meter = 0;
         }
         routeTo = o; routeCol = '#ff3b3b';
@@ -3591,8 +3634,8 @@ function drawCrimeMap(g) {
   for (const r of crime.police) { g.fillStyle = (t * 4 | 0) % 2 ? '#ff2a2a' : '#2a6bff'; g.beginPath(); g.arc(r.x, r.z, 12, 0, 7); g.fill(); }
   const o = crime.outlaw; if (o && o.mode !== 'gone') { g.fillStyle = (t * 3 | 0) % 2 ? '#ff2a2a' : '#ffffff'; g.beginPath(); g.arc(o.x, o.z, 15, 0, 7); g.fill(); }
 }
-$('outlawBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); startCrime('outlaw'); };
-$('policeBtn').onclick = () => { $('menu').classList.add('hidden'); startDrive(); startCrime('police'); };
+$('outlawBtn').onclick = ownedOnly(() => { $('menu').classList.add('hidden'); startDrive(); startCrime('outlaw'); });
+$('policeBtn').onclick = ownedOnly(() => { $('menu').classList.add('hidden'); startDrive(); startCrime('police'); });
 $('bPolice').onclick = () => { if (crime?.role === 'police') endCrime(); else startCrime('police'); setPause(false); };
 $('bOutlaw').onclick = () => { if (crime?.role === 'outlaw') endCrime(); else startCrime('outlaw'); setPause(false); };
 $('crBtn').onclick = () => { if (crime) { crime.showRoute = !crime.showRoute; crime.routeT = 0; } };
@@ -3688,7 +3731,7 @@ function tick(dt) {
     screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
     // HUD
     drawTacho(player); drawMinimap(player);
-    $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
+    $('walletHud').textContent = fmtYen(wallet.yen); $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   }
   if (state === 'map') { drawBigMap(); return; }
@@ -3720,7 +3763,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, wallet, earn, buyCar, garageGo, updateMenu };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

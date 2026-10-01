@@ -18,6 +18,21 @@ then open the URL it gives you.
 
 **Option 3 — local server:** `npx http-server .` and open `http://localhost:8080`.
 
+## Money · 財布
+
+You start with **¥3,000,000** and a free **Toyota GR86**. Every other car costs its real price in yen (about the US list price × 150, or the Japanese price for Japan-only cars): from ¥4.5 million for the GR86 to ¥870 million for the Bugatti Divo. In the garage, cars you don't own show their price, and the big button says **BUY** when you can afford one, or how much more you need. You can only drive, race, taxi or do jobs in cars you own.
+
+Ways to earn yen:
+| Job | Pay |
+|---|---|
+| **Races** | 1st 5% of your car's price (at least ¥1,500,000), 2nd 3% (≥ ¥800,000), 3rd 2% (≥ ¥500,000), others ¥200,000+. Faster, pricier cars win more. |
+| **Taxi** | VIP fares, about ¥100,000–300,000 each, plus a tip for arriving fast without crashing |
+| **Outlaw** | Money safes hold ¥300,000–1,200,000; you keep what you stash at a hideout (busted = you lose what you carry) |
+| **Police** | Arrest the outlaw: his cash + a ¥500,000 reward |
+| **Drift** | Drift and skill chains pay ¥20 per point when the chain is banked |
+
+Your wallet shows in yellow at the top right while driving and next to the title in the garage. It is saved in the browser.
+
 ## Controls
 
 | Key | Action |

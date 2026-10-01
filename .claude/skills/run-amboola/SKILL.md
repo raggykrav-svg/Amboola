@@ -67,6 +67,14 @@ This takes about 18 minutes for 1,288 frames at 1280×720, 24 fps. It steps the 
 
 Playwright's bundled ffmpeg has only VP8. For H.264, `pip download imageio-ffmpeg --no-deps` and use the static binary inside the wheel. Google Fonts are fetched with `curl` in a route handler, because the browser can't reach them through the proxy but curl can. The video is silent: headless Chromium's Web Audio output isn't captured.
 
+## Money
+
+- **Wallet and ownership:** `wallet` (`amboola.yen`, `amboola.owned` in localStorage) holds the yen and the owned car ids. A fresh browser starts with ¥3,000,000 and owns `gr86`.
+- **Prices:** every car in `CARS` has a `yen` price.
+- **Garage:** `garageGo()` drives an owned car or buys the selected one. The mode buttons are wrapped in `ownedOnly()`.
+- **Payouts:** `earn(yen)` pays out from finishRace, the taxi drop-off, the outlaw stash, the police arrest and banked skill chains.
+- **Testing:** the driver always starts from a fresh context, so pick `{"car":54}` (the GR86) or call `window.amboola.earn(n)` and then `updateMenu()` before `garageGo()`. Otherwise DRIVE/RACES/TAXI do nothing on locked cars.
+
 ## Rebuild the Blender car models
 
 All 14 Porsches are Blender models:
