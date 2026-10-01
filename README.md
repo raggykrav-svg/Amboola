@@ -123,6 +123,24 @@ The 6 Lamborghinis and 7 Ferraris are Blender models too. They are made the same
 blender -b --factory-startup --python models/blender/supercars.py -- --car all     # or --car svj,f8
 ```
 
+### The Blender McLarens and Bugattis
+
+![All 13 McLarens and Bugattis built in Blender](media/hypercars-blender.jpg)
+
+The 7 McLarens and 6 Bugattis are Blender models too, in [`models/blender/hypercars.py`](models/blender/hypercars.py).
+- **McLaren:** teardrop cabins, "eye socket" headlights, and the intake scooped into each door.
+  - The **Senna** has a huge two-part wing and glass door panels, and the **P1** a big active wing.
+  - The **765LT** has a longtail lip and four centre pipes, and the **Artura** one high centre pipe.
+  - The **GTS** is the grand tourer with a glass hatch.
+- **Bugatti:** the horseshoe grille, the C-shaped line on each side, a spine over the roof, four-point lights and quad centre pipes.
+  - The **Chiron Pur Sport** and **Divo** have fixed wings; the Divo also has a roof fin and fin-shaped tail lights.
+  - The **Veyron** has round tail lights and roof scoops.
+  - The **Bolide** is a 1 m-tall track car with X lights, a roof scoop, a shark fin and a giant wing.
+
+```bash
+blender -b --factory-startup --python models/blender/hypercars.py -- --car all     # or --car senna,bolide
+```
+
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
 ## The world
