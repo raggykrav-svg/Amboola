@@ -54,25 +54,55 @@ The Lamborghinis have sharp, angular wedge bodies. The Ferraris come in three sh
 
 The McLarens have a low mid-engine body with a teardrop cabin. The Bugattis have a wide, rounded body with the horseshoe grille, and the Bolide is a very low track car. The new paints are Papaya Orange, Volcano Blue, Bugatti Blue and Argent Silver. The Bugatti Tourbillon (2.0 s to 100 km/h, 445 km/h) and the track-only Bolide (500 km/h) are the fastest cars in the game.
 
-### The Blender 911 GT3 RS
+### The Blender Porsches
 
-![911 GT3 RS built in Blender: front, rear, side, and in the game's garage](media/gt3rs-blender.jpg)
+![All 14 Porsches built in Blender](media/porsches-blender.jpg)
 
-The 911 GT3 RS is a real 3D model built in [Blender](https://www.blender.org/), and it's the first of the cars to get one. It is made entirely by a Python script, [`models/blender/gt3rs.py`](models/blender/gt3rs.py), at the real 992 dimensions:
-- **Body:** smooth curved surfaces from 17 cross-sections, cut-out wheel wells and creased body lines.
-- **RS details:** hood vents, fender louvres, the full-width light bar, the 4-point LED headlights and the carbon roof.
-- **Wing:** the swan-neck wing with its DRS flap.
-- **Wheels:** forged 10-spoke centre-lock wheels with yellow calipers.
+All 14 Porsches are real 3D models built in [Blender](https://www.blender.org/). Each one is made entirely by Python script, at its real dimensions (length, width, height, wheelbase and wheel sizes). Each car has its own details:
 
-In the game you can still change its paint, the brake lights and headlights still glow, and the wheels still spin and steer. If the model can't load, the game falls back to the old built-in shape.
+| Car | What makes it look right |
+|---|---|
+| **911 GT3 RS** | Swan-neck wing with DRS flap, hood vents, fender louvres, carbon roof |
+| **911 GT3** | Narrower body, single swan-neck wing, hood nostrils |
+| **911 GT3 Touring** | No wing, just a pop-up spoiler, silver window trim |
+| **911 S/T** | Carbon hood and roof, ducktail, bronze magnesium wheels |
+| **911 GT2 RS** | Huge wing on uprights, NACA ducts, fender gills, big titanium pipes |
+| **911 Turbo S** | Wide body with big intakes in the rear fenders, active wing, square pipes |
+| **911 Dakar** | Raised on all-terrain tyres, black arch cladding, roof rack with spotlights, red tow hooks |
+| **718 Cayman GT4 RS** | Mid-engine body, big side intakes, air intakes in the rear side windows, swan-neck wing |
+| **718 Spyder RS** | Open top with seats and steering wheel, low windscreen, humps behind the seats, ducktail |
+| **918 Spyder** | 1.17 m tall, carbon roof panels, flying buttresses, exhausts that exit on top |
+| **Taycan Turbo GT** | 4 doors, 4-point LED headlights, carbon roof, aero wheels |
+| **Cayenne Turbo GT** | Coupé roofline, carbon roof, roof and tailgate spoilers, centre titanium pipes |
+| **Cayenne Turbo E-Hybrid** | Tall SUV roof with roof rails and spoiler, twin double pipes |
+| **Macan Turbo Electric** | Split headlights (thin LED strip on top, main lights below), glass roof, no exhausts |
 
-To change the car, edit the script and rebuild it ([Blender 4.2](https://www.blender.org/download/) or newer):
+They all have the full-width light bars, gloss-black window trim, forged wheels and coloured brake calipers.
+
+In the game you can still change the paint, the brake lights and headlights still glow, and the wheels still spin and steer. If a model can't load, the game falls back to the old built-in shape.
+
+![The 911 GT3 RS in close-up: front, rear, side, and in the game's garage](media/gt3rs-blender.jpg)
+
+**How the models are made:**
+- [`models/blender/carkit.py`](models/blender/carkit.py) holds the building blocks:
+  - **Body:** smooth curved surfaces lofted through a table of cross-sections.
+  - **Cut-outs:** wheel wells and cockpits cut out of the body.
+  - **Details:** glass, vents and lights projected onto the body surface.
+  - **Parts:** wings, swan necks, mirrors, exhausts and wheels.
+- [`models/blender/porsches.py`](models/blender/porsches.py) describes each car using those blocks.
+
+To change a car, edit its section and rebuild it ([Blender 4.2](https://www.blender.org/download/) or newer):
 
 ```bash
-blender -b --factory-startup --python models/blender/gt3rs.py -- --glb models/gt3rs.glb --renders renders/
+blender -b --factory-startup --python models/blender/porsches.py -- --car gt3rs              # one car
+blender -b --factory-startup --python models/blender/porsches.py -- --car all                # all 14 (about 2 minutes)
+blender -b --factory-startup --python models/blender/porsches.py -- --car 918 --renders renders/ --sheet
 ```
 
-This writes `models/gt3rs.glb`, plus `models/gt3rs.glb.js` (the same model as a script file, so double-clicking `index.html` still works). `--renders` also saves studio pictures from Blender's Cycles renderer, and `--blend car.blend` saves a file you can open and edit in Blender.
+Each car is written to `models/<id>.glb`, plus `models/<id>.glb.js` (the same model as a script file, so double-clicking `index.html` still works).
+- `--renders` saves studio pictures from Blender's Cycles renderer.
+- `--sheet` puts several views in one picture.
+- `--blend car.blend` saves a file you can open and edit in Blender.
 
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
@@ -165,7 +195,7 @@ In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI 
 
 ## Graphics
 
-The 911 GT3 RS is a Blender-made 3D model (see [Cars](#the-blender-911-gt3-rs)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
+Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
 
 ## Sound
 

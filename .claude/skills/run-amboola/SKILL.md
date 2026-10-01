@@ -67,22 +67,32 @@ This takes about 18 minutes for 1,288 frames at 1280×720, 24 fps. It steps the 
 
 Playwright's bundled ffmpeg has only VP8. For H.264, `pip download imageio-ffmpeg --no-deps` and use the static binary inside the wheel. Google Fonts are fetched with `curl` in a route handler, because the browser can't reach them through the proxy but curl can. The video is silent: headless Chromium's Web Audio output isn't captured.
 
-## Rebuild the Blender car model
+## Rebuild the Blender car models
 
-The 911 GT3 RS (`gt3rs`) is a Blender model. Its source is the bpy script `models/blender/gt3rs.py`, which builds the car from scratch. The game loads `models/gt3rs.glb.js` (a base64 copy of `models/gt3rs.glb`, so file:// works) at boot. `buildCar()` then clones that model for any car id in `MODELS`, and it falls back to the procedural body if the model fails to load. There is no Blender in the container by default:
+All 14 Porsches are Blender models:
+- **Building blocks:** `models/blender/carkit.py` holds them (loft, booleans, ray-cast decals, lights, wings, wheels, export, Cycles renders, contact sheets).
+- **Car definitions:** `models/blender/porsches.py` has one function per car id, plus the `CARS` registry. A new car is a new function and a registry entry.
+- **Game loading:** `index.html` has one `<script src="models/<id>.glb.js">` tag per model. Each is a base64 copy of `models/<id>.glb`, so file:// works.
+- **Building:** at boot `loadCarModels()` decodes the models (Draco, decoder from the three CDN). `buildCar()` then clones the model for any car id in `MODELS`, and falls back to the procedural body if a model fails to load.
+
+There is no Blender in the container by default:
 
 ```bash
 mkdir -p /tmp/blender && curl -sSL https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz | tar xJ -C /tmp/blender
 B=/tmp/blender/blender-4.2.3-linux-x64/blender
-$B -b --factory-startup --python models/blender/gt3rs.py -- --glb models/gt3rs.glb                 # ~40 s
-$B -b --factory-startup --python models/blender/gt3rs.py -- --renders /tmp/r --samples 10 --views front34,side,rear34,front,top   # quick Cycles previews
+$B -b --factory-startup --python models/blender/porsches.py -- --car gt3rs,918          # export (~8 s per car)
+$B -b --factory-startup --python models/blender/porsches.py -- --car 918 --renders /tmp/r --samples 8 --sheet --views front34,rear34,side --no-export
 ```
+
+`--sheet` tiles the views at 640x360 into `/tmp/r/<id>-sheet.png`, about 15 s per car. It's the fast way to check a shape change, so look at it before exporting. To check them in the game, look at every car in the garage with `{"car":N}` steps (indices 0–13 are the Porsches).
 
 Contract with the game: objects `Body`, `Wheel_FL/FR/RL/RR` and `Caliper_*`, each with its origin at the hub; material names `Paint`, `Glass`, `Headlight`, `Taillight`, `Rim`, `Caliper` and so on, which `buildModelCar()` swaps for game materials. The car is modelled front = +X; export turns it to glTF +Z.
 
 Model gotchas:
 - If a cross-section's points swap height order, the cage self-intersects and Blender flips all normals. You then see the wheel-well booleans *adding* cylinders, and every decal hidden inside the body. The script now forces outward normals, but keep each station's points ordered.
-- Decals (glass, vents, lights) are ray-cast patches. When the rays hit the body at a grazing angle, the patch gets holes, so fan the rays from inside the car (as `tailband()` does) at wrapped corners.
+- Decals (glass, vents, lights) are ray-cast patches. When the rays hit the body at a grazing angle, the patch gets holes, so fan the rays from inside the car (`Car.fan()`) at wrapped corners.
+- Decals only land on the body shell (the BVH from `surface()`). An open-top car's windscreen therefore has to be a free-standing `panel()`, and parts added after `surface()` (pods, wings) can't receive decals.
+- Raised cars (the Dakar): build at normal height and pass `join(lift=...)`. Its wheel specs give `cz`, the wheel-well centre *before* the lift.
 
 ## Gotchas
 
