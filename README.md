@@ -141,6 +141,19 @@ The 7 McLarens and 6 Bugattis are Blender models too, in [`models/blender/hyperc
 blender -b --factory-startup --python models/blender/hypercars.py -- --car all     # or --car senna,bolide
 ```
 
+### The Blender Teslas
+
+![All 7 Teslas built in Blender](media/teslas-blender.jpg)
+
+The 7 Teslas are Blender models too, in [`models/blender/teslas.py`](models/blender/teslas.py). That makes **every one of the 47 cars** a Blender model. The Teslas have smooth noses with no grille, slim swept headlights, glass roofs, flush door handles and aero wheels.
+- The **Model S** and **Model 3** are sleek sedans; the **Model Y** and **Model X** are crossovers. The X has its huge windscreen running over the front seats and falcon-wing door seams.
+- The **next-gen Roadster** has a removable glass roof, and the **2008 Roadster** is an open two-seater with a roll hoop.
+- The **Cybertruck** is built from flat stainless-steel panels with sharp edges, full-width light bars front and back, black arch cladding and off-road tyres.
+
+```bash
+blender -b --factory-startup --python models/blender/teslas.py -- --car all     # or --car cyberbeast
+```
+
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
 ## The world

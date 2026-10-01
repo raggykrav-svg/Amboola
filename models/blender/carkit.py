@@ -110,7 +110,7 @@ class Car:
         return h[0], h[1]
 
     # ------------------------------------------------------------ body
-    def loft(self, st, crease_front=0.55, crease_rear=0.75, crease_lines=0.35, crisp_front=0.7, crisp=0.3):
+    def loft(self, st, crease_front=0.55, crease_rear=0.75, crease_lines=0.35, crisp_front=0.7, crisp=0.3, crease_all=None, levels=3):
         """the main shell from a station table (see stations()); creases keep nose/tail faces, sill and beltline crisp"""
         def half(s):
             return [(0, s['zb']), (s['w'] * .74, s['zb']), (s['w'] * .91, lerp(s['zb'], s['zs'], .17)), (s['w'] * .985, lerp(s['zb'], s['zs'], .70)),
@@ -134,10 +134,12 @@ class Car:
             for j in (2, 5, n - 2, n - 5): bm.edges.get((a[j], b[j]))[cr] = crease_lines
             if a[0].co.x > crisp_front:                 # front lid shut line + fender crowns
                 for j in (6, 7, n - 6, n - 7): bm.edges.get((a[j], b[j]))[cr] = crisp
+        if crease_all is not None:                      # flat-panel bodies (Cybertruck): every edge stays sharp
+            for e in bm.edges: e[cr] = crease_all
         body = self.mesh('Body', bm, 'Paint')
         for k in ['Glass', 'Black', 'Gloss', 'Carbon', 'Chrome', 'Headlight', 'Taillight', 'Titanium']:
             body.data.materials.append(self.M[k])
-        sub = body.modifiers.new('Subsurf', 'SUBSURF'); sub.levels = sub.render_levels = 3
+        sub = body.modifiers.new('Subsurf', 'SUBSURF'); sub.levels = sub.render_levels = levels
         self.apply(body); self.body = body
         return body
 

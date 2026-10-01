@@ -75,7 +75,7 @@ All 14 Porsches are Blender models:
 - **Game loading:** `index.html` has one `<script src="models/<id>.glb.js">` tag per model. Each is a base64 copy of `models/<id>.glb`, so file:// works.
 - **Building:** at boot `loadCarModels()` decodes the models (Draco, decoder from the three CDN). `buildCar()` then clones the model for any car id in `MODELS`, and falls back to the procedural body if a model fails to load.
 
-The Lamborghinis and Ferraris (car indices 21–33) live in `models/blender/supercars.py`. It uses the same kit with sharp creases (`SHARP`) or soft ones (`SOFT`), and `remap()` reuses a station table on a car of another size. The McLarens and Bugattis (indices 34–46) live in `models/blender/hypercars.py`, which remaps `supercars.TFER` to each body. All three scripts use the shared command line, `carkit.main()`.
+The Lamborghinis and Ferraris (car indices 21–33) live in `models/blender/supercars.py`. It uses the same kit with sharp creases (`SHARP`) or soft ones (`SOFT`), and `remap()` reuses a station table on a car of another size. The McLarens and Bugattis (indices 34–46) live in `models/blender/hypercars.py`, which remaps `supercars.TFER` to each body. The Teslas (indices 14–20) live in `models/blender/teslas.py`. The Cybertruck uses `loft(crease_all=1.0, levels=1)` to get flat panels. All four scripts use the shared command line, `carkit.main()`, and every one of the 47 cars has a model.
 
 There is no Blender in the container by default:
 
