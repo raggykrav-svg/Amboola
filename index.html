@@ -254,6 +254,20 @@
 <script src="models/modelxplaid.glb.js"></script>
 <script src="models/modelyp.glb.js"></script>
 <script src="models/cyberbeast.glb.js"></script>
+<!-- Koenigsegg models (models/blender/koenigsegg.py) -->
+<script src="models/jesko.glb.js"></script>
+<script src="models/jeskoattack.glb.js"></script>
+<script src="models/regera.glb.js"></script>
+<script src="models/gemera.glb.js"></script>
+<script src="models/cc850.glb.js"></script>
+<script src="models/agerars.glb.js"></script>
+<!-- Toyota models (models/blender/toyota.py) -->
+<script src="models/grsupra.glb.js"></script>
+<script src="models/gr86.glb.js"></script>
+<script src="models/gryaris.glb.js"></script>
+<script src="models/grcorolla.glb.js"></script>
+<script src="models/lc300.glb.js"></script>
+<script src="models/grgt.glb.js"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -393,6 +407,7 @@ const PAINTS = [
   { n: 'Verde Mantis', c: '#6fc12a', m: .45 }, { n: 'Arancio Borealis', c: '#f0700f', m: .5 }, { n: 'Viola Pasifae', c: '#4a1d6c', m: .8 },
   { n: 'Rosso Corsa', c: '#c1111b', m: .3 }, { n: 'Giallo Modena', c: '#f6d10f', m: .25 }, { n: 'Blu Pozzi', c: '#1d3a70', m: .8 },
   { n: 'Papaya Orange', c: '#ff7a00', m: .3 }, { n: 'Volcano Blue', c: '#1f4fa8', m: .7 }, { n: 'Bugatti Blue', c: '#173a8c', m: .65 }, { n: 'Argent Silver', c: '#c4c8cc', m: .95 },
+  { n: 'Tang Orange', c: '#ff6a13', m: .35 }, { n: 'Naked Carbon', c: '#1a1c1f', m: .9, r: .22 }, { n: 'Emotional Red', c: '#b3121e', m: .45 }, { n: 'Nitro Yellow', c: '#f0cc00', m: .2 }, { n: 'Precious Metal', c: '#6d7176', m: .9 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', desc: '4.0 flat-six · 9,000 rpm' },
@@ -447,6 +462,20 @@ const CARS = [
   { id: 'divo', name: 'Bugatti Divo', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1960, vmax: 380, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.48, aero: 1.0, paint: 29, rim: '#1b1b1d', caliper: '#173a8c', desc: 'Corner-carving W16' },
   { id: 'veyronss', name: 'Bugatti Veyron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'none', kw: 882, redline: 6400, mass: 1888, vmax: 431, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.5, grip: 1.43, aero: .3, paint: 12, rim: '#9da1a6', caliper: '#1b1b1d', desc: 'The 431 km/h legend' },
   { id: 'bolide', name: 'Bugatti Bolide', brand: 'Bugatti', cat: 'BUGATTI', body: 'bolide', wing: 'rs', kw: 1361, redline: 7000, mass: 1450, vmax: 500, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.2, grip: 1.54, aero: 1.4, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', desc: 'Track-only W16 · 1,850 PS' },
+  // ---- Koenigsegg
+  { id: 'jesko', name: 'Koenigsegg Jesko Absolut', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1195, redline: 8500, mass: 1390, vmax: 480, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: .4, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed LST', desc: 'Twin-turbo V8 · 1,600 hp' },
+  { id: 'jeskoattack', name: 'Koenigsegg Jesko Attack', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 1195, redline: 8500, mass: 1420, vmax: 360, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: 1.3, paint: 31, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', desc: 'Track attack · 1,000 kg downforce' },
+  { id: 'regera', name: 'Koenigsegg Regera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'turbo', hybrid: true, kw: 1100, redline: 8250, mass: 1590, vmax: 410, drive: 'RWD', engine: 'v8ftt', gears: 2, zero: 2.8, grip: 1.55, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#c8141b', box: 'Direct Drive', desc: 'Hybrid V8 · no gearbox' },
+  { id: 'gemera', name: 'Koenigsegg Gemera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'gemera', wing: 'none', hybrid: true, kw: 1270, redline: 8000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'v8ftt', gears: 9, zero: 1.9, grip: 1.9, aero: .4, paint: 9, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', desc: 'Four-seat mega-GT · 1,700 hp' },
+  { id: 'cc850', name: 'Koenigsegg CC850', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1020, redline: 8500, mass: 1385, vmax: 400, drive: 'RWD', engine: 'v8ftt', gears: 6, manual: true, zero: 2.7, grip: 1.5, aero: .3, paint: 14, rim: '#9da1a6', caliper: '#c8141b', desc: 'Engage shift · 6-speed manual' },
+  { id: 'agerars', name: 'Koenigsegg Agera RS', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 865, redline: 8250, mass: 1395, vmax: 447, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.55, aero: .8, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', desc: '447 km/h record car' },
+  // ---- Toyota (GAZOO Racing)
+  { id: 'grsupra', name: 'Toyota GR Supra', brand: 'Toyota', cat: 'TOYOTA', body: 'supra', wing: 'duck', kw: 285, redline: 7000, mass: 1540, vmax: 263, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 3.9, grip: 1.27, aero: .2, paint: 33, rim: '#2a2b2e', caliper: '#c8141b', box: '8-speed auto', desc: '3.0 turbo straight-six' },
+  { id: 'gr86', name: 'Toyota GR86', brand: 'Toyota', cat: 'TOYOTA', body: 'gr86', wing: 'duck', kw: 172, redline: 7400, mass: 1275, vmax: 226, drive: 'RWD', engine: 'f4na', gears: 6, manual: true, zero: 6.3, grip: 0.9, aero: .1, paint: 32, rim: '#2a2b2e', caliper: '#c8141b', desc: '2.4 boxer · drift toy' },
+  { id: 'gryaris', name: 'Toyota GR Yaris', brand: 'Toyota', cat: 'TOYOTA', body: 'yaris', wing: 'none', kw: 206, redline: 7000, mass: 1280, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.2, grip: 0.98, aero: .2, paint: 8, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Rally homologation hot hatch' },
+  { id: 'grcorolla', name: 'Toyota GR Corolla', brand: 'Toyota', cat: 'TOYOTA', body: 'corolla', wing: 'none', kw: 224, redline: 7000, mass: 1470, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.0, grip: 0.98, aero: .2, paint: 32, rim: '#1b1b1d', caliper: '#c8141b', desc: 'Three-pipe turbo hatch' },
+  { id: 'lc300', name: 'Toyota Land Cruiser GR Sport', brand: 'Toyota', cat: 'TOYOTA', body: 'landcruiser', dakar: true, wing: 'none', kw: 305, redline: 6000, mass: 2630, vmax: 210, drive: 'AWD', engine: 'v6tt', gears: 10, zero: 6.7, grip: 0.82, aero: .1, paint: 7, rim: '#2a2b2e', caliper: '#1b1b1d', box: '10-speed auto', desc: 'Twin-turbo V6 · goes anywhere' },
+  { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', desc: 'Front-mid V8 hybrid flagship' },
 ];
 
 /* =====================================================================
@@ -623,6 +652,8 @@ const ADS = [
   { t: 'REVUELTO', maker: 'LAMBORGHINI', jp: '猛牛の咆哮', en: 'The V12 roars on.', bg: ['#0a0a06', '#3a3205'], ac: '#d4af37', car: '#6fc12a' },
   { t: 'HURACÁN STO', maker: 'LAMBORGHINI', jp: 'サーキットから公道へ', en: 'Super Trofeo Omologata.', bg: ['#130a02', '#4a2204'], ac: '#f0700f', car: '#f0700f' },
   { t: 'SF90 STRADALE', maker: 'FERRARI', jp: '跳ね馬、電動化', en: 'The prancing horse, electrified.', bg: ['#1a0203', '#5a0b0e'], ac: '#f6d10f', car: '#c1111b' },
+  { t: 'JESKO ABSOLUT', maker: 'KOENIGSEGG', jp: '最速への挑戦', en: 'Built to go beyond.', bg: ['#08090b', '#2a2d33'], ac: '#ff6a13', car: '#ff6a13' },
+  { t: 'GR SUPRA', maker: 'TOYOTA GAZOO RACING', jp: '道が人を鍛え、人がクルマを鍛える', en: 'Push the limits for better.', bg: ['#0a0a0a', '#3a0508'], ac: '#eb0a1e', car: '#f0cc00' },
   { t: '812 COMPETIZIONE', maker: 'FERRARI', jp: 'V12 9,500rpm', en: 'Pure V12 emotion.', bg: ['#0c0c0c', '#3a0508'], ac: '#ff2a2a', car: '#c1111b' },
   { t: 'SENNA', maker: 'McLAREN', jp: 'サーキットの伝説', en: 'Built for the track.', bg: ['#140800', '#4a2200'], ac: '#ff7a00', car: '#ff7a00' },
   { t: 'W1', maker: 'McLAREN', jp: '次世代ハイパーカー', en: 'The next real supercar.', bg: ['#050608', '#1c2733'], ac: '#ff7a00', car: '#1b1b1d' },
@@ -1303,6 +1334,16 @@ Object.assign(BODIES, {
     cabin: [[-1.0, .86], [-.5, .98], [0, 1.01], [.4, .97], [.8, .87], [1.2, .82], [-1.0, .82]], roof: [-.45, .3],
     head: { x: 2.1, y: .6, z: .7, round: false }, tail: { x: -2.4, y: .76 }, deck: { x: -2.2, y: .9 } },
 });
+Object.assign(BODIES, {
+  koenigsegg: { ...BODIES.mclaren, L: 4.61, W: 2.03, wr: .35, fX: 1.37, rX: -1.33 },
+  gemera: { ...BODIES.mclaren, L: 4.98, W: 2.0, wr: .36, fX: 1.55, rX: -1.45 },
+  supra: { ...BODIES.fgt, L: 4.38, W: 1.87, wr: .345, fX: 1.30, rX: -1.17 },
+  gr86: { ...BODIES.fgt, L: 4.27, W: 1.78, wr: .32, fX: 1.29, rX: -1.29 },
+  yaris: { ...BODIES.model3, L: 4.0, W: 1.81, wr: .33, fX: 1.28, rX: -1.28 },
+  corolla: { ...BODIES.model3, L: 4.41, W: 1.85, wr: .335, fX: 1.32, rX: -1.32 },
+  landcruiser: { ...BODIES.urus, L: 4.99, W: 1.98, wr: .41, fX: 1.45, rX: -1.40 },
+  grgt: { ...BODIES.fgt, L: 4.82, W: 2.0, wr: .35, fX: 1.40, rX: -1.33 },
+});
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .55 });
@@ -1511,7 +1552,7 @@ const SHADOW_TEX = canvasTex(128, 64, (g, w, h) => { const gr = g.createRadialGr
    PHYSICS DERIVATION
    ===================================================================== */
 function torqueCurve(spec, x) {
-  if (['f6na', 'v8na', 'v12na', 'v10na', 'v16na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
+  if (['f6na', 'v8na', 'v12na', 'v10na', 'v16na', 'f4na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
   return x < .22 ? .45 + 2.5 * x : x < .72 ? 1 : 1 - (x - .72) * 1.5; // turbo: flat plateau
 }
 function derive(spec) {
@@ -1547,6 +1588,9 @@ const ENGINE_TYPES = {
   v6tt: { cyl: 6, res: [[205, .0045, 1], [530, .0025, .85], [1420, .0012, .55], [3150, .0006, .3]], noise: .28, drive: 2.5, lpMin: 1000, lpMax: 8000, vol: .5, crackle: .8, intake: .07, turbo: true },
   // Bugatti: deep quad-turbo W16 whoosh, and the Tourbillon's 9,000 rpm Cosworth V16
   w16: { cyl: 16, res: [[105, .007, 1], [290, .004, .8], [740, .002, .4], [1750, .0009, .15]], noise: .25, drive: 2.3, lpMin: 600, lpMax: 4600, vol: .62, crackle: .4, intake: .05, turbo: true },
+  i6tt: { cyl: 6, res: [[150, .006, 1], [390, .0032, .8], [980, .0016, .4], [2300, .0008, .15]], noise: .24, drive: 2.2, lpMin: 800, lpMax: 5600, vol: .55, crackle: .6, intake: .04, turbo: true },
+  f4na: { cyl: 4, pattern: [1, .74, .96, .7], res: [[165, .0052, 1], [430, .0029, .85], [1120, .0014, .5], [2650, .0007, .25]], noise: .3, drive: 2.5, lpMin: 1000, lpMax: 7500, vol: .5, crackle: .5, intake: .08 },
+  i3t: { cyl: 3, res: [[185, .0048, 1], [470, .0027, .8], [1240, .0013, .45], [2900, .0006, .2]], noise: .3, drive: 2.6, lpMin: 900, lpMax: 6000, vol: .5, crackle: .8, intake: .05, turbo: true },
   v16na: { cyl: 16, res: [[245, .0038, 1], [650, .002, .95], [1720, .001, .72], [3850, .0005, .46]], noise: .25, drive: 2.9, lpMin: 1300, lpMax: 12000, vol: .5, crackle: .7, intake: .12 },
 };
 class AudioSys {
@@ -2357,7 +2401,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -2367,13 +2411,13 @@ function buildMenu() {
   $('drive').onclick = startDrive;
   updateMenu();
 }
-const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', ev: 'Electric' };
+const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
 function selectCar(i) { carIdx = i; paintIdx = CARS[i].paint; localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => d.classList.toggle('sel', +d.dataset.i === carIdx));
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
-  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK')}`;
+  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
   $('vPow').textContent = `${Math.round(c.kw * 1.36)} PS`; $('bPow').style.width = clamp(c.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${c.vmax} km/h`; $('bTop').style.width = clamp((c.vmax - 180) / 1.7, 5, 100) + '%';
   $('vAcc').textContent = `${c.zero.toFixed(1)} s`; $('bAcc').style.width = clamp((4.5 - c.zero) / 2.4 * 100, 5, 100) + '%';

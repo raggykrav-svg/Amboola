@@ -46,6 +46,8 @@ Gamepads work too: RT/LT for throttle and brake, the left stick steers, A is the
 **Ferrari:** SF90 Stradale · LaFerrari · 812 Competizione · 12Cilindri · 296 GTB · F8 Tributo · Purosangue
 **McLaren:** W1 · Senna · P1 · 765LT · 750S · Artura · GTS
 **Bugatti:** Tourbillon · Chiron Super Sport · Chiron Pur Sport · Divo · Veyron Super Sport · Bolide
+**Koenigsegg:** Jesko Absolut · Jesko Attack · Regera · Gemera · CC850 · Agera RS
+**Toyota:** GR Supra · GR86 · GR Yaris · GR Corolla · Land Cruiser GR Sport · GR GT
 **Tesla:** Roadster (next-gen) · Roadster (2008) · Model S Plaid · Model 3 Performance · Model X Plaid · Model Y Performance · Cybertruck Cyberbeast
 
 The Teslas have their own body shapes: glass roofs, smooth grille-less noses, and a flat-panel Cybertruck with a full-width light bar. They also get extra paints: Pearl White, Ultra Red, Stealth Grey, Quicksilver, Deep Blue, and brushed Stainless Steel for the Cybertruck. The next-gen Roadster uses Tesla's announced prototype figures (0–100 km/h in 1.9 s, 400 km/h).
@@ -153,6 +155,16 @@ The 7 Teslas are Blender models too, in [`models/blender/teslas.py`](models/blen
 ```bash
 blender -b --factory-startup --python models/blender/teslas.py -- --car all     # or --car cyberbeast
 ```
+
+### Koenigsegg and Toyota
+
+![Koenigsegg and Toyota cars built in Blender](media/koenigsegg-toyota-blender.jpg)
+
+Two more brands, built in Blender the same way: [`models/blender/koenigsegg.py`](models/blender/koenigsegg.py) and [`models/blender/toyota.py`](models/blender/toyota.py).
+- **Koenigsegg:** Jesko Absolut (480 km/h, rear fins), Jesko Attack (huge swan-neck wing), Regera (Direct Drive hybrid), Gemera (four-seat mega-GT), CC850 (6-speed manual, turbine wheels) and Agera RS (the 447 km/h record car). They share a narrow bubble canopy with a carbon targa roof, ring tail lights and a high centre exhaust.
+- **Toyota GAZOO Racing:** GR Supra (turbo straight-six, ducktail), GR86 (boxer, manual), GR Yaris and GR Corolla (rally hot hatches, manual, AWD), Land Cruiser GR Sport (raised on off-road tyres, chrome-bar grille, roof rails) and GR GT (front-mid V8 hybrid flagship).
+
+They have their own engine sounds: the Supra's straight-six, the GR86's boxer rumble and the GR Yaris/Corolla three-cylinder. They also bring new paints: Tang Orange, Naked Carbon, Emotional Red, Nitro Yellow and Precious Metal.
 
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
