@@ -104,6 +104,25 @@ Each car is written to `models/<id>.glb`, plus `models/<id>.glb.js` (the same mo
 - `--sheet` puts several views in one picture.
 - `--blend car.blend` saves a file you can open and edit in Blender.
 
+### The Blender Lamborghinis and Ferraris
+
+![All 13 Lamborghinis and Ferraris built in Blender](media/supercars-blender.jpg)
+
+The 6 Lamborghinis and 7 Ferraris are Blender models too. They are made the same way, in [`models/blender/supercars.py`](models/blender/supercars.py). The Lamborghinis have sharp, folded wedge shapes; the Ferraris have soft, flowing curves.
+- **Lamborghini:** Y-shaped LED lights, hexagonal exhausts and black rear grilles.
+  - The **Aventador SVJ** and **Huracán STO** get big wings on posts (the STO also has a roof scoop and a shark fin).
+  - The **Huracán Sterrato** is raised on off-road tyres, with light pods on the nose and roof rails.
+  - The **Urus Performante** is the sharp-edged super SUV.
+- **Ferrari:** slim swept headlights.
+  - The **SF90** has high-exit pipes and the **LaFerrari** three centre pipes.
+  - The **296 GTB** has a ducktail and one centre pipe, and the **F8** has round twin tail lights.
+  - The **812 Competizione** has its louvred rear window, and the **12Cilindri** the black band across its nose.
+  - The **Purosangue** is the four-door Ferrari.
+
+```bash
+blender -b --factory-startup --python models/blender/supercars.py -- --car all     # or --car svj,f8
+```
+
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
 ## The world

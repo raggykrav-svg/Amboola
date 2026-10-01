@@ -8,7 +8,7 @@
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy
-from carkit import Car, V, lerp, stations, edit, both, side
+from carkit import Car, V, lerp, stations, edit, both, side, main
 
 # ======================================================================= 911 (992)
 # x, zb, w, zs, wb, zbl, wg, zg, wr, zr, zt   (front axle x=1.22, rear axle x=-1.24)
@@ -506,17 +506,4 @@ CARS = {
 }
 
 if __name__ == '__main__':
-    argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-    arg = lambda n, d=None: argv[argv.index(n) + 1] if n in argv else d
-    ids = list(CARS) if arg('--car', 'all') == 'all' else arg('--car').split(',')
-    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    for cid in ids:
-        fn, paint, rim, cal = CARS[cid]
-        k = Car(cid, paint, rim, cal); fn(k)
-        if arg('--renders'):
-            views = arg('--views', 'front34,rear34,side,front,rear,top').split(',')
-            sheet = '--sheet' in argv
-            k.renders(arg('--renders'), views, int(arg('--samples', '48')), (640, 360) if sheet else (1280, 720),
-                      sheet=os.path.join(arg('--renders'), f'{cid}-sheet.png') if sheet else None)
-        if arg('--blend'): bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(arg('--blend')))
-        if '--no-export' not in argv: k.export(os.path.join(repo, 'models', f'{cid}.glb'))
+    main(CARS, 'porsches.py')
