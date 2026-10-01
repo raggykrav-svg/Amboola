@@ -134,6 +134,22 @@
   #price.own { color:#5cd67a; }
   #drive.buy { background:linear-gradient(90deg,#ffd02d,#ffb300); font-size:17px; letter-spacing:.12em; }
   #drive.locked { background:#3a3d44; color:#cfd2d8; font-size:15px; letter-spacing:.08em; cursor:not-allowed; }
+  #upgBtn { display:block; width:100%; margin:6px 0 4px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.12em;
+    color:#111; background:linear-gradient(90deg,#5cd67a,#2fe0ff); border:none; cursor:pointer; }
+  #upgBtn:hover { filter:brightness(1.15); } #upgBtn.hidden { display:none; }
+  #upgPanel { position:fixed; inset:0; z-index:32; background:rgba(4,5,9,.8); backdrop-filter:blur(6px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  #upgPanel.hidden { display:none; }
+  #upgPanel h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:34px; letter-spacing:.25em; margin:0; }
+  #upgCar { font-size:20px; font-weight:700; letter-spacing:.08em; margin:4px 0 16px; text-align:center; } #upgCar small { display:block; color:#ffd02d; font-family:'Orbitron',sans-serif; font-size:14px; margin-top:4px; }
+  .urow { display:flex; align-items:center; gap:18px; width:min(760px,100%); background:var(--panel); border:1px solid rgba(255,255,255,.08); padding:14px 16px; margin-bottom:10px; }
+  .uname { flex:1; } .uname b { font-family:'Orbitron',sans-serif; font-size:18px; letter-spacing:.12em; } .uname b i { font-style:normal; font-size:13px; color:var(--dim); margin-left:6px; }
+  .uname small { display:block; color:var(--dim); font-size:13px; letter-spacing:.05em; margin-top:3px; }
+  .pips { display:flex; gap:5px; } .pips span { width:22px; height:22px; border:2px solid #4a4f5b; transform:skewX(-14deg); } .pips span.on { background:linear-gradient(#5cd67a,#2fe0ff); border-color:#5cd67a; }
+  .urow button { min-width:220px; padding:10px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:13px; letter-spacing:.06em; color:#111; background:linear-gradient(90deg,#ffd02d,#ffb300); border:none; cursor:pointer; }
+  .urow button.poor { background:#3a3d44; color:#9a9ea8; } .urow button.max { background:#5cd67a; }
+  #upgStats { display:flex; gap:22px; flex-wrap:wrap; justify-content:center; margin:8px 0 18px; } #upgStats small { display:block; font-size:11px; color:var(--dim); letter-spacing:.2em; }
+  #upgStats b { font-family:'Orbitron',sans-serif; font-size:15px; } #upgStats em { font-style:normal; color:#5cd67a; }
+  #upgClose { padding:12px 40px; font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.2em; background:var(--panel); color:#fff; border:1px solid #3a3f4b; cursor:pointer; }
   #scorebox { position:absolute; right:22px; top:18px; text-align:right; text-shadow:0 2px 8px #000; }
   #scorebox .big { font-family:'Orbitron',sans-serif; font-weight:900; font-size:26px; }
   #scorebox .row { font-size:14px; letter-spacing:.2em; color:var(--dim); }
@@ -187,6 +203,10 @@
   #rBoard div { padding:2px 8px; background:rgba(10,12,18,.55); margin-bottom:2px; }
   #rBoard div.me { background:rgba(255,90,31,.45); }
   #rBoard b { display:inline-block; width:20px; color:var(--accent2); }
+  #draghud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:22px; align-items:center; background:var(--panel); padding:6px 18px; }
+  #draghud.hidden { display:none; } #draghud small { display:block; font-size:11px; letter-spacing:.2em; color:var(--dim); white-space:nowrap; } #draghud b { font-family:'Orbitron',sans-serif; font-size:20px; }
+  #dTree { display:flex; flex-direction:column; gap:3px; } #dTree i { width:12px; height:12px; border-radius:50%; background:#22252b; }
+  #dTree i.w { background:#fff; box-shadow:0 0 8px #fff; } #dTree i.a { background:#ffa000; box-shadow:0 0 10px #ffa000; } #dTree i.g { background:#20ff40; box-shadow:0 0 12px #20ff40; } #dTree i.r { background:#ff1010; box-shadow:0 0 12px #ff1010; }
   #count { position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); font-family:'Orbitron',sans-serif; font-weight:900; font-size:64px;
     color:#ff2a2a; text-shadow:0 0 30px rgba(255,40,40,.8); opacity:0; transition:opacity .3s; letter-spacing:.2em; }
   #taxihud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:20px; align-items:center; background:var(--panel);
@@ -292,10 +312,10 @@
 
 <div id="menu" class="hidden">
   <div id="brand"><h1>AMBOOLA</h1><p>Tokyo Open World · 東京</p></div>
-  <div id="walletG"><small>WALLET · 財布</small><span id="walletV">¥0</span></div>
+  <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
   <div id="carlist"></div>
   <div id="stats">
-    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div>
+    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button>
     <div class="stat"><div class="lbl">Power <b id="vPow"></b></div><div class="track"><i id="bPow"></i></div></div>
     <div class="stat"><div class="lbl">Top speed <b id="vTop"></b></div><div class="track"><i id="bTop"></i></div></div>
     <div class="stat"><div class="lbl">0–100 km/h <b id="vAcc"></b></div><div class="track"><i id="bAcc"></i></div></div>
@@ -323,7 +343,7 @@
     <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>R</kbd>Reset car to road</div>
     <div><kbd>G</kbd>Outlaw: route to a hideout</div><div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
-  <div id="scorebox"><div class="big wallet" id="walletHud">¥0</div><div class="big" id="skill">0</div><div class="row">SKILL POINTS</div>
+  <div id="scorebox"><div class="big wallet" id="walletHud">$0</div><div class="big" id="skill">0</div><div class="row">SKILL POINTS</div>
     <div class="row">BOARDS <b id="boardsN">0/0</b></div><div class="row">TOP SPEED <b id="topN">0</b></div></div>
   <div id="chain"><div class="lbl" id="chainLbl"></div><div class="pts" id="chainPts"></div></div>
   <div id="toast"></div>
@@ -334,12 +354,14 @@
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
   <div id="count"></div>
-  <div id="crimehud" class="hidden"><div class="job"><b id="crRole">OUTLAW</b><span id="crInfo">-</span></div><div><small id="crCashL">CARRYING</small><b id="crCash">¥0</b></div><div><small id="crBankL">STASHED</small><b id="crBank">¥0</b></div><div><small>POLICE</small><b id="crHeat">—</b></div><button id="crBtn">🏠 HIDEOUT ROUTE [G]</button></div>
+  <div id="draghud" class="hidden"><div id="dTree"></div><div><small id="dEvent">DRAG</small><b id="dTime">—</b></div><div><small>TO GO</small><b id="dLeft">—</b></div><div><small>VS <span id="dRival"></span></small><b id="dGap">—</b></div></div>
+  <div id="crimehud" class="hidden"><div class="job"><b id="crRole">OUTLAW</b><span id="crInfo">-</span></div><div><small id="crCashL">CARRYING</small><b id="crCash">$0</b></div><div><small id="crBankL">STASHED</small><b id="crBank">$0</b></div><div><small>POLICE</small><b id="crHeat">—</b></div><button id="crBtn">🏠 HIDEOUT ROUTE [G]</button></div>
   <div id="crMeter" class="hidden"><div id="crMeterL">BUSTED</div><i></i></div>
-  <div id="taxihud" class="hidden"><div class="job"><b id="txTask">-</b><span id="txWhere">-</span></div><div><small>DISTANCE</small><b id="txDist">-</b></div><div><small>TIME</small><b id="txTime">-</b></div><div><small>EARNED</small><b id="txMoney">¥0</b></div><div><small>FARES</small><b id="txFares">0</b></div></div>
+  <div id="taxihud" class="hidden"><div class="job"><b id="txTask">-</b><span id="txWhere">-</span></div><div><small>DISTANCE</small><b id="txDist">-</b></div><div><small>TIME</small><b id="txTime">-</b></div><div><small>EARNED</small><b id="txMoney">$0</b></div><div><small>FARES</small><b id="txFares">0</b></div></div>
 </div>
 <div id="raceprompt" class="hidden"></div>
 <div id="races" class="hidden"><h2>RACES</h2><div id="raceList"></div><button id="racesClose">BACK</button></div>
+<div id="upgPanel" class="hidden"><h2>UPGRADES</h2><div id="upgCar"></div><div id="upgRows"></div><div id="upgStats"></div><button id="upgClose">DONE</button></div>
 <div id="results" class="hidden"><h2 id="resTitle"></h2><table id="resTable"></table><div class="rbtns"><button id="resRestart">RACE AGAIN</button><button id="resLeave">BACK TO CITY</button></div></div>
 
 <div id="bigmap" class="hidden">
@@ -421,72 +443,72 @@ const PAINTS = [
   { n: 'Tang Orange', c: '#ff6a13', m: .35 }, { n: 'Naked Carbon', c: '#1a1c1f', m: .9, r: .22 }, { n: 'Emotional Red', c: '#b3121e', m: .45 }, { n: 'Nitro Yellow', c: '#f0cc00', m: .2 }, { n: 'Precious Metal', c: '#6d7176', m: .9 },
 ];
 const CARS = [
-  { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', yen: 36200000, desc: '4.0 flat-six · 9,000 rpm' },
-  { id: 'gt3', name: '911 GT3', cat: 'GT', body: '911', wing: 'gt3', kw: 375, redline: 9000, mass: 1420, vmax: 311, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .6, paint: 1, rim: '#2a2b2e', caliper: '#c8141b', yen: 33300000, desc: '4.0 flat-six · naturally aspirated' },
-  { id: 'gt3t', name: '911 GT3 Touring', cat: 'GT', body: '911', wing: 'duck', kw: 375, redline: 9000, mass: 1420, vmax: 313, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.3, aero: .2, paint: 5, rim: '#9da1a6', caliper: '#c8141b', yen: 33300000, desc: 'The subtle GT3' },
-  { id: 'st', name: '911 S/T', cat: 'GT', body: '911', wing: 'duck', kw: 386, redline: 9000, mass: 1380, vmax: 300, drive: 'RWD', engine: 'f6na', gears: 6, zero: 3.7, grip: 1.3, aero: .2, paint: 12, rim: '#8a6a3a', caliper: '#e3c11b', yen: 43500000, desc: 'Lightweight · 6-speed manual', manual: true },
-  { id: 'gt2rs', name: '911 GT2 RS', cat: 'GT', body: '911', wing: 'gt2', kw: 515, redline: 7200, mass: 1470, vmax: 340, drive: 'RWD', engine: 'f6tt', gears: 7, zero: 2.8, grip: 1.4, aero: .9, paint: 7, rim: '#d9dadc', caliper: '#e3c11b', yen: 44000000, desc: '3.8 twin-turbo flat-six · 700 PS' },
-  { id: 'turbos', name: '911 Turbo S', cat: 'GT', body: '911', wing: 'turbo', kw: 478, redline: 7200, mass: 1640, vmax: 330, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 2.7, grip: 1.36, aero: .4, paint: 9, rim: '#2a2b2e', caliper: '#e3c11b', yen: 40800000, desc: 'Twin-turbo · all-wheel drive' },
-  { id: 'gt4rs', name: '718 Cayman GT4 RS', cat: 'GT', body: '718', wing: 'gt3', kw: 368, redline: 9000, mass: 1415, vmax: 315, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.38, aero: .8, paint: 11, rim: '#1b1b1d', caliper: '#c8141b', yen: 24200000, desc: 'Mid-engine · 9,000 rpm' },
-  { id: 'spyrs', name: '718 Spyder RS', cat: 'GT', body: '718', wing: 'duck', open: true, kw: 368, redline: 9000, mass: 1410, vmax: 308, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .3, paint: 6, rim: '#1b1b1d', caliper: '#c8141b', yen: 24200000, desc: 'Open-top · mid-engine' },
-  { id: 'dakar', name: '911 Dakar', cat: 'GT', body: '911', dakar: true, wing: 'turbo', kw: 353, redline: 7500, mass: 1605, vmax: 240, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 3.4, grip: 1.12, aero: .1, paint: 8, rim: '#e8e8e8', caliper: '#c8141b', yen: 33300000, desc: 'Rally-raised 911 · all-terrain' },
-  { id: '918', name: '918 Spyder', cat: 'HYPER', body: '918', wing: 'turbo', kw: 652, redline: 9150, mass: 1675, vmax: 345, drive: 'AWD', engine: 'v8na', gears: 7, zero: 2.6, grip: 1.45, aero: .7, paint: 13, rim: '#1b1b1d', caliper: '#1f8a5a', yen: 126800000, desc: 'V8 hybrid hypercar · 887 PS' },
-  { id: 'taycangt', name: 'Taycan Turbo GT', cat: 'ELECTRIC', body: 'taycan', wing: 'turbo', kw: 700, redline: 16000, mass: 2220, vmax: 305, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.2, grip: 1.3, aero: .4, paint: 3, rim: '#1b1b1d', caliper: '#e3c11b', yen: 34500000, desc: 'Dual-motor EV · 1,034 PS overboost' },
-  { id: 'macanev', name: 'Macan Turbo Electric', cat: 'SUV', body: 'macan', wing: 'none', kw: 470, redline: 16000, mass: 2405, vmax: 260, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.3, grip: 1.12, aero: .1, paint: 10, rim: '#2a2b2e', caliper: '#c8141b', yen: 15800000, desc: 'Electric SUV · 639 PS' },
-  { id: 'cayennegt', name: 'Cayenne Turbo GT', cat: 'SUV', body: 'cayenne', wing: 'turbo', kw: 485, redline: 6800, mass: 2220, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.18, aero: .2, paint: 2, rim: '#2a2b2e', caliper: '#e3c11b', yen: 29400000, desc: '4.0 twin-turbo V8 · SUV coupé' },
-  { id: 'cayenneeh', name: 'Cayenne Turbo E-Hybrid', cat: 'SUV', body: 'cayenne', wing: 'none', kw: 544, redline: 6800, mass: 2535, vmax: 295, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.7, grip: 1.12, aero: .1, paint: 8, rim: '#9da1a6', caliper: '#1f8a5a', yen: 23000000, desc: 'V8 plug-in hybrid · 739 PS' },
+  { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', usd: 241000, desc: '4.0 flat-six · 9,000 rpm' },
+  { id: 'gt3', name: '911 GT3', cat: 'GT', body: '911', wing: 'gt3', kw: 375, redline: 9000, mass: 1420, vmax: 311, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .6, paint: 1, rim: '#2a2b2e', caliper: '#c8141b', usd: 222000, desc: '4.0 flat-six · naturally aspirated' },
+  { id: 'gt3t', name: '911 GT3 Touring', cat: 'GT', body: '911', wing: 'duck', kw: 375, redline: 9000, mass: 1420, vmax: 313, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.3, aero: .2, paint: 5, rim: '#9da1a6', caliper: '#c8141b', usd: 222000, desc: 'The subtle GT3' },
+  { id: 'st', name: '911 S/T', cat: 'GT', body: '911', wing: 'duck', kw: 386, redline: 9000, mass: 1380, vmax: 300, drive: 'RWD', engine: 'f6na', gears: 6, zero: 3.7, grip: 1.3, aero: .2, paint: 12, rim: '#8a6a3a', caliper: '#e3c11b', usd: 290000, desc: 'Lightweight · 6-speed manual', manual: true },
+  { id: 'gt2rs', name: '911 GT2 RS', cat: 'GT', body: '911', wing: 'gt2', kw: 515, redline: 7200, mass: 1470, vmax: 340, drive: 'RWD', engine: 'f6tt', gears: 7, zero: 2.8, grip: 1.4, aero: .9, paint: 7, rim: '#d9dadc', caliper: '#e3c11b', usd: 293000, desc: '3.8 twin-turbo flat-six · 700 PS' },
+  { id: 'turbos', name: '911 Turbo S', cat: 'GT', body: '911', wing: 'turbo', kw: 478, redline: 7200, mass: 1640, vmax: 330, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 2.7, grip: 1.36, aero: .4, paint: 9, rim: '#2a2b2e', caliper: '#e3c11b', usd: 272000, desc: 'Twin-turbo · all-wheel drive' },
+  { id: 'gt4rs', name: '718 Cayman GT4 RS', cat: 'GT', body: '718', wing: 'gt3', kw: 368, redline: 9000, mass: 1415, vmax: 315, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.38, aero: .8, paint: 11, rim: '#1b1b1d', caliper: '#c8141b', usd: 161000, desc: 'Mid-engine · 9,000 rpm' },
+  { id: 'spyrs', name: '718 Spyder RS', cat: 'GT', body: '718', wing: 'duck', open: true, kw: 368, redline: 9000, mass: 1410, vmax: 308, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.4, grip: 1.34, aero: .3, paint: 6, rim: '#1b1b1d', caliper: '#c8141b', usd: 161000, desc: 'Open-top · mid-engine' },
+  { id: 'dakar', name: '911 Dakar', cat: 'GT', body: '911', dakar: true, wing: 'turbo', kw: 353, redline: 7500, mass: 1605, vmax: 240, drive: 'AWD', engine: 'f6tt', gears: 8, zero: 3.4, grip: 1.12, aero: .1, paint: 8, rim: '#e8e8e8', caliper: '#c8141b', usd: 222000, desc: 'Rally-raised 911 · all-terrain' },
+  { id: '918', name: '918 Spyder', cat: 'HYPER', body: '918', wing: 'turbo', kw: 652, redline: 9150, mass: 1675, vmax: 345, drive: 'AWD', engine: 'v8na', gears: 7, zero: 2.6, grip: 1.45, aero: .7, paint: 13, rim: '#1b1b1d', caliper: '#1f8a5a', usd: 845000, desc: 'V8 hybrid hypercar · 887 PS' },
+  { id: 'taycangt', name: 'Taycan Turbo GT', cat: 'ELECTRIC', body: 'taycan', wing: 'turbo', kw: 700, redline: 16000, mass: 2220, vmax: 305, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.2, grip: 1.3, aero: .4, paint: 3, rim: '#1b1b1d', caliper: '#e3c11b', usd: 230000, desc: 'Dual-motor EV · 1,034 PS overboost' },
+  { id: 'macanev', name: 'Macan Turbo Electric', cat: 'SUV', body: 'macan', wing: 'none', kw: 470, redline: 16000, mass: 2405, vmax: 260, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.3, grip: 1.12, aero: .1, paint: 10, rim: '#2a2b2e', caliper: '#c8141b', usd: 105000, desc: 'Electric SUV · 639 PS' },
+  { id: 'cayennegt', name: 'Cayenne Turbo GT', cat: 'SUV', body: 'cayenne', wing: 'turbo', kw: 485, redline: 6800, mass: 2220, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.18, aero: .2, paint: 2, rim: '#2a2b2e', caliper: '#e3c11b', usd: 196000, desc: '4.0 twin-turbo V8 · SUV coupé' },
+  { id: 'cayenneeh', name: 'Cayenne Turbo E-Hybrid', cat: 'SUV', body: 'cayenne', wing: 'none', kw: 544, redline: 6800, mass: 2535, vmax: 295, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.7, grip: 1.12, aero: .1, paint: 8, rim: '#9da1a6', caliper: '#1f8a5a', usd: 153000, desc: 'V8 plug-in hybrid · 739 PS' },
   // ---- Tesla (all electric, single-speed; "brand" switches on the Tesla sound profile)
-  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', yen: 30000000, desc: 'Next-gen · prototype claims' },
-  { id: 'roadster08', name: 'Tesla Roadster (2008)', brand: 'Tesla', cat: 'TESLA', body: 'roadster08', wing: 'none', kw: 185, redline: 14000, mass: 1235, vmax: 201, drive: 'RWD', engine: 'ev', gears: 1, zero: 3.9, grip: 1.15, aero: .1, paint: 0, rim: '#9da1a6', caliper: '#1b1b1d', yen: 16400000, desc: 'The original · 248 hp' },
-  { id: 'modelsplaid', name: 'Tesla Model S Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelS', wing: 'turbo', kw: 760, redline: 20000, mass: 2162, vmax: 322, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: .2, paint: 16, rim: '#2a2b2e', caliper: '#c8141b', yen: 14300000, desc: 'Tri-motor · 1,020 hp' },
-  { id: 'model3p', name: 'Tesla Model 3 Performance', brand: 'Tesla', cat: 'TESLA', body: 'model3', wing: 'turbo', kw: 460, redline: 18000, mass: 1836, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.1, grip: 1.12, aero: .15, paint: 14, rim: '#2a2b2e', caliper: '#c8141b', yen: 8300000, desc: 'Dual-motor · 510 hp' },
-  { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', yen: 15800000, desc: 'Tri-motor SUV · falcon wing' },
-  { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', yen: 8600000, desc: 'Dual-motor SUV' },
-  { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 17300000, desc: 'Tri-motor · stainless steel' },
+  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', usd: 200000, desc: 'Next-gen · prototype claims' },
+  { id: 'roadster08', name: 'Tesla Roadster (2008)', brand: 'Tesla', cat: 'TESLA', body: 'roadster08', wing: 'none', kw: 185, redline: 14000, mass: 1235, vmax: 201, drive: 'RWD', engine: 'ev', gears: 1, zero: 3.9, grip: 1.15, aero: .1, paint: 0, rim: '#9da1a6', caliper: '#1b1b1d', usd: 109000, desc: 'The original · 248 hp' },
+  { id: 'modelsplaid', name: 'Tesla Model S Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelS', wing: 'turbo', kw: 760, redline: 20000, mass: 2162, vmax: 322, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: .2, paint: 16, rim: '#2a2b2e', caliper: '#c8141b', usd: 95000, desc: 'Tri-motor · 1,020 hp' },
+  { id: 'model3p', name: 'Tesla Model 3 Performance', brand: 'Tesla', cat: 'TESLA', body: 'model3', wing: 'turbo', kw: 460, redline: 18000, mass: 1836, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.1, grip: 1.12, aero: .15, paint: 14, rim: '#2a2b2e', caliper: '#c8141b', usd: 55000, desc: 'Dual-motor · 510 hp' },
+  { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', usd: 105000, desc: 'Tri-motor SUV · falcon wing' },
+  { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', usd: 57000, desc: 'Dual-motor SUV' },
+  { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 115000, desc: 'Tri-motor · stainless steel' },
   // ---- Lamborghini
-  { id: 'revuelto', name: 'Lamborghini Revuelto', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'turbo', hybrid: true, kw: 747, redline: 9500, mass: 1772, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 20, rim: '#1b1b1d', caliper: '#e3c11b', yen: 91200000, desc: 'V12 hybrid · 1,015 CV' },
-  { id: 'svj', name: 'Lamborghini Aventador SVJ', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'gt2', kw: 566, redline: 8700, mass: 1525, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 7, zero: 2.8, grip: 1.32, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1f8a5a', yen: 77600000, desc: '6.5 V12 · 770 CV' },
-  { id: 'temerario', name: 'Lamborghini Temerario', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'turbo', hybrid: true, kw: 677, redline: 10000, mass: 1690, vmax: 343, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.4, aero: .6, paint: 22, rim: '#2a2b2e', caliper: '#e3c11b', yen: 49500000, desc: 'Twin-turbo V8 hybrid · 10,000 rpm' },
-  { id: 'sto', name: 'Lamborghini Huracán STO', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'gt3', kw: 470, redline: 8500, mass: 1339, vmax: 310, drive: 'RWD', engine: 'v10na', gears: 7, zero: 3.0, grip: 1.5, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 49200000, desc: '5.2 V10 · race-bred' },
-  { id: 'sterrato', name: 'Lamborghini Huracán Sterrato', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', dakar: true, wing: 'none', kw: 449, redline: 8000, mass: 1470, vmax: 260, drive: 'AWD', engine: 'v10na', gears: 7, zero: 3.4, grip: 1.15, aero: .1, paint: 20, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 41000000, desc: 'Off-road V10 supercar' },
-  { id: 'urusp', name: 'Lamborghini Urus Performante', brand: 'Lamborghini', cat: 'LAMBO', body: 'urus', wing: 'turbo', kw: 490, redline: 6800, mass: 2150, vmax: 306, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.2, aero: .2, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', yen: 39200000, desc: 'Super SUV · 666 CV' },
+  { id: 'revuelto', name: 'Lamborghini Revuelto', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'turbo', hybrid: true, kw: 747, redline: 9500, mass: 1772, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 20, rim: '#1b1b1d', caliper: '#e3c11b', usd: 608000, desc: 'V12 hybrid · 1,015 CV' },
+  { id: 'svj', name: 'Lamborghini Aventador SVJ', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'gt2', kw: 566, redline: 8700, mass: 1525, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 7, zero: 2.8, grip: 1.32, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1f8a5a', usd: 517000, desc: '6.5 V12 · 770 CV' },
+  { id: 'temerario', name: 'Lamborghini Temerario', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'turbo', hybrid: true, kw: 677, redline: 10000, mass: 1690, vmax: 343, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.4, aero: .6, paint: 22, rim: '#2a2b2e', caliper: '#e3c11b', usd: 330000, desc: 'Twin-turbo V8 hybrid · 10,000 rpm' },
+  { id: 'sto', name: 'Lamborghini Huracán STO', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', wing: 'gt3', kw: 470, redline: 8500, mass: 1339, vmax: 310, drive: 'RWD', engine: 'v10na', gears: 7, zero: 3.0, grip: 1.5, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 328000, desc: '5.2 V10 · race-bred' },
+  { id: 'sterrato', name: 'Lamborghini Huracán Sterrato', brand: 'Lamborghini', cat: 'LAMBO', body: 'huracan', dakar: true, wing: 'none', kw: 449, redline: 8000, mass: 1470, vmax: 260, drive: 'AWD', engine: 'v10na', gears: 7, zero: 3.4, grip: 1.15, aero: .1, paint: 20, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 273000, desc: 'Off-road V10 supercar' },
+  { id: 'urusp', name: 'Lamborghini Urus Performante', brand: 'Lamborghini', cat: 'LAMBO', body: 'urus', wing: 'turbo', kw: 490, redline: 6800, mass: 2150, vmax: 306, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.2, aero: .2, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', usd: 261000, desc: 'Super SUV · 666 CV' },
   // ---- Ferrari
-  { id: 'sf90', name: 'Ferrari SF90 Stradale', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 735, redline: 8000, mass: 1570, vmax: 340, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', yen: 78800000, desc: 'V8 plug-in hybrid · 1,000 CV' },
-  { id: 'laferrari', name: 'Ferrari LaFerrari', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 708, redline: 9250, mass: 1585, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.9, grip: 1.56, aero: .7, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', yen: 210000000, desc: 'V12 hybrid hypercar · 963 CV' },
-  { id: '812c', name: 'Ferrari 812 Competizione', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'duck', kw: 610, redline: 9500, mass: 1487, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.85, grip: 1.59, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', yen: 90000000, desc: '6.5 V12 · 9,500 rpm' },
-  { id: '12cil', name: 'Ferrari 12Cilindri', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'none', kw: 610, redline: 9500, mass: 1560, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 8, zero: 2.9, grip: 1.61, aero: .2, paint: 25, rim: '#9da1a6', caliper: '#c8141b', yen: 63500000, desc: 'Front V12 grand tourer' },
-  { id: '296gtb', name: 'Ferrari 296 GTB', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 610, redline: 8500, mass: 1470, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 2.9, grip: 1.6, aero: .5, paint: 24, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 48300000, desc: 'V6 plug-in hybrid · 830 CV' },
-  { id: 'f8', name: 'Ferrari F8 Tributo', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'duck', kw: 530, redline: 8000, mass: 1435, vmax: 340, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.9, grip: 1.56, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', yen: 41400000, desc: '3.9 twin-turbo V8 · 720 CV' },
-  { id: 'purosangue', name: 'Ferrari Purosangue', brand: 'Ferrari', cat: 'FERRARI', body: 'purosangue', wing: 'none', kw: 533, redline: 8250, mass: 2033, vmax: 310, drive: 'AWD', engine: 'v12na', gears: 8, zero: 3.3, grip: 1.17, aero: .1, paint: 25, rim: '#1b1b1d', caliper: '#e3c11b', yen: 60000000, desc: 'V12 four-door · 725 CV' },
+  { id: 'sf90', name: 'Ferrari SF90 Stradale', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 735, redline: 8000, mass: 1570, vmax: 340, drive: 'AWD', engine: 'v8ftt', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', usd: 525000, desc: 'V8 plug-in hybrid · 1,000 CV' },
+  { id: 'laferrari', name: 'Ferrari LaFerrari', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 708, redline: 9250, mass: 1585, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.9, grip: 1.56, aero: .7, paint: 23, rim: '#1b1b1d', caliper: '#e3c11b', usd: 1400000, desc: 'V12 hybrid hypercar · 963 CV' },
+  { id: '812c', name: 'Ferrari 812 Competizione', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'duck', kw: 610, redline: 9500, mass: 1487, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 7, zero: 2.85, grip: 1.59, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', usd: 600000, desc: '6.5 V12 · 9,500 rpm' },
+  { id: '12cil', name: 'Ferrari 12Cilindri', brand: 'Ferrari', cat: 'FERRARI', body: 'fgt', wing: 'none', kw: 610, redline: 9500, mass: 1560, vmax: 340, drive: 'RWD', engine: 'v12na', gears: 8, zero: 2.9, grip: 1.61, aero: .2, paint: 25, rim: '#9da1a6', caliper: '#c8141b', usd: 423000, desc: 'Front V12 grand tourer' },
+  { id: '296gtb', name: 'Ferrari 296 GTB', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'turbo', hybrid: true, kw: 610, redline: 8500, mass: 1470, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 2.9, grip: 1.6, aero: .5, paint: 24, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 322000, desc: 'V6 plug-in hybrid · 830 CV' },
+  { id: 'f8', name: 'Ferrari F8 Tributo', brand: 'Ferrari', cat: 'FERRARI', body: 'ferrari', wing: 'duck', kw: 530, redline: 8000, mass: 1435, vmax: 340, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.9, grip: 1.56, aero: .4, paint: 23, rim: '#2a2b2e', caliper: '#e3c11b', usd: 276000, desc: '3.9 twin-turbo V8 · 720 CV' },
+  { id: 'purosangue', name: 'Ferrari Purosangue', brand: 'Ferrari', cat: 'FERRARI', body: 'purosangue', wing: 'none', kw: 533, redline: 8250, mass: 2033, vmax: 310, drive: 'AWD', engine: 'v12na', gears: 8, zero: 3.3, grip: 1.17, aero: .1, paint: 25, rim: '#1b1b1d', caliper: '#e3c11b', usd: 400000, desc: 'V12 four-door · 725 CV' },
   // ---- McLaren
-  { id: 'w1', name: 'McLaren W1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 928, redline: 9200, mass: 1399, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.74, aero: 1.0, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 315000000, desc: 'V8 hybrid hypercar · 1,275 PS' },
-  { id: 'senna', name: 'McLaren Senna', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'rs', kw: 588, redline: 8250, mass: 1198, vmax: 335, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: 1.2, paint: 27, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 150000000, desc: 'Track-focused · 800 PS' },
-  { id: 'p1', name: 'McLaren P1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 673, redline: 8500, mass: 1490, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: .9, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 172500000, desc: 'The original hybrid hypercar' },
-  { id: '765lt', name: 'McLaren 765LT', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'duck', kw: 563, redline: 8500, mass: 1339, vmax: 330, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 53700000, desc: 'Longtail · 765 PS' },
-  { id: '750s', name: 'McLaren 750S', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'turbo', kw: 552, redline: 8500, mass: 1389, vmax: 332, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .5, paint: 27, rim: '#2a2b2e', caliper: '#1b1b1d', yen: 48600000, desc: '4.0 twin-turbo V8 · 750 PS' },
-  { id: 'artura', name: 'McLaren Artura', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', hybrid: true, kw: 515, redline: 8500, mass: 1498, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 3.0, grip: 1.56, aero: .3, paint: 29, rim: '#2a2b2e', caliper: '#1b1b1d', yen: 37500000, desc: 'V6 plug-in hybrid · 700 PS' },
-  { id: 'gts', name: 'McLaren GTS', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', kw: 470, redline: 7500, mass: 1520, vmax: 326, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 3.2, grip: 1.42, aero: .2, paint: 9, rim: '#9da1a6', caliper: '#1b1b1d', yen: 30900000, desc: 'Grand tourer · 635 PS' },
+  { id: 'w1', name: 'McLaren W1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 928, redline: 9200, mass: 1399, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 8, zero: 2.7, grip: 1.74, aero: 1.0, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 2100000, desc: 'V8 hybrid hypercar · 1,275 PS' },
+  { id: 'senna', name: 'McLaren Senna', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'rs', kw: 588, redline: 8250, mass: 1198, vmax: 335, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: 1.2, paint: 27, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 1000000, desc: 'Track-focused · 800 PS' },
+  { id: 'p1', name: 'McLaren P1', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'gt2', hybrid: true, kw: 673, redline: 8500, mass: 1490, vmax: 350, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.61, aero: .9, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 1150000, desc: 'The original hybrid hypercar' },
+  { id: '765lt', name: 'McLaren 765LT', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'duck', kw: 563, redline: 8500, mass: 1339, vmax: 330, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 358000, desc: 'Longtail · 765 PS' },
+  { id: '750s', name: 'McLaren 750S', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'turbo', kw: 552, redline: 8500, mass: 1389, vmax: 332, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.62, aero: .5, paint: 27, rim: '#2a2b2e', caliper: '#1b1b1d', usd: 324000, desc: '4.0 twin-turbo V8 · 750 PS' },
+  { id: 'artura', name: 'McLaren Artura', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', hybrid: true, kw: 515, redline: 8500, mass: 1498, vmax: 330, drive: 'RWD', engine: 'v6tt', gears: 8, zero: 3.0, grip: 1.56, aero: .3, paint: 29, rim: '#2a2b2e', caliper: '#1b1b1d', usd: 250000, desc: 'V6 plug-in hybrid · 700 PS' },
+  { id: 'gts', name: 'McLaren GTS', brand: 'McLaren', cat: 'MCLAREN', body: 'mclaren', wing: 'none', kw: 470, redline: 7500, mass: 1520, vmax: 326, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 3.2, grip: 1.42, aero: .2, paint: 9, rim: '#9da1a6', caliper: '#1b1b1d', usd: 206000, desc: 'Grand tourer · 635 PS' },
   // ---- Bugatti
-  { id: 'tourbillon', name: 'Bugatti Tourbillon', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', hybrid: true, kw: 1320, redline: 9000, mass: 1995, vmax: 445, drive: 'AWD', engine: 'v16na', gears: 8, zero: 2.0, grip: 1.87, aero: .6, paint: 28, rim: '#1b1b1d', caliper: '#173a8c', yen: 600000000, desc: '8.3 V16 hybrid · 1,800 PS' },
-  { id: 'chironss', name: 'Bugatti Chiron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', kw: 1177, redline: 6900, mass: 1995, vmax: 440, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.49, aero: .5, paint: 7, rim: '#1b1b1d', caliper: '#ff7a00', yen: 585000000, desc: '8.0 quad-turbo W16 · 1,600 PS' },
-  { id: 'chironps', name: 'Bugatti Chiron Pur Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1935, vmax: 350, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.3, grip: 1.62, aero: 1.0, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 540000000, desc: 'Agile W16 · 1,500 PS' },
-  { id: 'divo', name: 'Bugatti Divo', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1960, vmax: 380, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.48, aero: 1.0, paint: 29, rim: '#1b1b1d', caliper: '#173a8c', yen: 870000000, desc: 'Corner-carving W16' },
-  { id: 'veyronss', name: 'Bugatti Veyron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'none', kw: 882, redline: 6400, mass: 1888, vmax: 431, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.5, grip: 1.43, aero: .3, paint: 12, rim: '#9da1a6', caliper: '#1b1b1d', yen: 360000000, desc: 'The 431 km/h legend' },
-  { id: 'bolide', name: 'Bugatti Bolide', brand: 'Bugatti', cat: 'BUGATTI', body: 'bolide', wing: 'rs', kw: 1361, redline: 7000, mass: 1450, vmax: 500, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.2, grip: 1.54, aero: 1.4, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', yen: 690000000, desc: 'Track-only W16 · 1,850 PS' },
+  { id: 'tourbillon', name: 'Bugatti Tourbillon', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', hybrid: true, kw: 1320, redline: 9000, mass: 1995, vmax: 445, drive: 'AWD', engine: 'v16na', gears: 8, zero: 2.0, grip: 1.87, aero: .6, paint: 28, rim: '#1b1b1d', caliper: '#173a8c', usd: 4000000, desc: '8.3 V16 hybrid · 1,800 PS' },
+  { id: 'chironss', name: 'Bugatti Chiron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'turbo', kw: 1177, redline: 6900, mass: 1995, vmax: 440, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.49, aero: .5, paint: 7, rim: '#1b1b1d', caliper: '#ff7a00', usd: 3900000, desc: '8.0 quad-turbo W16 · 1,600 PS' },
+  { id: 'chironps', name: 'Bugatti Chiron Pur Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1935, vmax: 350, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.3, grip: 1.62, aero: 1.0, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 3600000, desc: 'Agile W16 · 1,500 PS' },
+  { id: 'divo', name: 'Bugatti Divo', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'gt2', kw: 1103, redline: 6900, mass: 1960, vmax: 380, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.4, grip: 1.48, aero: 1.0, paint: 29, rim: '#1b1b1d', caliper: '#173a8c', usd: 5800000, desc: 'Corner-carving W16' },
+  { id: 'veyronss', name: 'Bugatti Veyron Super Sport', brand: 'Bugatti', cat: 'BUGATTI', body: 'bugatti', wing: 'none', kw: 882, redline: 6400, mass: 1888, vmax: 431, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.5, grip: 1.43, aero: .3, paint: 12, rim: '#9da1a6', caliper: '#1b1b1d', usd: 2400000, desc: 'The 431 km/h legend' },
+  { id: 'bolide', name: 'Bugatti Bolide', brand: 'Bugatti', cat: 'BUGATTI', body: 'bolide', wing: 'rs', kw: 1361, redline: 7000, mass: 1450, vmax: 500, drive: 'AWD', engine: 'w16', gears: 7, zero: 2.2, grip: 1.54, aero: 1.4, paint: 28, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 4600000, desc: 'Track-only W16 · 1,850 PS' },
   // ---- Koenigsegg
-  { id: 'jesko', name: 'Koenigsegg Jesko Absolut', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1195, redline: 8500, mass: 1390, vmax: 480, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: .4, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed LST', yen: 450000000, desc: 'Twin-turbo V8 · 1,600 hp' },
-  { id: 'jeskoattack', name: 'Koenigsegg Jesko Attack', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 1195, redline: 8500, mass: 1420, vmax: 360, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: 1.3, paint: 31, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', yen: 450000000, desc: 'Track attack · 1,000 kg downforce' },
-  { id: 'regera', name: 'Koenigsegg Regera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'turbo', hybrid: true, kw: 1100, redline: 8250, mass: 1590, vmax: 410, drive: 'RWD', engine: 'v8ftt', gears: 2, zero: 2.8, grip: 1.55, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#c8141b', box: 'Direct Drive', yen: 285000000, desc: 'Hybrid V8 · no gearbox' },
-  { id: 'gemera', name: 'Koenigsegg Gemera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'gemera', wing: 'none', hybrid: true, kw: 1270, redline: 8000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'v8ftt', gears: 9, zero: 1.9, grip: 1.9, aero: .4, paint: 9, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', yen: 255000000, desc: 'Four-seat mega-GT · 1,700 hp' },
-  { id: 'cc850', name: 'Koenigsegg CC850', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1020, redline: 8500, mass: 1385, vmax: 400, drive: 'RWD', engine: 'v8ftt', gears: 6, manual: true, zero: 2.7, grip: 1.5, aero: .3, paint: 14, rim: '#9da1a6', caliper: '#c8141b', yen: 547500000, desc: 'Engage shift · 6-speed manual' },
-  { id: 'agerars', name: 'Koenigsegg Agera RS', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 865, redline: 8250, mass: 1395, vmax: 447, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.55, aero: .8, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', yen: 375000000, desc: '447 km/h record car' },
+  { id: 'jesko', name: 'Koenigsegg Jesko Absolut', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1195, redline: 8500, mass: 1390, vmax: 480, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: .4, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed LST', usd: 3000000, desc: 'Twin-turbo V8 · 1,600 hp' },
+  { id: 'jeskoattack', name: 'Koenigsegg Jesko Attack', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 1195, redline: 8500, mass: 1420, vmax: 360, drive: 'RWD', engine: 'v8ftt', gears: 9, zero: 2.5, grip: 1.75, aero: 1.3, paint: 31, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', usd: 3000000, desc: 'Track attack · 1,000 kg downforce' },
+  { id: 'regera', name: 'Koenigsegg Regera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'turbo', hybrid: true, kw: 1100, redline: 8250, mass: 1590, vmax: 410, drive: 'RWD', engine: 'v8ftt', gears: 2, zero: 2.8, grip: 1.55, aero: .6, paint: 26, rim: '#1b1b1d', caliper: '#c8141b', box: 'Direct Drive', usd: 1900000, desc: 'Hybrid V8 · no gearbox' },
+  { id: 'gemera', name: 'Koenigsegg Gemera', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'gemera', wing: 'none', hybrid: true, kw: 1270, redline: 8000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'v8ftt', gears: 9, zero: 1.9, grip: 1.9, aero: .4, paint: 9, rim: '#1b1b1d', caliper: '#ff6a13', box: '9-speed LST', usd: 1700000, desc: 'Four-seat mega-GT · 1,700 hp' },
+  { id: 'cc850', name: 'Koenigsegg CC850', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'none', kw: 1020, redline: 8500, mass: 1385, vmax: 400, drive: 'RWD', engine: 'v8ftt', gears: 6, manual: true, zero: 2.7, grip: 1.5, aero: .3, paint: 14, rim: '#9da1a6', caliper: '#c8141b', usd: 3650000, desc: 'Engage shift · 6-speed manual' },
+  { id: 'agerars', name: 'Koenigsegg Agera RS', brand: 'Koenigsegg', cat: 'KOENIGSEGG', body: 'koenigsegg', wing: 'gt2', kw: 865, redline: 8250, mass: 1395, vmax: 447, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.8, grip: 1.55, aero: .8, paint: 30, rim: '#1b1b1d', caliper: '#c8141b', usd: 2500000, desc: '447 km/h record car' },
   // ---- Toyota (GAZOO Racing)
-  { id: 'grsupra', name: 'Toyota GR Supra', brand: 'Toyota', cat: 'TOYOTA', body: 'supra', wing: 'duck', kw: 285, redline: 7000, mass: 1540, vmax: 263, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 3.9, grip: 1.27, aero: .2, paint: 33, rim: '#2a2b2e', caliper: '#c8141b', box: '8-speed auto', yen: 8600000, desc: '3.0 turbo straight-six' },
-  { id: 'gr86', name: 'Toyota GR86', brand: 'Toyota', cat: 'TOYOTA', body: 'gr86', wing: 'duck', kw: 172, redline: 7400, mass: 1275, vmax: 226, drive: 'RWD', engine: 'f4na', gears: 6, manual: true, zero: 6.3, grip: 0.9, aero: .1, paint: 32, rim: '#2a2b2e', caliper: '#c8141b', yen: 4500000, desc: '2.4 boxer · drift toy' },
-  { id: 'gryaris', name: 'Toyota GR Yaris', brand: 'Toyota', cat: 'TOYOTA', body: 'yaris', wing: 'none', kw: 206, redline: 7000, mass: 1280, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.2, grip: 0.98, aero: .2, paint: 8, rim: '#1b1b1d', caliper: '#c8141b', yen: 5300000, desc: 'Rally homologation hot hatch' },
-  { id: 'grcorolla', name: 'Toyota GR Corolla', brand: 'Toyota', cat: 'TOYOTA', body: 'corolla', wing: 'none', kw: 224, redline: 7000, mass: 1470, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.0, grip: 0.98, aero: .2, paint: 32, rim: '#1b1b1d', caliper: '#c8141b', yen: 6000000, desc: 'Three-pipe turbo hatch' },
-  { id: 'lc300', name: 'Toyota Land Cruiser GR Sport', brand: 'Toyota', cat: 'TOYOTA', body: 'landcruiser', dakar: true, wing: 'none', kw: 305, redline: 6000, mass: 2630, vmax: 210, drive: 'AWD', engine: 'v6tt', gears: 10, zero: 6.7, grip: 0.82, aero: .1, paint: 7, rim: '#2a2b2e', caliper: '#1b1b1d', box: '10-speed auto', yen: 8000000, desc: 'Twin-turbo V6 · goes anywhere' },
-  { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', yen: 45000000, desc: 'Front-mid V8 hybrid flagship' },
+  { id: 'grsupra', name: 'Toyota GR Supra', brand: 'Toyota', cat: 'TOYOTA', body: 'supra', wing: 'duck', kw: 285, redline: 7000, mass: 1540, vmax: 263, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 3.9, grip: 1.27, aero: .2, paint: 33, rim: '#2a2b2e', caliper: '#c8141b', box: '8-speed auto', usd: 57000, desc: '3.0 turbo straight-six' },
+  { id: 'gr86', name: 'Toyota GR86', brand: 'Toyota', cat: 'TOYOTA', body: 'gr86', wing: 'duck', kw: 172, redline: 7400, mass: 1275, vmax: 226, drive: 'RWD', engine: 'f4na', gears: 6, manual: true, zero: 6.3, grip: 0.9, aero: .1, paint: 32, rim: '#2a2b2e', caliper: '#c8141b', usd: 30000, desc: '2.4 boxer · drift toy' },
+  { id: 'gryaris', name: 'Toyota GR Yaris', brand: 'Toyota', cat: 'TOYOTA', body: 'yaris', wing: 'none', kw: 206, redline: 7000, mass: 1280, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.2, grip: 0.98, aero: .2, paint: 8, rim: '#1b1b1d', caliper: '#c8141b', usd: 35000, desc: 'Rally homologation hot hatch' },
+  { id: 'grcorolla', name: 'Toyota GR Corolla', brand: 'Toyota', cat: 'TOYOTA', body: 'corolla', wing: 'none', kw: 224, redline: 7000, mass: 1470, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.0, grip: 0.98, aero: .2, paint: 32, rim: '#1b1b1d', caliper: '#c8141b', usd: 40000, desc: 'Three-pipe turbo hatch' },
+  { id: 'lc300', name: 'Toyota Land Cruiser GR Sport', brand: 'Toyota', cat: 'TOYOTA', body: 'landcruiser', dakar: true, wing: 'none', kw: 305, redline: 6000, mass: 2630, vmax: 210, drive: 'AWD', engine: 'v6tt', gears: 10, zero: 6.7, grip: 0.82, aero: .1, paint: 7, rim: '#2a2b2e', caliper: '#1b1b1d', box: '10-speed auto', usd: 53000, desc: 'Twin-turbo V6 · goes anywhere' },
+  { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', usd: 300000, desc: 'Front-mid V8 hybrid flagship' },
 ];
 
 /* =====================================================================
@@ -1043,6 +1065,7 @@ async function buildWorld() {
     if (z > HALF + 30) continue;
     if (x > MTN.cx - MTN.R - 120 && x < -HALF - 40 && z > MTN.cz - MTN.R - 120 && z < MTN.cz + MTN.R + 120) continue;
     if (TRACKS.some(T => x > T.bx0 - 90 && x < T.bx1 + 90 && z > T.bz0 - 90 && z < T.bz1 + 90)) continue;
+    if (x > DRAG.x0 - 160 && x < DRAG.x0 + DRAG.len + 140 && Math.abs(z - DRAG.z) < 110) continue;
     const w = rr(20, 50), d = rr(20, 50), h = r < HALF + 600 ? rr(20, 120) : rr(40, 220);
     facadeGB[pick([0, 1, 2, 3, 4])].box(x, 0, z, w, h, d, 16, 32, 0, tint(), roofGB);
   }
@@ -1127,7 +1150,7 @@ async function buildWorld() {
   await nextFrame(); setLoad(.7, 'Placing Amboola boards…');
   buildBoards();
   buildSpeedTraps();
-  buildTracks();
+  buildTracks(); buildDragway();
   buildMountain();
   buildMinimapImage();
 }
@@ -1948,6 +1971,7 @@ function collideWorld(p) {
     }
   }
   if (race) { p.y = 0; p.slope = 0; return Math.max(hit, trackCollide(p)); }
+  if (drag) { p.y = 0; p.slope = 0; return Math.max(hit, dragCollide(p)); }
   if (inMountain(p)) return Math.max(hit, mountainCollide(p));
   p.y = 0; p.slope = 0; mtnHint = -1;
   const lim = HALF + 7;
@@ -2144,24 +2168,80 @@ function updateSkill(dt, p) {
     box.style.opacity = 1; $('chainLbl').textContent = skill.label + (skill.mult > 1 ? `  x${skill.mult}` : '');
     $('chainPts').textContent = skill.broken ? '' : Math.floor(skill.chain * skill.mult).toLocaleString();
   } else {
-    if (skill.chain > 0) { const tot = Math.floor(skill.chain * skill.mult); skill.bank += tot; localStorage.setItem('amboola.skill', skill.bank); earn(tot * 20); toast(`+${fmtYen(tot * 20)}`, `${skill.label === 'DRIFT' ? 'DRIFT' : 'SKILL'} CHAIN BANKED · ${tot.toLocaleString()} PTS`); }
+    if (skill.chain > 0) { const tot = Math.floor(skill.chain * skill.mult); skill.bank += tot; localStorage.setItem('amboola.skill', skill.bank); earn(tot * .15); toast(`+${fmtUSD(tot * .15)}`, `${skill.label === 'DRIFT' ? 'DRIFT' : 'SKILL'} CHAIN BANKED · ${tot.toLocaleString()} PTS`); }
     skill.chain = 0; skill.count = 0; skill.mult = 1; skill.broken = false; box.style.opacity = 0;
   }
 }
 let toastT = 0;
 /* =====================================================================
-   MONEY — real car prices in yen; earn from races, taxi, outlaw, police and drift/skill chains
+   MONEY — real car prices in US dollars; earn from races, taxi, outlaw, police, drag races and drift/skill chains
    ===================================================================== */
-const wallet = { yen: +(localStorage.getItem('amboola.yen') ?? 3000000), owned: new Set(JSON.parse(localStorage.getItem('amboola.owned') || '["gr86"]')) };
-function saveWallet() { localStorage.setItem('amboola.yen', Math.round(wallet.yen)); localStorage.setItem('amboola.owned', JSON.stringify([...wallet.owned])); }
-function earn(yen, why) {
-  yen = Math.round(yen); if (yen <= 0) return; wallet.yen += yen; saveWallet();
+if (localStorage.getItem('amboola.usd') == null) {   // older saves kept money in yen: convert once at ¥150 = $1
+  for (const k of ['amboola.taxi.total', 'amboola.outlaw.bank', 'amboola.police.bank']) { const v = localStorage.getItem(k); if (v != null) localStorage.setItem(k, Math.round(+v / 150)); }
+  const y = localStorage.getItem('amboola.yen'); localStorage.setItem('amboola.usd', y != null ? Math.round(+y / 150) : 20000); localStorage.removeItem('amboola.yen');
+}
+const wallet = { usd: +localStorage.getItem('amboola.usd'), owned: new Set(JSON.parse(localStorage.getItem('amboola.owned') || '["gr86"]')) };
+function saveWallet() { localStorage.setItem('amboola.usd', Math.round(wallet.usd)); localStorage.setItem('amboola.owned', JSON.stringify([...wallet.owned])); }
+function earn(usd, why) {
+  usd = Math.round(usd); if (usd <= 0) return; wallet.usd += usd; saveWallet();
   const w = $('walletHud'); if (w) { w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); }
 }
 const owns = c => wallet.owned.has(c.id);
 function buyCar(c) {
-  if (owns(c) || wallet.yen < c.yen) return false;
-  wallet.yen -= c.yen; wallet.owned.add(c.id); saveWallet(); return true;
+  if (owns(c) || wallet.usd < c.usd) return false;
+  wallet.usd -= c.usd; wallet.owned.add(c.id); saveWallet(); return true;
+}
+/* ---- upgrades: 5 engine + 5 tyre levels per owned car (saved per car id) */
+const UPG_MAX = 5, upg = JSON.parse(localStorage.getItem('amboola.upg') || '{}');
+const UPG_KINDS = [
+  { k: 'e', n: 'ENGINE', jp: 'エンジン', d: '+7% power per level · harder launches, higher top speed' },
+  { k: 't', n: 'TIRES', jp: 'タイヤ', d: '+5% grip per level · less wheelspin, faster corners, shorter braking' },
+];
+const upgOf = c => upg[c.id] || { e: 0, t: 0 };
+const upgCost = (c, k, lvl) => Math.round(Math.max(k === 'e' ? 1700 : 1000, c.usd * (k === 'e' ? .03 : .02)) * lvl / 100) * 100;
+const tunedCache = new Map();
+// the spec the physics drives: more power (same drag, so top speed grows with its cube root; gearing stretched to reach
+// it and torque raised so wheel force still grows with power) and more tyre grip
+function tunedSpec(c) {
+  const u = upgOf(c); if (!u.e && !u.t) return c;
+  const key = `${c.id}:${u.e}:${u.t}`; if (tunedCache.has(key)) return tunedCache.get(key);
+  const pm = 1 + .07 * u.e, vm = Math.cbrt(pm);
+  const s = { ...c, kw: c.kw * pm, vmax: Math.round(c.vmax * vm), grip: c.grip * (1 + .05 * u.t), ratios: c.ratios.map(r => r / vm), tuned: u };
+  if (c.tpeak) s.tpeak = c.tpeak * pm * vm;
+  tunedCache.set(key, s); return s;
+}
+function buyUpgrade(c, k) {
+  const u = { ...upgOf(c) }; if (!owns(c) || u[k] >= UPG_MAX) return false;
+  const cost = upgCost(c, k, u[k] + 1); if (wallet.usd < cost) return false;
+  wallet.usd -= cost; u[k]++; upg[c.id] = u; saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
+}
+// 0-100 km/h and quarter mile with the real physics on a headless Player (same trick as the bench)
+const sprintCache = new Map();
+function simSprint(spec) {
+  const key = spec.tuned ? `${spec.id}:${spec.tuned.e}:${spec.tuned.t}` : spec.id; if (sprintCache.has(key)) return sprintCache.get(key);
+  const p = Object.create(Player.prototype);
+  Object.assign(p, { spec, x: 0, z: 0, heading: 0, vx: 0, vz: 0, yawRate: 0, steer: 0, gear: 1, rpm: spec.idle, reverse: false, shiftT: 0, manual: false, throttle: 0 });
+  const dt = 1 / 120, inp = { throttle: 1, brake: 0, steer: 0, handbrake: 0 }; let t = 0, t100 = null, qm = null;
+  for (let i = 0; i < 120 * 45 && !qm; i++) { p.update(dt, inp); t += dt; if (!t100 && p.speed * 3.6 >= 100) t100 = t; if (p.z >= 402.3) qm = { t, v: p.speed * 3.6 }; }
+  const r = { t100: t100 ?? 99, qm: qm ?? { t: 99, v: 0 } }; sprintCache.set(key, r); return r;
+}
+function renderUpg() {
+  const c = CARS[carIdx], u = upgOf(c), b = c, tS = tunedSpec(c), s0 = simSprint(b), s1 = simSprint(tS);
+  const zero = c.zero * s1.t100 / s0.t100;
+  $('upgCar').innerHTML = `${c.name}<small>WALLET ${fmtUSD(wallet.usd)}</small>`;
+  $('upgRows').innerHTML = UPG_KINDS.map(K => {
+    const lv = u[K.k], max = lv >= UPG_MAX, cost = max ? 0 : upgCost(c, K.k, lv + 1), can = !max && wallet.usd >= cost;
+    return `<div class="urow"><div class="uname"><b>${K.n} <i>${K.jp}</i></b><small>${K.d}</small></div>
+      <div class="pips">${Array.from({ length: UPG_MAX }, (_, i) => `<span class="${i < lv ? 'on' : ''}"></span>`).join('')}</div>
+      <button data-k="${K.k}" class="${max ? 'max' : can ? '' : 'poor'}">${max ? 'MAX' : `LEVEL ${lv + 1} · ${fmtUSD(cost)}`}</button></div>`;
+  }).join('');
+  const row = (n, a, bv) => `<div><small>${n}</small><b>${a}${a !== bv ? ` <em>→ ${bv}</em>` : ''}</b></div>`;
+  $('upgStats').innerHTML = row('POWER', `${Math.round(c.kw * 1.36)} PS`, `${Math.round(tS.kw * 1.36)} PS`) + row('TOP SPEED', `${c.vmax} km/h`, `${tS.vmax} km/h`)
+    + row('0–100', `${c.zero.toFixed(1)} s`, `${zero.toFixed(1)} s`) + row('¼ MILE', `${s0.qm.t.toFixed(2)} s`, `${s1.qm.t.toFixed(2)} s`) + row('GRIP', '100%', `${Math.round(tS.grip / c.grip * 100)}%`);
+  document.querySelectorAll('#upgRows button').forEach(el => el.onclick = () => {
+    if (buyUpgrade(c, el.dataset.k)) { audio.init(); audio.beep(880, .12); setTimeout(() => audio.beep(1320, .25), 120); renderUpg(); updateMenu(); }
+    else el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], 220);
+  });
 }
 function toast(a, b) { const t = $('toast'); t.innerHTML = `${a}<small>${b || ''}</small>`; t.style.opacity = 1; toastT = 2.4; }
 
@@ -2450,19 +2530,22 @@ function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => {
     const cc = CARS[+d.dataset.i], own = owns(cc); d.classList.toggle('sel', +d.dataset.i === carIdx); d.classList.toggle('locked', !own);
-    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : fmtYen(cc.yen);
+    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : fmtUSD(cc.usd);
   });
-  $('walletV').textContent = fmtYen(wallet.yen);
+  $('walletV').textContent = fmtUSD(wallet.usd);
   const own = owns(c), pr = $('price'), dv = $('drive');
-  pr.className = own ? 'own' : ''; pr.textContent = own ? 'OWNED · 所有' : `PRICE ${fmtYen(c.yen)}`;
-  dv.className = own ? '' : wallet.yen >= c.yen ? 'buy' : 'locked';
-  dv.textContent = own ? 'DRIVE' : wallet.yen >= c.yen ? `BUY ${fmtYen(c.yen)}` : `NEED ${fmtYen(c.yen - wallet.yen)} MORE`;
+  const u = upgOf(c), t = tunedSpec(c);
+  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${u.e || u.t ? ` · ENGINE ${u.e}/5 · TIRES ${u.t}/5` : ''}` : `PRICE ${fmtUSD(c.usd)}`;
+  $('upgBtn').classList.toggle('hidden', !own);
+  dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
+  dv.textContent = own ? 'DRIVE' : wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`;
   for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn']) $(b).style.opacity = own ? 1 : .35;
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
   $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
-  $('vPow').textContent = `${Math.round(c.kw * 1.36)} PS`; $('bPow').style.width = clamp(c.kw / 7.6, 5, 100) + '%';
-  $('vTop').textContent = `${c.vmax} km/h`; $('bTop').style.width = clamp((c.vmax - 180) / 1.7, 5, 100) + '%';
-  $('vAcc').textContent = `${c.zero.toFixed(1)} s`; $('bAcc').style.width = clamp((4.5 - c.zero) / 2.4 * 100, 5, 100) + '%';
+  const z = t === c ? c.zero : c.zero * simSprint(t).t100 / simSprint(c).t100;
+  $('vPow').textContent = `${Math.round(t.kw * 1.36)} PS`; $('bPow').style.width = clamp(t.kw / 7.6, 5, 100) + '%';
+  $('vTop').textContent = `${t.vmax} km/h`; $('bTop').style.width = clamp((t.vmax - 180) / 1.7, 5, 100) + '%';
+  $('vAcc').textContent = `${z.toFixed(1)} s`; $('bAcc').style.width = clamp((4.5 - z) / 2.4 * 100, 5, 100) + '%';
   $('vWgt').textContent = `${c.mass} kg`; $('bWgt').style.width = clamp((2700 - c.mass) / 14, 5, 100) + '%';
   document.querySelectorAll('.sw').forEach((s, i) => s.classList.toggle('sel', i === paintIdx));
   $('paintname').textContent = PAINTS[paintIdx].n;
@@ -2782,7 +2865,7 @@ function finishRace() {
   const order = [...race.order].sort((a, b) => (a.me ? P.finish : a.finish ?? 1e9) - (b.me ? P.finish : b.finish ?? 1e9));
   const pos = order.findIndex(e => e.me) + 1;
   const prize = [5000, 3000, 2000][pos - 1] || 800; skill.bank += prize; localStorage.setItem('amboola.skill', skill.bank);
-  const cash = Math.round(Math.max([1500000, 800000, 500000][pos - 1] || 200000, (player.spec.yen || 0) * ([.05, .03, .02][pos - 1] || .005)) / 10000) * 10000; earn(cash);
+  const cash = Math.round(Math.max([10000, 5000, 3500][pos - 1] || 1500, (player.spec.usd || 0) * ([.05, .03, .02][pos - 1] || .005)) / 100) * 100; earn(cash);
   const best = T.best || {}; const nbRace = !best.race || P.finish < best.race, nbLap = !best.lap || P.best < best.lap;
   T.best = { race: nbRace ? P.finish : best.race, lap: nbLap ? P.best : best.lap, car: nbRace ? player.spec.name : best.car };
   localStorage.setItem('amboola.best.' + T.id, JSON.stringify(T.best));
@@ -2792,7 +2875,7 @@ function finishRace() {
     const rows = race.ais.map(a => ({ name: a.name, t: a.finish ?? (race.t + (race.laps * T.L - a.prog) / Math.max(a.v, 20)), est: a.finish == null }));
     rows.push({ name: 'YOU · ' + player.spec.name, t: P.finish, me: true }); rows.sort((a, b) => a.t - b.t);
     const place = rows.findIndex(r => r.me) + 1;
-    $('resTitle').innerHTML = `${place === 1 ? 'VICTORY' : 'FINISHED'} · P${place}<small>${T.name} · BEST LAP ${fmtTime(P.best)}${nbLap ? ' · TRACK RECORD' : ''} · +${fmtYen(cash)} · +${prize.toLocaleString()} SKILL</small>`;
+    $('resTitle').innerHTML = `${place === 1 ? 'VICTORY' : 'FINISHED'} · P${place}<small>${T.name} · BEST LAP ${fmtTime(P.best)}${nbLap ? ' · TRACK RECORD' : ''} · +${fmtUSD(cash)} · +${prize.toLocaleString()} SKILL</small>`;
     $('resTable').innerHTML = rows.map((r, k) => `<tr class="${r.me ? 'me' : ''}"><td>${k + 1}</td><td>${r.name}</td><td>${r.est ? '~' : ''}${fmtTime(r.t)}</td></tr>`).join('');
     $('results').classList.remove('hidden'); state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
   }, 1600);
@@ -2808,12 +2891,199 @@ function endRace(toCity) {
     camPos.set(player.x - Math.sin(h) * 8, 3, player.z - Math.cos(h) * 8);
   }
 }
+/* =====================================================================
+   DRAG RACES — Amboola Dragway, north of Fujimi Speedway: two lanes, a christmas tree, ¼ and ½ mile, 1 vs 1
+   ===================================================================== */
+const DRAG = { x0: -620, z: -2150, len: 1250, lane: 2.7, hw: 6.4 };     // start line at x0; cars run towards +x
+const DRAG_EVENTS = [
+  { id: 'q', name: 'Quarter Mile', jp: '400m ドラッグ', dist: 402.3, mult: 1 },
+  { id: 'h', name: 'Half Mile', jp: '800m ドラッグ', dist: 804.7, mult: 1.6 },
+];
+let drag = null, dragTree = null, dragBoard = null;
+const dragBest = id => JSON.parse(localStorage.getItem('amboola.drag.' + id) || 'null');
+function buildDragway() {
+  const D = DRAG, L = D.len + 80, cx = D.x0 - 60 + L / 2;
+  const tex = TRACK_TEX(); tex.center.set(.5, .5); tex.rotation = Math.PI / 2; tex.repeat.set(1, L / 16);
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(L, D.hw * 2), new THREE.MeshStandardMaterial({ map: tex, roughness: .8 }));
+  road.rotation.x = -Math.PI / 2; road.position.set(cx, .05, D.z); road.receiveShadow = true; scene.add(road);
+  const pad = new THREE.Mesh(new THREE.PlaneGeometry(140, D.hw * 2 - .4), new THREE.MeshStandardMaterial({ color: 0x18191b, roughness: .55 }));   // rubbered launch pad
+  pad.rotation.x = -Math.PI / 2; pad.position.set(D.x0 + 50, .06, D.z); scene.add(pad);
+  const lineM = new THREE.MeshBasicMaterial({ color: 0xf2f2f2 }), stripe = (x, z, lx, lz) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(lx, lz), lineM); m.rotation.x = -Math.PI / 2; m.position.set(x, .07, z); scene.add(m); };
+  stripe(cx, D.z, L, .18); for (const s of [-1, 1]) stripe(cx, D.z + s * (D.hw - .5), L, .15);    // centre + edge lines
+  stripe(D.x0, D.z, .35, D.hw * 2 - 1);                                                             // start line
+  const chk = new THREE.MeshStandardMaterial({ map: CHECKER_TEX(), roughness: .7 });
+  for (const E of DRAG_EVENTS) {
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(1.6, D.hw * 2 - 1), chk); f.rotation.x = -Math.PI / 2; f.rotation.z = Math.PI / 2; f.position.set(D.x0 + E.dist, .075, D.z); scene.add(f);
+    const signT = canvasTex(512, 256, (g, w, h) => { g.fillStyle = '#0a0b0e'; g.fillRect(0, 0, w, h); g.strokeStyle = '#ffd02d'; g.lineWidth = 12; g.strokeRect(6, 6, w - 12, h - 12); g.fillStyle = '#ffd02d'; g.textAlign = 'center'; g.font = `900 120px ${OR}`; g.fillText(E.id === 'q' ? '¼' : '½', w / 2, 140); g.fillStyle = '#fff'; g.font = `900 40px ${OR}`; g.fillText('FINISH', w / 2, 210); });
+    const sm = new THREE.MeshBasicMaterial({ map: signT }); dynMats.neon.push(sm);
+    for (const s of [-1, 1]) { const sg = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), sm); sg.position.set(D.x0 + E.dist, 3.4, D.z + s * (D.hw + 1.4)); sg.rotation.y = -Math.PI / 2; scene.add(sg); const p = new THREE.Mesh(new THREE.BoxGeometry(.2, 2.4, .2), blackMat); p.position.set(D.x0 + E.dist + .1, 1.2, D.z + s * (D.hw + 1.4)); scene.add(p); }
+  }
+  // concrete barriers along both sides + end wall
+  const conc = new THREE.MeshStandardMaterial({ color: 0xc8cacd, roughness: .85 });
+  for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.BoxGeometry(L, 1.05, .6), conc); w.position.set(cx, .52, D.z + s * (D.hw + .3)); w.castShadow = w.receiveShadow = true; scene.add(w); }
+  const end = new THREE.Mesh(new THREE.BoxGeometry(1, 1.6, D.hw * 2 + 1.2), new THREE.MeshStandardMaterial({ map: WALL_TEX(), roughness: .5 })); end.position.set(D.x0 + D.len + 20, .8, D.z); scene.add(end);
+  // christmas tree between the lanes, just past the start line: per lane 2 stage, 3 amber, green, red
+  const tree = new THREE.Group(); tree.position.set(D.x0 + 7, 0, D.z); scene.add(tree);
+  const steel = new THREE.MeshStandardMaterial({ color: 0x2a2d33, roughness: .4, metalness: .7 });
+  const pole = new THREE.Mesh(new THREE.BoxGeometry(.25, 2.2, .25), steel); pole.position.y = 1.1; tree.add(pole);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(.4, 2.4, 1.1), steel); box.position.y = 3.3; tree.add(box);
+  const bulb = (col, y, z) => { const m = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: col, emissiveIntensity: 0 }); const b = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), m); b.position.set(-.22, y, z); tree.add(b); return m; };
+  dragTree = { stage: [], amber: [], green: [], red: [] };
+  for (const z of [-.28, .28]) {
+    dragTree.stage.push(bulb(0xffffff, 4.35, z), bulb(0xffffff, 4.1, z));
+    for (let k = 0; k < 3; k++) dragTree.amber.push(bulb(0xffa000, 3.75 - k * .35, z));
+    dragTree.green.push(bulb(0x20ff40, 2.7, z)); dragTree.red.push(bulb(0xff1010, 2.35, z));
+  }
+  // start gantry with the dragway sign
+  const gT = canvasTex(1024, 192, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#120a00'); gr.addColorStop(1, '#2a1a00'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.strokeStyle = '#ffd02d'; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, h - 10); g.textAlign = 'center'; g.fillStyle = '#ffd02d'; g.font = `900 78px ${OR}`; g.fillText('AMBOOLA DRAGWAY', w / 2, 100); g.fillStyle = '#fff'; g.font = `900 46px ${JP}`; g.fillText('アンブーラ・ドラッグウェイ', w / 2, 165); });
+  const gm = new THREE.MeshBasicMaterial({ map: gT }); dynMats.neon.push(gm);
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.5, 7.2, .5), steel); p.position.set(D.x0 - 6, 3.6, D.z + s * (D.hw + 1)); scene.add(p); }
+  const gs = new THREE.Mesh(new THREE.BoxGeometry(.5, 2.4, D.hw * 2 + 2.5), new THREE.MeshBasicMaterial({ color: 0x0a0b0e })); gs.position.set(D.x0 - 6, 7.2, D.z); scene.add(gs);
+  for (const s of [-1, 1]) { const sg = new THREE.Mesh(new THREE.PlaneGeometry(D.hw * 2 + 2, 2.2), gm); sg.position.set(D.x0 - 6 + s * .27, 7.2, D.z); sg.rotation.y = s * Math.PI / 2; scene.add(sg); }
+  // grandstand along the launch area + timing board at the quarter-mile line
+  const stand = new THREE.Group(); stand.position.set(D.x0 + 90, 0, D.z - D.hw - 10); scene.add(stand);
+  for (let k = 0; k < 6; k++) { const st = new THREE.Mesh(new THREE.BoxGeometry(160, 1 + k * 1.1, 2), conc); st.position.set(0, (1 + k * 1.1) / 2, 5 - k * 2); st.receiveShadow = true; stand.add(st); }
+  const crowdT = CROWD_TEX(); crowdT.repeat.set(10, 1);
+  const crowd = new THREE.Mesh(new THREE.PlaneGeometry(160, 12.6), new THREE.MeshStandardMaterial({ map: crowdT, roughness: .9 })); crowd.position.set(0, 4.6, -.5); crowd.rotateX(-Math.atan2(11, 6.6)); stand.add(crowd);
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 384; const bt = new THREE.CanvasTexture(cv); bt.colorSpace = THREE.SRGBColorSpace;
+  const bm = new THREE.MeshBasicMaterial({ map: bt }); dynMats.neon.push(bm);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(14, 5.25), bm); board.position.set(D.x0 + 402.3 + 12, 7, D.z + D.hw + 8); board.rotation.y = Math.PI; scene.add(board);
+  for (const x of [-5, 5]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.4, 5, .4), steel); p.position.set(board.position.x + x, 2.4, board.position.z + .3); scene.add(p); }
+  dragBoard = { cv, tex: bt }; drawDragBoard('AMBOOLA DRAGWAY', '— . — — —', '— — —');
+  for (let k = 0; k < 6; k++) {   // floodlights
+    const x = D.x0 - 30 + k * 240, z = D.z + (k % 2 ? 1 : -1) * (D.hw + 4);
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(.18, .28, 16, 6), steel); p.position.set(x, 8, z); scene.add(p);
+    const hm = new THREE.MeshBasicMaterial({ color: 0xffffff }); dynMats.lamps.push(hm); const hd = new THREE.Mesh(new THREE.BoxGeometry(2.4, .5, .5), hm); hd.position.set(x, 16, z); scene.add(hd);
+  }
+  landmarks.push({ x: D.x0 + 400, z: D.z, c: '#ffd02d', n: 'Amboola Dragway' });
+}
+function drawDragBoard(title, et, mph) {
+  if (!dragBoard) return; const g = dragBoard.cv.getContext('2d'), w = 1024, h = 384;
+  g.fillStyle = '#050608'; g.fillRect(0, 0, w, h); g.strokeStyle = '#ffd02d'; g.lineWidth = 10; g.strokeRect(5, 5, w - 10, h - 10);
+  g.textAlign = 'center'; g.fillStyle = '#ffd02d'; g.font = `900 52px ${OR}`; g.fillText(title, w / 2, 80);
+  g.fillStyle = '#ff3b2f'; g.font = `900 120px ${OR}`; g.fillText(et, w / 2, 220);
+  g.fillStyle = '#2fe0ff'; g.font = `900 70px ${OR}`; g.fillText(mph, w / 2, 320); dragBoard.tex.needsUpdate = true;
+}
+function setTree(stage, amber, green, red) {
+  if (!dragTree) return;
+  dragTree.stage.forEach((m, i) => m.emissiveIntensity = (i % 2) < stage ? 6 : 0);
+  dragTree.amber.forEach((m, i) => m.emissiveIntensity = (i % 3) < amber ? 7 : 0);
+  dragTree.green.forEach(m => m.emissiveIntensity = green ? 9 : 0);
+  dragTree.red.forEach((m, i) => m.emissiveIntensity = red && (red === 'both' || (i === 0) === (red === 'me')) ? 9 : 0);
+  $('dTree').innerHTML = `<i class="${stage > 0 ? 'w' : ''}"></i><i class="${stage > 1 ? 'w' : ''}"></i>${[0, 1, 2].map(k => `<i class="${k < amber ? 'a' : ''}"></i>`).join('')}<i class="${green ? 'g' : ''}"></i><i class="${red ? 'r' : ''}"></i>`;
+}
+// the rival: a car with a similar quarter-mile time (a touch quicker), driven by the same physics on a headless Player
+function pickDragRival(me) {
+  const mine = simSprint(me).qm.t;
+  const opts = CARS.filter(c => c.id !== me.id).map(c => ({ c, d: Math.abs(simSprint(c).qm.t - (mine - .12)) })).sort((a, b) => a.d - b.d).slice(0, 4);
+  return pick(opts).c;
+}
+function startDrag(ev, rivalSpec) {
+  endCrime(true); clearNav(true); $('navhud').classList.add('hidden');
+  if (race) endRace(false); if (taxi) endTaxi(); if (drag) endDrag(false);
+  $('pause').classList.add('hidden'); $('races').classList.add('hidden'); $('results').classList.add('hidden'); $('raceprompt').classList.add('hidden');
+  if (audio.ctx) audio.ctx.resume();
+  const me = player.spec, rs = rivalSpec || pickDragRival(me), p = PAINTS[rs.paint ?? 0];
+  const ghost = Object.create(Player.prototype);
+  Object.assign(ghost, { spec: rs, x: 0, z: 0, heading: 0, vx: 0, vz: 0, yawRate: 0, steer: 0, gear: 1, rpm: rs.idle, reverse: false, shiftT: 0, manual: false, throttle: 0, speed: 0 });
+  const car = buildCar(rs, p.c, p.m, p.r); scene.add(car.group);
+  drag = { ev, t: -4.2, state: 'tree', foul: null,
+    p: { react: null, total: null, trap: null, d: 0 },
+    r: { spec: rs, ghost, car, react: .13 + Math.random() * .17, total: null, trap: null, d: 0 } };
+  dragHold();
+  car.group.position.set(DRAG.x0 - rs.L / 2, 0, DRAG.z + DRAG.lane); car.group.rotation.y = Math.PI / 2;
+  camPos.set(player.x - 9, 3, player.z);
+  setTree(0, 0, false, null); drawDragBoard(ev.name.toUpperCase(), '— . — — —', `${me.name.toUpperCase()} vs ${rs.name.toUpperCase()}`.slice(0, 34));
+  $('draghud').classList.remove('hidden'); $('dEvent').textContent = `${ev.name.toUpperCase()} · ${Math.round(ev.dist)} m`; $('dRival').textContent = rs.name;
+  state = 'drive'; toast(`DRAG · ${ev.name.toUpperCase()}`, `VS ${rs.name.toUpperCase()} · LAUNCH ON GREEN`);
+}
+function dragHold() { Object.assign(player, { x: DRAG.x0 - player.spec.L / 2, z: DRAG.z - DRAG.lane, heading: Math.PI / 2, vx: 0, vz: 0, yawRate: 0, gear: 1, reverse: false, steer: 0 }); }
+function dragCollide(p) {
+  const lim = DRAG.hw - 1.05, dz = p.z - DRAG.z; let hit = 0;
+  if (Math.abs(dz) > lim) { p.z = DRAG.z + Math.sign(dz) * lim; hit = Math.abs(p.vz); p.vz *= -.3; p.vx *= .97; }
+  const xEnd = DRAG.x0 + DRAG.len + 18, xStart = DRAG.x0 - 50;
+  if (p.x > xEnd) { p.x = xEnd; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.2; }
+  if (p.x < xStart) { p.x = xStart; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.2; }
+  return hit;
+}
+function updateDrag(dt) {
+  const D = drag, P = D.p, R = D.r, dist = D.ev.dist; D.t += dt;
+  if (D.state === 'tree') {
+    const stage = D.t > -3.6 ? 2 : D.t > -3.9 ? 1 : 0, amber = D.t >= -1.5 ? clamp(Math.floor((D.t + 1.5) / .5) + 1, 0, 3) : 0;
+    if (amber !== D.amber) { D.amber = amber; if (amber) audio.beep(620, .12); }
+    setTree(stage, amber, false, null);
+    if (amber && player.throttle > .5) { D.foul = 'me'; setTree(stage, amber, false, 'me'); audio.beep(220, .5); endDragRun(); return; }   // jumped the start
+    if (D.t >= 0) { D.state = 'run'; setTree(2, 3, true, null); audio.beep(1040, .4); }
+  }
+  if (D.state === 'run' || D.state === 'done') {
+    if (P.react == null && player.throttle > .5) P.react = D.t;
+    if (D.t >= R.react && (R.total == null || R.ghost.speed > .1)) {   // full throttle to the line, then brakes in the shutdown area
+      const inp = { throttle: R.total == null ? 1 : 0, brake: R.total == null ? 0 : .7, steer: 0, handbrake: 0 };
+      for (let k = 0; k < 3; k++) R.ghost.update(dt / 3, inp);
+    }
+    R.d = R.ghost.z;
+    P.d = player.x + player.spec.L / 2 - DRAG.x0;
+    if (P.total == null && P.d >= dist) { P.total = D.t; P.trap = player.speed * 3.6; if (R.total == null) audio.beep(1320, .3); }
+    if (R.total == null && R.d >= dist) { R.total = D.t; R.trap = R.ghost.speed * 3.6; }
+    if (D.state === 'run' && P.total != null && (R.total != null || D.t > P.total + 6)) endDragRun();
+    if (D.state === 'run' && D.t > 60) endDragRun();
+  }
+  // rival car on the strip
+  const rc = R.car; rc.group.position.set(DRAG.x0 - R.spec.L / 2 + R.d, 0, DRAG.z + DRAG.lane);
+  for (const w of rc.wheels) w.spin.rotation.z -= R.ghost.speed / w.R * dt;
+  rc.body.rotation.z = damp(rc.body.rotation.z, clamp((R.ghost.accel || 0) * .0045, -.045, .035), 7, dt);
+  rc.tailMat.emissiveIntensity = R.total != null ? 9 : 1.5;
+  // HUD
+  const t = Math.max(0, D.t);
+  $('dTime').textContent = D.state === 'tree' ? '—' : (P.total ?? t).toFixed(3);
+  $('dLeft').textContent = `${Math.max(0, Math.round(dist - P.d))} m`;
+  const gap = P.d - R.d; $('dGap').textContent = D.state === 'tree' ? '—' : `${gap >= 0 ? '+' : '−'}${Math.abs(gap).toFixed(1)} m`; $('dGap').style.color = gap >= 0 ? '#5cd67a' : '#ff4b4b';
+}
+function endDragRun() {
+  const D = drag, P = D.p, R = D.r; D.state = 'done';
+  const me = player.spec, base = CARS.find(c => c.id === me.id) || me;
+  const win = !D.foul && P.total != null && (R.total == null || P.total < R.total);
+  const prize = D.foul ? 0 : win ? Math.round(Math.max(7500, (base.usd || 0) * .03) * D.ev.mult / 100) * 100 : 750;
+  earn(prize);
+  const et = P.total != null ? P.total - (P.react ?? 0) : null;
+  const best = dragBest(D.ev.id), nb = et != null && !D.foul && (!best || et < best.et);
+  if (nb) localStorage.setItem('amboola.drag.' + D.ev.id, JSON.stringify({ et, trap: P.trap, car: me.name }));
+  if (et != null) drawDragBoard(win ? 'WINNER · 勝利' : 'FINISHED', `${et.toFixed(3)} s`, `${Math.round(P.trap)} KM/H`);
+  else if (D.foul) drawDragBoard('RED LIGHT · フライング', 'FOUL', '— — —');
+  skill.bank += win ? 2500 : 500; localStorage.setItem('amboola.skill', skill.bank);
+  setTimeout(() => {
+    if (drag !== D) return;
+    const rEt = R.total != null ? R.total - R.react : null;
+    const row = (who, car, react, et, trap, total, me) => `<tr class="${me ? 'me' : ''}"><td>${who}</td><td>${car}</td><td>${react}</td><td>${et}</td><td>${trap}</td><td>${total}</td></tr>`;
+    $('resTitle').innerHTML = `${D.foul ? 'RED LIGHT · フライング' : win ? 'WIN · 勝利' : 'LOSE · 負け'}<small>${D.ev.name.toUpperCase()} · ${D.foul ? 'YOU LEFT BEFORE THE GREEN' : `ET ${et != null ? et.toFixed(3) + ' s' : '—'}${nb ? ' · PERSONAL BEST' : ''}`} · +${fmtUSD(prize)}</small>`;
+    $('resTable').innerHTML = `<tr><td></td><td>CAR</td><td>REACTION</td><td>ET</td><td>TRAP</td><td>TOTAL</td></tr>`
+      + row('YOU', me.name, P.react != null ? P.react.toFixed(3) : '—', et != null ? et.toFixed(3) : '—', P.trap ? Math.round(P.trap) + ' km/h' : '—', P.total != null ? P.total.toFixed(3) : 'DNF', true)
+      + row('RIVAL', R.spec.name, R.react.toFixed(3), rEt != null ? rEt.toFixed(3) : '—', R.trap ? Math.round(R.trap) + ' km/h' : '—', R.total != null ? R.total.toFixed(3) : '—');
+    $('results').classList.remove('hidden'); state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  }, D.foul ? 1200 : 1800);
+}
+function endDrag(toCity) {
+  if (!drag) return;
+  scene.remove(drag.r.car.group); setTree(0, 0, false, null);
+  $('draghud').classList.add('hidden'); $('results').classList.add('hidden');
+  drag = null;
+  if (toCity) {
+    const m = TRACKS.find(T => T.id === 'fujimi').marker, h = m.h + Math.PI;
+    Object.assign(player, { x: m.x + Math.sin(h) * 30, z: m.z + Math.cos(h) * 30, heading: h, vx: 0, vz: 0, yawRate: 0, reverse: false });
+    camPos.set(player.x - Math.sin(h) * 8, 3, player.z - Math.cos(h) * 8);
+  }
+}
 let racesFrom = 'pause';
 function openRaces(from = 'pause') {
   racesFrom = from;
   $('pause').classList.add('hidden');
   $('raceList').innerHTML = TRACKS.map((T, k) => `<div class="rcard" data-k="${k}" style="border-left-color:${T.col}"><b>${T.name}</b><span>${T.jp} · ${(T.L / 1000).toFixed(2)} km · ${T.laps} laps</span><span>${T.desc}</span><span>BEST ${fmtTime(T.best?.race)} · LAP ${fmtTime(T.best?.lap)}${T.best?.car ? ' · ' + T.best.car : ''}</span></div>`).join('');
-  document.querySelectorAll('.rcard').forEach(el => el.onclick = () => {
+  $('raceList').innerHTML = DRAG_EVENTS.map((E, k) => { const b = dragBest(E.id); return `<div class="rcard" data-d="${k}" style="border-left-color:#ffd02d"><b>🚦 DRAG · ${E.name}</b><span>${E.jp} · ${Math.round(E.dist)} m · 1 VS 1 · AMBOOLA DRAGWAY</span><span>Launch on the green light · beat the rival to the line</span><span>BEST ${b ? b.et.toFixed(3) + ' s · ' + Math.round(b.trap) + ' km/h · ' + b.car : '—'}</span></div>`; }).join('') + $('raceList').innerHTML;   // drag events first
+  document.querySelectorAll('.rcard[data-d]').forEach(el => el.onclick = () => {
+    if (racesFrom === 'garage') { $('races').classList.add('hidden'); startDrive(); }
+    state = 'drive'; startDrag(DRAG_EVENTS[+el.dataset.d]);
+  });
+  document.querySelectorAll('.rcard[data-k]').forEach(el => el.onclick = () => {
     const T = TRACKS[+el.dataset.k];
     if (racesFrom === 'garage') { $('races').classList.add('hidden'); startDrive(); } // drive the car picked in the garage
     state = 'drive'; startRace(T);
@@ -2831,8 +3101,12 @@ function checkMarkers() {
 $('raceprompt').onclick = () => { if (nearMarker) startRace(nearMarker); };
 $('racesClose').onclick = () => { $('races').classList.add('hidden'); if (racesFrom === 'pause') $('pause').classList.remove('hidden'); };
 $('raceBtn').onclick = ownedOnly(() => openRaces('garage'));
-$('resRestart').onclick = () => { const T = race.T; endRace(false); state = 'drive'; startRace(T); };
-$('resLeave').onclick = () => { endRace(true); $('results').classList.add('hidden'); state = 'drive'; if (audio.ctx) audio.ctx.resume(); };
+$('upgBtn').onclick = ownedOnly(() => { renderUpg(); $('upgPanel').classList.remove('hidden'); });
+$('upgClose').onclick = () => { $('upgPanel').classList.add('hidden'); updateMenu(); };
+$('resRestart').onclick = () => {
+  if (drag) { const ev = drag.ev, rs = drag.r.spec; endDrag(false); state = 'drive'; startDrag(ev, rs); return; }
+  const T = race.T; endRace(false); state = 'drive'; startRace(T); };
+$('resLeave').onclick = () => { if (drag) endDrag(true); endRace(true); $('results').classList.add('hidden'); state = 'drive'; if (audio.ctx) audio.ctx.resume(); };
 
 /* =====================================================================
    TAXI JOBS — any car becomes a taxi: pick up passengers at the kerb,
@@ -2929,7 +3203,7 @@ function taxiRoute(px, pz, tx, tz) {
   pts.push([tx, tz]); return pts;
 }
 const routeLen = (px, pz, pts) => { let L = 0, x = px, z = pz; for (const [a, b] of pts) { L += Math.hypot(a - x, b - z); x = a; z = b; } return L; };
-const fmtYen = v => '¥' + Math.round(v).toLocaleString();
+const fmtUSD = v => '$' + Math.round(v).toLocaleString('en-US');
 function startTaxi() {
   endCrime(true);
   clearNav(true);
@@ -2980,23 +3254,23 @@ function updateTaxi(dt) {
     $('txTime').textContent = taxi.timer > 0 ? `${Math.ceil(taxi.timer)} s` : 'LATE';
     $('txTime').style.color = taxi.timer < 10 ? '#ff4b4b' : '';
     if (stopped) {
-      const base = 50000 + taxi.routeLen * 160, speedTip = taxi.timer > 0 ? taxi.timer * 2500 : 0, late = taxi.timer > 0 ? 1 : .7;
-      const tip = Math.max(0, speedTip * (1 - Math.min(taxi.crashes, 4) * .25)), pay = Math.round((base * late + tip) / 1000) * 1000;
+      const base = 350 + taxi.routeLen * 1.1, speedTip = taxi.timer > 0 ? taxi.timer * 17 : 0, late = taxi.timer > 0 ? 1 : .7;
+      const tip = Math.max(0, speedTip * (1 - Math.min(taxi.crashes, 4) * .25)), pay = Math.round((base * late + tip) / 10) * 10;
       taxi.earnings += pay; taxi.fares++; taxi.total += pay; localStorage.setItem('amboola.taxi.total', taxi.total);
-      skill.bank += Math.round(pay / 400); localStorage.setItem('amboola.skill', skill.bank); earn(pay);
+      skill.bank += Math.round(pay * .375); localStorage.setItem('amboola.skill', skill.bank); earn(pay);
       const w = makePerson(); w.position.set(s.px, 0, s.pz); w.rotation.y = s.ry + Math.PI / 2; scene.add(w); taxi.walker = { g: w, t: 0 };
       audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
-      toast(`FARE ${fmtYen(pay)}`, `${taxi.crashes ? 'BUMPY RIDE · ' : ''}${taxi.timer > 0 ? 'TIP ' + fmtYen(tip) : 'LATE · NO TIP'} · ありがとう!`);
+      toast(`FARE ${fmtUSD(pay)}`, `${taxi.crashes ? 'BUMPY RIDE · ' : ''}${taxi.timer > 0 ? 'TIP ' + fmtUSD(tip) : 'LATE · NO TIP'} · ありがとう!`);
       newTaxiJob(false);
     }
   }
   $('txDist').textContent = `${Math.round(routeLen(p.x, p.z, taxi.route))} m`;
-  $('txMoney').textContent = fmtYen(taxi.earnings); $('txFares').textContent = taxi.fares;
+  $('txMoney').textContent = fmtUSD(taxi.earnings); $('txFares').textContent = taxi.fares;
 }
 function endTaxi() {
   if (!taxi) return;
   for (const o of [taxi.person, taxi.marker, taxi.arrows, taxi.walker?.g]) if (o) scene.remove(o);
-  if (taxi.fares) toast(`SHIFT OVER · ${fmtYen(taxi.earnings)}`, `${taxi.fares} FARES · TOTAL ${fmtYen(taxi.total)}`);
+  if (taxi.fares) toast(`SHIFT OVER · ${fmtUSD(taxi.earnings)}`, `${taxi.fares} FARES · TOTAL ${fmtUSD(taxi.total)}`);
   taxi = null; $('taxihud').classList.add('hidden');
 }
 function drawTaxiRoute(g) {
@@ -3450,7 +3724,7 @@ function makeSafe(s) {
 }
 function newSafe(avoidX, avoidZ) {
   const s = taxiSpot(avoidX ?? 0, avoidZ ?? 0, avoidX == null ? 0 : 150, 99999);
-  s.amount = Math.round((300000 + Math.random() * 900000) / 10000) * 10000; s.mesh = makeSafe(s); return s;
+  s.amount = Math.round((2000 + Math.random() * 6000) / 100) * 100; s.mesh = makeSafe(s); return s;
 }
 function buildPoliceCar() {
   const g = buildTrafficCar(TRAFFIC_TYPES[2]);
@@ -3519,7 +3793,7 @@ function endCrime(silent) {
   for (const s of crime.safes) scene.remove(s.mesh);
   for (const r of crime.police) r.dispose(); if (crime.outlaw) crime.outlaw.dispose();
   scene.remove(crime.arrows); audio.siren(0);
-  if (!silent) toast(crime.role === 'outlaw' ? 'OUTLAW OVER' : 'OFF DUTY', `TOTAL ${fmtYen(crime.bank)}`);
+  if (!silent) toast(crime.role === 'outlaw' ? 'OUTLAW OVER' : 'OFF DUTY', `TOTAL ${fmtUSD(crime.bank)}`);
   crime = null; $('crimehud').classList.add('hidden'); $('crMeter').classList.add('hidden');
 }
 function spawnOutlaw(first) {
@@ -3534,7 +3808,7 @@ const nearestHideout = (x, z) => HIDEOUTS.reduce((b, h) => routeLen(x, z, taxiRo
 function collectSafe(s, byAI) {
   const i = crime.safes.indexOf(s); scene.remove(s.mesh); crime.safes.splice(i, 1);
   crime.safes.push(newSafe(player.x, player.z));
-  if (!byAI) { crime.carry += s.amount; audio.beep(1200, .1); setTimeout(() => audio.beep(1600, .15), 90); toast(`+${fmtYen(s.amount)}`, 'MONEY SAFE CRACKED · POLICE ALERTED'); }
+  if (!byAI) { crime.carry += s.amount; audio.beep(1200, .1); setTimeout(() => audio.beep(1600, .15), 90); toast(`+${fmtUSD(s.amount)}`, 'MONEY SAFE CRACKED · POLICE ALERTED'); }
 }
 function updateCrime(dt) {
   const c = crime, p = player; c.anim += dt; c.cool -= dt;
@@ -3562,22 +3836,22 @@ function updateCrime(dt) {
     // busted meter: police right next to you while you are (almost) stopped
     if (pSafe) c.meter = 0; else c.meter = clamp(c.meter + (near && p.speed < 6 ? dt / 2.2 : -dt / 1.2), 0, 1);
     if (c.meter >= 1) {
-      toast('BUSTED · 逮捕', `THE POLICE TOOK ${fmtYen(c.carry)}`); c.carry = 0; c.meter = 0;
+      toast('BUSTED · 逮捕', `THE POLICE TOOK ${fmtUSD(c.carry)}`); c.carry = 0; c.meter = 0;
       c.police.forEach(r => r.dispose()); c.police = []; c.cool = 12; audio.crash(8);
     }
     c.hideT = (c.hideT || 0) - dt; if (!c.hide || c.hideT <= 0) { c.hide = nearestHideout(p.x, p.z); c.hideT = 1; }
     const hide = c.hide;
     if (c.showRoute && hide) routeTo = hide;
     if (pSafe && c.carry > 0 && p.speed < 4) {
-      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry / 500); localStorage.setItem('amboola.skill', skill.bank); earn(c.carry);
-      toast(`STASHED ${fmtYen(c.carry)}`, 'SAFE AT THE HIDEOUT · 隠れ家'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry * .3); localStorage.setItem('amboola.skill', skill.bank); earn(c.carry);
+      toast(`STASHED ${fmtUSD(c.carry)}`, 'SAFE AT THE HIDEOUT · 隠れ家'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
       c.carry = 0; c.police.forEach(r => r.dispose()); c.police = []; c.cool = 6; c.showRoute = false;
     }
     const nearest = c.police.reduce((m, r) => Math.min(m, Math.hypot(p.x - r.x, p.z - r.z)), 1e9);
     audio.siren(c.police.length ? clamp(1 - nearest / 260, 0, 1) : 0);
     $('crInfo').textContent = pSafe ? 'SAFE AT A HIDEOUT · no arrests here' : c.carry ? (c.showRoute ? `Hideout: ${hide.n}` : 'Press G for the way to a hideout') : 'Find the green money safes';
     $('crHeat').textContent = c.police.length ? '🚨'.repeat(c.police.length) : '—';
-    $('crCash').textContent = fmtYen(c.carry);
+    $('crCash').textContent = fmtUSD(c.carry);
   } else {
     const o = c.outlaw;
     if (o) {
@@ -3586,7 +3860,7 @@ function updateCrime(dt) {
       else {
         if (d < 120 && o.mode !== 'stash') o.mode = 'flee';
         else if (o.mode === 'flee' && d > 320) o.mode = 'loot';
-        if (o.cash >= 2000000 || (o.mode === 'flee' && o.cash >= 600000)) o.mode = 'stash';
+        if (o.cash >= 13000 || (o.mode === 'flee' && o.cash >= 4000)) o.mode = 'stash';
         o.retarget = (o.retarget || 0) - dt;
         if (!o.target || o.retarget <= 0 || Math.hypot(o.x - o.target.x, o.z - o.target.z) < 6) {
           o.retarget = o.mode === 'flee' ? 2.5 : 6;
@@ -3597,25 +3871,25 @@ function updateCrime(dt) {
         o.update(dt, o.target.x, o.target.z, false, o.mode === 'loot' ? 30 : 46);
         for (const s of [...c.safes]) if (Math.hypot(o.x - s.x, o.z - s.z) < 6) { o.cash += s.amount; collectSafe(s, true); o.target = null; }
         if (o.mode === 'stash' && oSafe && Math.hypot(o.x - o.target.x, o.z - o.target.z) < 8) {
-          toast('THE OUTLAW GOT AWAY', `HE STASHED ${fmtYen(o.cash)} AT ${o.target.n.toUpperCase()}`); o.cash = 0; o.mode = 'gone'; o.goneT = 3; o.v = 0;
+          toast('THE OUTLAW GOT AWAY', `HE STASHED ${fmtUSD(o.cash)} AT ${o.target.n.toUpperCase()}`); o.cash = 0; o.mode = 'gone'; o.goneT = 3; o.v = 0;
         }
         // touch him = arrested (but never inside a hideout)
         const touched = inCity && crimeBump(o); c.meter = 0;
         if (touched && oSafe && toastT <= 0) toast('SAFE ZONE · 隠れ家', 'HE IS AT A HIDEOUT · YOU CAN\'T ARREST HIM HERE');
         if (touched && !oSafe) {
-          const reward = o.cash + 500000; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward / 500); localStorage.setItem('amboola.skill', skill.bank); earn(reward);
-          toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtYen(o.cash)} + ${fmtYen(500000)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+          const reward = o.cash + 3500; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward * .3); localStorage.setItem('amboola.skill', skill.bank); earn(reward);
+          toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtUSD(o.cash)} + ${fmtUSD(3500)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
           o.cash = 0; o.mode = 'gone'; o.goneT = 4; o.v = 0; c.meter = 0;
         }
         routeTo = o; routeCol = '#ff3b3b';
         $('crInfo').textContent = oSafe ? 'HE IS AT A HIDEOUT · CAN\'T ARREST HERE' : `${o.spec.name} · ${Math.round(d)} m · ${o.mode === 'stash' ? 'heading to a hideout!' : o.mode === 'flee' ? 'fleeing' : 'looting safes'}`;
       }
-      $('crCash').textContent = fmtYen(o.cash);
+      $('crCash').textContent = fmtUSD(o.cash);
       $('crHeat').textContent = o.mode === 'stash' ? 'ESCAPING' : o.mode === 'flee' ? 'FLEEING' : o.mode === 'gone' ? '—' : 'LOOTING';
     }
     audio.siren(p.speed > 2 ? .55 : 0);
   }
-  $('crBank').textContent = fmtYen(c.bank);
+  $('crBank').textContent = fmtUSD(c.bank);
   $('crMeter').firstElementChild.style.width = (c.meter * 100) + '%';
   $('crMeter').classList.toggle('hidden', c.meter <= 0);
   $('crMeterL').textContent = c.role === 'outlaw' ? 'BUSTED' : 'ARREST';
@@ -3648,11 +3922,11 @@ function startDrive() {
   audio.init();
   const spec = CARS[carIdx];
   let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
-  player = new Player(spec, paintIdx);
+  player = new Player(tunedSpec(spec), paintIdx);
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
   audio.setCar(spec);
   camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
-  $('carname').innerHTML = `${spec.name}<small>${PAINTS[paintIdx].n.toUpperCase()}</small>`;
+  const uu = upgOf(spec); $('carname').innerHTML = `${spec.name}<small>${PAINTS[paintIdx].n.toUpperCase()}${uu.e || uu.t ? ` · 🔧 ENGINE ${uu.e} · TIRES ${uu.t}` : ''}</small>`;
   $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
   renderPass.scene = scene; renderPass.camera = camera;
   applyTime(timeName);
@@ -3669,7 +3943,7 @@ $('bResume').onclick = () => setPause(false);
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
 $('bLeave').onclick = () => { endRace(true); setPause(false); };
-$('bGarage').onclick = () => { endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
+$('bGarage').onclick = () => { endDrag(true); endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
@@ -3689,8 +3963,9 @@ function simStep(dt, inp) {
     if (hit > 3) { audio.crash(hit); skillCrash(); taxiCrash(); shakeT += 1; }
   }
   if (race && race.state === 'countdown') raceHold();
+  if (drag && drag.state === 'tree') dragHold();
   player.sync(dt);
-  if (race) updateRace(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); else if (crime) updateCrime(dt); else updateNav(dt); }
+  if (race) updateRace(dt); else if (drag) updateDrag(dt); else { traffic.update(dt, player); checkMarkers(); if (taxi) updateTaxi(dt); else if (crime) updateCrime(dt); else updateNav(dt); }
   updateBoards(dt, player); updateTraps(dt, player); updateSkill(dt, player);
 }
 const clock = new THREE.Clock();
@@ -3731,7 +4006,7 @@ function tick(dt) {
     screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
     // HUD
     drawTacho(player); drawMinimap(player);
-    $('walletHud').textContent = fmtYen(wallet.yen); $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
+    $('walletHud').textContent = fmtUSD(wallet.usd); $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   }
   if (state === 'map') { drawBigMap(); return; }
@@ -3763,7 +4038,7 @@ async function boot() {
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, wallet, earn, buyCar, garageGo, updateMenu };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, get drag() { return drag; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
