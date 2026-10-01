@@ -67,6 +67,23 @@ This takes about 18 minutes for 1,288 frames at 1280×720, 24 fps. It steps the 
 
 Playwright's bundled ffmpeg has only VP8. For H.264, `pip download imageio-ffmpeg --no-deps` and use the static binary inside the wheel. Google Fonts are fetched with `curl` in a route handler, because the browser can't reach them through the proxy but curl can. The video is silent: headless Chromium's Web Audio output isn't captured.
 
+## Rebuild the Blender car model
+
+The 911 GT3 RS (`gt3rs`) is a Blender model. Its source is the bpy script `models/blender/gt3rs.py`, which builds the car from scratch. The game loads `models/gt3rs.glb.js` (a base64 copy of `models/gt3rs.glb`, so file:// works) at boot. `buildCar()` then clones that model for any car id in `MODELS`, and it falls back to the procedural body if the model fails to load. There is no Blender in the container by default:
+
+```bash
+mkdir -p /tmp/blender && curl -sSL https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz | tar xJ -C /tmp/blender
+B=/tmp/blender/blender-4.2.3-linux-x64/blender
+$B -b --factory-startup --python models/blender/gt3rs.py -- --glb models/gt3rs.glb                 # ~40 s
+$B -b --factory-startup --python models/blender/gt3rs.py -- --renders /tmp/r --samples 10 --views front34,side,rear34,front,top   # quick Cycles previews
+```
+
+Contract with the game: objects `Body`, `Wheel_FL/FR/RL/RR` and `Caliper_*`, each with its origin at the hub; material names `Paint`, `Glass`, `Headlight`, `Taillight`, `Rim`, `Caliper` and so on, which `buildModelCar()` swaps for game materials. The car is modelled front = +X; export turns it to glTF +Z.
+
+Model gotchas:
+- If a cross-section's points swap height order, the cage self-intersects and Blender flips all normals. You then see the wheel-well booleans *adding* cylinders, and every decal hidden inside the body. The script now forces outward normals, but keep each station's points ordered.
+- Decals (glass, vents, lights) are ray-cast patches. When the rays hit the body at a grazing angle, the patch gets holes, so fan the rays from inside the car (as `tailband()` does) at wrapped corners.
+
 ## Gotchas
 
 - **Test on a high-DPI screen too:** `AMBOOLA_DPR=2 node .claude/skills/run-amboola/driver.mjs shots …` emulates a Retina/HiDPI display (deviceScaleFactor 2). One real bug only showed up there. Handing `EffectComposer` a pre-sized render target makes it treat that size as CSS pixels and multiply by the pixel ratio again, so the SMAA and bloom passes came out pr× too large and the 3D picture was squeezed into the top-left corner of users' screens. `setupComposer()` now calls `composer.setPixelRatio(pr)` then `composer.setSize(innerWidth, innerHeight)`. To check it, read `window.amboola.composer.renderTarget1` against `renderer.domElement.width/height`. Ultra at 2× (2560×1440 with MSAA) is too heavy for SwiftShader to click through, so test High at 2×.

@@ -259,11 +259,10 @@ for k in range(9):
     decal('engineslat', 'Carbon', 'top', -2.10 + k * .048, -2.084 + k * .048, -0.48, 0.48, 1, 12, off=.010)
 def tailband(z0, z1, ang):  # rays fanned out from inside the tail so the band wraps round the corners
     return lambda u, v: (V(-1.55, 0, lerp(z0, z1, v)), V(-math.cos(lerp(-ang, ang, u)), math.sin(lerp(-ang, ang, u)), 0))
-project('taillight_bg', 'Gloss', tailband(0.835, 0.915, 0.95), 60, 3, off=.003)
-project('taillight', 'Taillight', tailband(0.858, 0.884, 0.94), 60, 2, off=.006)
-both(lambda s: project('tailend', 'Taillight', lambda u, v: (V(-1.55, 0, lerp(0.842, 0.902, v)), V(-math.cos(s * lerp(0.80, 0.94, u)), math.sin(s * lerp(0.80, 0.94, u)), 0)), 6, 3, off=.007))
-project('rearpanel', 'Gloss', tailband(0.47, 0.66, 0.70), 30, 4)
-project('diffuser', 'Carbon', tailband(0.35, 0.47, 0.70), 30, 3)
+project('taillight_bg', 'Gloss', tailband(0.835, 0.915, 0.86), 60, 3, off=.003)
+project('taillight', 'Taillight', tailband(0.856, 0.890, 0.84), 60, 2, off=.006)
+project('rearpanel', 'Gloss', tailband(0.47, 0.66, 0.60), 30, 4)
+project('diffuser', 'Carbon', tailband(0.35, 0.47, 0.60), 30, 3)
 # side skirts, door shut lines + flush handle
 both(lambda s: decal('skirt', 'Carbon', side(s), -0.92, 0.86, 0.163, 0.235, 30, 2))
 for xg in (0.64, -0.62):

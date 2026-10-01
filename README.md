@@ -54,6 +54,26 @@ The Lamborghinis have sharp, angular wedge bodies. The Ferraris come in three sh
 
 The McLarens have a low mid-engine body with a teardrop cabin. The Bugattis have a wide, rounded body with the horseshoe grille, and the Bolide is a very low track car. The new paints are Papaya Orange, Volcano Blue, Bugatti Blue and Argent Silver. The Bugatti Tourbillon (2.0 s to 100 km/h, 445 km/h) and the track-only Bolide (500 km/h) are the fastest cars in the game.
 
+### The Blender 911 GT3 RS
+
+![911 GT3 RS built in Blender: front, rear, side, and in the game's garage](media/gt3rs-blender.jpg)
+
+The 911 GT3 RS is a real 3D model built in [Blender](https://www.blender.org/), and it's the first of the cars to get one. It is made entirely by a Python script, [`models/blender/gt3rs.py`](models/blender/gt3rs.py), at the real 992 dimensions:
+- **Body:** smooth curved surfaces from 17 cross-sections, cut-out wheel wells and creased body lines.
+- **RS details:** hood vents, fender louvres, the full-width light bar, the 4-point LED headlights and the carbon roof.
+- **Wing:** the swan-neck wing with its DRS flap.
+- **Wheels:** forged 10-spoke centre-lock wheels with yellow calipers.
+
+In the game you can still change its paint, the brake lights and headlights still glow, and the wheels still spin and steer. If the model can't load, the game falls back to the old built-in shape.
+
+To change the car, edit the script and rebuild it ([Blender 4.2](https://www.blender.org/download/) or newer):
+
+```bash
+blender -b --factory-startup --python models/blender/gt3rs.py -- --glb models/gt3rs.glb --renders renders/
+```
+
+This writes `models/gt3rs.glb`, plus `models/gt3rs.glb.js` (the same model as a script file, so double-clicking `index.html` still works). `--renders` also saves studio pictures from Blender's Cycles renderer, and `--blend car.blend` saves a file you can open and edit in Blender.
+
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
 ## The world
@@ -145,7 +165,7 @@ In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI 
 
 ## Graphics
 
-Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
+The 911 GT3 RS is a Blender-made 3D model (see [Cars](#the-blender-911-gt3-rs)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
 
 ## Sound
 
