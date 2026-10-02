@@ -1,8 +1,8 @@
 # AMBOOLA — Tokyo Open World
 
-A browser driving game: take Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis, Ferraris, McLarens and Bugattis through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
+A browser driving game: take 59 cars (Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis, Ferraris, McLarens, Bugattis, Koenigseggs and Toyota GR cars) through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
 
-**▶ Watch the trailer:** [media/amboola-trailer.mp4](media/amboola-trailer.mp4) (54 s, recorded from the real game)
+**▶ Watch the trailer:** [media/amboola-trailer.mp4](media/amboola-trailer.mp4) (66 s with sound, recorded from the real game: drag races, all the Blender cars, buying and upgrading, races, drift, outlaw and police)
 
 [![Amboola trailer](media/amboola-trailer-poster.jpg)](media/amboola-trailer.mp4)
 
