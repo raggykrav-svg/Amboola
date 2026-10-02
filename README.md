@@ -2,6 +2,10 @@
 
 A browser driving game: take 59 cars (Porsche GT cars and SUVs, the whole Tesla lineup, Lamborghinis, Ferraris, McLarens, Bugattis, Koenigseggs and Toyota GR cars) through an open-world, Tokyo-inspired city covered in neon signs and Porsche billboards.
 
+## 🎮 [PLAY NOW → raggykrav-svg.github.io/Amboola](https://raggykrav-svg.github.io/Amboola/)
+
+Free, in your browser: no download, no install, no account. It works on computers (keyboard or gamepad) and on phones and tablets (touch controls). A fast computer gives the best graphics; pick **Low** graphics in the garage on older laptops and phones.
+
 **▶ Watch the trailer:** [media/amboola-trailer.mp4](media/amboola-trailer.mp4) (66 s with sound, recorded from the real game: drag races, all the Blender cars, buying and upgrading, races, drift, outlaw and police)
 
 [![Amboola trailer](media/amboola-trailer-poster.jpg)](media/amboola-trailer.mp4)
