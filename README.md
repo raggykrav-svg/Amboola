@@ -46,7 +46,7 @@ Each level costs a bit more than the last, and the price scales with the car. Th
 
 ## Drag races
 
-**RACES → 🚦 DRAG** takes you to the **Amboola Dragway** north of Fujimi Speedway, a two-lane strip with a grandstand and a timing board. Pick the **Quarter Mile** (402 m) or the **Half Mile** (805 m). Your rival is a car with a similar quarter-mile time (a touch quicker), driven by the same physics as yours.
+The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes you to the **Amboola Dragway** north of Fujimi Speedway, a two-lane strip with a grandstand and a timing board. Pick the **Quarter Mile** (402 m) or the **Half Mile** (805 m). Your rival is a car with a similar quarter-mile time (a touch quicker), driven by the same physics as yours.
 - **The tree:** the two white stage lights come on, then the three ambers, then **green**. Hit the throttle on green.
 - **Red light:** if you press the throttle during the ambers, you jumped the start and lose.
 - **Results:** reaction time, ET (elapsed time), trap speed and total for both cars. Your best ET per distance is saved.
