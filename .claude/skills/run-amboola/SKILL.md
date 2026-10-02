@@ -61,11 +61,32 @@ There is no test suite. The checks are `driver.mjs shots` (must print `no page e
 
 ```bash
 FFMPEG=/path/to/ffmpeg-with-libx264 node .claude/skills/run-amboola/trailer.mjs /tmp/amboola-trailer.mp4
+PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: runs every scene unrendered, screenshots each scene's middle frame
 ```
 
-This takes about 18 minutes for 1,288 frames at 1280×720, 24 fps. It steps the game one frame at a time (`window.__manualFrames` plus `amboola.tick(1/24)`), so SwiftShader's low frame rate doesn't matter. The scenes live in `trailer-director.js`: garage, city, night, drift, mountain, summit, race, taxi, outlaw, map and end card. `SCENE=i` re-records only scene *i* onward over the existing frames in `/tmp/amboola-frames`; scene indices count each car shot separately, and the end card is 18.
+**Recording:**
+- It takes about 25 minutes for about 1,600 frames at 1280×720, 24 fps.
+- It steps the game one frame at a time (`window.__manualFrames` plus `amboola.tick(1/24)`), so SwiftShader's low frame rate doesn't matter.
+- The scenes live in `trailer-director.js`, in this order:
+  1. drag launch cold open, title
+  2. 18-car garage montage
+  3. Blender gallery (the `media/*-blender.jpg` pictures)
+  4. buy a Supra, upgrade it, drag race it (launch, finish line, results)
+  5. city, drift, GP race, outlaw, police, mountain, viewpoint, taxi, map
+  6. end card
+- `SCENE=i` re-records from scene *i* (also works with `PREVIEW`), and `MAXF=n` stops early.
+- **Always run `PREVIEW` first.** It found a NaN-steering crash (a fresh car has no `.speed`) and blank gallery frames before a 25-minute recording.
 
-Playwright's bundled ffmpeg has only VP8. For H.264, `pip download imageio-ffmpeg --no-deps` and use the static binary inside the wheel. Google Fonts are fetched with `curl` in a route handler, because the browser can't reach them through the proxy but curl can. The video is silent: headless Chromium's Web Audio output isn't captured.
+**Soundtrack:**
+- `soundtrack.py` synthesizes the music and sound effects from `window.__timeline()`. The timeline holds each scene's `sfx: [[frame, 'whoosh'|'beep'|'launch'|'impact'|'cash'|'siren']]`, so the sound is frame-exact even for partial re-records.
+- The music is 128 BPM, Am F C G, and drops on the title.
+- It needs numpy. The recorder uses Blender's bundled python (`/tmp/blender/.../python3.11`) or `$PYTHON`, and without numpy it writes a silent video.
+- Headless Chromium's Web Audio output can't be captured, so the game's own engine sounds aren't in the video.
+
+**Recorder notes:**
+- Playwright's bundled ffmpeg has only VP8. For H.264, `pip download imageio-ffmpeg --no-deps` and use the static binary inside the wheel.
+- Google Fonts are fetched with `curl` in a route handler, because the browser can't reach them through the proxy but curl can.
+- The recorder serves real repo files. An earlier version answered every request with `index.html`, which would silently load no car models.
 
 ## Money, upgrades, drag races
 
