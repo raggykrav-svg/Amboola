@@ -30,7 +30,7 @@ node .claude/skills/run-amboola/driver.mjs shots /tmp/amboola-shots '[{"car":12,
 | `car: N` | select car N in the garage list (index into `CARS` in index.html: 0 = GT3 RS … 12 = Cayenne Turbo GT) |
 | `click: "#sel"` | click a DOM element (`#drive`, `#bResume`, `#bGarage`, `#bTime`, `#bMute`) |
 | `key: ["KeyW",…], ms` | hold the keys for `ms` |
-| `press: "KeyC"` | tap one key (C camera, T time of day, M gearbox, R reset, Escape pause, H help) |
+| `press: "KeyC"` | tap one key (C camera, T time of day, Y weather, M gearbox, R reset, Escape pause, H help) |
 | `eval: "js"` or `"@file.js"` | evaluate JS in the page (value of the last expression is printed as `eval <json>`); use `window.amboola.*` for internals |
 | `wait: ms` | sleep before the screenshot |
 | `shot: "name"` | save `<outDir>/name.png` |
@@ -106,7 +106,7 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **Upgrade kinds:** `UPG_KINDS` lists them, each with its own max: e 5, t 5, b 3, w 3, s 3, n 3. `UPG_FULL` maxes them all.
 - **Tuned cars:** `tunedSpec(car, u?)` builds the tuned spec, and drag bosses pass `UPG_FULL`.
 - **Nitro:** `inp.nitro` adds 2.6 m/s² after the traction cap while `player.nitro` (seconds) lasts. It is in readInput (Shift/X, the touch `tn` button, gamepad button 1) and shows in the `#nitroBar` HUD.
-- **Stats and missions:** `ST` (`amboola.stats`) counts `dragWins`, `raceWins`, `fares`, `arrests`, `stashed`, `driftBest`, `bosses`, and `done` (finished mission ids). `bump()` and `best()` update it and call `checkMissions()`, which pays each of the 14 `MISSIONS` once and queues the `#achv` banner.
+- **Stats and missions:** `ST` (`amboola.stats`) counts `dragWins`, `raceWins`, `fares`, `arrests`, `stashed`, `driftBest`, `bosses`, and `done` (finished mission ids). `bump()` and `best()` update it and call `checkMissions()`, which pays each of the 16 `MISSIONS` once (`ST.visited` holds the new areas reached) and queues the `#achv` banner.
 - **Daily bonus:** `checkDaily()` runs at boot (`amboola.daily` = {last, streak}). The first visit only records the day, so fresh driver contexts never see the popup.
 - **Drag bosses:** they are the `DRAG_EVENTS` entries with `boss`, unlocked in order via `ST.bosses`.
 - **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade spend.
@@ -119,6 +119,21 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **Decals:** `decalPaint()` patches the car's own paint material (`onBeforeCompile`, `customProgramCacheKey 'amboola-decal'`). It projects the car-space position (via `uCarInv`, which each paint mesh's `onBeforeRender` refreshes) onto a 2048×1024 side canvas (top half = left side, bottom half = right side, text drawn mirrored there) and a 1024×512 top canvas. Both fade with the surface normal. `carGeom()` measures the paint bounds and wheel positions, so the designs are drawn in metres. `decalTex()` keeps an LRU of 8 texture pairs.
 - **UI:** `#custBtn` opens `#custPanel` (left side, a bottom sheet on phones), and `#menu.customizing` hides the car list. `renderCust()` builds the swatches. `closeCust()` runs on car change and on DRIVE.
 - **Testing:** own the car and preset the save with an `eval` step, e.g. `localStorage.setItem('amboola.custom.taycangt', JSON.stringify({rim:6,cal:3,tint:3,decal:4,dcol:2}))`, then pick the car. `AMBOOLA_VIEWPORT=390x844` runs the driver at phone size.
+
+## Weather and the new areas
+
+- **Weather:** `weather` is `'clear'` or `'rain'` (`amboola.weather`); `setWeather()` / `cycleWeather()` (key Y). `weatherLook(T)` runs at the end of `applyTime()` and greys the sky/fog. `updateWeather(dt, p)` runs every driving frame:
+  - it ramps `WX.wet` and sets `surfGrip`, which `Player.update` multiplies into every `s.grip` (wet ×0.82, snow ×0.8);
+  - it moves the rain (`LineSegments` on layer 1, so the reflection camera skips it) and the snow (`Points`);
+  - it fires lightning and calls `audio.weather()` / `audio.thunder()`.
+- **Wet film:** `buildWetFilm()` lays a 720 m film at y 0.075 that follows the camera. On Medium and up it is a `Reflector` with `WET_SHADER`: a vertical smear, raindrop ripples and puddle noise, discarded over the sea (`uShore`) except the beach town rectangle (`uIsland`). On Low it is a plain sheen. It is rebuilt when the quality changes (`WX.filmQ`). `WX.roads` materials (highway, mountain roads) get lower roughness when wet.
+- **Areas:**
+  - `Route` (ribbon road: samples, `near`, `collide` with rails/median, `place`) and `Pad` (union of flat rectangles with box colliders, edge walls except at route `mouths`) are generic.
+  - `AREAS` = `wangan` (`WANGAN` route + `BEACH_PAD`) and `snow` (`SNOW_ROUTE` + `SNOW_PAD`, terrain `snowHeight`).
+  - `collideWorld` calls `areaCollide(p)` for anything outside the city box, and `atGate(p)` lets cars through the edge wall at each gate.
+  - `HwyTraffic` drives the highway cars and recycles them out of sight. `updateAreas()` animates the Ferris wheel, lighthouse, chairlift and onsen steam.
+  - The GPS treats each area (and Mt. Amboola) as a zone with a gate: `zoneAt`, `ZONES`, `navRoute`.
+- **Testing:** `window.amboola` exposes `AREAS`, `WANGAN`, `SNOW_ROUTE`, `SNOW`, `BEACH`, `WX`, `setWeather` and `hwyTraffic`. `WANGAN.place(player, i, -1)` puts the car on the highway at sample `i`. To check a route end to end, drive it with an autopilot `eval` that calls `simStep` with steering toward the sample about 12 ahead. Both routes were run both ways like this.
 
 ## Rebuild the Blender car models
 

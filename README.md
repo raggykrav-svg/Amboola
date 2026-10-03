@@ -71,9 +71,10 @@ The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes y
 
 ## Missions, daily bonus, selling cars
 
-- **🏆 Missions** (garage button): 14 goals that pay automatically when you reach them, with a banner and a sound.
+- **🏆 Missions** (garage button): 16 goals that pay automatically when you reach them, with a banner and a sound.
   - **Driving:** win a drag race ($2,000), win 10 drag races ($25,000), win a circuit race ($5,000), win 5 circuit races ($40,000), deliver 10 taxi passengers ($8,000), arrest 3 outlaws ($15,000), stash $50,000 as the outlaw ($20,000), bank a 2,500-point drift chain ($10,000).
   - **Building your garage:** max every upgrade on one car ($30,000), own 5 cars ($25,000), own a $1M+ car ($100,000), own a Bugatti ($250,000), have $1,000,000 in your wallet ($50,000).
+  - **Exploring:** drive the Wangan Highway to Amboola Beach ($10,000), climb the Snow Pass to the Ski Village ($15,000).
   - **Final goal:** beat all 3 drag bosses ($500,000).
 - **📅 Daily bonus:** come back on a new day and collect free money. It grows every day you keep your streak: $5,000 on day 1, up to $20,000 on day 7 and after. Miss a day and the streak starts again.
 - **💸 Sell cars:** the red **SELL** button under UPGRADE sells the car for 60% of its price plus half of what you spent upgrading it. Tap twice to confirm. You always keep at least one car.
@@ -101,6 +102,7 @@ The decals are painted inside the car's own paint, so they follow every curve an
 | `M` | Automatic ↔ manual gearbox |
 | `Q` / `E` | Shift down / up (manual) |
 | `T` | Time of day: day / sunset / night |
+| `Y` | Weather: rain / clear |
 | `R` | Put the car back on the road |
 | `P` / `Esc` | Pause, change car, sound on/off |
 | `H` | Show controls |
@@ -283,6 +285,36 @@ Pick any car in the garage and press **🚓 POLICE**, or choose **P → POLICE**
 - **Hideouts are safe for him:** you **can't arrest him at a hideout** (隠れ家). If he gets there with the money, he stashes it and gets away. Then a new outlaw appears somewhere in the city.
 
 Your police rewards are saved. **P → END POLICE DUTY** stops.
+
+## Weather · rain 🌧
+
+Pick **🌧 Rain** under *Weather* in the garage, press **Y** while driving, or use **WEATHER** in the pause menu. It works in every time of day, but night rain in the city is the one to see.
+- **Rain:** streaks fall around you and slant when you drive fast. The sky turns grey, the haze gets thicker, and at night lightning flashes over the city, followed by thunder a moment later.
+- **Wet roads that reflect the neon:** the streets get wet over a few seconds. Signs, street lamps, headlights and your own car are mirrored in the road and smeared like they are on real wet asphalt. Puddles give sharper reflections, and raindrops make little ripples in them. The highway and mountain roads get a wet shine too.
+- **Driving:** wet roads have 18% less grip, so brake earlier and be gentle on the throttle. The tyres throw up spray behind the car and hiss on the wet road, and you hear the rain (quieter in the hood camera).
+- **Graphics:** on Medium/High/Ultra the reflections are real. On Low they're a cheaper sheen, so phones stay smooth.
+
+## Wangan Highway & Amboola Beach 🏖
+
+- **Getting there:** drive east along the harbour road (the street just north of the seawall) to the green **ETC toll gate**.
+- **The Wangan Highway (湾岸線):** six lanes with a central barrier, concrete barriers on both sides, street lamps and green gantry signs. It runs along the coast on a viaduct, with traffic going both ways at 80–120 km/h, driving on the left like in Japan. The traffic slows down behind you.
+- **Amboola Bay Bridge:** a white suspension bridge across the bay, about 30 m above the water, with lights along its cables at night.
+- **Amboola Beach:** an island beach town. You can drive anywhere in town:
+  - streets of pastel shops and hotels, with neon signs that light up at night (かき氷, SURF SHOP, ラーメン, BEACH BAR…);
+  - palm trees, a sandy beach with umbrellas, towels, a lifeguard tower and a volleyball net;
+  - a long wooden pier you can drive along to a Ferris wheel at the end;
+  - a lighthouse whose beam sweeps the bay at night.
+- **First visit:** +2,000 skill points and the **Beach Trip** mission.
+
+## Shirayuki Snow Pass ❄️
+
+- **Getting there:** drive out of the north edge of the city through the red gate marked **白雪山 SNOW PASS**. The road crosses the plain between Kanto Short Circuit and Fujimi Speedway to a snowy mountain.
+- **The pass:** five long switchback legs with hairpin bends, about 5 km long and climbing to about 210 m. It has yellow guardrails, red-and-white snow poles and snow-laden pine forest.
+- **Driving it:** it snows on the mountain, and the snowy road has 20% less grip. With **Y**/Rain on, the snowfall gets heavier.
+- **Shirayuki Ski Village:** a square of wooden chalets with snowy roofs and warm lit windows: a ski lodge, an onsen with steam rising, a ramen shop, a café and a ski rental. There's a lit tree in the middle, and a chairlift runs up to the summit.
+- **First visit:** +2,000 skill points and the **Snow Chaser** mission.
+
+The map (**N**) lists all of it: Amboola Beach, Beach Pier, Wangan Highway, Amboola Bay Bridge, Shirayuki Ski Village and Snow Pass. You can set a GPS route through the right gate, or fast-travel there. **R** puts you back on the highway or the pass.
 
 ## Mt. Amboola
 
