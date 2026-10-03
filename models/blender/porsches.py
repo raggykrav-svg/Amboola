@@ -364,9 +364,12 @@ def taycangt(k):
         for xg in (0.80, -0.08, -1.12): k.decal('doorline', 'Black', side(s), xg - .004, xg + .004, 0.25, 0.92, 1, 12, off=.002)
         for xh in (0.15, -0.85): k.decal('handle', 'Black', side(s), xh - .14, xh, 0.86, 0.875, 4, 1, off=.003)
         k.decal('skirt', 'Carbon', side(s), -1.00, 1.05, 0.16, 0.24, 30, 2)
-        k.slanted('aircurtain', 'Gloss', s, 2.30, 2.22, 0.24, 0.52, lean=-0.03, nu=3, nv=8)
-    k.headlight_quad((2.24, 0.66, 0.70), (0.72, 0.28, 0.52), 0.17, 0.11)
-    k.decal('intakeC', 'Gloss', 'front', -0.52, 0.52, 0.22, 0.38, 18, 5)
+    # Taycan face: 4-point lamps on the fender peaks, tall air curtains below them, wide low intake with a body bar
+    k.lamp((2.22, 0.63, 0.695), (0.70, 0.30, 0.55), 0.31, 0.15, 'quad', slant=0.04, taper=0.18)
+    k.curtain((2.40, 0.70, 0.40), (0.85, 0.48, 0.05), 0.075, 0.24, slant=0.015)
+    k.project('intakeC', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.56, 0.48, v), lerp(0.20, 0.37, v)), 18, 5)
+    k.decal('intakebar', 'Paint', 'front', -0.30, 0.30, 0.285, 0.30, 12, 1, off=.010)
+    k.decal('sensor', 'Gloss', 'front', -0.05, 0.05, 0.305, 0.335, 2, 1, off=.011)
     k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.18, 0.215, 30, 2)
     k.light_bar(-1.90, 0.905, 0.935, 0.86, bg=0.02, frac=1.0)
     k.fan('rearpanel', 'Gloss', -1.90, 0.45, 0.58, -0.60, 0.60, 30, 3)
@@ -421,12 +424,18 @@ def suv_common(k, glass_top, glass_bot, pillars, doors, handles, mirror_x, cabin
     k.interior(-0.45, 1.5, 0.98, l=cabin_l, h=0.42, seats_x=-0.20, seat_z=1.06)
 
 def cayenne_front(k, carbon=False):
-    k.headlight_quad((2.30, 0.70, 0.93), (0.75, 0.30, 0.45), 0.24, 0.12)
-    k.decal('grille', 'Gloss', 'front', -0.46, 0.46, 0.46, 0.70, 18, 5)
-    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.55, s * 0.84, 0.40, 0.72, 10, 8))
-    for i in range(3):
-        k.decal('grillebar', 'Gloss' if not carbon else 'Carbon', 'front', -0.44, 0.44, 0.52 + i * .06, 0.53 + i * .06, 18, 1, off=.010)
-    k.decal('lip', 'Carbon' if carbon else 'Gloss', 'front', -0.82, 0.82, 0.30, 0.38, 30, 2)
+    """Cayenne face: big matrix 4-point lamps, a trapezoid grille (wider at the bottom) with slats and a frame,
+    tall corner intakes with a vertical blade, and a lower lip"""
+    k.lamp((2.30, 0.69, 0.925), (0.75, 0.30, 0.45), 0.36, 0.14, 'quad', slant=0.03, taper=0.12)
+    gr = lambda grow: (lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * (lerp(0.52, 0.42, v) + grow), lerp(0.42 - grow, 0.75 + grow * .6, v)))
+    k.project('grille_frame', 'Chrome' if not carbon else 'Gloss', gr(0.025), 20, 6, off=.003)
+    k.project('grille', 'Gloss', gr(0.0), 20, 6, off=.005)
+    for i in range(5):
+        z = 0.47 + i * 0.055
+        k.decal('grillebar', 'Carbon' if carbon else 'Titanium', 'front', -lerp(0.51, 0.43, (z - .42) / .33), lerp(0.51, 0.43, (z - .42) / .33), z, z + .012, 18, 1, off=.009)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.58, s * 0.86, 0.36, 0.72, 10, 8))
+    both(lambda s: k.decal('blade', 'Paint' if not carbon else 'Carbon', 'front', s * 0.70, s * 0.725, 0.38, 0.70, 1, 6, off=.010))
+    k.decal('lip', 'Carbon' if carbon else 'Gloss', 'front', -0.84, 0.84, 0.29, 0.36, 30, 2)
 def cayenne_rear(k, ox=-1.90, carbon=False):
     k.light_bar(ox, 1.035, 1.075, 0.84, bg=0.025, frac=0.5)
     k.tail_clusters(ox, 1.00, 1.11, 0.62, 0.84)
@@ -478,10 +487,14 @@ def macanev(k):
     suv_common(k, top, bot, [mx(-0.15), mx(-1.15)], (mx(0.86), mx(-0.17), mx(-1.22)), (mx(0.15), mx(-0.90)), mx(0.80), cabin_l=2.3)
     k.decal('roof', 'Glass', 'top', mx(-1.10), mx(0.30), -0.55, 0.55, 16, 12, off=.003)        # panoramic glass roof
     # split lights: slim LED strip on top, the 4-point main lights low in the bumper corners
-    k.drl_strip((2.26, 0.62, 0.86), (0.80, 0.22, 0.55), 0.24, 0.025)
-    k.headlight_quad((2.33, 0.68, 0.64), (0.85, 0.35, 0.20), 0.17, 0.10)
-    k.decal('intake', 'Gloss', 'front', -0.55, 0.55, 0.32, 0.48, 20, 4)
-    k.decal('lip', 'Gloss', 'front', -0.80, 0.80, 0.27, 0.33, 30, 2)
+    # Macan Electric split lights: slim LED strip on the fender edge, 4-point main lamps low in the bumper,
+    # smooth grille-less nose, wide black lower intake and corner air curtains
+    k.lamp((2.25, 0.63, 0.86), (0.78, 0.24, 0.55), 0.34, 0.045, 'strip', slant=0.02, taper=0.25)
+    k.lamp((2.36, 0.66, 0.635), (0.85, 0.35, 0.20), 0.22, 0.12, 'quad', slant=0.01)
+    k.project('intake', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.64, 0.56, v), lerp(0.27, 0.46, v)), 20, 4)
+    k.decal('intakebar', 'Gloss', 'front', -0.50, 0.50, 0.36, 0.372, 16, 1, off=.010)
+    k.curtain((2.30, 0.86, 0.50), (0.80, 0.55, 0.10), 0.06, 0.20, slant=0.02)
+    k.decal('lip', 'Gloss', 'front', -0.80, 0.80, 0.24, 0.28, 30, 2)
     cayenne_rear(k, ox=-1.85)
     k.spoiler(mx(-2.28), 1.215, 0.20, 1.30, aoa=-5, mat='Paint', strut_y=0.42)
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts', caliper=(0.25, 0.08, 0.10))

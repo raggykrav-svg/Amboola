@@ -287,6 +287,31 @@ class Car:
             pts = [(-.25, .22), (.25, .22), (-.25, -.22), (.25, -.22)] if dots == 4 else [(-.33, 0), (-.11, 0), (.11, 0), (.33, 0)]
             for px, py in pts:
                 self.oval('drl', 'Headlight', cs + e1 * (px * w + s * slant * py) + e2 * py * h, fs, w * .11, h * .14, .010, n=4)
+    def lamp(self, c, f, w, h, style='quad', slant=0.0, taper=0.0, mirror=True):
+        """a detailed headlight on both sides: gloss-black housing, chrome reflector, then per style
+        'quad'   Porsche 4-point LED signature (four bright pads in a 2x2 grid)
+        'tesla'  slim lamp: LED eyebrow along the top edge + two projector lenses
+        'strip'  one long LED strip (split-light upper unit)"""
+        for s in ((1, -1) if mirror else (1,)):
+            cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]); sl = s * slant
+            self.rect('lamp_housing', 'Gloss', cs, fs, w * 1.1, h * 1.28, .004, 12, 5, slant=sl, taper=taper)
+            _, e1, e2 = self.basis(fs)
+            at = lambda px, py: cs + e1 * (px * w * (1 - taper * (py + .5)) + sl * py) + e2 * py * h
+            if style == 'strip':
+                self.rect('lamp_led', 'Headlight', cs, fs, w, h * .55, .008, 12, 2, slant=sl, taper=taper); continue
+            self.rect('lamp_reflector', 'Chrome', cs, fs, w, h, .006, 12, 5, slant=sl, taper=taper)
+            if style == 'quad':
+                for px, py in ((-.2, .2), (.2, .2), (-.2, -.2), (.2, -.2)):
+                    self.rect('lamp_led', 'Headlight', at(px, py), fs, w * .26, h * .26, .010, 3, 3)
+            else:   # tesla
+                self.rect('lamp_led', 'Headlight', at(0, .36), fs, w * .92, h * .14, .010, 10, 1, slant=sl * .3, taper=taper)
+                for px in (-.22, .18):
+                    self.oval('lamp_proj', 'Headlight', at(px, -.12), fs, h * .26, h * .26, .011, n=5)
+                    self.oval('lamp_projring', 'Black', at(px, -.12), fs, h * .34, h * .34, .009, ring=.78)
+    def curtain(self, c, f, w, h, slant=0.0, mat='Gloss'):
+        """vertical air-curtain intake at the bumper corners (both sides)"""
+        for s in (1, -1):
+            self.rect('curtain', mat, V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]), w, h, .005, 3, 8, slant=s * slant)
     def drl_strip(self, c, f, w, h, slant=0.0):
         for s in (1, -1):
             self.rect('drl', 'Headlight', V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]), w, h, .007, slant=s * slant, nu=6, nv=2)

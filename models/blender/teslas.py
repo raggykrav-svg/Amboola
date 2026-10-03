@@ -24,10 +24,14 @@ def glass(k, X, Z, ws, rw, top, bot, pillars=(), ws_top=None, frame='Gloss'):
     k.side_glass([(X(x), Z(z)) for x, z in top], [(X(x), Z(z)) for x, z in bot], pillars=[X(p) for p in pillars], pillar_w=0.05, frame=frame)
 
 def tesla_face(k, c, f, w=0.26, h=0.07, intake=(0.40, 0.20, 0.30)):
-    """slim swept headlights and a small lower intake on a smooth nose"""
-    k.headlight_quad(c, f, w, h, slant=0.05, taper=0.2, dots='row')
+    """smooth grille-less nose: sleek tapered lamps (LED eyebrow + twin projectors), a lower intake with a body bar,
+    slim corner air curtains and a gloss lip"""
+    k.lamp(c, f, w * 1.3, h * 1.7, 'tesla', slant=0.05, taper=0.35)
     hw, z0, z1 = intake
-    k.decal('intake', 'Gloss', 'front', -hw, hw, z0, z1, 16, 3)
+    k.project('intake', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(hw, hw * .88, v), lerp(z0, z1 + .02, v)), 16, 3)
+    k.decal('intakebar', 'Paint', 'front', -hw * .55, hw * .55, (z0 + z1) / 2, (z0 + z1) / 2 + .012, 10, 1, off=.010)
+    k.curtain((c[0] + 0.12, c[1] + 0.10, z1 + 0.06), (0.85, 0.50, 0.05), 0.05, 0.16, slant=0.02)
+    k.decal('lip', 'Gloss', 'front', -hw * 1.6, hw * 1.6, z0 - .05, z0 - .02, 20, 1)
 
 def flush_handles(k, xs, z):
     for s in (1, -1):
