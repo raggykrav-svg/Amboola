@@ -91,6 +91,9 @@
   /* ---------- HUD ---------- */
   #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
   #tacho { position:absolute; right:18px; bottom:14px; width:260px; height:260px; }
+  #nitroBar { position:absolute; right:48px; bottom:282px; width:200px; height:12px; background:rgba(0,0,0,.5); border:1px solid #2fe0ff; }
+  #nitroBar.hidden { display:none; } #nitroBar small { position:absolute; left:-44px; top:-3px; font-size:11px; font-weight:700; letter-spacing:.1em; color:#2fe0ff; }
+  #nitroBar i { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#2f6bff,#2fe0ff); } #nitroBar.on i { box-shadow:0 0 14px #2fe0ff; background:#fff; }
   #minimap { position:absolute; left:18px; bottom:18px; width:210px; height:210px; pointer-events:auto; cursor:pointer; border-radius:50%; }
   #minimap:hover { filter:brightness(1.2); }
   #maptag { position:absolute; left:18px; bottom:232px; width:210px; text-align:center; font-size:12px; letter-spacing:.25em; color:var(--dim); text-shadow:0 1px 4px #000; }
@@ -137,6 +140,28 @@
   #price.own { color:#5cd67a; }
   #drive.buy { background:linear-gradient(90deg,#ffd02d,#ffb300); font-size:17px; letter-spacing:.12em; }
   #drive.locked { background:#3a3d44; color:#cfd2d8; font-size:15px; letter-spacing:.08em; cursor:not-allowed; }
+  #misBtn { position:absolute; left:632px; top:84px; padding:7px 14px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.14em;
+    color:#fff; background:rgba(10,12,18,.8); border:2px solid #ffd02d; cursor:pointer; } #misBtn:hover { background:rgba(255,208,45,.3); } #misCount { color:#ffd02d; }
+  #sellBtn { display:block; width:100%; margin:0 0 6px; padding:5px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:11px; letter-spacing:.1em;
+    color:#ff8a8a; background:transparent; border:1px solid #6a3036; cursor:pointer; } #sellBtn:hover { border-color:#ff4b4b; } #sellBtn.confirm { background:#c8141b; color:#fff; border-color:#ff4b4b; } #sellBtn.hidden { display:none; }
+  #misPanel, #dailyScreen { position:fixed; inset:0; z-index:38; background:rgba(4,5,9,.88); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; }
+  #misPanel.hidden, #dailyScreen.hidden { display:none; }
+  #misPanel h2, #dailyScreen h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:30px; letter-spacing:.2em; margin:0; color:#ffd02d; }
+  #misHead { font-family:'Orbitron',sans-serif; font-size:15px; margin:6px 0 10px; text-align:center; } #misHead small { display:block; color:var(--dim); font-size:11px; letter-spacing:.2em; margin-top:3px; }
+  #misList { display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; width:min(980px,100%); max-height:62vh; overflow-y:auto; }
+  .mis { display:flex; gap:10px; align-items:center; background:var(--panel); border:1px solid rgba(255,255,255,.08); padding:7px 12px; }
+  .mis > div { flex:1; } .mis b { font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:.08em; } .mis small { display:block; color:var(--dim); font-size:12px; }
+  .mis i { display:block; height:4px; margin-top:5px; background:linear-gradient(90deg,#ffd02d var(--p),#2a2d35 var(--p)); }
+  .mis span { text-align:right; font-family:'Orbitron',sans-serif; font-size:12px; white-space:nowrap; } .mis em { display:block; font-style:normal; color:#5cd67a; font-size:12px; margin-top:3px; }
+  .mis.done { border-color:#2e6a3e; background:rgba(46,106,62,.25); } .mis.done i { background:#5cd67a; }
+  #misClose, #dailyGet { margin-top:14px; padding:12px 40px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:15px; letter-spacing:.2em; color:#111; background:linear-gradient(90deg,#ffd02d,#ffb300); border:none; cursor:pointer; }
+  #misClose { background:var(--panel); color:#fff; border:1px solid #3a3f4b; font-weight:400; font-size:14px; }
+  #dailyInfo { text-align:center; margin-top:16px; font-family:'Orbitron',sans-serif; } #dailyInfo > b { display:block; font-size:72px; color:#5cd67a; text-shadow:0 0 30px rgba(92,214,122,.5); }
+  #dailyInfo small { display:block; font-size:18px; letter-spacing:.25em; margin:6px 0 14px; color:#ffb01f; } #dailyInfo span { font-family:'Rajdhani',sans-serif; font-size:17px; color:var(--dim); } #dailyInfo span b { color:#fff; }
+  #achv { position:fixed; left:50%; top:16px; z-index:45; transform:translate(-50%,-140%); transition:transform .35s cubic-bezier(.2,1.4,.4,1); pointer-events:none;
+    background:linear-gradient(90deg,#1a1405,#2a2108); border:2px solid #ffd02d; padding:10px 26px; text-align:center; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.2em; color:#ffd02d; box-shadow:0 10px 40px rgba(0,0,0,.6); }
+  #achv.show { transform:translate(-50%,0); } #achv b { display:block; font-size:22px; color:#fff; margin:4px 0; letter-spacing:.12em; } #achv small { display:block; font-family:'Rajdhani',sans-serif; font-size:14px; letter-spacing:.08em; color:#cfd2d8; }
+  @media (max-width: 760px) { #misBtn { left:auto; right:12px; top:46px; font-size:11px; padding:6px 10px; } #misList { grid-template-columns:1fr; } }
   #saveQuit { position:absolute; left:470px; top:84px; padding:7px 14px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.14em;
     color:#fff; background:rgba(10,12,18,.8); border:2px solid #5cd67a; cursor:pointer; } #saveQuit:hover { background:rgba(92,214,122,.3); }
   #savedScreen { position:fixed; inset:0; z-index:40; background:rgba(4,5,9,.9); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
@@ -152,9 +177,10 @@
   #upgPanel.hidden { display:none; }
   #upgPanel h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:34px; letter-spacing:.25em; margin:0; }
   #upgCar { font-size:20px; font-weight:700; letter-spacing:.08em; margin:4px 0 16px; text-align:center; } #upgCar small { display:block; color:#ffd02d; font-family:'Orbitron',sans-serif; font-size:14px; margin-top:4px; }
-  .urow { display:flex; align-items:center; gap:18px; width:min(760px,100%); background:var(--panel); border:1px solid rgba(255,255,255,.08); padding:14px 16px; margin-bottom:10px; }
+  .urow { display:flex; align-items:center; gap:18px; width:min(760px,100%); background:var(--panel); border:1px solid rgba(255,255,255,.08); padding:7px 16px; margin-bottom:6px; }
   .uname { flex:1; } .uname b { font-family:'Orbitron',sans-serif; font-size:18px; letter-spacing:.12em; } .uname b i { font-style:normal; font-size:13px; color:var(--dim); margin-left:6px; }
-  .uname small { display:block; color:var(--dim); font-size:13px; letter-spacing:.05em; margin-top:3px; }
+  .uname small { display:block; color:var(--dim); font-size:12px; letter-spacing:.05em; margin-top:1px; }
+  .uname b { font-size:15px!important; }
   .pips { display:flex; gap:5px; } .pips span { width:22px; height:22px; border:2px solid #4a4f5b; transform:skewX(-14deg); } .pips span.on { background:linear-gradient(#5cd67a,#2fe0ff); border-color:#5cd67a; }
   .urow button { min-width:220px; padding:10px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:13px; letter-spacing:.06em; color:#111; background:linear-gradient(90deg,#ffd02d,#ffb300); border:none; cursor:pointer; }
   .urow button.poor { background:#3a3d44; color:#9a9ea8; } .urow button.max { background:#5cd67a; }
@@ -191,6 +217,7 @@
   #touch .tb.on { background:rgba(255,90,31,.45); }
   #tl { left:20px; bottom:250px; } #tr { left:110px; bottom:250px; }
   #tg { right:24px; bottom:290px; } #tbk { right:114px; bottom:290px; } #th { right:24px; bottom:380px; width:60px!important; height:60px!important; font-size:11px!important; }
+  #tn { right:100px; bottom:380px; width:60px!important; height:60px!important; font-size:11px!important; border-color:#2fe0ff!important; }
   #tpause { right:50%; top:10px; width:48px!important; height:48px!important; transform:translateX(50%); }
   @media (max-width: 760px) {
     #carlist { top:auto; bottom:236px; left:12px; right:12px; width:auto; height:120px; display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; }
@@ -239,6 +266,7 @@
   .rcard { width:min(560px,92vw); background:var(--panel); border-left:4px solid var(--accent); padding:12px 16px; cursor:pointer; transition:transform .15s; }
   .rcard:hover { transform:translateX(4px); background:rgba(255,90,31,.14); }
   .rcard b { display:block; font-size:20px; } .rcard span { display:block; color:var(--dim); font-size:14px; letter-spacing:.06em; }
+  .rcard.locked { opacity:.45; cursor:not-allowed; }
   #races button, #results button { padding:12px 26px; font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.2em; background:var(--panel); color:#fff; border:1px solid #3a3f4b; cursor:pointer; }
   #races button:hover, #results button:hover { border-color:var(--accent); }
   #resTable { border-collapse:collapse; min-width:min(520px,92vw); font-size:17px; }
@@ -328,7 +356,7 @@
   <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
   <div id="carlist"></div>
   <div id="stats">
-    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button>
+    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="sellBtn">SELL</button>
     <div class="stat"><div class="lbl">Power <b id="vPow"></b></div><div class="track"><i id="bPow"></i></div></div>
     <div class="stat"><div class="lbl">Top speed <b id="vTop"></b></div><div class="track"><i id="bTop"></i></div></div>
     <div class="stat"><div class="lbl">0–100 km/h <b id="vAcc"></b></div><div class="track"><i id="bAcc"></i></div></div>
@@ -346,6 +374,7 @@
   <button id="policeBtn">🚓 POLICE</button>
   <button id="drive">DRIVE</button>
   <button id="saveQuit">💾 SAVE &amp; QUIT</button>
+  <button id="misBtn">🏆 MISSIONS <span id="misCount"></span></button>
   <div id="disclaimer">Fan-made game · not affiliated with or endorsed by any car maker · model names used for reference only</div>
 </div>
 
@@ -354,7 +383,7 @@
   <div id="helpbtn">[H] CONTROLS</div>
   <div id="help" class="hidden">
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
-    <div><kbd>SPACE</kbd>Handbrake (drift)</div><div><kbd>C</kbd>Camera view</div><div><kbd>M</kbd>Auto / Manual gearbox</div>
+    <div><kbd>SPACE</kbd>Handbrake (drift)</div><div><kbd>SHIFT / X</kbd>Nitro (upgrade it first)</div><div><kbd>C</kbd>Camera view</div><div><kbd>M</kbd>Auto / Manual gearbox</div>
     <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>R</kbd>Reset car to road</div>
     <div><kbd>G</kbd>Outlaw: route to a hideout</div><div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
@@ -363,6 +392,7 @@
   <div id="chain"><div class="lbl" id="chainLbl"></div><div class="pts" id="chainPts"></div></div>
   <div id="toast"></div>
   <canvas id="tacho" width="520" height="520"></canvas>
+  <div id="nitroBar" class="hidden"><small>N₂O</small><i></i></div>
   <canvas id="minimap" width="420" height="420" title="Open map (N)"></canvas>
   <div id="maptag">🗺 MAP · CLICK / N</div>
   <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
@@ -376,6 +406,9 @@
 </div>
 <div id="raceprompt" class="hidden"></div>
 <div id="races" class="hidden"><h2>RACES</h2><div id="raceList"></div><button id="racesClose">BACK</button></div>
+<div id="misPanel" class="hidden"><h2>MISSIONS · ミッション</h2><div id="misHead"></div><div id="misList"></div><button id="misClose">BACK</button></div>
+<div id="dailyScreen" class="hidden"><h2>DAILY BONUS · 毎日ボーナス</h2><div id="dailyInfo"></div><button id="dailyGet">COLLECT</button></div>
+<div id="achv"></div>
 <div id="savedScreen" class="hidden"><h2>GAME SAVED · 保存しました</h2><div id="savedInfo"></div>
   <p>Everything is saved in this browser. You can close this tab now; next time you open Amboola you carry on from here.</p>
   <div class="rbtns"><button id="savedBack">▶ KEEP PLAYING</button><button id="savedQuit">QUIT</button></div></div>
@@ -412,7 +445,7 @@
 
 <div id="touch" class="hidden">
   <div class="tb" id="tl">◀</div><div class="tb" id="tr">▶</div>
-  <div class="tb" id="tg">GAS</div><div class="tb" id="tbk">BRK</div><div class="tb" id="th">HB</div>
+  <div class="tb" id="tg">GAS</div><div class="tb" id="tbk">BRK</div><div class="tb" id="th">HB</div><div class="tb" id="tn">N₂O</div>
   <div class="tb" id="tpause">II</div>
 </div>
 
@@ -1848,7 +1881,7 @@ class Player {
     this.x = -LANES[1]; this.z = 150; this.heading = Math.PI; this.vx = 0; this.vz = 0; this.yawRate = 0;
     this.steer = 0; this.gear = 1; this.rpm = spec.idle || 0; this.reverse = false; this.shiftT = 0; this.manual = !!spec.manual;
     this.accel = 0; this.latAcc = 0; this.slip = 0; this.limiter = false; this.throttle = 0; this.y = 0; this.slope = 0; this.pitchG = 0;
-    this.pitch = 0; this.roll = 0; this.lastShiftDir = 0;
+    this.pitch = 0; this.roll = 0; this.lastShiftDir = 0; this.nitro = spec.nitroCap || 0; this.boosting = false;
     this.head = new THREE.SpotLight(0xfff1dc, 0, 110, .5, .45, 1.4);
     this.head.position.set(0, .8, 2.2); this.head.target.position.set(0, 0, 25);
     this.car.group.add(this.head, this.head.target);
@@ -1903,9 +1936,14 @@ class Player {
       if (drive > 0 && this.shiftT <= 0 && !this.limiter) F = s.tpeak * torqueCurve(s, this.rpm / s.redline) * s.ratios[this.gear - 1] / s.wr * .9 * drive;
       if (drive === 0 && vf > 1) F = -s.mass * 1.1 * (this.rpm / s.redline) * (s.ratios[this.gear - 1] / s.ratios[s.ratios.length - 1]) * .35;
     } else { this.rpm = damp(this.rpm, s.idle + Math.abs(drive) * 2500, 8, dt); }
-    if (vf * 3.6 >= s.vmax && F > 0) F = 0; // electronic top-speed limiter
+    // nitro: while held (and the tank lasts) a straight extra push of 0.27 g on top of the tyres' limit, so it is felt in
+    // every car, even grip-limited hypercars; the tank refills slowly when not in use
+    this.boosting = false;
+    if (s.nitroCap) { if (inp.nitro && this.nitro > 0 && drive > 0 && vf > 2 && !this.reverse) { this.nitro = Math.max(0, this.nitro - dt); this.boosting = true; } else if (!inp.nitro) this.nitro = Math.min(s.nitroCap, (this.nitro ?? s.nitroCap) + dt * .12); }
+    if (vf * 3.6 >= s.vmax * (this.boosting ? 1.04 : 1) && F > 0) F = 0; // electronic top-speed limiter (nitro can nudge past it)
     let a = F / s.mass;
     let spin = 0; if (a > traction) { spin = Math.min((a - traction) / traction, s.drive === 'AWD' ? .06 : .14); a = traction; } // traction control keeps launch wheelspin small
+    if (this.boosting && vf * 3.6 < s.vmax * 1.04) a += 2.6;
     if (this.reverse && drive < 0) a = vf > -9 ? drive * 5 : 0;
     // resistances
     a -= s.drag * vf * Math.abs(vf) / s.mass + (Math.abs(vf) > .1 ? Math.sign(vf) * .15 : 0);
@@ -2186,7 +2224,7 @@ function updateSkill(dt, p) {
     box.style.opacity = 1; $('chainLbl').textContent = skill.label + (skill.mult > 1 ? `  x${skill.mult}` : '');
     $('chainPts').textContent = skill.broken ? '' : Math.floor(skill.chain * skill.mult).toLocaleString();
   } else {
-    if (skill.chain > 0) { const tot = Math.floor(skill.chain * skill.mult); skill.bank += tot; localStorage.setItem('amboola.skill', skill.bank); earn(tot * .15); toast(`+${fmtUSD(tot * .15)}`, `${skill.label === 'DRIFT' ? 'DRIFT' : 'SKILL'} CHAIN BANKED · ${tot.toLocaleString()} PTS`); }
+    if (skill.chain > 0) { const tot = Math.floor(skill.chain * skill.mult); skill.bank += tot; localStorage.setItem('amboola.skill', skill.bank); earn(tot * .15); if (skill.label === 'DRIFT') best('driftBest', tot); toast(`+${fmtUSD(tot * .15)}`, `${skill.label === 'DRIFT' ? 'DRIFT' : 'SKILL'} CHAIN BANKED · ${tot.toLocaleString()} PTS`); }
     skill.chain = 0; skill.count = 0; skill.mult = 1; skill.broken = false; box.style.opacity = 0;
   }
 }
@@ -2201,42 +2239,52 @@ if (localStorage.getItem('amboola.usd') == null) {   // older saves kept money i
 const wallet = { usd: +localStorage.getItem('amboola.usd'), owned: new Set(JSON.parse(localStorage.getItem('amboola.owned') || '["gr86"]')) };
 function saveWallet() { localStorage.setItem('amboola.usd', Math.round(wallet.usd)); localStorage.setItem('amboola.owned', JSON.stringify([...wallet.owned])); }
 function earn(usd, why) {
-  usd = Math.round(usd); if (usd <= 0) return; wallet.usd += usd; saveWallet();
+  usd = Math.round(usd); if (usd <= 0) return; wallet.usd += usd; saveWallet(); if (typeof ST !== 'undefined') checkMissions();
   const w = $('walletHud'); if (w) { w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); }
 }
 const owns = c => wallet.owned.has(c.id);
 function buyCar(c) {
   if (owns(c) || wallet.usd < c.usd) return false;
-  wallet.usd -= c.usd; wallet.owned.add(c.id); saveWallet(); return true;
+  wallet.usd -= c.usd; wallet.owned.add(c.id); saveWallet(); checkMissions(); return true;
 }
 /* ---- upgrades: 5 engine + 5 tyre levels per owned car (saved per car id) */
-const UPG_MAX = 5, upg = JSON.parse(localStorage.getItem('amboola.upg') || '{}');
+const upg = JSON.parse(localStorage.getItem('amboola.upg') || '{}');
+// k: saved key · max: levels · base/pct: level-1 price = max(base, pct × car price), level n costs n× that
 const UPG_KINDS = [
-  { k: 'e', n: 'ENGINE', jp: 'エンジン', d: '+7% power per level · harder launches, higher top speed' },
-  { k: 't', n: 'TIRES', jp: 'タイヤ', d: '+5% grip per level · less wheelspin, faster corners, shorter braking' },
+  { k: 'e', n: 'ENGINE', jp: 'エンジン', max: 5, base: 1700, pct: .03, d: '+7% power per level · harder launches, higher top speed' },
+  { k: 't', n: 'TIRES', jp: 'タイヤ', max: 5, base: 1000, pct: .02, d: '+5% grip per level · less wheelspin, faster corners, shorter braking' },
+  { k: 'b', n: 'TURBO', jp: 'ターボ', max: 3, base: 2500, pct: .04, d: '+6% power per level · stacks with the engine' },
+  { k: 'w', n: 'WEIGHT', jp: '軽量化', max: 3, base: 1500, pct: .025, d: '−3.5% weight per level · carbon panels, lighter seats' },
+  { k: 's', n: 'SPOILER', jp: 'スポイラー', max: 3, base: 1200, pct: .02, d: 'more downforce · more grip at high speed' },
+  { k: 'n', n: 'NITRO', jp: 'ニトロ', max: 3, base: 2000, pct: .03, d: 'hold SHIFT for a big push · 2.5 / 3.5 / 4.5 s tank, refills' },
 ];
-const upgOf = c => upg[c.id] || { e: 0, t: 0 };
-const upgCost = (c, k, lvl) => Math.round(Math.max(k === 'e' ? 1700 : 1000, c.usd * (k === 'e' ? .03 : .02)) * lvl / 100) * 100;
+const UPG_ZERO = Object.fromEntries(UPG_KINDS.map(K => [K.k, 0]));
+const UPG_FULL = Object.fromEntries(UPG_KINDS.map(K => [K.k, K.max]));
+const upgOf = c => ({ ...UPG_ZERO, ...(upg[c.id] || {}) });
+const upgCost = (c, k, lvl) => { const K = UPG_KINDS.find(K => K.k === k); return Math.round(Math.max(K.base, c.usd * K.pct) * lvl / 100) * 100; };
+const upgSpent = c => { const u = upgOf(c); let t = 0; for (const K of UPG_KINDS) for (let l = 1; l <= u[K.k]; l++) t += upgCost(c, K.k, l); return t; };
 const tunedCache = new Map();
 // the spec the physics drives: more power (same drag, so top speed grows with its cube root; gearing stretched to reach
-// it and torque raised so wheel force still grows with power) and more tyre grip
-function tunedSpec(c) {
-  const u = upgOf(c); if (!u.e && !u.t) return c;
-  const key = `${c.id}:${u.e}:${u.t}`; if (tunedCache.has(key)) return tunedCache.get(key);
-  const pm = 1 + .07 * u.e, vm = Math.cbrt(pm);
-  const s = { ...c, kw: c.kw * pm, vmax: Math.round(c.vmax * vm), grip: c.grip * (1 + .05 * u.t), ratios: c.ratios.map(r => r / vm), tuned: u };
+// it and torque raised so wheel force still grows with power), more tyre grip, less mass, more downforce, a nitro tank.
+// u overrides the saved levels (drag bosses run fully tuned cars).
+function tunedSpec(c, u = upgOf(c)) {
+  u = { ...UPG_ZERO, ...u }; if (UPG_KINDS.every(K => !u[K.k])) return c;
+  const key = `${c.id}:${UPG_KINDS.map(K => u[K.k]).join('')}`; if (tunedCache.has(key)) return tunedCache.get(key);
+  const pm = 1 + .07 * u.e + .06 * u.b, vm = Math.cbrt(pm);
+  const s = { ...c, kw: c.kw * pm, vmax: Math.round(c.vmax * vm), grip: c.grip * (1 + .05 * u.t + .01 * u.s), mass: Math.round(c.mass * (1 - .035 * u.w)),
+    aero: c.aero + .25 * u.s, ratios: c.ratios.map(r => r / vm), nitroCap: u.n ? 1.5 + u.n : 0, tuned: u };
   if (c.tpeak) s.tpeak = c.tpeak * pm * vm;
   tunedCache.set(key, s); return s;
 }
 function buyUpgrade(c, k) {
-  const u = { ...upgOf(c) }; if (!owns(c) || u[k] >= UPG_MAX) return false;
+  const u = upgOf(c), K = UPG_KINDS.find(K => K.k === k); if (!owns(c) || u[k] >= K.max) return false;
   const cost = upgCost(c, k, u[k] + 1); if (wallet.usd < cost) return false;
-  wallet.usd -= cost; u[k]++; upg[c.id] = u; saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
+  wallet.usd -= cost; u[k]++; upg[c.id] = u; saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); checkMissions(); return true;
 }
 // 0-100 km/h and quarter mile with the real physics on a headless Player (same trick as the bench)
 const sprintCache = new Map();
 function simSprint(spec) {
-  const key = spec.tuned ? `${spec.id}:${spec.tuned.e}:${spec.tuned.t}` : spec.id; if (sprintCache.has(key)) return sprintCache.get(key);
+  const key = spec.tuned ? `${spec.id}:${UPG_KINDS.map(K => spec.tuned[K.k]).join('')}` : spec.id; if (sprintCache.has(key)) return sprintCache.get(key);
   const p = Object.create(Player.prototype);
   Object.assign(p, { spec, x: 0, z: 0, heading: 0, vx: 0, vz: 0, yawRate: 0, steer: 0, gear: 1, rpm: spec.idle, reverse: false, shiftT: 0, manual: false, throttle: 0 });
   const dt = 1 / 120, inp = { throttle: 1, brake: 0, steer: 0, handbrake: 0 }; let t = 0, t100 = null, qm = null;
@@ -2248,18 +2296,77 @@ function renderUpg() {
   const zero = c.zero * s1.t100 / s0.t100;
   $('upgCar').innerHTML = `${c.name}<small>WALLET ${fmtUSD(wallet.usd)}</small>`;
   $('upgRows').innerHTML = UPG_KINDS.map(K => {
-    const lv = u[K.k], max = lv >= UPG_MAX, cost = max ? 0 : upgCost(c, K.k, lv + 1), can = !max && wallet.usd >= cost;
+    const lv = u[K.k], max = lv >= K.max, cost = max ? 0 : upgCost(c, K.k, lv + 1), can = !max && wallet.usd >= cost;
     return `<div class="urow"><div class="uname"><b>${K.n} <i>${K.jp}</i></b><small>${K.d}</small></div>
-      <div class="pips">${Array.from({ length: UPG_MAX }, (_, i) => `<span class="${i < lv ? 'on' : ''}"></span>`).join('')}</div>
+      <div class="pips">${Array.from({ length: K.max }, (_, i) => `<span class="${i < lv ? 'on' : ''}"></span>`).join('')}</div>
       <button data-k="${K.k}" class="${max ? 'max' : can ? '' : 'poor'}">${max ? 'MAX' : `LEVEL ${lv + 1} · ${fmtUSD(cost)}`}</button></div>`;
   }).join('');
   const row = (n, a, bv) => `<div><small>${n}</small><b>${a}${a !== bv ? ` <em>→ ${bv}</em>` : ''}</b></div>`;
   $('upgStats').innerHTML = row('POWER', `${Math.round(c.kw * 1.36)} PS`, `${Math.round(tS.kw * 1.36)} PS`) + row('TOP SPEED', `${c.vmax} km/h`, `${tS.vmax} km/h`)
-    + row('0–100', `${c.zero.toFixed(1)} s`, `${zero.toFixed(1)} s`) + row('¼ MILE', `${s0.qm.t.toFixed(2)} s`, `${s1.qm.t.toFixed(2)} s`) + row('GRIP', '100%', `${Math.round(tS.grip / c.grip * 100)}%`);
+    + row('0–100', `${c.zero.toFixed(1)} s`, `${zero.toFixed(1)} s`) + row('¼ MILE', `${s0.qm.t.toFixed(2)} s`, `${s1.qm.t.toFixed(2)} s`) + row('GRIP', '100%', `${Math.round(tS.grip / c.grip * 100)}%`)
+    + row('WEIGHT', `${c.mass} kg`, `${tS.mass} kg`) + row('NITRO', '—', tS.nitroCap ? `${tS.nitroCap.toFixed(1)} s` : '—');
   document.querySelectorAll('#upgRows button').forEach(el => el.onclick = () => {
     if (buyUpgrade(c, el.dataset.k)) { audio.init(); audio.beep(880, .12); setTimeout(() => audio.beep(1320, .25), 120); renderUpg(); updateMenu(); }
     else el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], 220);
   });
+}
+/* ---- stats + missions: counters saved in amboola.stats; each mission pays once, automatically */
+const ST = { dragWins: 0, raceWins: 0, fares: 0, arrests: 0, stashed: 0, driftBest: 0, bosses: [], done: [], ...JSON.parse(localStorage.getItem('amboola.stats') || '{}') };
+const saveStats = () => localStorage.setItem('amboola.stats', JSON.stringify(ST));
+const bump = (k, v = 1) => { ST[k] = (ST[k] || 0) + v; saveStats(); checkMissions(); };
+const best = (k, v) => { if (v > (ST[k] || 0)) { ST[k] = v; saveStats(); checkMissions(); } };
+const ownedCars = () => CARS.filter(c => wallet.owned.has(c.id));
+const MISSIONS = [
+  { id: 'drag1', n: 'FIRST LAUNCH', d: 'Win a drag race', goal: 1, v: () => ST.dragWins, r: 2000 },
+  { id: 'drag10', n: 'DRAG MASTER', d: 'Win 10 drag races', goal: 10, v: () => ST.dragWins, r: 25000 },
+  { id: 'race1', n: 'CHECKERED FLAG', d: 'Win a circuit race', goal: 1, v: () => ST.raceWins, r: 5000 },
+  { id: 'race5', n: 'CHAMPION', d: 'Win 5 circuit races', goal: 5, v: () => ST.raceWins, r: 40000 },
+  { id: 'taxi10', n: 'TAXI DRIVER', d: 'Deliver 10 taxi passengers', goal: 10, v: () => ST.fares, r: 8000 },
+  { id: 'arrest3', n: 'BUSTED!', d: 'Arrest 3 outlaws as the police', goal: 3, v: () => ST.arrests, r: 15000 },
+  { id: 'stash', n: 'KINGPIN', d: 'Stash $50,000 as the outlaw', goal: 50000, v: () => ST.stashed, r: 20000, money: true },
+  { id: 'drift', n: 'DRIFT KING', d: 'Bank a 2,500-point drift chain', goal: 2500, v: () => ST.driftBest, r: 10000 },
+  { id: 'tune', n: 'FULLY LOADED', d: 'Max every upgrade on one car', goal: 1, v: () => ownedCars().some(c => UPG_KINDS.every(K => upgOf(c)[K.k] >= K.max)) ? 1 : 0, r: 30000 },
+  { id: 'cars5', n: 'COLLECTOR', d: 'Own 5 cars', goal: 5, v: () => wallet.owned.size, r: 25000 },
+  { id: 'million', n: 'BIG SPENDER', d: 'Own a car worth $1,000,000 or more', goal: 1, v: () => ownedCars().some(c => c.usd >= 1e6) ? 1 : 0, r: 100000 },
+  { id: 'bugatti', n: 'BUGATTI CLUB', d: 'Own a Bugatti', goal: 1, v: () => ownedCars().some(c => c.brand === 'Bugatti') ? 1 : 0, r: 250000 },
+  { id: 'rich', n: 'MILLIONAIRE', d: 'Have $1,000,000 in your wallet', goal: 1e6, v: () => wallet.usd, r: 50000, money: true },
+  { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
+];
+let achvQ = [], achvBusy = false;
+function showAchv() {
+  if (achvBusy || !achvQ.length) return; achvBusy = true; const m = achvQ.shift(), el = $('achv');
+  el.innerHTML = `🏆 MISSION COMPLETE<b>${m.n}</b><small>${m.d} · +${fmtUSD(m.r)}</small>`; el.classList.add('show');
+  try { audio.beep(988, .12); setTimeout(() => audio.beep(1319, .25), 120); } catch (e) { }
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => { achvBusy = false; showAchv(); }, 400); }, 3200);
+}
+function checkMissions() {
+  for (const m of MISSIONS) if (!ST.done.includes(m.id) && m.v() >= m.goal) { ST.done.push(m.id); saveStats(); wallet.usd += m.r; saveWallet(); achvQ.push(m); }
+  showAchv(); if (state === 'garage') updateMenu();
+}
+function renderMissions() {
+  const n = ST.done.length;
+  $('misHead').innerHTML = `${n} / ${MISSIONS.length} COMPLETE<small>REWARDS ARE PAID AUTOMATICALLY</small>`;
+  $('misList').innerHTML = MISSIONS.map(m => { const done = ST.done.includes(m.id), v = Math.min(m.v(), m.goal), f = m.money ? fmtUSD : x => Math.floor(x).toLocaleString();
+    return `<div class="mis${done ? ' done' : ''}"><div><b>${done ? '✅' : '🏁'} ${m.n}</b><small>${m.d}</small><i style="--p:${v / m.goal * 100}%"></i></div><span>${done ? 'DONE' : `${f(v)} / ${f(m.goal)}`}<em>+${fmtUSD(m.r)}</em></span></div>`; }).join('');
+}
+/* ---- daily bonus: once per calendar day; the streak grows when you come back the next day ($5,000 → $20,000 on day 7+) */
+const dayStr = d => d.toLocaleDateString('en-CA');
+function checkDaily() {
+  const today = dayStr(new Date()), y = new Date(); y.setDate(y.getDate() - 1);
+  const D = JSON.parse(localStorage.getItem('amboola.daily') || 'null');
+  if (!D) { localStorage.setItem('amboola.daily', JSON.stringify({ last: today, streak: 1 })); return; }   // first visit: no popup, the streak starts today
+  if (D.last === today) return;
+  const streak = D.last === dayStr(y) ? D.streak + 1 : 1, bonus = 2500 + 2500 * Math.min(streak, 7);
+  $('dailyInfo').innerHTML = `<b>+${fmtUSD(bonus)}</b><small>DAY ${streak} STREAK${streak > 1 ? ' 🔥' : ''}</small><span>${streak < 7 ? `Come back tomorrow for <b>${fmtUSD(2500 + 2500 * Math.min(streak + 1, 7))}</b>` : 'Max streak! Keep it going every day.'}</span>`;
+  $('dailyScreen').classList.remove('hidden');
+  $('dailyGet').onclick = () => { localStorage.setItem('amboola.daily', JSON.stringify({ last: today, streak })); earn(bonus); $('dailyScreen').classList.add('hidden'); updateMenu();
+    try { audio.init(); audio.beep(880, .12); setTimeout(() => audio.beep(1320, .3), 120); } catch (e) { } };
+}
+/* ---- selling: 60% of the price plus half of what you spent on upgrades; you always keep at least one car */
+const sellValue = c => Math.round((c.usd * .6 + upgSpent(c) * .5) / 100) * 100;
+function sellCar(c) {
+  if (!owns(c) || wallet.owned.size <= 1) return false;
+  wallet.usd += sellValue(c); wallet.owned.delete(c.id); delete upg[c.id]; saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
 }
 function toast(a, b) { const t = $('toast'); t.innerHTML = `${a}<small>${b || ''}</small>`; t.style.opacity = 1; toastT = 2.4; }
 
@@ -2434,7 +2541,7 @@ function updateCamera(dt, p) {
 /* =====================================================================
    INPUT
    ===================================================================== */
-const keys = {}; const touchState = { l: 0, r: 0, g: 0, b: 0, h: 0 };
+const keys = {}; const touchState = { l: 0, r: 0, g: 0, b: 0, h: 0, n: 0 };
 addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
@@ -2466,26 +2573,26 @@ function readInput() {
   if (window.__autoInput) return window.__autoInput(); // scripted driving (video recording / tests)
   let thr = (keys.KeyW || keys.ArrowUp) ? 1 : 0, brk = (keys.KeyS || keys.ArrowDown) ? 1 : 0;
   let st = ((keys.KeyD || keys.ArrowRight) ? 1 : 0) - ((keys.KeyA || keys.ArrowLeft) ? 1 : 0);
-  let hb = keys.Space ? 1 : 0;
-  thr = Math.max(thr, touchState.g); brk = Math.max(brk, touchState.b); hb = Math.max(hb, touchState.h); if (touchState.l || touchState.r) st = touchState.r - touchState.l;
+  let hb = keys.Space ? 1 : 0, nitro = keys.ShiftLeft || keys.ShiftRight || keys.KeyX ? 1 : 0;
+  thr = Math.max(thr, touchState.g); brk = Math.max(brk, touchState.b); hb = Math.max(hb, touchState.h); nitro = Math.max(nitro, touchState.n); if (touchState.l || touchState.r) st = touchState.r - touchState.l;
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   for (const gp of pads) {
     if (!gp) continue;
     const ax = gp.axes[0] || 0; if (Math.abs(ax) > .12) st = Math.sign(ax) * Math.pow((Math.abs(ax) - .12) / .88, 1.4);
     const rt = gp.buttons[7]?.value || 0, lt = gp.buttons[6]?.value || 0; if (rt > .05) thr = rt; if (lt > .05) brk = lt;
-    if (gp.buttons[0]?.pressed) hb = 1;
+    if (gp.buttons[0]?.pressed) hb = 1; if (gp.buttons[1]?.pressed) nitro = 1;
     const pr = n => gp.buttons[n]?.pressed && !padPrev[gp.index + ':' + n];
     if (pr(3)) { camMode = (camMode + 1) % 4; } if (pr(9)) setPause(state === 'drive'); if (pr(5) && player?.manual) player.doShift(1); if (pr(4) && player?.manual) player.doShift(-1); if (pr(2) && player) race ? raceReset() : player.resetToRoad(); if (pr(1) && nearMarker && !race) startRace(nearMarker); if (pr(8)) openMap();
     gp.buttons.forEach((b, n) => padPrev[gp.index + ':' + n] = b.pressed);
   }
-  return { throttle: thr, brake: brk, steer: clamp(st, -1, 1), handbrake: hb };
+  return { throttle: thr, brake: brk, steer: clamp(st, -1, 1), handbrake: hb, nitro };
 }
 function bindTouch(id, k) {
   const el = $(id);
   const on = e => { e.preventDefault(); touchState[k] = 1; el.classList.add('on'); }, off = e => { e.preventDefault(); touchState[k] = 0; el.classList.remove('on'); };
   el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('pointerleave', off);
 }
-[['tl', 'l'], ['tr', 'r'], ['tg', 'g'], ['tbk', 'b'], ['th', 'h']].forEach(([a, b]) => bindTouch(a, b));
+[['tl', 'l'], ['tr', 'r'], ['tg', 'g'], ['tbk', 'b'], ['th', 'h'], ['tn', 'n']].forEach(([a, b]) => bindTouch(a, b));
 $('tpause').addEventListener('pointerdown', () => setPause(true));
 
 /* =====================================================================
@@ -2554,8 +2661,10 @@ function updateMenu() {
   $('walletV').textContent = fmtUSD(wallet.usd);
   const own = owns(c), pr = $('price'), dv = $('drive');
   const u = upgOf(c), t = tunedSpec(c);
-  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${u.e || u.t ? ` · ENGINE ${u.e}/5 · TIRES ${u.t}/5` : ''}` : `PRICE ${fmtUSD(c.usd)}`;
+  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : `PRICE ${fmtUSD(c.usd)}`;
   $('upgBtn').classList.toggle('hidden', !own);
+  const sb = $('sellBtn'); sb.classList.toggle('hidden', !own || wallet.owned.size <= 1); sb.classList.remove('confirm'); sb.textContent = `SELL FOR ${fmtUSD(sellValue(c))}`;
+  $('misCount').textContent = `${ST.done.length}/${MISSIONS.length}`;
   dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
   dv.textContent = own ? 'DRIVE' : wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`;
   for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own ? 1 : .35;
@@ -2565,7 +2674,7 @@ function updateMenu() {
   $('vPow').textContent = `${Math.round(t.kw * 1.36)} PS`; $('bPow').style.width = clamp(t.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${t.vmax} km/h`; $('bTop').style.width = clamp((t.vmax - 180) / 1.7, 5, 100) + '%';
   $('vAcc').textContent = `${z.toFixed(1)} s`; $('bAcc').style.width = clamp((4.5 - z) / 2.4 * 100, 5, 100) + '%';
-  $('vWgt').textContent = `${c.mass} kg`; $('bWgt').style.width = clamp((2700 - c.mass) / 14, 5, 100) + '%';
+  $('vWgt').textContent = `${t.mass} kg`; $('bWgt').style.width = clamp((2700 - t.mass) / 14, 5, 100) + '%';
   document.querySelectorAll('.sw').forEach((s, i) => s.classList.toggle('sel', i === paintIdx));
   $('paintname').textContent = PAINTS[paintIdx].n;
   document.querySelectorAll('#optTime .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === timeName));
@@ -2882,7 +2991,7 @@ function updateRace(dt) {
 function finishRace() {
   const T = race.T, P = race.p; P.finish = race.t; race.state = 'finished';
   const order = [...race.order].sort((a, b) => (a.me ? P.finish : a.finish ?? 1e9) - (b.me ? P.finish : b.finish ?? 1e9));
-  const pos = order.findIndex(e => e.me) + 1;
+  const pos = order.findIndex(e => e.me) + 1; if (pos === 1) bump('raceWins');
   const prize = [5000, 3000, 2000][pos - 1] || 800; skill.bank += prize; localStorage.setItem('amboola.skill', skill.bank);
   const cash = Math.round(Math.max([10000, 5000, 3500][pos - 1] || 1500, (player.spec.usd || 0) * ([.05, .03, .02][pos - 1] || .005)) / 100) * 100; earn(cash);
   const best = T.best || {}; const nbRace = !best.race || P.finish < best.race, nbLap = !best.lap || P.best < best.lap;
@@ -2917,7 +3026,13 @@ const DRAG = { x0: -620, z: -2150, len: 1250, lane: 2.7, hw: 6.4 };     // start
 const DRAG_EVENTS = [
   { id: 'q', name: 'Quarter Mile', jp: '400m ドラッグ', dist: 402.3, mult: 1 },
   { id: 'h', name: 'Half Mile', jp: '800m ドラッグ', dist: 804.7, mult: 1.6 },
+  // boss ladder: fully upgraded rivals (no nitro, sharp reactions), unlocked in order
+  { id: 'b1', name: 'Boss 1 · Street King', jp: 'ストリートキング', dist: 402.3, boss: { car: 'gryaris', prize: 40000, title: 'STREET KING' } },
+  { id: 'b2', name: 'Boss 2 · Midnight Turbo', jp: 'ミッドナイト・ターボ', dist: 402.3, boss: { car: 'turbos', prize: 300000, title: 'MIDNIGHT TURBO' } },
+  { id: 'b3', name: 'Boss 3 · Final Boss', jp: 'ファイナルボス', dist: 402.3, boss: { car: 'bolide', prize: 2500000, title: 'THE FINAL BOSS' } },
 ];
+const bossSpec = E => tunedSpec(CARS.find(c => c.id === E.boss.car), UPG_FULL);
+const bossUnlocked = E => { const i = DRAG_EVENTS.filter(e => e.boss).indexOf(E); return i <= 0 || ST.bosses.includes(DRAG_EVENTS.filter(e => e.boss)[i - 1].id); };
 let drag = null, dragTree = null, dragBoard = null;
 const dragBest = id => JSON.parse(localStorage.getItem('amboola.drag.' + id) || 'null');
 function buildDragway() {
@@ -3002,13 +3117,13 @@ function startDrag(ev, rivalSpec) {
   if (race) endRace(false); if (taxi) endTaxi(); if (drag) endDrag(false);
   $('pause').classList.add('hidden'); $('races').classList.add('hidden'); $('results').classList.add('hidden'); $('raceprompt').classList.add('hidden');
   if (audio.ctx) audio.ctx.resume();
-  const me = player.spec, rs = rivalSpec || pickDragRival(me), p = PAINTS[rs.paint ?? 0];
+  const me = player.spec, rs = rivalSpec || (ev.boss ? bossSpec(ev) : pickDragRival(me)), p = PAINTS[ev.boss ? 7 : rs.paint ?? 0];
   const ghost = Object.create(Player.prototype);
   Object.assign(ghost, { spec: rs, x: 0, z: 0, heading: 0, vx: 0, vz: 0, yawRate: 0, steer: 0, gear: 1, rpm: rs.idle, reverse: false, shiftT: 0, manual: false, throttle: 0, speed: 0 });
   const car = buildCar(rs, p.c, p.m, p.r); scene.add(car.group);
   drag = { ev, t: -4.2, state: 'tree', foul: null,
     p: { react: null, total: null, trap: null, d: 0 },
-    r: { spec: rs, ghost, car, react: .13 + Math.random() * .17, total: null, trap: null, d: 0 } };
+    r: { spec: rs, ghost, car, react: ev.boss ? .09 + Math.random() * .06 : .13 + Math.random() * .17, total: null, trap: null, d: 0 } };
   dragHold();
   car.group.position.set(DRAG.x0 - rs.L / 2, 0, DRAG.z + DRAG.lane); car.group.rotation.y = Math.PI / 2;
   camPos.set(player.x - 9, 3, player.z);
@@ -3063,7 +3178,10 @@ function endDragRun() {
   const D = drag, P = D.p, R = D.r; D.state = 'done';
   const me = player.spec, base = CARS.find(c => c.id === me.id) || me;
   const win = !D.foul && P.total != null && (R.total == null || P.total < R.total);
-  const prize = D.foul ? 0 : win ? Math.round(Math.max(7500, (base.usd || 0) * .03) * D.ev.mult / 100) * 100 : 750;
+  const boss = D.ev.boss, firstBeat = boss && win && !ST.bosses.includes(D.ev.id);
+  // a boss pays its full prize the first time, 10% on rematches
+  const prize = D.foul ? 0 : boss ? (win ? (firstBeat ? boss.prize : Math.round(boss.prize * .1)) : 750) : win ? Math.round(Math.max(7500, (base.usd || 0) * .03) * D.ev.mult / 100) * 100 : 750;
+  if (win) { if (firstBeat) ST.bosses.push(D.ev.id); bump('dragWins'); }
   earn(prize);
   const et = P.total != null ? P.total - (P.react ?? 0) : null;
   const best = dragBest(D.ev.id), nb = et != null && !D.foul && (!best || et < best.et);
@@ -3075,7 +3193,7 @@ function endDragRun() {
     if (drag !== D) return;
     const rEt = R.total != null ? R.total - R.react : null;
     const row = (who, car, react, et, trap, total, me) => `<tr class="${me ? 'me' : ''}"><td>${who}</td><td>${car}</td><td>${react}</td><td>${et}</td><td>${trap}</td><td>${total}</td></tr>`;
-    $('resTitle').innerHTML = `${D.foul ? 'RED LIGHT · フライング' : win ? 'WIN · 勝利' : 'LOSE · 負け'}<small>${D.ev.name.toUpperCase()} · ${D.foul ? 'YOU LEFT BEFORE THE GREEN' : `ET ${et != null ? et.toFixed(3) + ' s' : '—'}${nb ? ' · PERSONAL BEST' : ''}`} · +${fmtUSD(prize)}</small>`;
+    $('resTitle').innerHTML = `${D.foul ? 'RED LIGHT · フライング' : boss && win ? `${boss.title} DEFEATED!` : win ? 'WIN · 勝利' : 'LOSE · 負け'}<small>${D.ev.name.toUpperCase()} · ${D.foul ? 'YOU LEFT BEFORE THE GREEN' : `ET ${et != null ? et.toFixed(3) + ' s' : '—'}${nb ? ' · PERSONAL BEST' : ''}`} · +${fmtUSD(prize)}</small>`;
     $('resTable').innerHTML = `<tr><td></td><td>CAR</td><td>REACTION</td><td>ET</td><td>TRAP</td><td>TOTAL</td></tr>`
       + row('YOU', me.name, P.react != null ? P.react.toFixed(3) : '—', et != null ? et.toFixed(3) : '—', P.trap ? Math.round(P.trap) + ' km/h' : '—', P.total != null ? P.total.toFixed(3) : 'DNF', true)
       + row('RIVAL', R.spec.name, R.react.toFixed(3), rEt != null ? rEt.toFixed(3) : '—', R.trap ? Math.round(R.trap) + ' km/h' : '—', R.total != null ? R.total.toFixed(3) : '—');
@@ -3099,8 +3217,12 @@ function openRaces(from = 'pause', dragOnly = false) {
   $('pause').classList.add('hidden');
   $('races').querySelector('h2').textContent = dragOnly ? 'DRAG RACES' : 'RACES';
   $('raceList').innerHTML = TRACKS.map((T, k) => `<div class="rcard" data-k="${k}" style="border-left-color:${T.col}"><b>${T.name}</b><span>${T.jp} · ${(T.L / 1000).toFixed(2)} km · ${T.laps} laps</span><span>${T.desc}</span><span>BEST ${fmtTime(T.best?.race)} · LAP ${fmtTime(T.best?.lap)}${T.best?.car ? ' · ' + T.best.car : ''}</span></div>`).join('');
-  $('raceList').innerHTML = DRAG_EVENTS.map((E, k) => { const b = dragBest(E.id); return `<div class="rcard" data-d="${k}" style="border-left-color:#ffd02d"><b>🚦 DRAG · ${E.name}</b><span>${E.jp} · ${Math.round(E.dist)} m · 1 VS 1 · AMBOOLA DRAGWAY</span><span>Launch on the green light · beat the rival to the line</span><span>BEST ${b ? b.et.toFixed(3) + ' s · ' + Math.round(b.trap) + ' km/h · ' + b.car : '—'}</span></div>`; }).join('') + (dragOnly ? '' : $('raceList').innerHTML);   // drag events first
+  $('raceList').innerHTML = DRAG_EVENTS.map((E, k) => { const b = dragBest(E.id);
+    if (E.boss) { const sp = bossSpec(E), open = bossUnlocked(E), beat = ST.bosses.includes(E.id);
+      return `<div class="rcard${open ? '' : ' locked'}" data-d="${k}" style="border-left-color:#ff3b6b"><b>${beat ? '👑' : open ? '💀' : '🔒'} DRAG · ${E.name}</b><span>${E.jp} · ¼ MILE · VS FULLY UPGRADED ${sp.name.toUpperCase()} (${simSprint(sp).qm.t.toFixed(2)} s)</span><span>${open ? `PRIZE ${fmtUSD(E.boss.prize)}${beat ? ' · BEATEN · REMATCH PAYS 10%' : ''}` : 'BEAT THE BOSS BEFORE TO UNLOCK'}</span><span>BEST ${b ? b.et.toFixed(3) + ' s · ' + b.car : '—'}</span></div>`; }
+    return `<div class="rcard" data-d="${k}" style="border-left-color:#ffd02d"><b>🚦 DRAG · ${E.name}</b><span>${E.jp} · ${Math.round(E.dist)} m · 1 VS 1 · AMBOOLA DRAGWAY</span><span>Launch on the green light · beat the rival to the line</span><span>BEST ${b ? b.et.toFixed(3) + ' s · ' + Math.round(b.trap) + ' km/h · ' + b.car : '—'}</span></div>`; }).join('') + (dragOnly ? '' : $('raceList').innerHTML);   // drag events first
   document.querySelectorAll('.rcard[data-d]').forEach(el => el.onclick = () => {
+    if (el.classList.contains('locked')) { el.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; }
     if (racesFrom === 'garage') { $('races').classList.add('hidden'); startDrive(); }
     state = 'drive'; startDrag(DRAG_EVENTS[+el.dataset.d]);
   });
@@ -3143,6 +3265,13 @@ $('savedQuit').onclick = () => {
   window.close();   // works only if the game was opened by a script; otherwise show a goodbye screen
   setTimeout(() => { $('savedScreen').innerHTML = '<h2>SEE YOU NEXT TIME · またね</h2><p>Your game is saved. You can close this tab.</p><div class="rbtns"><button onclick="location.reload()">▶ PLAY AGAIN</button></div>'; }, 150);
 };
+$('sellBtn').onclick = () => {
+  const b = $('sellBtn'), c = CARS[carIdx];
+  if (!b.classList.contains('confirm')) { b.classList.add('confirm'); b.textContent = `TAP AGAIN TO SELL · ${fmtUSD(sellValue(c))}`; setTimeout(() => { if (b.classList.contains('confirm')) updateMenu(); }, 3500); return; }
+  if (sellCar(c)) { try { audio.init(); audio.beep(660, .12); setTimeout(() => audio.beep(990, .2), 110); } catch (e) { } updateMenu(); }
+};
+$('misBtn').onclick = () => { renderMissions(); $('misPanel').classList.remove('hidden'); };
+$('misClose').onclick = () => $('misPanel').classList.add('hidden');
 $('upgClose').onclick = () => { $('upgPanel').classList.add('hidden'); updateMenu(); };
 $('resRestart').onclick = () => {
   if (drag) { const ev = drag.ev, rs = drag.r.spec; endDrag(false); state = 'drive'; startDrag(ev, rs); return; }
@@ -3298,7 +3427,7 @@ function updateTaxi(dt) {
       const base = 350 + taxi.routeLen * 1.1, speedTip = taxi.timer > 0 ? taxi.timer * 17 : 0, late = taxi.timer > 0 ? 1 : .7;
       const tip = Math.max(0, speedTip * (1 - Math.min(taxi.crashes, 4) * .25)), pay = Math.round((base * late + tip) / 10) * 10;
       taxi.earnings += pay; taxi.fares++; taxi.total += pay; localStorage.setItem('amboola.taxi.total', taxi.total);
-      skill.bank += Math.round(pay * .375); localStorage.setItem('amboola.skill', skill.bank); earn(pay);
+      skill.bank += Math.round(pay * .375); localStorage.setItem('amboola.skill', skill.bank); earn(pay); bump('fares');
       const w = makePerson(); w.position.set(s.px, 0, s.pz); w.rotation.y = s.ry + Math.PI / 2; scene.add(w); taxi.walker = { g: w, t: 0 };
       audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
       toast(`FARE ${fmtUSD(pay)}`, `${taxi.crashes ? 'BUMPY RIDE · ' : ''}${taxi.timer > 0 ? 'TIP ' + fmtUSD(tip) : 'LATE · NO TIP'} · ありがとう!`);
@@ -3884,7 +4013,7 @@ function updateCrime(dt) {
     const hide = c.hide;
     if (c.showRoute && hide) routeTo = hide;
     if (pSafe && c.carry > 0 && p.speed < 4) {
-      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry * .3); localStorage.setItem('amboola.skill', skill.bank); earn(c.carry);
+      c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry * .3); localStorage.setItem('amboola.skill', skill.bank); earn(c.carry); bump('stashed', c.carry);
       toast(`STASHED ${fmtUSD(c.carry)}`, 'SAFE AT THE HIDEOUT · 隠れ家'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
       c.carry = 0; c.police.forEach(r => r.dispose()); c.police = []; c.cool = 6; c.showRoute = false;
     }
@@ -3918,7 +4047,7 @@ function updateCrime(dt) {
         const touched = inCity && crimeBump(o); c.meter = 0;
         if (touched && oSafe && toastT <= 0) toast('SAFE ZONE · 隠れ家', 'HE IS AT A HIDEOUT · YOU CAN\'T ARREST HIM HERE');
         if (touched && !oSafe) {
-          const reward = o.cash + 3500; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward * .3); localStorage.setItem('amboola.skill', skill.bank); earn(reward);
+          const reward = o.cash + 3500; c.bank += reward; localStorage.setItem('amboola.police.bank', c.bank); skill.bank += Math.round(reward * .3); localStorage.setItem('amboola.skill', skill.bank); earn(reward); bump('arrests');
           toast('ARRESTED · 逮捕', `YOU TOOK HIS ${fmtUSD(o.cash)} + ${fmtUSD(3500)} REWARD`); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
           o.cash = 0; o.mode = 'gone'; o.goneT = 4; o.v = 0; c.meter = 0;
         }
@@ -3967,7 +4096,7 @@ function startDrive() {
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
   audio.setCar(spec);
   camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
-  const uu = upgOf(spec); $('carname').innerHTML = `${spec.name}<small>${PAINTS[paintIdx].n.toUpperCase()}${uu.e || uu.t ? ` · 🔧 ENGINE ${uu.e} · TIRES ${uu.t}` : ''}</small>`;
+  const uu = upgOf(spec), ul = UPG_KINDS.reduce((a, K) => a + uu[K.k], 0); $('carname').innerHTML = `${spec.name}<small>${PAINTS[paintIdx].n.toUpperCase()}${ul ? ` · 🔧 TUNED ${ul}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}</small>`;
   $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
   renderPass.scene = scene; renderPass.camera = camera;
   applyTime(timeName);
@@ -4047,6 +4176,8 @@ function tick(dt) {
     screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
     // HUD
     drawTacho(player); drawMinimap(player);
+    const nb = $('nitroBar'), cap = player.spec.nitroCap; nb.classList.toggle('hidden', !cap);
+    if (cap) { nb.firstElementChild.nextElementSibling.style.width = (player.nitro / cap * 100) + '%'; nb.classList.toggle('on', player.boosting); }
     $('walletHud').textContent = fmtUSD(wallet.usd); $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   }
@@ -4075,11 +4206,11 @@ async function boot() {
   setLoad(1, 'Ready');
   await new Promise(r => setTimeout(r, 250));
   $('loading').classList.add('hidden');
-  enterGarage();
+  enterGarage(); checkDaily(); checkMissions();
   frame();
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, get drag() { return drag; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

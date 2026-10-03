@@ -103,6 +103,13 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
   - States go `tree` → `run` → `done`. The tree is green at `drag.t >= 0`. Throttle during the ambers is a red-light foul.
   - The rival is a headless Player (`drag.r.ghost`).
   - To simulate a run, call `simStep(1/60, …)` with `throttle: 0` until `drag.t >= 0`, then full throttle and steer to `DRAG.z - DRAG.lane`. Set `player.manual = false` first, because the GR86 is a manual.
+- **Upgrade kinds:** `UPG_KINDS` lists them, each with its own max: e 5, t 5, b 3, w 3, s 3, n 3. `UPG_FULL` maxes them all.
+- **Tuned cars:** `tunedSpec(car, u?)` builds the tuned spec, and drag bosses pass `UPG_FULL`.
+- **Nitro:** `inp.nitro` adds 2.6 m/s² after the traction cap while `player.nitro` (seconds) lasts. It is in readInput (Shift/X, the touch `tn` button, gamepad button 1) and shows in the `#nitroBar` HUD.
+- **Stats and missions:** `ST` (`amboola.stats`) counts `dragWins`, `raceWins`, `fares`, `arrests`, `stashed`, `driftBest`, `bosses`, and `done` (finished mission ids). `bump()` and `best()` update it and call `checkMissions()`, which pays each of the 14 `MISSIONS` once and queues the `#achv` banner.
+- **Daily bonus:** `checkDaily()` runs at boot (`amboola.daily` = {last, streak}). The first visit only records the day, so fresh driver contexts never see the popup.
+- **Drag bosses:** they are the `DRAG_EVENTS` entries with `boss`, unlocked in order via `ST.bosses`.
+- **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade spend.
 - **Testing:** the driver always starts from a fresh context, so pick `{"car":54}` (the GR86) or call `window.amboola.earn(n)` and then `updateMenu()` before `garageGo()`. Otherwise DRIVE/RACES/TAXI do nothing on locked cars.
 
 ## Rebuild the Blender car models

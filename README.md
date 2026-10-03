@@ -41,20 +41,42 @@ Your wallet shows in yellow at the top right while driving and next to the title
 ## Upgrades
 
 Press **🔧 UPGRADE** in the garage (on a car you own) to tune it. Each car has its own upgrades:
-| Upgrade | Per level (5 levels) | At level 5 |
+| Upgrade | Levels | Per level |
 |---|---|---|
-| **Engine** | +7% power | +35% power, about +10% top speed |
-| **Tires** | +5% grip | +25% grip: less wheelspin, faster corners, shorter braking |
+| **Engine** | 5 | +7% power (more acceleration and top speed) |
+| **Tires** | 5 | +5% grip: less wheelspin, faster corners, shorter braking |
+| **Turbo** | 3 | +6% power, stacks with the engine |
+| **Weight** | 3 | −3.5% weight |
+| **Spoiler** | 3 | more downforce, so more grip at high speed |
+| **Nitro** | 3 | a 2.5 / 3.5 / 4.5 s tank. Hold **SHIFT** (or **X**, the **N₂O** touch button, or gamepad **B**) for a big extra push that works even in grip-limited hypercars. It refills slowly. |
+
+A fully tuned car with nitro is about 1–2 s quicker over the quarter mile.
 
 Each level costs a bit more than the last, and the price scales with the car. The panel shows your power, top speed, 0–100, quarter-mile time and grip before and after, measured with the game's real physics. For example, a fully tuned GR86 (Engine 5, Tires 3) drops from 14.1 s to 12.8 s over the quarter mile.
 
 ## Drag races
+
+**💀 Drag bosses:** three quarter-mile boss races against **fully upgraded** cars that react fast at the green. Each one unlocks after you beat the one before. A boss pays its big prize the first time you win, and 10% on rematches:
+| Boss | Rival | Prize | You'll need about |
+|---|---|---|---|
+| 1 · Street King | maxed Toyota GR Yaris (10.96 s) | $40,000 | an upgraded GR Supra |
+| 2 · Midnight Turbo | maxed Porsche 911 Turbo S (8.73 s) | $300,000 | a tuned supercar with nitro |
+| 3 · The Final Boss | maxed Bugatti Bolide (7.08 s) | $2,500,000 | a maxed hypercar, nitro and a perfect launch |
 
 The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes you to the **Amboola Dragway** north of Fujimi Speedway, a two-lane strip with a grandstand and a timing board. Pick the **Quarter Mile** (402 m) or the **Half Mile** (805 m). Your rival is a car with a similar quarter-mile time (a touch quicker), driven by the same physics as yours.
 - **The tree:** the two white stage lights come on, then the three ambers, then **green**. Hit the throttle on green.
 - **Red light:** if you press the throttle during the ambers, you jumped the start and lose.
 - **Results:** reaction time, ET (elapsed time), trap speed and total for both cars. Your best ET per distance is saved.
 - **Tip:** manual-gearbox cars need you to shift (Q/E). Press **M** for auto, or practise your shifts.
+
+## Missions, daily bonus, selling cars
+
+- **🏆 Missions** (garage button): 14 goals that pay automatically when you reach them, with a banner and a sound.
+  - **Driving:** win a drag race ($2,000), win 10 drag races ($25,000), win a circuit race ($5,000), win 5 circuit races ($40,000), deliver 10 taxi passengers ($8,000), arrest 3 outlaws ($15,000), stash $50,000 as the outlaw ($20,000), bank a 2,500-point drift chain ($10,000).
+  - **Building your garage:** max every upgrade on one car ($30,000), own 5 cars ($25,000), own a $1M+ car ($100,000), own a Bugatti ($250,000), have $1,000,000 in your wallet ($50,000).
+  - **Final goal:** beat all 3 drag bosses ($500,000).
+- **📅 Daily bonus:** come back on a new day and collect free money. It grows every day you keep your streak: $5,000 on day 1, up to $20,000 on day 7 and after. Miss a day and the streak starts again.
+- **💸 Sell cars:** the red **SELL** button under UPGRADE sells the car for 60% of its price plus half of what you spent upgrading it. Tap twice to confirm. You always keep at least one car.
 
 ## Controls
 
