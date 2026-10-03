@@ -36,7 +36,7 @@ Ways to earn money:
 | **Police** | Arrest the outlaw: his cash + a $3,500 reward |
 | **Drift** | Drift and skill chains pay 15¢ per point when the chain is banked |
 
-Your wallet shows in yellow at the top right while driving and next to the title in the garage. It is saved in the browser. Older saves that still held yen are converted once, at ¥150 = $1.
+Your wallet shows in yellow at the top right while driving and next to the title in the garage. It is saved in the browser. Press **💾 SAVE & QUIT** in the garage to save everything (money, cars, upgrades, your car and its paint colour, time of day) and stop. Next time you open the game, you carry on where you left off. Older saves that still held yen are converted once, at ¥150 = $1.
 
 ## Upgrades
 
