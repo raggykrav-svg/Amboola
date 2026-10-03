@@ -3031,7 +3031,8 @@ function updateDrag(dt) {
     const stage = D.t > -3.6 ? 2 : D.t > -3.9 ? 1 : 0, amber = D.t >= -1.5 ? clamp(Math.floor((D.t + 1.5) / .5) + 1, 0, 3) : 0;
     if (amber !== D.amber) { D.amber = amber; if (amber) audio.beep(620, .12); }
     setTree(stage, amber, false, null);
-    if (amber && player.throttle > .5) { D.foul = 'me'; setTree(stage, amber, false, 'me'); audio.beep(220, .5); endDragRun(); return; }   // jumped the start
+    if (D.t < 0 && amber && player.throttle > .5) { D.foul = 'me';   // only before the green: a launch on the green frame is fair
+      setTree(stage, amber, false, 'me'); audio.beep(220, .5); endDragRun(); return; }   // jumped the start
     if (D.t >= 0) { D.state = 'run'; setTree(2, 3, true, null); audio.beep(1040, .4); }
   }
   if (D.state === 'run' || D.state === 'done') {
