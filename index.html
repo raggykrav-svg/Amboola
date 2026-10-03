@@ -173,6 +173,23 @@
   #upgBtn { display:block; width:100%; margin:6px 0 4px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.12em;
     color:#111; background:linear-gradient(90deg,#5cd67a,#2fe0ff); border:none; cursor:pointer; }
   #upgBtn:hover { filter:brightness(1.15); } #upgBtn.hidden { display:none; }
+  #custBtn { display:block; width:100%; margin:0 0 6px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.12em;
+    color:#111; background:linear-gradient(90deg,#ff3fa4,#ffd02d); border:none; cursor:pointer; } #custBtn:hover { filter:brightness(1.15); } #custBtn.hidden { display:none; }
+  #custPanel { position:fixed; left:28px; top:130px; bottom:28px; width:330px; z-index:31; overflow-y:auto; background:var(--panel); border:1px solid rgba(255,255,255,.08);
+    backdrop-filter:blur(8px); padding:14px 16px; } #custPanel.hidden { display:none; }
+  #menu.customizing #carlist, #menu.customizing #misBtn { visibility:hidden; }
+  #custPanel h2 { margin:0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:22px; letter-spacing:.2em; }
+  #custCar { color:var(--dim); font-size:13px; letter-spacing:.15em; text-transform:uppercase; margin-bottom:4px; }
+  .crow { margin-top:12px; } .crow > small { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.25em; color:var(--dim); text-transform:uppercase; } .crow > small b { color:#fff; letter-spacing:.08em; }
+  .csw { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .csw i { width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,.18); box-shadow:inset 0 -6px 10px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; font-style:normal; font-size:10px; color:#bbb; }
+  .csw i.sel { border-color:#fff; transform:scale(1.14); box-shadow:0 0 0 2px var(--accent); }
+  .cdec { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:6px; }
+  .cdec div { font-size:12px; letter-spacing:.1em; padding:6px 4px; border:1px solid #3a3f4b; cursor:pointer; text-align:center; text-transform:uppercase; }
+  .cdec div.sel { border-color:var(--accent); color:#fff; background:rgba(255,90,31,.18); }
+  #custPanel .rbtns { display:flex; gap:8px; margin-top:16px; } #custPanel .rbtns button { flex:1; padding:10px; font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:.15em; background:var(--panel); color:#fff; border:1px solid #3a3f4b; cursor:pointer; }
+  #custDone { background:linear-gradient(90deg,#ffd02d,#ffb300)!important; color:#111!important; border:none!important; font-weight:900; }
+  @media (max-width: 760px) { #custPanel { left:12px; right:12px; width:auto; top:auto; bottom:12px; max-height:46vh; z-index:33; } #menu.customizing #stats { visibility:hidden; } }
   #upgPanel { position:fixed; inset:0; z-index:32; background:rgba(4,5,9,.8); backdrop-filter:blur(6px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
   #upgPanel.hidden { display:none; }
   #upgPanel h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:34px; letter-spacing:.25em; margin:0; }
@@ -356,7 +373,7 @@
   <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
   <div id="carlist"></div>
   <div id="stats">
-    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="sellBtn">SELL</button>
+    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="custBtn">🎨 CUSTOMIZE · カスタム</button><button id="sellBtn">SELL</button>
     <div class="stat"><div class="lbl">Power <b id="vPow"></b></div><div class="track"><i id="bPow"></i></div></div>
     <div class="stat"><div class="lbl">Top speed <b id="vTop"></b></div><div class="track"><i id="bTop"></i></div></div>
     <div class="stat"><div class="lbl">0–100 km/h <b id="vAcc"></b></div><div class="track"><i id="bAcc"></i></div></div>
@@ -412,6 +429,7 @@
 <div id="savedScreen" class="hidden"><h2>GAME SAVED · 保存しました</h2><div id="savedInfo"></div>
   <p>Everything is saved in this browser. You can close this tab now; next time you open Amboola you carry on from here.</p>
   <div class="rbtns"><button id="savedBack">▶ KEEP PLAYING</button><button id="savedQuit">QUIT</button></div></div>
+<div id="custPanel" class="hidden"><h2>CUSTOMIZE</h2><div id="custCar"></div><div id="custRows"></div><div class="rbtns"><button id="custReset">RESET</button><button id="custDone">DONE</button></div></div>
 <div id="upgPanel" class="hidden"><h2>UPGRADES</h2><div id="upgCar"></div><div id="upgRows"></div><div id="upgStats"></div><button id="upgClose">DONE</button></div>
 <div id="results" class="hidden"><h2 id="resTitle"></h2><table id="resTable"></table><div class="rbtns"><button id="resRestart">RACE AGAIN</button><button id="resLeave">BACK TO CITY</button></div></div>
 
@@ -1476,7 +1494,7 @@ function buildWheel(B, spec, front, side, lift) {
   const prof = [[R * .72, -tw / 2], [R - .035, -tw / 2], [R, -tw / 2 + .04], [R, tw / 2 - .04], [R - .035, tw / 2], [R * .72, tw / 2]].map(([r, y]) => new THREE.Vector2(r, y));
   const tg = new THREE.LatheGeometry(prof, 36); tg.rotateX(Math.PI / 2);
   const tire = new THREE.Mesh(tg, spec.dakar ? new THREE.MeshStandardMaterial({ color: 0x1b1b1b, roughness: 1, flatShading: true }) : tireMat); tire.castShadow = true; spin.add(tire);
-  const rimMat = new THREE.MeshStandardMaterial({ color: spec.rim, roughness: .28, metalness: .9 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: spec.rim, roughness: .28, metalness: .9 }); rimMat.userData.kind = 'rim';
   const face = side * (tw / 2 - .03);
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(R * .72, R * .72, tw * .9, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a2a2c, roughness: .5, metalness: .8, side: THREE.DoubleSide }));
   barrel.rotation.x = Math.PI / 2; spin.add(barrel);
@@ -1487,7 +1505,7 @@ function buildWheel(B, spec, front, side, lift) {
   const sp = new THREE.Mesh(mergeGeometries(sg), rimMat); sp.position.z = face; sp.castShadow = true; spin.add(sp);
   const nut = new THREE.Mesh(new THREE.CylinderGeometry(R * .07, R * .07, .08, 6), chromeMat); nut.rotation.x = Math.PI / 2; nut.position.z = face + side * .02; spin.add(nut);
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(R * .58, R * .58, .03, 24), discMat); disc.rotation.x = Math.PI / 2; disc.position.z = side * (tw / 2 - .12); spin.add(disc);
-  const cal = new THREE.Mesh(new THREE.BoxGeometry(.22, .12, .07), new THREE.MeshStandardMaterial({ color: spec.caliper, roughness: .35, metalness: .3 }));
+  const cal = new THREE.Mesh(new THREE.BoxGeometry(.22, .12, .07), new THREE.MeshStandardMaterial({ color: spec.caliper, roughness: .35, metalness: .3 })); cal.material.userData.kind = 'cal';
   cal.position.set(front ? -R * .42 : R * .42, R * .22, side * (tw / 2 - .08)); pivot.add(cal);
   pivot.position.set(front ? B.fX : B.rX, R, side * (B.W / 2 - tw / 2 - .015 + (front ? 0 : .01)));
   return { pivot, spin, front, R };
@@ -1527,6 +1545,7 @@ function buildModelCar(spec, src, paint) {
     Rim: new THREE.MeshStandardMaterial({ color: spec.rim, roughness: .32, metalness: .85, side: THREE.DoubleSide }),
     Caliper: new THREE.MeshStandardMaterial({ color: spec.caliper, roughness: .35, metalness: .3 }),
   };
+  MAT.Rim.userData.kind = 'rim'; MAT.Caliper.userData.kind = 'cal';
   const dress = node => { const o = node.clone(); o.traverse(m => { if (m.isMesh) { m.material = MAT[m.material.name] || m.material; m.castShadow = true; m.receiveShadow = true; } }); return o; };
   // glTF space is +Z front, +X left; car parts live in profile space (x front, y up, z right): turn by +90 deg
   const toProfile = o => { const f = new THREE.Group(); f.rotation.y = Math.PI / 2; f.add(o); return f; };
@@ -1632,6 +1651,168 @@ function buildCar(spec, paintHex, metal = .4, rough) {
   return { group, body, wheels, headMat, tailMat, paint, B };
 }
 const SHADOW_TEX = canvasTex(128, 64, (g, w, h) => { const gr = g.createRadialGradient(64, 32, 4, 64, 32, 64); gr.addColorStop(0, 'rgba(0,0,0,.85)'); gr.addColorStop(.6, 'rgba(0,0,0,.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.save(); g.scale(1, .5); g.fillRect(0, 0, w, h * 2); g.restore(); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+
+/* =====================================================================
+   CUSTOMIZING (garage): rims, calipers, window tint and decals, saved per car in amboola.custom.<id>
+   Decals are painted inside the car's own paint shader (no extra meshes, so no z-fighting or flicker): each fragment
+   projects its car-space position onto a side texture (one half per side) or a top texture, faded by how much the
+   surface faces that way. Only the player's car and the garage car wear them.
+   ===================================================================== */
+const RIMS = [
+  { n: 'Stock' }, { n: 'Gloss black', c: '#0d0d0f', m: .5, r: .16 }, { n: 'Satin black', c: '#1c1c1e', m: .35, r: .6 }, { n: 'Silver', c: '#c4c7cc', m: .95, r: .24 },
+  { n: 'Gunmetal', c: '#4a4d52', m: .9, r: .3 }, { n: 'Bronze', c: '#8c6a3c', m: .9, r: .3 }, { n: 'Gold', c: '#c9a13a', m: 1, r: .2 }, { n: 'White', c: '#ececea', m: .1, r: .3 },
+  { n: 'Red', c: '#b3121a', m: .4, r: .3 }, { n: 'Neon blue', c: '#2fb8ff', m: .4, r: .3 }, { n: 'Chrome', c: '#eef0f3', m: 1, r: .04 },
+];
+const CALIPERS = [{ n: 'Stock' }, { n: 'Red', c: '#c8141b' }, { n: 'Yellow', c: '#f2c200' }, { n: 'Acid green', c: '#7ccf1f' }, { n: 'Blue', c: '#1b5fd6' },
+  { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }, { n: 'Black', c: '#141416' }, { n: 'Silver', c: '#b9bcc1' }];
+const TINTS = [{ n: 'Stock' }, { n: 'Light', sw: '#3c4a58' }, { n: 'Limo black', sw: '#000' }, { n: 'Blue mirror', sw: '#3a78c8' }, { n: 'Gold mirror', sw: '#c9a13a' }, { n: 'Oil slick', sw: 'linear-gradient(135deg,#7a2bd6,#1fb7c9,#d6c22b)' }];
+const DECALS = [{ n: 'None' }, { n: 'Racing stripes' }, { n: 'Side stripe' }, { n: 'Race number' }, { n: 'Flames' }, { n: 'Tokyo livery' }, { n: 'Checker' }, { n: 'Sponsor stickers' }];
+const DCOLS = [{ n: 'White', c: '#f4f4f2' }, { n: 'Black', c: '#111113' }, { n: 'Red', c: '#d1121c' }, { n: 'Gold', c: '#e2b33c' }, { n: 'Cyan', c: '#2fe0ff' },
+  { n: 'Lime', c: '#8fe02a' }, { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }];
+const CUST0 = { rim: 0, cal: 0, tint: 0, decal: 0, dcol: 0 };
+function custOf(id) {
+  let v = null; try { v = JSON.parse(localStorage.getItem('amboola.custom.' + id)); } catch (e) { }
+  const c = { ...CUST0 };
+  if (v && typeof v === 'object') for (const [k, L] of [['rim', RIMS], ['cal', CALIPERS], ['tint', TINTS], ['decal', DECALS], ['dcol', DCOLS]]) if (Number.isInteger(v[k]) && L[v[k]]) c[k] = v[k];
+  return c;
+}
+function saveCust(id, c) { if (Object.keys(CUST0).every(k => c[k] === 0)) localStorage.removeItem('amboola.custom.' + id); else localStorage.setItem('amboola.custom.' + id, JSON.stringify(c)); }
+// opaque tinted glass (no transparency, so nothing behind it can sort wrong)
+const tintMats = {};
+function tintMat(i) {
+  if (!i) return glassMat;
+  return tintMats[i] ??= [null,
+    () => new THREE.MeshPhysicalMaterial({ color: 0x26303a, roughness: .08, metalness: .15, clearcoat: 1, clearcoatRoughness: .05 }),
+    () => new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: .04, metalness: .35, clearcoat: 1, clearcoatRoughness: .03 }),
+    () => new THREE.MeshPhysicalMaterial({ color: 0x3f7fd0, roughness: .06, metalness: 1, clearcoat: 1, clearcoatRoughness: .04 }),
+    () => new THREE.MeshPhysicalMaterial({ color: 0xc89a3c, roughness: .07, metalness: 1, clearcoat: 1, clearcoatRoughness: .04 }),
+    () => new THREE.MeshPhysicalMaterial({ color: 0x15181d, roughness: .06, metalness: .55, clearcoat: 1, clearcoatRoughness: .04, iridescence: 1, iridescenceIOR: 1.9, iridescenceThicknessRange: [180, 700] }),
+  ][i]();
+}
+const lum = hex => { const v = parseInt(hex.slice(1), 16); return ((v >> 16 & 255) * .299 + (v >> 8 & 255) * .587 + (v & 255) * .114) / 255; };
+const ink = hex => lum(hex) > .5 ? '#111113' : '#f4f4f2';
+// the car's paint-panel bounds and wheel positions in car space (+Z front, +Y up, X across)
+function carGeom(car) {
+  car.group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(car.group.matrixWorld).invert(), box = new THREE.Box3(), tmp = new THREE.Box3();
+  car.group.traverse(o => { if (o.isMesh && o.material === car.paint) { o.geometry.computeBoundingBox(); tmp.copy(o.geometry.boundingBox).applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)); box.union(tmp); } });
+  if (box.isEmpty()) return null;
+  const fw = car.wheels.filter(w => w.front), rw = car.wheels.filter(w => !w.front);
+  const fz = fw.length ? fw[0].pivot.position.x : box.max.z - 1.1, rz = rw.length ? rw[0].pivot.position.x : box.min.z + 1.1;
+  const wr = car.wheels[0]?.R ?? .34;
+  return { z0: box.min.z, z1: box.max.z, y0: box.min.y, y1: box.max.y, xh: Math.max(box.max.x, -box.min.x), fz, rz, wr, mid: (fz + rz) / 2, door: Math.min(wr * 2 - .06, box.min.y + (box.max.y - box.min.y) * .42) };
+}
+function carNum(id) { let h = 7; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 997; return 1 + h % 99; }
+// side texture: 2048x1024, top half = left side (x<0), bottom half = right side (x>0); both halves draw front to the
+// right, and the right half draws its text mirrored because that side is seen flipped
+function drawSide(g, G, design, col, num, flip) {
+  const W = 2048, H = 512, sx = W / (G.z1 - G.z0), sy = H / (G.y1 - G.y0);
+  const X = z => (z - G.z0) * sx, Y = y => (G.y1 - y) * sy;
+  const txt = (s, z, y, h, font, fill, stroke) => {
+    g.save(); g.translate(X(z), Y(y)); g.scale((flip ? -1 : 1) * sx / sy, 1); g.font = `900 ${Math.round(h * sy)}px ${font}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (stroke) { g.lineWidth = h * sy * .12; g.strokeStyle = stroke; g.lineJoin = 'round'; g.strokeText(s, 0, 0); }
+    g.fillStyle = fill; g.fillText(s, 0, 0); g.restore();
+  };
+  const poly = (pts, fill) => { g.beginPath(); pts.forEach(([z, y], i) => i ? g.lineTo(X(z), Y(y)) : g.moveTo(X(z), Y(y))); g.closePath(); g.fillStyle = fill; g.fill(); };
+  const rect = (za, zb, ya, yb, fill) => poly([[za, ya], [zb, ya], [zb, yb], [za, yb]], fill);
+  const d = G.door, wr = G.wr;
+  if (design === 2) {   // side stripe: a long band with a pinstripe, slashed at the front
+    poly([[G.rz - wr - .25, d - .05], [G.fz + wr * .4, d - .05], [G.fz + wr * .4 + .14, d + .05], [G.rz - wr - .25, d + .05]], col);
+    poly([[G.rz - wr - .25, d + .085], [G.fz + wr * .4 + .1, d + .085], [G.fz + wr * .4 + .13, d + .11], [G.rz - wr - .25, d + .11]], col);
+  } else if (design === 3) {   // race number roundel on the doors
+    g.beginPath(); g.ellipse(X(G.mid + .05), Y(d + .02), .24 * sx, .24 * sy, 0, 0, Math.PI * 2); g.fillStyle = col; g.fill();
+    g.lineWidth = .025 * sy; g.strokeStyle = ink(col); g.beginPath(); g.ellipse(X(G.mid + .05), Y(d + .02), .2 * sx, .2 * sy, 0, 0, Math.PI * 2); g.stroke();
+    txt(String(num), G.mid + .05, d + .015, .25, OR, ink(col));
+    rect(G.rz - wr - .3, G.fz + wr + .25, G.y0 + .1, G.y0 + .14, col);
+  } else if (design === 4) {   // flames licking back from the front wheel arch
+    const z0 = G.fz + wr + .35, len = (G.fz - G.mid) * 1.6 + wr;
+    const tongues = [[d + .12, 1, .09], [d + .02, .78, .1], [d - .09, .95, .09], [d - .2, .62, .07], [d + .22, .55, .06]];
+    for (const [layer, fill] of [[1, col], [.62, col === '#e2b33c' || col === '#ff6a13' ? '#ffe36a' : '#ffb01f']]) {
+      for (const [y, l, w] of tongues) {
+        const L = len * l * layer, ww = w * (layer < 1 ? .55 : 1), zt = z0 - L;
+        g.beginPath(); g.moveTo(X(z0), Y(y + ww));
+        g.bezierCurveTo(X(z0 - L * .35), Y(y + ww * 1.4), X(z0 - L * .7), Y(y - ww * .2), X(zt), Y(y + ww * .9));
+        g.bezierCurveTo(X(z0 - L * .7), Y(y - ww * 1.3), X(z0 - L * .35), Y(y - ww * 1.2), X(z0), Y(y - ww));
+        g.closePath(); g.fillStyle = fill; g.fill();
+      }
+    }
+  } else if (design === 5) {   // Tokyo livery: kanji on the doors, a slanted band and the team name
+    poly([[G.rz + .2, G.y0 + .1], [G.rz + .55, G.y0 + .1], [G.fz - .25, d + .32], [G.fz - .6, d + .32]], col);
+    txt('東京', G.mid - .1, d + .02, .3, JP, col, ink(col));
+    txt('AMBOOLA', G.rz - wr - .15, d + .1, .09, OR, col);
+  } else if (design === 6) {   // checkered band along the sills
+    const sq = .075, ya = G.y0 + .1;
+    for (let z = G.rz + wr + .05, i = 0; z < G.fz - wr - .05 - sq; z += sq, i++) for (let r = 0; r < 3; r++) if ((i + r) % 2 === 0) rect(z, z + sq, ya + r * sq, ya + (r + 1) * sq, col);
+    rect(G.rz + wr + .05, G.fz - wr - .05, ya + 3 * sq + .02, ya + 3 * sq + .035, col);
+  } else if (design === 7) {   // sponsor stickers (all made-up names)
+    const sticker = (z, y, w, h, bg, s, fg, font = OR) => { rect(z - w / 2, z + w / 2, y - h / 2, y + h / 2, bg); txt(s, z, y, h * .62, font, fg); };
+    sticker(G.mid + .1, d + .05, .9, .16, col, 'AMBOOLA', ink(col));
+    sticker(G.mid - .35, d - .14, .5, .09, '#111113', 'TOKYO TUNE', '#ffd02d');
+    sticker(G.mid + .38, d - .14, .36, .09, '#f4f4f2', 'N₂O', '#d1121c');
+    sticker(G.fz + wr * .2, d + .02, .32, .07, '#d1121c', 'SHIBUYA', '#f4f4f2');
+    sticker(G.rz - wr * .5, d + .06, .4, .08, '#2fe0ff', '速い', '#111113', JP);
+    sticker(G.rz + wr + .25, G.y0 + .16, .36, .07, col, 'DRIFT CLUB', ink(col));
+  }
+}
+function drawTop(g, G, design, col, num) {
+  const W = 1024, H = 512, sx = W / (G.z1 - G.z0), sy = H / (2 * G.xh);
+  const X = z => (z - G.z0) * sx, Y = x => (G.xh - x) * sy;
+  const band = (xa, xb, fill, za = G.z0, zb = G.z1) => { g.fillStyle = fill; g.fillRect(X(za), Y(xb), (zb - za) * sx, (xb - xa) * sy); };
+  if (design === 1) { band(-.27, -.07, col); band(.07, .27, col); band(-.3, -.285, col); band(.285, .3, col); }
+  else if (design === 3) { g.beginPath(); g.ellipse(X(G.fz - .15), Y(0), .26 * sx, .26 * sy, 0, 0, Math.PI * 2); g.fillStyle = col; g.fill();
+    g.save(); g.translate(X(G.fz - .15), Y(0)); g.rotate(Math.PI / 2); g.scale(sy / sx, 1); g.font = `900 ${Math.round(.26 * sx)}px ${OR}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = ink(col); g.fillText(String(num), 0, 0); g.restore(); }
+  else if (design === 5) { band(-.2, .2, col); band(-.24, -.22, col); band(.22, .24, col); }
+  else if (design === 6) { const sq = .075; for (let z = G.z0, i = 0; z < G.z1; z += sq, i++) for (let r = -2; r < 2; r++) if ((i + r) % 2 === 0) band(r * sq, (r + 1) * sq, col, z, z + sq); }
+  else if (design === 2) { band(-.03, .03, col); }
+}
+const decalCache = new Map();
+function decalTex(id, G, design, col) {
+  const key = [id, design, col].join('|');
+  if (decalCache.has(key)) { const t = decalCache.get(key); decalCache.delete(key); decalCache.set(key, t); return t; }
+  const num = carNum(id);
+  const side = canvasTex(2048, 1024, g => { g.save(); g.beginPath(); g.rect(0, 0, 2048, 512); g.clip(); drawSide(g, G, design, col, num, false); g.restore(); g.save(); g.beginPath(); g.rect(0, 512, 2048, 512); g.clip(); g.translate(0, 512); drawSide(g, G, design, col, num, true); g.restore(); });
+  const top = canvasTex(1024, 512, g => drawTop(g, G, design, col, num));
+  const t = { side, top }; decalCache.set(key, t);
+  // keep a handful; a texture evicted while still on screen is simply re-uploaded from its canvas
+  while (decalCache.size > 8) { const [k, v] = decalCache.entries().next().value; v.side.dispose(); v.top.dispose(); decalCache.delete(k); }
+  return t;
+}
+function decalPaint(car, G, tex) {
+  const U = { uCarInv: { value: new THREE.Matrix4() }, uBox: { value: new THREE.Vector4(G.z0, G.z1 - G.z0, G.y0, G.y1 - G.y0) }, uXh: { value: G.xh }, uSide: { value: tex.side }, uTop: { value: tex.top } };
+  const m = car.paint;
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'uniform mat4 uCarInv;\nvarying vec3 vCarP;\nvarying vec3 vCarN;\n' + sh.vertexShader.replace('#include <project_vertex>',
+      '#include <project_vertex>\n  mat4 carM = uCarInv * modelMatrix; vCarP = (carM * vec4(transformed, 1.0)).xyz; vCarN = mat3(carM) * objectNormal;');
+    sh.fragmentShader = 'uniform vec4 uBox;\nuniform float uXh;\nuniform sampler2D uSide;\nuniform sampler2D uTop;\nvarying vec3 vCarP;\nvarying vec3 vCarN;\n' + sh.fragmentShader.replace('#include <color_fragment>',
+      `#include <color_fragment>
+  {
+    vec3 cn = normalize(vCarN);
+    float u = clamp((vCarP.z - uBox.x) / uBox.y, 0.0, 1.0);
+    float sv = clamp((vCarP.y - uBox.z) / uBox.w, 0.004, 0.996) * 0.5 + (vCarP.x < 0.0 ? 0.5 : 0.0);
+    vec4 ds = texture2D(uSide, vec2(u, sv));
+    vec4 dt = texture2D(uTop, vec2(u, clamp((vCarP.x + uXh) / (2.0 * uXh), 0.004, 0.996)));
+    diffuseColor.rgb = mix(diffuseColor.rgb, ds.rgb, ds.a * smoothstep(0.45, 0.75, abs(cn.x)));
+    diffuseColor.rgb = mix(diffuseColor.rgb, dt.rgb, dt.a * smoothstep(0.5, 0.8, cn.y));
+  }`);
+  };
+  m.customProgramCacheKey = () => 'amboola-decal';
+  m.needsUpdate = true;
+  const sync = () => U.uCarInv.value.copy(car.group.matrixWorld).invert();
+  car.group.traverse(o => { if (o.isMesh && o.material === m) o.onBeforeRender = sync; });
+}
+function applyCustom(car, id) {
+  const c = custOf(id), R = RIMS[c.rim], K = CALIPERS[c.cal];
+  car.group.traverse(o => {
+    if (!o.isMesh) return;
+    const k = o.material.userData.kind;
+    if (k === 'rim' && R.c) { o.material.color.set(R.c); o.material.metalness = R.m; o.material.roughness = R.r; }
+    else if (k === 'cal' && K.c) o.material.color.set(K.c);
+    else if (o.material === glassMat) o.material = tintMat(c.tint);
+  });
+  if (c.decal) { const G = carGeom(car); if (G) decalPaint(car, G, decalTex(id, G, c.decal, DCOLS[c.dcol].c)); }
+  car.cust = c; return car;
+}
 
 /* =====================================================================
    PHYSICS DERIVATION
@@ -1876,7 +2057,7 @@ let player = null;
 class Player {
   constructor(spec, paintIdx) {
     this.spec = spec; const p = PAINTS[paintIdx];
-    this.car = buildCar(spec, p.c, p.m, p.r);
+    this.car = applyCustom(buildCar(spec, p.c, p.m, p.r), spec.id);
     scene.add(this.car.group);
     this.x = -LANES[1]; this.z = 150; this.heading = Math.PI; this.vx = 0; this.vz = 0; this.yawRate = 0;
     this.steer = 0; this.gear = 1; this.rpm = spec.idle || 0; this.reverse = false; this.shiftT = 0; this.manual = !!spec.manual;
@@ -2366,7 +2547,7 @@ function checkDaily() {
 const sellValue = c => Math.round((c.usd * .6 + upgSpent(c) * .5) / 100) * 100;
 function sellCar(c) {
   if (!owns(c) || wallet.owned.size <= 1) return false;
-  wallet.usd += sellValue(c); wallet.owned.delete(c.id); delete upg[c.id]; saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
+  wallet.usd += sellValue(c); wallet.owned.delete(c.id); delete upg[c.id]; localStorage.removeItem('amboola.custom.' + c.id); saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
 }
 function toast(a, b) { const t = $('toast'); t.innerHTML = `${a}<small>${b || ''}</small>`; t.style.opacity = 1; toastT = 2.4; }
 
@@ -2623,7 +2804,7 @@ function buildGarage() {
 }
 function showGarageCar() {
   if (gCar) gScene.remove(gCar.group);
-  const p = PAINTS[paintIdx]; gCar = buildCar(CARS[carIdx], p.c, p.m, p.r); gCar.group.position.y = .08;
+  const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08;
   gCar.headMat.emissiveIntensity = 2.5; gCar.tailMat.emissiveIntensity = 2;
   gCar.group.traverse(o => { if (o.isMesh) o.castShadow = true; });
   gScene.add(gCar.group);
@@ -2651,7 +2832,7 @@ function garageGo() {
 }
 // garage mode buttons only work with a car you own
 const ownedOnly = fn => () => { if (!owns(CARS[carIdx])) { const d = $('drive'); d.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; } fn(); };
-function selectCar(i) { carIdx = i; paintIdx = savedPaint(CARS[i]); localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
+function selectCar(i) { closeCust(); carIdx = i; paintIdx = savedPaint(CARS[i]); localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => {
@@ -2662,7 +2843,7 @@ function updateMenu() {
   const own = owns(c), pr = $('price'), dv = $('drive');
   const u = upgOf(c), t = tunedSpec(c);
   pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : `PRICE ${fmtUSD(c.usd)}`;
-  $('upgBtn').classList.toggle('hidden', !own);
+  $('upgBtn').classList.toggle('hidden', !own); $('custBtn').classList.toggle('hidden', !own);
   const sb = $('sellBtn'); sb.classList.toggle('hidden', !own || wallet.owned.size <= 1); sb.classList.remove('confirm'); sb.textContent = `SELL FOR ${fmtUSD(sellValue(c))}`;
   $('misCount').textContent = `${ST.done.length}/${MISSIONS.length}`;
   dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
@@ -3273,6 +3454,28 @@ $('sellBtn').onclick = () => {
 $('misBtn').onclick = () => { renderMissions(); $('misPanel').classList.remove('hidden'); };
 $('misClose').onclick = () => $('misPanel').classList.add('hidden');
 $('upgClose').onclick = () => { $('upgPanel').classList.add('hidden'); updateMenu(); };
+// customizing: every pick is free, saved at once and shown on the turntable car
+function renderCust() {
+  const c = CARS[carIdx], cu = custOf(c.id);
+  $('custCar').textContent = c.name;
+  const sw = (key, list, fill, label) => `<div class="crow"><small>${label} <b>${list[cu[key]].n}</b></small><div class="csw">${list.map((o, i) =>
+    `<i data-k="${key}" data-i="${i}" class="${i === cu[key] ? 'sel' : ''}" title="${o.n}" style="background:${fill(o, i)}">${i ? '' : '✕'}</i>`).join('')}</div></div>`;
+  const metal = o => o.c ? `radial-gradient(circle at 35% 30%, #fff${o.m > .8 ? 'c' : '6'}, ${o.c} 50%, #000 125%)` : '#2a2d35';
+  $('custRows').innerHTML =
+    sw('rim', RIMS, metal, 'Rims') + sw('cal', CALIPERS, metal, 'Brake calipers') + sw('tint', TINTS, o => o.sw ?? '#2a2d35', 'Window tint') +
+    `<div class="crow"><small>Decals &amp; stickers <b>${DECALS[cu.decal].n}</b></small><div class="cdec">${DECALS.map((o, i) => `<div data-k="decal" data-i="${i}" class="${i === cu.decal ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>` +
+    sw('dcol', DCOLS, o => o.c, 'Decal colour').replace('>✕<', '><');
+  $('custRows').querySelectorAll('[data-k]').forEach(el => el.onclick = () => {
+    const cu2 = custOf(c.id); cu2[el.dataset.k] = +el.dataset.i;
+    if (el.dataset.k === 'dcol' && !cu2.decal) cu2.decal = 1;   // picking a colour with no decal shows the stripes
+    if (el.dataset.k === 'decal' && cu2.decal) gAngle = el.dataset.i === '1' ? .9 : Math.PI / 2;   // turn the car to show it
+    saveCust(c.id, cu2); showGarageCar(); renderCust(); audio.init?.(); audio.beep?.(1040, .05);
+  });
+}
+function closeCust() { $('custPanel').classList.add('hidden'); $('menu').classList.remove('customizing'); }
+$('custBtn').onclick = ownedOnly(() => { renderCust(); $('custPanel').classList.remove('hidden'); $('menu').classList.add('customizing'); });
+$('custDone').onclick = closeCust;
+$('custReset').onclick = () => { saveCust(CARS[carIdx].id, { ...CUST0 }); showGarageCar(); renderCust(); };
 $('resRestart').onclick = () => {
   if (drag) { const ev = drag.ev, rs = drag.r.spec; endDrag(false); state = 'drive'; startDrag(ev, rs); return; }
   const T = race.T; endRace(false); state = 'drive'; startRace(T); };
@@ -4089,6 +4292,7 @@ $('crBtn').onclick = () => { if (crime) { crime.showRoute = !crime.showRoute; cr
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
 function startDrive() {
+  closeCust();
   audio.init();
   const spec = CARS[carIdx];
   let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }

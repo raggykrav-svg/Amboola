@@ -112,10 +112,19 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade spend.
 - **Testing:** the driver always starts from a fresh context, so pick `{"car":54}` (the GR86) or call `window.amboola.earn(n)` and then `updateMenu()` before `garageGo()`. Otherwise DRIVE/RACES/TAXI do nothing on locked cars.
 
+## Customizing
+
+- **Data:** `custOf(id)` / `saveCust(id, c)` keep `{rim, cal, tint, decal, dcol}` (indices into `RIMS`, `CALIPERS`, `TINTS`, `DECALS`, `DCOLS`; 0 = stock) in `amboola.custom.<id>`. Bad or old values fall back to stock. `sellCar()` clears them.
+- **Applying:** `applyCustom(car, id)` runs on the garage car (`showGarageCar`) and the player car (`Player`) only, never on traffic or rivals. Rim and caliper materials are tagged with `userData.kind = 'rim' | 'cal'` in both `buildWheel` and `buildModelCar`. The shared `glassMat` is swapped for an opaque `tintMat(i)` (no transparency, so there's no sorting glitch).
+- **Decals:** `decalPaint()` patches the car's own paint material (`onBeforeCompile`, `customProgramCacheKey 'amboola-decal'`). It projects the car-space position (via `uCarInv`, which each paint mesh's `onBeforeRender` refreshes) onto a 2048×1024 side canvas (top half = left side, bottom half = right side, text drawn mirrored there) and a 1024×512 top canvas. Both fade with the surface normal. `carGeom()` measures the paint bounds and wheel positions, so the designs are drawn in metres. `decalTex()` keeps an LRU of 8 texture pairs.
+- **UI:** `#custBtn` opens `#custPanel` (left side, a bottom sheet on phones), and `#menu.customizing` hides the car list. `renderCust()` builds the swatches. `closeCust()` runs on car change and on DRIVE.
+- **Testing:** own the car and preset the save with an `eval` step, e.g. `localStorage.setItem('amboola.custom.taycangt', JSON.stringify({rim:6,cal:3,tint:3,decal:4,dcol:2}))`, then pick the car. `AMBOOLA_VIEWPORT=390x844` runs the driver at phone size.
+
 ## Rebuild the Blender car models
 
 All 14 Porsches are Blender models:
 - **Building blocks:** `models/blender/carkit.py` holds them (loft, booleans, ray-cast decals, lights, wings, wheels, export, Cycles renders, contact sheets).
+- **Lamps:** `Car.lamp(c, f, w, h, style)` builds a gloss housing with a chrome reflector and `'quad'` (4 LED pads: Taycan, Cayenne, Macan), `'tesla'` (eyebrow strip + 2 projectors) or `'strip'` lights. `Car.curtain()` cuts the vertical air curtains at the bumper corners.
 - **Car definitions:** `models/blender/porsches.py` has one function per car id, plus the `CARS` registry. A new car is a new function and a registry entry.
 - **Game loading:** `index.html` has one `<script src="models/<id>.glb.js">` tag per model. Each is a base64 copy of `models/<id>.glb`, so file:// works.
 - **Building:** at boot `loadCarModels()` decodes the models (Draco, decoder from the three CDN). `buildCar()` then clones the model for any car id in `MODELS`, and falls back to the procedural body if a model fails to load.

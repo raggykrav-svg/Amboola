@@ -62,7 +62,8 @@ if (mode === 'shots') {
     { press: 'KeyC' }, { press: 'KeyC', wait: 1500, shot: 'hood' }, { press: 'Escape', wait: 1000, shot: 'pause' },
   ]));
   fs.mkdirSync(out, { recursive: true });
-  const { browser, page, errors } = await open();
+  const [vw, vh] = (process.env.AMBOOLA_VIEWPORT || '1280x720').split('x').map(Number);
+  const { browser, page, errors } = await open({ width: vw, height: vh });
   for (const st of steps) {
     if (st.car !== undefined) await page.evaluate(i => document.querySelector(`.caritem[data-i="${i}"]`).click(), st.car);
     if (st.click) await page.click(st.click);

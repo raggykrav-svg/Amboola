@@ -78,6 +78,17 @@ The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes y
 - **📅 Daily bonus:** come back on a new day and collect free money. It grows every day you keep your streak: $5,000 on day 1, up to $20,000 on day 7 and after. Miss a day and the streak starts again.
 - **💸 Sell cars:** the red **SELL** button under UPGRADE sells the car for 60% of its price plus half of what you spent upgrading it. Tap twice to confirm. You always keep at least one car.
 
+## Customizing · カスタム
+
+Pick a car you own in the garage and press **🎨 CUSTOMIZE**. Everything is free, shows on the turntable straight away, is saved for that car, and goes with you when you drive.
+- **Rims:** gloss black, satin black, silver, gunmetal, bronze, gold, white, red, neon blue or chrome.
+- **Brake calipers:** red, yellow, acid green, blue, orange, pink, black or silver.
+- **Window tint:** light, limo black, blue mirror, gold mirror or an oil-slick rainbow.
+- **Decals & stickers:** racing stripes, a side stripe, a race number (each car has its own number), flames, a Tokyo livery with 東京 on the doors, a checkered band, or a set of sponsor stickers. Choose from 8 decal colours.
+- **RESET** puts the car back to stock. Selling a car also clears its customizing.
+
+The decals are painted inside the car's own paint, so they follow every curve and never flicker or float off the body.
+
 ## Controls
 
 | Key | Action |
@@ -208,6 +219,7 @@ blender -b --factory-startup --python models/blender/hypercars.py -- --car all  
 ![All 7 Teslas built in Blender](media/teslas-blender.jpg)
 
 The 7 Teslas are Blender models too, in [`models/blender/teslas.py`](models/blender/teslas.py). That makes **every one of the 47 cars** a Blender model. The Teslas have smooth noses with no grille, slim swept headlights, glass roofs, flush door handles and aero wheels.
+- The fronts have LED eyebrow lamps with twin projectors, a lower intake with a body-coloured bar, and air curtains at the corners.
 - The **Model S** and **Model 3** are sleek sedans; the **Model Y** and **Model X** are crossovers. The X has its huge windscreen running over the front seats and falcon-wing door seams.
 - The **next-gen Roadster** has a removable glass roof, and the **2008 Roadster** is an open two-seater with a roll hoop.
 - The **Cybertruck** is built from flat stainless-steel panels with sharp edges, full-width light bars front and back, black arch cladding and off-road tyres.
