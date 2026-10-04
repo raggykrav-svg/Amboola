@@ -120,6 +120,16 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **UI:** `#custBtn` opens `#custPanel` (left side, a bottom sheet on phones), and `#menu.customizing` hides the car list. `renderCust()` builds the swatches. `closeCust()` runs on car change and on DRIVE.
 - **Testing:** own the car and preset the save with an `eval` step, e.g. `localStorage.setItem('amboola.custom.taycangt', JSON.stringify({rim:6,cal:3,tint:3,decal:4,dcol:2}))`, then pick the car. `AMBOOLA_VIEWPORT=390x844` runs the driver at phone size.
 
+## Car commercials
+
+- **What plays:** `playAd(car, 'boot'|'buy', done)` runs a 13 s ad in `state = 'ad'`; `tick` calls `updateAd(dt)`. The shot times are `AD_T`:
+  - studio shots in `gScene`/`gCamera`, sweeping the existing spotlights;
+  - street shots in `scene`/`camera`, with night and rain forced on, traffic and the player's car hidden, and `updateWeather` driven by the ad car.
+- **When it plays:** `bootAd()` runs after loading and rotates the Lamborghinis (`amboola.adi`). `garageGo()` plays a `'buy'` ad after a purchase.
+- **Ending it:** `endAd()` restores the time, weather, lights and car visibility, then calls `enterGarage()`. `AD_BRAND` holds the brand names, taglines and accent colours.
+- **Driver:** it sets `localStorage['amboola.noad']='1'` (no ads at all) unless you run it with `AMBOOLA_AD=1`, and `trailer.mjs` always sets it.
+- **Capturing frames:** set `window.__manualFrames = true` and step with `amboola.tick(1/30)` while `amboola.ad` exists. Set `__manualFrames` back to false afterwards, otherwise the canvas keeps showing the last ad frame.
+
 ## Weather and the new areas
 
 - **Weather:** `weather` is `'clear'` or `'rain'` (`amboola.weather`); `setWeather()` / `cycleWeather()` (key Y). `weatherLook(T)` runs at the end of `applyTime()` and greys the sky/fog. `updateWeather(dt, p)` runs every driving frame:

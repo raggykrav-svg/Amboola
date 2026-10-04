@@ -30,6 +30,7 @@ await page.route(/fonts\.(googleapis|gstatic)\.com/, r => { try { const body = e
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.jpg': 'image/jpeg', '.png': 'image/png', '.json': 'application/json' };
 await page.route('http://amboola.test/**', r => { const p = path.join(ROOT, decodeURIComponent(new URL(r.request().url()).pathname));
   fs.existsSync(p) && fs.statSync(p).isFile() ? r.fulfill({ path: p, contentType: MIME[path.extname(p)] || 'application/octet-stream' }) : r.fulfill({ status: 404 }); });
+await page.addInitScript(() => localStorage.setItem('amboola.noad', '1'));   // no start-up commercial in the recording
 await page.goto('http://amboola.test/index.html');
 await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden'), null, { timeout: 180000 });
 await page.evaluate(([fps, sc]) => { window.__FPS = fps; window.__manualFrames = true; window.__startScene = sc; }, [FPS, SCENE]);

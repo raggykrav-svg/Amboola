@@ -286,6 +286,20 @@ Pick any car in the garage and press **🚓 POLICE**, or choose **P → POLICE**
 
 Your police rewards are saved. **P → END POLICE DUTY** stops.
 
+## Car commercials · 広告 📺
+
+The game plays a short TV-style ad for a car:
+- **When you open the game:** a different Lamborghini each time (Revuelto, Aventador SVJ, Temerario, Huracán STO…).
+- **When you buy a car:** your new car, in your paint and with your custom parts, ending with **NOW IN YOUR GARAGE**.
+
+Each ad is about 13 seconds long and has four shots, with letterbox bars and flash cuts:
+1. A dark studio, with one light sweeping over the car and the brand's tagline.
+2. The car racing at you down a rainy, neon-lit Tokyo street at night, with the name and engine.
+3. A side tracking shot, with power, 0–100 and top speed counting up.
+4. A hero turntable shot with the title card and price.
+
+You hear the car's own engine. When the game first opens, tap **🔊 TAP FOR SOUND** to switch the sound on. Skip at any time with **SKIP**, Esc, Enter or Space. The ads are made up for this fan game and are not real ads from any car maker.
+
 ## Weather · rain 🌧
 
 Pick **🌧 Rain** under *Weather* in the garage, press **Y** while driving, or use **WEATHER** in the pause menu. It works in every time of day, but night rain in the city is the one to see.
