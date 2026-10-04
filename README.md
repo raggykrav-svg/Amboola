@@ -299,6 +299,35 @@ Your police rewards are saved. **P → END POLICE DUTY** stops.
 
 The Blender script is [`models/blender/amboola.py`](models/blender/amboola.py).
 
+### AMBOOLA Sport: 20 sports cars
+
+The AMBOOLA range also has **20 sports cars**, the fastest cars in the game through the corners and on the straights. They all share the AMBOOLA look: tiger stripes, an "A"-shaped grille and fang headlights. The wild ones add a red spike crest and horns. They were built in Blender by [`models/blender/amboola_concepts.py`](models/blender/amboola_concepts.py).
+
+| Car | Top speed | 0–100 | Power | Price |
+| --- | --- | --- | --- | --- |
+| **Tora Zero** (fan car, fastest of all) | 540 km/h | 1.5 s | 3,000 PS | $8,000,000 |
+| Hayabusa (speed record) | 520 km/h | 2.4 s | 1,900 PS | $5,000,000 |
+| Kaze (longtail) | 505 km/h | 2.3 s | 1,600 PS | $2,800,000 |
+| Tora (flagship) | 480 km/h | 2.0 s | 1,850 PS | $3,200,000 |
+| Shogun (W16) | 470 km/h | 1.9 s | 2,000 PS | $4,500,000 |
+| Kuro (stealth) | 450 km/h | 2.2 s | 1,700 PS | $3,000,000 |
+| Raiden (electric) | 440 km/h | 2.1 s | 2,200 PS | $2,400,000 |
+| Kasai (fire) | 420 km/h | 1.9 s | 1,600 PS | $2,200,000 |
+| Ryu (dragon) | 410 km/h | 2.2 s | 1,300 PS | $1,600,000 |
+| Taiyō (solar electric) | 400 km/h | 2.1 s | 1,500 PS | $1,200,000 |
+| Oni (track monster, most grip after Tora Zero) | 395 km/h | 1.8 s | 1,400 PS | $2,900,000 |
+| Hoshi (luxury GT) | 370 km/h | 3.5 s | 1,000 PS | $650,000 |
+| Samurai R | 360 km/h | 2.5 s | 1,050 PS | $950,000 |
+| Neon (electric) | 350 km/h | 2.4 s | 1,100 PS | $520,000 |
+| Tsunami (GT) | 350 km/h | 3.4 s | 950 PS | $480,000 |
+| Sakura GT | 340 km/h | 3.6 s | 830 PS | $420,000 |
+| Kaminari (speedster) | 330 km/h | 3.0 s | 900 PS | $750,000 |
+| Kitsune | 305 km/h | 3.4 s | 520 PS | $180,000 |
+| Yuki (rally, for the Snow Pass) | 300 km/h | 2.7 s | 720 PS | $260,000 |
+| Mini Tora (cheapest) | 280 km/h | 3.8 s | 400 PS | $95,000 |
+
+The 0–100 times are what the game's physics really gives (rear-wheel-drive cars lose a little at launch).
+
 ## Car commercials · 広告 📺
 
 The game plays a short TV-style ad for a car:

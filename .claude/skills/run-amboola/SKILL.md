@@ -128,6 +128,8 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
   - then come `MEGA_STOPS` (4) drop-offs, paying `MEGA_PAY` ($10,000) per person.
 - **Testing:** `window.__taxi()` returns the current taxi state. Hold the handbrake, not the brake, to stay stopped in a `simStep` loop, because brake at a standstill engages reverse.
 
+- **AMBOOLA Sport:** 20 concept cars at CARS indices 60–79 (ids `tora` … `torazero`, bodies `amb_<id>`, models from `amboola_concepts.py`; their stripes are a fixed `Stripe` material baked into the model). Grip goes up to 2.2 (Tora Zero), the highest in the game. The `zero` values come from `driver.mjs bench`.
+
 ## Car commercials
 
 - **What plays:** `playAd(car, 'boot'|'buy', done)` runs a 13 s ad in `state = 'ad'`; `tick` calls `updateAd(dt)`. The shot times are `AD_T`:

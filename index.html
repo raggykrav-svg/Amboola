@@ -376,6 +376,26 @@
 <script src="models/lc300.glb.js"></script>
 <script src="models/grgt.glb.js"></script>
 <script src="models/amboolataxi.glb.js"></script>
+<script src="models/tora.glb.js"></script>
+<script src="models/raiden.glb.js"></script>
+<script src="models/kaze.glb.js"></script>
+<script src="models/oni.glb.js"></script>
+<script src="models/sakura.glb.js"></script>
+<script src="models/ryu.glb.js"></script>
+<script src="models/kitsune.glb.js"></script>
+<script src="models/shogun.glb.js"></script>
+<script src="models/samurai.glb.js"></script>
+<script src="models/yuki.glb.js"></script>
+<script src="models/neon.glb.js"></script>
+<script src="models/hayabusa.glb.js"></script>
+<script src="models/kaminari.glb.js"></script>
+<script src="models/tsunami.glb.js"></script>
+<script src="models/taiyo.glb.js"></script>
+<script src="models/kuro.glb.js"></script>
+<script src="models/hoshi.glb.js"></script>
+<script src="models/kasai.glb.js"></script>
+<script src="models/minitora.glb.js"></script>
+<script src="models/torazero.glb.js"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -535,7 +555,7 @@ const PAINTS = [
   { n: 'Rosso Corsa', c: '#c1111b', m: .3 }, { n: 'Giallo Modena', c: '#f6d10f', m: .25 }, { n: 'Blu Pozzi', c: '#1d3a70', m: .8 },
   { n: 'Papaya Orange', c: '#ff7a00', m: .3 }, { n: 'Volcano Blue', c: '#1f4fa8', m: .7 }, { n: 'Bugatti Blue', c: '#173a8c', m: .65 }, { n: 'Argent Silver', c: '#c4c8cc', m: .95 },
   { n: 'Tang Orange', c: '#ff6a13', m: .35 }, { n: 'Naked Carbon', c: '#1a1c1f', m: .9, r: .22 }, { n: 'Emotional Red', c: '#b3121e', m: .45 }, { n: 'Nitro Yellow', c: '#f0cc00', m: .2 }, { n: 'Precious Metal', c: '#6d7176', m: .9 },
-  { n: 'Amboola Sky', c: '#7cc8e8', m: .3 },
+  { n: 'Amboola Sky', c: '#7cc8e8', m: .3 }, { n: 'Sakura Pink', c: '#f2a5c0', m: .3 }, { n: 'Ryu Green', c: '#1f7a3a', m: .5 }, { n: 'Taiyo Gold', c: '#f0a020', m: .55 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', usd: 241000, desc: '4.0 flat-six · 9,000 rpm' },
@@ -606,6 +626,27 @@ const CARS = [
   { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', usd: 300000, desc: 'Front-mid V8 hybrid flagship' },
   // AMBOOLA: the game's own car company. The Mega Taxi is drawn by the game's creator: 20 seats, $10,000 for every passenger dropped off
   { id: 'amboolataxi', name: 'AMBOOLA Mega Taxi', brand: 'Amboola', cat: 'AMBOOLA', body: 'amboolataxi', wing: 'none', kw: 300, redline: 6500, mass: 2950, vmax: 220, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 5.9, grip: 0.95, aero: .15, paint: 35, rim: '#c8141b', caliper: '#c8141b', box: '8-speed auto', usd: 100000, desc: '20-seat taxi · $10,000 per passenger' },
+  // AMBOOLA Sport: the 20 concept cars (models/blender/amboola_concepts.py), the fastest cars in the game through corners and on the straights
+  { id: 'tora', name: 'AMBOOLA Tora', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_tora', wing: 'none', hybrid: true, kw: 1360, redline: 9500, mass: 1280, vmax: 480, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.0, grip: 1.8, aero: 1.4, paint: 35, rim: '#c8141b', caliper: '#c8141b', usd: 3200000, desc: 'V12 hybrid · 1,850 PS · swan wing', jp: '虎' },
+  { id: 'raiden', name: 'AMBOOLA Raiden', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_raiden', wing: 'none', kw: 1618, redline: 20000, mass: 1650, vmax: 440, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.66, aero: 0.6, paint: 24, rim: '#111113', caliper: '#111113', usd: 2400000, desc: '4 electric motors · 2,200 PS', jp: '雷電' },
+  { id: 'kaze', name: 'AMBOOLA Kaze', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kaze', wing: 'none', kw: 1176, redline: 8000, mass: 1350, vmax: 505, drive: 'AWD', engine: 'v8tt', gears: 7, zero: 2.3, grip: 1.48, aero: 0.35, paint: 14, rim: '#9aa0a8', caliper: '#16a3cc', usd: 2800000, desc: 'V8 quad-turbo · 1,600 PS', jp: '風' },
+  { id: 'oni', name: 'AMBOOLA Oni', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_oni', wing: 'none', hybrid: true, kw: 1029, redline: 9000, mass: 1100, vmax: 395, drive: 'AWD', engine: 'v10na', gears: 7, zero: 1.8, grip: 2.02, aero: 2.0, paint: 7, rim: '#c8141b', caliper: '#c8141b', usd: 2900000, desc: 'V10 + hybrid boost · 1,400 PS', jp: '鬼' },
+  { id: 'sakura', name: 'AMBOOLA Sakura GT', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_sakura', wing: 'none', kw: 610, redline: 7500, mass: 1550, vmax: 340, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.6, grip: 1.3, aero: 0.18, paint: 36, rim: '#f2f2f2', caliper: '#f8f8f6', usd: 420000, desc: 'V8 twin-turbo · 830 PS', jp: '桜' },
+  { id: 'ryu', name: 'AMBOOLA Ryu', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_ryu', wing: 'none', hybrid: true, kw: 956, redline: 9200, mass: 1300, vmax: 410, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.2, grip: 1.71, aero: 1.1, paint: 37, rim: '#d5b46a', caliper: '#d5b46a', usd: 1600000, desc: 'V12 hybrid · 1,300 PS', jp: '竜' },
+  { id: 'kitsune', name: 'AMBOOLA Kitsune', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kitsune', wing: 'none', kw: 382, redline: 8000, mass: 1150, vmax: 305, drive: 'RWD', engine: 'f6tt', gears: 7, zero: 3.4, grip: 1.35, aero: 0.25, paint: 30, rim: '#111113', caliper: '#f8f8f6', usd: 180000, desc: 'Turbo flat-six · 520 PS', jp: '狐' },
+  { id: 'shogun', name: 'AMBOOLA Shogun', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_shogun', wing: 'none', kw: 1471, redline: 7000, mass: 1420, vmax: 470, drive: 'AWD', engine: 'w16', gears: 7, zero: 1.9, grip: 1.75, aero: 1.25, paint: 22, rim: '#d5b46a', caliper: '#d5b46a', usd: 4500000, desc: 'W16 quad-turbo · 2,000 PS', jp: '将軍' },
+  { id: 'samurai', name: 'AMBOOLA Samurai R', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_samurai', wing: 'none', kw: 772, redline: 8500, mass: 1190, vmax: 360, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 2.5, grip: 1.84, aero: 1.3, paint: 23, rim: '#111113', caliper: '#f2c20f', usd: 950000, desc: 'V8 flat-plane · 1,050 PS', jp: '侍' },
+  { id: 'yuki', name: 'AMBOOLA Yuki', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_yuki', wing: 'none', kw: 529, redline: 7500, mass: 1380, vmax: 300, drive: 'AWD', engine: 'v6tt', gears: 7, zero: 2.7, grip: 1.39, aero: 0.3, paint: 8, rim: '#7cc8e8', caliper: '#7cc8e8', usd: 260000, desc: 'Turbo V6 AWD · 720 PS', jp: '雪' },
+  { id: 'neon', name: 'AMBOOLA Neon', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_neon', wing: 'none', kw: 809, redline: 18000, mass: 1500, vmax: 350, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.4, grip: 1.44, aero: 0.4, paint: 11, rim: '#ff3fa4', caliper: '#ff3fa4', usd: 520000, desc: '2 electric motors · 1,100 PS', jp: 'ネオン' },
+  { id: 'hayabusa', name: 'AMBOOLA Hayabusa', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_hayabusa', wing: 'none', hybrid: true, kw: 1397, redline: 8500, mass: 1390, vmax: 520, drive: 'AWD', engine: 'v8tt', gears: 7, zero: 2.4, grip: 1.44, aero: 0.3, paint: 29, rim: '#1d3a70', caliper: '#1d3a70', usd: 5000000, desc: 'V8 quad-turbo + motor · 1,900 PS', jp: '隼' },
+  { id: 'kaminari', name: 'AMBOOLA Kaminari', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kaminari', wing: 'none', kw: 662, redline: 8000, mass: 1050, vmax: 330, drive: 'RWD', engine: 'v8tt', gears: 7, zero: 3.0, grip: 1.53, aero: 0.5, paint: 4, rim: '#111113', caliper: '#111113', usd: 750000, desc: 'V8 twin-turbo · 900 PS', jp: '雷' },
+  { id: 'tsunami', name: 'AMBOOLA Tsunami', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_tsunami', wing: 'none', kw: 699, redline: 9000, mass: 1600, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 8, zero: 3.4, grip: 1.39, aero: 0.45, paint: 27, rim: '#f8f8f6', caliper: '#f8f8f6', usd: 480000, desc: 'V12 · 950 PS', jp: '津波' },
+  { id: 'taiyo', name: 'AMBOOLA Taiyō', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_taiyo', wing: 'none', kw: 1103, redline: 18000, mass: 1450, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: 0.9, paint: 38, rim: '#c8141b', caliper: '#c8141b', usd: 1200000, desc: '3 electric motors · 1,500 PS', jp: '太陽' },
+  { id: 'kuro', name: 'AMBOOLA Kuro', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kuro', wing: 'none', hybrid: true, kw: 1250, redline: 8500, mass: 1320, vmax: 450, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 2.2, grip: 1.71, aero: 1.15, paint: 7, rim: '#3a3d41', caliper: '#c8141b', usd: 3000000, desc: 'V8 hybrid · 1,700 PS', jp: '黒' },
+  { id: 'hoshi', name: 'AMBOOLA Hoshi', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_hoshi', wing: 'none', hybrid: true, kw: 735, redline: 8500, mass: 1700, vmax: 370, drive: 'RWD', engine: 'v12na', gears: 8, zero: 3.5, grip: 1.3, aero: 0.2, paint: 9, rim: '#c4c8cc', caliper: '#c4c8cc', usd: 650000, desc: 'V12 hybrid · 1,000 PS', jp: '星' },
+  { id: 'kasai', name: 'AMBOOLA Kasai', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kasai', wing: 'none', kw: 1176, redline: 9000, mass: 1250, vmax: 420, drive: 'AWD', engine: 'v10na', gears: 7, zero: 1.9, grip: 1.89, aero: 1.6, paint: 3, rim: '#111113', caliper: '#f6d10f', usd: 2200000, desc: 'V10 twin-turbo · 1,600 PS', jp: '火災' },
+  { id: 'minitora', name: 'AMBOOLA Mini Tora', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_minitora', wing: 'none', manual: true, kw: 294, redline: 7500, mass: 980, vmax: 280, drive: 'RWD', engine: 'i3t', gears: 6, zero: 3.8, grip: 1.35, aero: 0.2, paint: 35, rim: '#c8141b', caliper: '#c8141b', usd: 95000, desc: 'Turbo four · 400 PS', jp: '子虎' },
+  { id: 'torazero', name: 'AMBOOLA Tora Zero', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_torazero', wing: 'none', kw: 2206, redline: 22000, mass: 1200, vmax: 540, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.5, grip: 2.2, aero: 2.5, paint: 14, rim: '#c8141b', caliper: '#c8141b', usd: 8000000, desc: 'Fan car · 3,000 PS · 540 km/h', jp: '虎ゼロ' },
 ];
 
 /* =====================================================================
@@ -1635,6 +1676,26 @@ Object.assign(BODIES, {
   landcruiser: { ...BODIES.urus, L: 4.99, W: 1.98, wr: .41, fX: 1.45, rX: -1.40 },
   grgt: { ...BODIES.fgt, L: 4.82, W: 2.0, wr: .35, fX: 1.40, rX: -1.33 },
   amboolataxi: { ...BODIES.urus, L: 6.6, W: 2.0, wr: .39, fX: 1.70, rX: -2.30 },
+  amb_tora: { ...BODIES.lambo, L: 4.75, W: 1.98, wr: 0.35, fX: 1.375, rX: -1.375 },
+  amb_raiden: { ...BODIES.lambo, L: 4.85, W: 1.98, wr: 0.35, fX: 1.4, rX: -1.4 },
+  amb_kaze: { ...BODIES.ferrari, L: 5.2, W: 1.98, wr: 0.35, fX: 1.375, rX: -1.375 },
+  amb_oni: { ...BODIES.lambo, L: 4.8, W: 2.06, wr: 0.35, fX: 1.375, rX: -1.375 },
+  amb_sakura: { ...BODIES.fgt, L: 4.7, W: 1.98, wr: 0.35, fX: 1.375, rX: -1.375 },
+  amb_ryu: { ...BODIES.ferrari, L: 4.75, W: 1.98, wr: 0.35, fX: 1.35, rX: -1.35 },
+  amb_kitsune: { ...BODIES.ferrari, L: 4.15, W: 1.98, wr: 0.35, fX: 1.225, rX: -1.225 },
+  amb_shogun: { ...BODIES.lambo, L: 4.95, W: 2.04, wr: 0.35, fX: 1.4, rX: -1.4 },
+  amb_samurai: { ...BODIES.ferrari, L: 4.6, W: 1.98, wr: 0.35, fX: 1.325, rX: -1.325 },
+  amb_yuki: { ...BODIES.fgt, L: 4.5, W: 1.98, wr: 0.37, fX: 1.3, rX: -1.3 },
+  amb_neon: { ...BODIES.lambo, L: 4.6, W: 1.98, wr: 0.35, fX: 1.35, rX: -1.35 },
+  amb_hayabusa: { ...BODIES.ferrari, L: 5.3, W: 1.98, wr: 0.35, fX: 1.4, rX: -1.4 },
+  amb_kaminari: { ...BODIES.ferrari, L: 4.5, W: 1.98, wr: 0.35, fX: 1.325, rX: -1.325 },
+  amb_tsunami: { ...BODIES.fgt, L: 4.8, W: 1.98, wr: 0.35, fX: 1.4, rX: -1.4 },
+  amb_taiyo: { ...BODIES.lambo, L: 4.7, W: 1.98, wr: 0.35, fX: 1.375, rX: -1.375 },
+  amb_kuro: { ...BODIES.ferrari, L: 4.7, W: 1.98, wr: 0.35, fX: 1.35, rX: -1.35 },
+  amb_hoshi: { ...BODIES.fgt, L: 4.95, W: 1.98, wr: 0.35, fX: 1.45, rX: -1.45 },
+  amb_kasai: { ...BODIES.lambo, L: 4.8, W: 2.04, wr: 0.35, fX: 1.375, rX: -1.375 },
+  amb_minitora: { ...BODIES.ferrari, L: 3.95, W: 1.98, wr: 0.35, fX: 1.175, rX: -1.175 },
+  amb_torazero: { ...BODIES.lambo, L: 5.0, W: 2.08, wr: 0.35, fX: 1.425, rX: -1.425 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
@@ -3066,14 +3127,14 @@ function garageGo() {
 const AD_BRAND = {
   LAMBO: ['LAMBORGHINI', 'UNLEASH THE BULL', '#ffd02d'], FERRARI: ['FERRARI', 'PURE ITALIAN FIRE', '#ff2a2a'], MCLAREN: ['McLAREN', 'ENGINEERED FOR THE LIMIT', '#ff8000'],
   BUGATTI: ['BUGATTI', 'BEYOND EXTREME', '#3a7bff'], KOENIGSEGG: ['KOENIGSEGG', 'HYPERCAR. REDEFINED.', '#ff6a13'], TESLA: ['TESLA', 'THE FUTURE IS ELECTRIC', '#e82127'],
-  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], AMBOOLA: ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
+  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], AMBOOLA: ['AMBOOLA', 'BORN IN TOKYO · BUILT TO WIN', '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
   HYPER: ['PORSCHE', 'THE HYBRID HYPERCAR', '#d5b46a'], ELECTRIC: ['PORSCHE', 'ELECTRIFIED PERFORMANCE', '#d5b46a'], SUV: ['PORSCHE', 'SPORTS CAR. FOR EVERY DAY.', '#d5b46a'],
 };
 const AD_T = [0, 3.2, 6.4, 9.2, 13];   // shot boundaries (s)
 let ad = null;
 function playAd(c, mode, done) {
   if (ad) return;
-  const brand = AD_BRAND[c.cat] || [c.brand || 'AMBOOLA', 'DRIVE THE DREAM', '#ff5a1f'];
+  const brand = c.id === 'amboolataxi' ? ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'] : AD_BRAND[c.cat] || [c.brand || 'AMBOOLA', 'DRIVE THE DREAM', '#ff5a1f'];
   const paint = mode === 'buy' ? PAINTS[savedPaint(c)] : PAINTS[c.paint ?? 0];
   const mk = () => applyCustom(buildCar(c, paint.c, paint.m, paint.r), mode === 'buy' ? c.id : '__ad');
   const studio = mk(), street = mk();
@@ -3098,7 +3159,7 @@ function adText(k) {
   el.className = 'adS' + k;
   el.innerHTML = [
     `<small>${bn}</small><b>${tag}</b>`,
-    `<b>${c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche) /, '')}</b><small>${c.desc}</small>`,
+    `<b>${c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|AMBOOLA) /, '')}</b><small>${c.desc}</small>`,
     `<div><b class="adN">0</b><small>PS</small></div><div><b class="adN">0.0</b><small>0–100 km/h · s</small></div><div><b class="adN">0</b><small>km/h top speed</small></div>`,
     `<small>${bn}</small><b>${c.name}</b><i>${A.mode === 'buy' ? 'NOW IN YOUR GARAGE · 所有' : `AVAILABLE NOW · AMBOOLA GT CENTER · ${price}`}</i>`,
   ][k];
