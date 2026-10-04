@@ -375,6 +375,7 @@
 <script src="models/grcorolla.glb.js"></script>
 <script src="models/lc300.glb.js"></script>
 <script src="models/grgt.glb.js"></script>
+<script src="models/amboolataxi.glb.js"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -534,6 +535,7 @@ const PAINTS = [
   { n: 'Rosso Corsa', c: '#c1111b', m: .3 }, { n: 'Giallo Modena', c: '#f6d10f', m: .25 }, { n: 'Blu Pozzi', c: '#1d3a70', m: .8 },
   { n: 'Papaya Orange', c: '#ff7a00', m: .3 }, { n: 'Volcano Blue', c: '#1f4fa8', m: .7 }, { n: 'Bugatti Blue', c: '#173a8c', m: .65 }, { n: 'Argent Silver', c: '#c4c8cc', m: .95 },
   { n: 'Tang Orange', c: '#ff6a13', m: .35 }, { n: 'Naked Carbon', c: '#1a1c1f', m: .9, r: .22 }, { n: 'Emotional Red', c: '#b3121e', m: .45 }, { n: 'Nitro Yellow', c: '#f0cc00', m: .2 }, { n: 'Precious Metal', c: '#6d7176', m: .9 },
+  { n: 'Amboola Sky', c: '#7cc8e8', m: .3 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', usd: 241000, desc: '4.0 flat-six · 9,000 rpm' },
@@ -602,6 +604,8 @@ const CARS = [
   { id: 'grcorolla', name: 'Toyota GR Corolla', brand: 'Toyota', cat: 'TOYOTA', body: 'corolla', wing: 'none', kw: 224, redline: 7000, mass: 1470, vmax: 230, drive: 'AWD', engine: 'i3t', gears: 6, manual: true, zero: 5.0, grip: 0.98, aero: .2, paint: 32, rim: '#1b1b1d', caliper: '#c8141b', usd: 40000, desc: 'Three-pipe turbo hatch' },
   { id: 'lc300', name: 'Toyota Land Cruiser GR Sport', brand: 'Toyota', cat: 'TOYOTA', body: 'landcruiser', dakar: true, wing: 'none', kw: 305, redline: 6000, mass: 2630, vmax: 210, drive: 'AWD', engine: 'v6tt', gears: 10, zero: 6.7, grip: 0.82, aero: .1, paint: 7, rim: '#2a2b2e', caliper: '#1b1b1d', box: '10-speed auto', usd: 53000, desc: 'Twin-turbo V6 · goes anywhere' },
   { id: 'grgt', name: 'Toyota GR GT', brand: 'Toyota', cat: 'TOYOTA', body: 'grgt', wing: 'turbo', hybrid: true, kw: 478, redline: 7500, mass: 1750, vmax: 320, drive: 'RWD', engine: 'v8tt', gears: 8, zero: 3.2, grip: 1.42, aero: .6, paint: 34, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto', usd: 300000, desc: 'Front-mid V8 hybrid flagship' },
+  // AMBOOLA: the game's own car company. The Mega Taxi is drawn by the game's creator: 20 seats, $10,000 for every passenger dropped off
+  { id: 'amboolataxi', name: 'AMBOOLA Mega Taxi', brand: 'Amboola', cat: 'AMBOOLA', body: 'amboolataxi', wing: 'none', kw: 300, redline: 6500, mass: 2950, vmax: 220, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 5.9, grip: 0.95, aero: .15, paint: 35, rim: '#c8141b', caliper: '#c8141b', box: '8-speed auto', usd: 100000, desc: '20-seat taxi · $10,000 per passenger' },
 ];
 
 /* =====================================================================
@@ -1630,6 +1634,7 @@ Object.assign(BODIES, {
   corolla: { ...BODIES.model3, L: 4.41, W: 1.85, wr: .335, fX: 1.32, rX: -1.32 },
   landcruiser: { ...BODIES.urus, L: 4.99, W: 1.98, wr: .41, fX: 1.45, rX: -1.40 },
   grgt: { ...BODIES.fgt, L: 4.82, W: 2.0, wr: .35, fX: 1.40, rX: -1.33 },
+  amboolataxi: { ...BODIES.urus, L: 6.6, W: 2.0, wr: .39, fX: 1.70, rX: -2.30 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
@@ -1850,17 +1855,19 @@ const RIMS = [
 const CALIPERS = [{ n: 'Stock' }, { n: 'Red', c: '#c8141b' }, { n: 'Yellow', c: '#f2c200' }, { n: 'Acid green', c: '#7ccf1f' }, { n: 'Blue', c: '#1b5fd6' },
   { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }, { n: 'Black', c: '#141416' }, { n: 'Silver', c: '#b9bcc1' }];
 const TINTS = [{ n: 'Stock' }, { n: 'Light', sw: '#3c4a58' }, { n: 'Limo black', sw: '#000' }, { n: 'Blue mirror', sw: '#3a78c8' }, { n: 'Gold mirror', sw: '#c9a13a' }, { n: 'Oil slick', sw: 'linear-gradient(135deg,#7a2bd6,#1fb7c9,#d6c22b)' }];
-const DECALS = [{ n: 'None' }, { n: 'Racing stripes' }, { n: 'Side stripe' }, { n: 'Race number' }, { n: 'Flames' }, { n: 'Tokyo livery' }, { n: 'Checker' }, { n: 'Sponsor stickers' }];
+const DECALS = [{ n: 'None' }, { n: 'Racing stripes' }, { n: 'Side stripe' }, { n: 'Race number' }, { n: 'Flames' }, { n: 'Tokyo livery' }, { n: 'Checker' }, { n: 'Sponsor stickers' }, { n: 'Amboola tiger' }];
 const DCOLS = [{ n: 'White', c: '#f4f4f2' }, { n: 'Black', c: '#111113' }, { n: 'Red', c: '#d1121c' }, { n: 'Gold', c: '#e2b33c' }, { n: 'Cyan', c: '#2fe0ff' },
   { n: 'Lime', c: '#8fe02a' }, { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }];
 const CUST0 = { rim: 0, cal: 0, tint: 0, decal: 0, dcol: 0 };
+const CUST_DEFAULT = { amboolataxi: { decal: 8, dcol: 2 } };   // the Mega Taxi comes in its red tiger stripes
+const custBase = id => ({ ...CUST0, ...(CUST_DEFAULT[id] || {}) });
 function custOf(id) {
   let v = null; try { v = JSON.parse(localStorage.getItem('amboola.custom.' + id)); } catch (e) { }
-  const c = { ...CUST0 };
+  const c = custBase(id);
   if (v && typeof v === 'object') for (const [k, L] of [['rim', RIMS], ['cal', CALIPERS], ['tint', TINTS], ['decal', DECALS], ['dcol', DCOLS]]) if (Number.isInteger(v[k]) && L[v[k]]) c[k] = v[k];
   return c;
 }
-function saveCust(id, c) { if (Object.keys(CUST0).every(k => c[k] === 0)) localStorage.removeItem('amboola.custom.' + id); else localStorage.setItem('amboola.custom.' + id, JSON.stringify(c)); }
+function saveCust(id, c) { const b = custBase(id); if (Object.keys(CUST0).every(k => c[k] === b[k])) localStorage.removeItem('amboola.custom.' + id); else localStorage.setItem('amboola.custom.' + id, JSON.stringify(c)); }
 // opaque tinted glass (no transparency, so nothing behind it can sort wrong)
 const tintMats = {};
 function tintMat(i) {
@@ -1936,6 +1943,15 @@ function drawSide(g, G, design, col, num, flip) {
     sticker(G.fz + wr * .2, d + .02, .32, .07, '#d1121c', 'SHIBUYA', '#f4f4f2');
     sticker(G.rz - wr * .5, d + .06, .4, .08, '#2fe0ff', '速い', '#111113', JP);
     sticker(G.rz + wr + .25, G.y0 + .16, .36, .07, col, 'DRIFT CLUB', ink(col));
+  } else if (design === 8) {   // Amboola tiger: jagged stripes sweeping back along the whole body, and the company name
+    for (let z = G.z1 - .25, k = 0; z > G.z0 + .1; z -= .52, k++) {
+      const top = G.y1 + .1, bot = G.y0 + .08, lean = .55, w = .2 + (k % 3) * .05;
+      g.beginPath(); g.moveTo(X(z), Y(bot));
+      for (let u = 0; u <= 1; u += .2) g.lineTo(X(z - lean * u - Math.sin(u * 9 + k) * .05), Y(lerp(bot, top, u)));
+      for (let u = 1; u >= 0; u -= .2) g.lineTo(X(z - lean * u - w * (1 - u * .6) + Math.sin(u * 7 + k) * .05), Y(lerp(bot, top, u)));
+      g.closePath(); g.fillStyle = col; g.fill();
+    }
+    txt('AMBOOLA', G.mid - .25, d + .02, .2, OR, '#f4f4f2', '#111113');
   }
 }
 function drawTop(g, G, design, col, num) {
@@ -1948,6 +1964,7 @@ function drawTop(g, G, design, col, num) {
   else if (design === 5) { band(-.2, .2, col); band(-.24, -.22, col); band(.22, .24, col); }
   else if (design === 6) { const sq = .075; for (let z = G.z0, i = 0; z < G.z1; z += sq, i++) for (let r = -2; r < 2; r++) if ((i + r) % 2 === 0) band(r * sq, (r + 1) * sq, col, z, z + sq); }
   else if (design === 2) { band(-.03, .03, col); }
+  else if (design === 8) { g.fillStyle = col; for (let z = G.z1 - .3, k = 0; z > G.z0; z -= .55, k++) { g.beginPath(); g.moveTo(X(z), Y(G.xh)); g.lineTo(X(z - .22), Y(G.xh)); g.lineTo(X(z - .5 - (k % 2) * .1), Y(0)); g.lineTo(X(z - .22), Y(-G.xh)); g.lineTo(X(z), Y(-G.xh)); g.lineTo(X(z - .28), Y(0)); g.closePath(); g.fill(); } }
 }
 const decalCache = new Map();
 function decalTex(id, G, design, col) {
@@ -3021,7 +3038,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -3049,7 +3066,7 @@ function garageGo() {
 const AD_BRAND = {
   LAMBO: ['LAMBORGHINI', 'UNLEASH THE BULL', '#ffd02d'], FERRARI: ['FERRARI', 'PURE ITALIAN FIRE', '#ff2a2a'], MCLAREN: ['McLAREN', 'ENGINEERED FOR THE LIMIT', '#ff8000'],
   BUGATTI: ['BUGATTI', 'BEYOND EXTREME', '#3a7bff'], KOENIGSEGG: ['KOENIGSEGG', 'HYPERCAR. REDEFINED.', '#ff6a13'], TESLA: ['TESLA', 'THE FUTURE IS ELECTRIC', '#e82127'],
-  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
+  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], AMBOOLA: ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
   HYPER: ['PORSCHE', 'THE HYBRID HYPERCAR', '#d5b46a'], ELECTRIC: ['PORSCHE', 'ELECTRIFIED PERFORMANCE', '#d5b46a'], SUV: ['PORSCHE', 'SPORTS CAR. FOR EVERY DAY.', '#d5b46a'],
 };
 const AD_T = [0, 3.2, 6.4, 9.2, 13];   // shot boundaries (s)
@@ -3073,7 +3090,7 @@ function playAd(c, mode, done) {
   const [bn, , col] = brand;
   $('ad').style.setProperty('--ac', col); $('ad').classList.remove('hidden'); $('menu').classList.add('hidden');
   $('adSound').classList.toggle('hidden', ad.soundOn);
-  $('adFine').textContent = `Fan-made Amboola game ad · not affiliated with ${bn.charAt(0) + bn.slice(1).toLowerCase()} or any car maker`;
+  $('adFine').textContent = c.cat === 'AMBOOLA' ? 'An AMBOOLA original · designed in Tokyo by the Amboola team' : `Fan-made Amboola game ad · not affiliated with ${bn.charAt(0) + bn.slice(1).toLowerCase()} or any car maker`;
   state = 'ad';
 }
 function adText(k) {
@@ -3788,7 +3805,7 @@ function renderCust() {
 function closeCust() { $('custPanel').classList.add('hidden'); $('menu').classList.remove('customizing'); }
 $('custBtn').onclick = ownedOnly(() => { renderCust(); $('custPanel').classList.remove('hidden'); $('menu').classList.add('customizing'); });
 $('custDone').onclick = closeCust;
-$('custReset').onclick = () => { saveCust(CARS[carIdx].id, { ...CUST0 }); showGarageCar(); renderCust(); };
+$('custReset').onclick = () => { saveCust(CARS[carIdx].id, custBase(CARS[carIdx].id)); showGarageCar(); renderCust(); };
 $('resRestart').onclick = () => {
   if (drag) { const ev = drag.ev, rs = drag.r.spec; endDrag(false); state = 'drive'; startDrag(ev, rs); return; }
   const T = race.T; endRace(false); state = 'drive'; startRace(T); };
@@ -3800,7 +3817,7 @@ $('resLeave').onclick = () => { if (drag) endDrag(true); endRace(true); $('resul
    ===================================================================== */
 const TAXI_NAMES = ['Yuki', 'Haruto', 'Sakura', 'Ren', 'Aoi', 'Sota', 'Hina', 'Kaito', 'Mei', 'Riku', 'Yui', 'Takumi', 'Emi', 'Kenji', 'Nanami', 'Daichi', 'Airi', 'Hiro'];
 const DISTRICTS = [['Ikebukuro', 'Shinjuku', 'Ueno'], ['Shibuya', 'Tokyo Station', 'Akihabara'], ['Meguro', 'Roppongi', 'Ginza']];
-let taxi = null;
+let taxi = null; window.__taxi = () => taxi;
 function placeName(x, z) {
   for (const l of landmarks) if (Math.hypot(l.x - x, l.z - z) < 170 && !TRACKS.some(T => T.name === l.n)) return `near ${l.n === 'Tower' ? 'Tokyo Tower' : l.n}`;
   if (Math.abs(x) < 40 && Math.abs(z) < 40) return 'Scramble Crossing';
@@ -3896,11 +3913,61 @@ function startTaxi() {
   if (race) endRace(false);
   if (taxi) endTaxi();
   taxi = { phase: 'pickup', earnings: 0, fares: 0, total: +(localStorage.getItem('amboola.taxi.total') || 0), route: [], routeT: 0, crashes: 0, anim: 0 };
+  // the AMBOOLA Mega Taxi: collect a whole crowd of 20, then drop them off in groups at 4 stops, $10,000 a person
+  taxi.mega = player.spec.id === 'amboolataxi'; taxi.aboard = 0; taxi.crowd = []; taxi.walkers = [];
+  $('txTime').previousElementSibling.textContent = taxi.mega ? 'SEATS' : 'TIME';
   taxi.arrows = buildRoadArrows();
   $('taxihud').classList.remove('hidden');
   newTaxiJob(true);
 }
+const MEGA_SEATS = 20, MEGA_STOPS = 4, MEGA_PAY = 10000;
+function newMegaJob(first) {
+  const s = taxiSpot(player.x, player.z, first ? 120 : 180, first ? 380 : 650);
+  taxi.phase = 'pickup'; taxi.spot = s; taxi.who = `${MEGA_SEATS} passengers`; taxi.aboard = 0; taxi.boardT = 0;
+  // a crowd spread along the kerb, everyone waving
+  const along = s.ry === 0 || s.ry === Math.PI ? [1, 0] : [0, 1];
+  for (let k = 0; k < MEGA_SEATS; k++) {
+    const g = makePerson(), u = (k % 10 - 4.5) * 1.1 + rr(-.3, .3), v = (k < 10 ? 0 : 1.1) + rr(-.2, .2);
+    const ox = s.px - s.x, oz = s.pz - s.z, ol = Math.hypot(ox, oz) || 1;
+    g.position.set(s.px + along[0] * u + ox / ol * v, 0, s.pz + along[1] * u + oz / ol * v); g.rotation.y = s.ry; scene.add(g); taxi.crowd.push(g);
+  }
+  if (taxi.marker) scene.remove(taxi.marker);
+  taxi.marker = makeTaxiMarker('#2fd0ff'); taxi.marker.position.set(s.x, 0, s.z);
+  taxi.routeT = 0;
+  toast(`${MEGA_SEATS} PASSENGERS WAITING`, `AMBOOLA MEGA TAXI · ${s.name}`);
+}
+function updateMegaStop(dt, p, s, stopped) {
+  if (taxi.phase === 'pickup') {
+    $('txTask').textContent = `PICK UP ${MEGA_SEATS} PASSENGERS`; $('txWhere').textContent = s.name; $('txTime').textContent = `${taxi.aboard}/${MEGA_SEATS}`;
+    taxi.crowd.forEach((g, k) => g.userData.wave.rotation.z = Math.PI + Math.sin(taxi.anim * 9 + k) * .5 - .2);
+    if (!stopped) { if (Math.hypot(p.x - s.x, p.z - s.z) < 35 && toastT <= 0) toast('STOP AT THE CROWD', 'ブレーキ · everyone gets in'); return; }
+    // board one by one while you wait
+    taxi.boardT -= dt;
+    if (taxi.boardT <= 0 && taxi.crowd.length) { taxi.boardT = .12; scene.remove(taxi.crowd.pop()); taxi.aboard++; audio.beep(600 + taxi.aboard * 25, .05); }
+    if (!taxi.crowd.length) {
+      taxi.stops = []; let fx = s.x, fz = s.z;
+      for (let k = 0; k < MEGA_STOPS; k++) { const d = taxiSpot(fx, fz, 300, 750); taxi.stops.push({ spot: d, n: MEGA_SEATS / MEGA_STOPS }); fx = d.x; fz = d.z; }
+      taxi.phase = 'dropoff'; taxi.spot = taxi.stops[0].spot; taxi.routeT = 0; taxi.stopNo = 1;
+      scene.remove(taxi.marker); taxi.marker = makeTaxiMarker('#34d399'); taxi.marker.position.set(taxi.spot.x, 0, taxi.spot.z);
+      toast(`ALL ${MEGA_SEATS} ABOARD!`, `${MEGA_STOPS} STOPS · ${fmtUSD(MEGA_PAY)} FOR EVERY PASSENGER`);
+    }
+    return;
+  }
+  const st = taxi.stops[0];
+  $('txTask').textContent = `DROP OFF ${st.n} · STOP ${taxi.stopNo}/${MEGA_STOPS}`; $('txWhere').textContent = s.name; $('txTime').textContent = `${taxi.aboard}/${MEGA_SEATS}`;
+  if (!stopped) return;
+  const pay = st.n * MEGA_PAY;
+  taxi.aboard -= st.n; taxi.earnings += pay; taxi.fares += st.n; taxi.total += pay; localStorage.setItem('amboola.taxi.total', taxi.total);
+  skill.bank += Math.round(pay * .05); localStorage.setItem('amboola.skill', skill.bank); earn(pay); bump('fares', st.n);
+  for (let k = 0; k < st.n; k++) { const w = makePerson(); w.position.set(s.px + (k - st.n / 2) * 1.1 * Math.cos(s.ry), 0, s.pz + (k - st.n / 2) * 1.1 * Math.sin(s.ry)); w.rotation.y = s.ry + Math.PI / 2 + rr(-.4, .4); scene.add(w); taxi.walkers.push({ g: w, t: 0 }); }
+  audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
+  toast(`${st.n} PASSENGERS OFF · +${fmtUSD(pay)}`, `${taxi.aboard ? taxi.aboard + ' STILL ABOARD' : 'TAXI EMPTY · NEW CROWD WAITING'} · ありがとう!`);
+  taxi.stops.shift(); taxi.stopNo++;
+  if (taxi.stops.length) { taxi.spot = taxi.stops[0].spot; taxi.routeT = 0; taxi.marker.position.set(taxi.spot.x, 0, taxi.spot.z); }
+  else newMegaJob(false);
+}
 function newTaxiJob(first) {
+  if (taxi.mega) return newMegaJob(first);
   const s = taxiSpot(player.x, player.z, first ? 120 : 180, first ? 380 : 650);
   taxi.phase = 'pickup'; taxi.spot = s; taxi.who = pick(TAXI_NAMES);
   taxi.person = makePerson(); taxi.person.position.set(s.px, 0, s.pz); taxi.person.rotation.y = s.ry; scene.add(taxi.person);
@@ -3923,8 +3990,11 @@ function updateTaxi(dt) {
   taxi.marker.userData.ring.material.opacity = .55 + Math.sin(taxi.anim * 5) * .3;
   if (taxi.person && taxi.phase === 'pickup') taxi.person.userData.wave.rotation.z = Math.PI + Math.sin(taxi.anim * 9) * .5 - .2;
   if (taxi.walker) { const w = taxi.walker; w.t += dt; w.g.position.x += Math.sin(w.g.rotation.y) * 1.3 * dt; w.g.position.z += Math.cos(w.g.rotation.y) * 1.3 * dt; if (w.t > 3) { scene.remove(w.g); taxi.walker = null; } }
-  const stopped = dist < 8.5 && p.speed < 2.6;
-  if (taxi.phase === 'pickup') {
+  const stopped = dist < (taxi.mega ? 11 : 8.5) && p.speed < 2.6;
+  for (const w of taxi.walkers) { w.t += dt; w.g.position.x += Math.sin(w.g.rotation.y) * 1.3 * dt; w.g.position.z += Math.cos(w.g.rotation.y) * 1.3 * dt; if (w.t > 3) scene.remove(w.g); }
+  taxi.walkers = taxi.walkers.filter(w => w.t <= 3);
+  if (taxi.mega) updateMegaStop(dt, p, s, stopped);
+  else if (taxi.phase === 'pickup') {
     $('txTask').textContent = `PICK UP ${taxi.who.toUpperCase()}`; $('txWhere').textContent = s.name;
     $('txTime').textContent = '--';
     if (stopped) {
@@ -3955,7 +4025,7 @@ function updateTaxi(dt) {
 }
 function endTaxi() {
   if (!taxi) return;
-  for (const o of [taxi.person, taxi.marker, taxi.arrows, taxi.walker?.g]) if (o) scene.remove(o);
+  for (const o of [taxi.person, taxi.marker, taxi.arrows, taxi.walker?.g, ...taxi.crowd, ...taxi.walkers.map(w => w.g)]) if (o) scene.remove(o);
   if (taxi.fares) toast(`SHIFT OVER · ${fmtUSD(taxi.earnings)}`, `${taxi.fares} FARES · TOTAL ${fmtUSD(taxi.total)}`);
   taxi = null; $('taxihud').classList.add('hidden');
 }

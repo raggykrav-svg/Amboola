@@ -286,6 +286,19 @@ Pick any car in the garage and press **🚓 POLICE**, or choose **P → POLICE**
 
 Your police rewards are saved. **P → END POLICE DUTY** stops.
 
+## AMBOOLA · our own car company 🚕
+
+**AMBOOLA** is the game's own car brand, at the bottom of the car list. Its first car is the **AMBOOLA Mega Taxi**, from a drawing by the game's creator.
+- **The car:** a 6.6 m stretched taxi with 20 seats, light blue with red tiger stripes and **AMBOOLA** on the sides. It has a taxi sign on the roof with a red spiky crest and two horns, a tall rear fin with red spikes, a long black stripe and red-spoked wheels.
+- **Price:** $100,000. Twin-turbo V8, 408 PS, 0–100 in 5.9 s, 220 km/h.
+- **Mega taxi jobs:** press **🚕 TAXI** in the Mega Taxi.
+  - A crowd of **20 passengers** waits at the kerb. Stop next to them and they get in one by one; the HUD shows **SEATS x/20**.
+  - Then drive them to **4 stops**, where 5 people get off at each.
+  - Every passenger pays **$10,000**, so one full load is worth **$200,000**. After the last stop, a new crowd is waiting.
+- **Customizing:** the tiger stripes are the default *Amboola tiger* decal. In 🎨 CUSTOMIZE you can recolour them, swap them for another design, or remove them, and RESET brings the tiger back. You can also pick the *Amboola tiger* livery for any other car.
+
+The Blender script is [`models/blender/amboola.py`](models/blender/amboola.py).
+
 ## Car commercials · 広告 📺
 
 The game plays a short TV-style ad for a car:

@@ -120,6 +120,14 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **UI:** `#custBtn` opens `#custPanel` (left side, a bottom sheet on phones), and `#menu.customizing` hides the car list. `renderCust()` builds the swatches. `closeCust()` runs on car change and on DRIVE.
 - **Testing:** own the car and preset the save with an `eval` step, e.g. `localStorage.setItem('amboola.custom.taycangt', JSON.stringify({rim:6,cal:3,tint:3,decal:4,dcol:2}))`, then pick the car. `AMBOOLA_VIEWPORT=390x844` runs the driver at phone size.
 
+## AMBOOLA Mega Taxi
+
+- **The car:** `amboolataxi` (CARS index 59, cat `AMBOOLA`, paint 35 'Amboola Sky'), built by `models/blender/amboola.py`. `CUST_DEFAULT` gives it the `Amboola tiger` decal (DECALS 8) in red, and `saveCust` and RESET compare against `custBase(id)`.
+- **Taxi mode:** when `player.spec.id === 'amboolataxi'`, `startTaxi()` sets `taxi.mega`, and `newMegaJob` / `updateMegaStop` take over:
+  - a crowd of `MEGA_SEATS` (20) boards one every 0.12 s while you are stopped;
+  - then come `MEGA_STOPS` (4) drop-offs, paying `MEGA_PAY` ($10,000) per person.
+- **Testing:** `window.__taxi()` returns the current taxi state. Hold the handbrake, not the brake, to stay stopped in a `simStep` loop, because brake at a standstill engages reverse.
+
 ## Car commercials
 
 - **What plays:** `playAd(car, 'boot'|'buy', done)` runs a 13 s ad in `state = 'ad'`; `tick` calls `updateAd(dt)`. The shot times are `AD_T`:
