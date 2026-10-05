@@ -71,7 +71,7 @@ The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes y
 
 ## Missions, daily bonus, selling cars
 
-- **🏆 Missions** (garage button): 16 goals that pay automatically when you reach them, with a banner and a sound.
+- **🏆 Missions** (garage button): 18 goals that pay automatically when you reach them, with a banner and a sound.
   - **Driving:** win a drag race ($2,000), win 10 drag races ($25,000), win a circuit race ($5,000), win 5 circuit races ($40,000), deliver 10 taxi passengers ($8,000), arrest 3 outlaws ($15,000), stash $50,000 as the outlaw ($20,000), bank a 2,500-point drift chain ($10,000).
   - **Building your garage:** max every upgrade on one car ($30,000), own 5 cars ($25,000), own a $1M+ car ($100,000), own a Bugatti ($250,000), have $1,000,000 in your wallet ($50,000).
   - **Exploring:** drive the Wangan Highway to Amboola Beach ($10,000), climb the Snow Pass to the Ski Village ($15,000).
@@ -341,6 +341,24 @@ Each ad is about 13 seconds long and has four shots, with letterbox bars and fla
 4. A hero turntable shot with the title card and price.
 
 You hear the car's own engine. When the game first opens, tap **🔊 TAP FOR SOUND** to switch the sound on. Skip at any time with **SKIP**, Esc, Enter or Space. The ads are made up for this fan game and are not real ads from any car maker.
+
+## Countries: Cyprus 🇨🇾, Italy 🇮🇹 and Dubai 🇦🇪
+
+Three countries lie about 20 km out to sea, south of Tokyo. Each is joined to the city by its own 6-lane sea bridge. The bridges leave from three gates on the harbour edge (the south side of the city), each marked with a big sign.
+
+- **By car:** drive over the bridge. It takes about 5 minutes in a GR86, and less in a fast car. There are distance signs every 5 km, and a "TOKYO" sign for the way back.
+- **Cyprus · ΚΥΠΡΟΣ:** white and sandstone houses with terracotta roofs, palm and olive trees, Kolossi Castle, the Kourion columns and stage, a domed church, and Aphrodite's Rock in the sea.
+- **Italy · ITALIA:** ochre and terracotta palazzi, cypress trees, the Colosseum, the leaning tower, and a piazza with a fountain.
+- **Dubai · دبي:** glass towers, the Burj Khalifa with a red light on top, the sail-shaped Burj Al Arab on its own island, a gold-domed mosque with minarets, palms and sand.
+- **Missions:** each country gives +2,000 skill points the first time you arrive. Visiting all three completes **WORLD TRAVELLER** (+$100,000).
+
+### The AMBOOLA Jet ✈ ($100,000)
+
+Buy the **AMBOOLA Jet** in the garage (bottom of the AMBOOLA list) and press **✈ FLY**.
+- **Controls:** **W/S** throttle up to **20,000 km/h** (Mach 16), **A/D** to turn, **↑/↓** to climb and dive. On phones, use the gas and brake buttons for throttle and the steer buttons to turn.
+- **Autopilot:** click **TOKYO, CYPRUS, ITALY or DUBAI** on the right and the jet steers there for you. It slows down for turns so it never misses the airport. The list shows how far each place is and how many seconds it takes.
+- **Landing:** when you are within 3 km of an airport, press **L** (or the yellow LAND button). You land at the runway and get out in your last car, ready to drive.
+- **Missions:** your first landing completes **FIRST FLIGHT** (+$20,000).
 
 ## Weather · rain 🌧
 

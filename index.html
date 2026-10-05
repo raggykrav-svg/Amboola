@@ -190,6 +190,19 @@
   #custPanel .rbtns { display:flex; gap:8px; margin-top:16px; } #custPanel .rbtns button { flex:1; padding:10px; font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:.15em; background:var(--panel); color:#fff; border:1px solid #3a3f4b; cursor:pointer; }
   #custDone { background:linear-gradient(90deg,#ffd02d,#ffb300)!important; color:#111!important; border:none!important; font-weight:900; }
   @media (max-width: 760px) { #custPanel { left:12px; right:12px; width:auto; top:auto; bottom:12px; max-height:46vh; z-index:33; } #menu.customizing #stats { visibility:hidden; } }
+  #flyhud { position:fixed; inset:0; pointer-events:none; z-index:20; } #flyhud.hidden { display:none; } #flyhud button { pointer-events:auto; }
+  #flyTop { position:absolute; left:50%; top:12px; transform:translateX(-50%); display:flex; gap:26px; align-items:flex-end; background:rgba(8,12,18,.6); padding:8px 20px; border-bottom:2px solid #2fe0ff; text-align:center; }
+  #flyTop b { display:block; font-family:'Orbitron',sans-serif; font-weight:900; font-size:30px; font-variant-numeric:tabular-nums; } #flyTop small { font-size:11px; letter-spacing:.2em; color:#9fb3c4; }
+  #flyThrBox i { display:block; width:150px; height:8px; background:#26343e; margin-top:6px; } #flyThr { display:block; height:100%; background:linear-gradient(90deg,#2fe0ff,#ff5a1f); text-decoration:none; }
+  #flyDest { position:absolute; right:14px; top:90px; display:grid; gap:6px; width:min(240px,46vw); }
+  #flyDest button { text-align:left; padding:8px 12px; font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:.1em; color:#fff; background:rgba(8,12,18,.7); border:1px solid #3a3f4b; cursor:pointer; }
+  #flyDest button small { display:block; font-family:'Rajdhani',sans-serif; font-size:13px; color:#9fb3c4; letter-spacing:.05em; } #flyDest button.on { border-color:#2fe0ff; background:rgba(47,224,255,.18); }
+  #flyLand { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:12px 22px; font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.12em; color:#9fb3c4; background:rgba(8,12,18,.75); border:1px solid #3a3f4b; cursor:pointer; }
+  #flyLand.ready { color:#111; background:linear-gradient(90deg,#ffd02d,#ffb300); border-color:#ffd02d; font-weight:900; }
+  #flyExit { position:absolute; left:14px; top:14px; padding:7px 14px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.15em; color:#fff; background:rgba(8,12,18,.7); border:1px solid #3a3f4b; cursor:pointer; }
+  #flyHelp { position:absolute; left:14px; bottom:24px; max-width:40vw; font-size:13px; color:#cfd8e0; text-shadow:0 1px 4px #000; }
+  #flyFade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; z-index:25; transition:opacity .1s; }
+  @media (max-width:760px) { #flyTop { gap:12px; padding:6px 10px; } #flyTop b { font-size:20px; } #flyThrBox { display:none; } #flyHelp { display:none; } #flyLand { bottom:150px; } }
   #ad { position:fixed; inset:0; z-index:60; pointer-events:none; --ac:#ffd02d; } #ad.hidden { display:none; } #ad button { pointer-events:auto; }
   .adBar { position:absolute; left:0; right:0; top:0; height:11vh; background:#000; } .adBar.bot { top:auto; bottom:0; }
   #adFlash { position:absolute; inset:0; background:#fff; opacity:0; } #adFlash.go { animation:adFlash .35s ease-out; } @keyframes adFlash { 0% { opacity:.85; } 100% { opacity:0; } }
@@ -471,6 +484,13 @@
 <div id="savedScreen" class="hidden"><h2>GAME SAVED · 保存しました</h2><div id="savedInfo"></div>
   <p>Everything is saved in this browser. You can close this tab now; next time you open Amboola you carry on from here.</p>
   <div class="rbtns"><button id="savedBack">▶ KEEP PLAYING</button><button id="savedQuit">QUIT</button></div></div>
+<div id="flyhud" class="hidden">
+  <div id="flyTop"><div><b id="flySpd">0</b><small>KM/H · <span id="flyMach">MACH 0</span></small></div><div><b id="flyAlt">0 m</b><small>ALTITUDE</small></div><div id="flyThrBox"><small>THROTTLE · W / S</small><i><u id="flyThr"></u></i></div></div>
+  <div id="flyDest"></div>
+  <button id="flyLand">🛬 LAND [L]</button><button id="flyExit">GARAGE</button>
+  <div id="flyHelp">W/S throttle · A/D turn · ↑/↓ climb &amp; dive · click a place for autopilot · L land</div>
+</div>
+<div id="flyFade"></div>
 <div id="custPanel" class="hidden"><h2>CUSTOMIZE</h2><div id="custCar"></div><div id="custRows"></div><div class="rbtns"><button id="custReset">RESET</button><button id="custDone">DONE</button></div></div>
 <div id="ad" class="hidden"><div class="adBar"></div><div class="adBar bot"></div><div id="adTxt"></div><div id="adFlash"></div><div id="adFade"></div>
   <div id="adFine"></div><button id="adSkip">SKIP ▸▸</button><button id="adSound">🔊 TAP FOR SOUND</button><div id="adTag">AD · 広告</div></div>
@@ -647,6 +667,8 @@ const CARS = [
   { id: 'kasai', name: 'AMBOOLA Kasai', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kasai', wing: 'none', kw: 1176, redline: 9000, mass: 1250, vmax: 420, drive: 'AWD', engine: 'v10na', gears: 7, zero: 1.9, grip: 1.89, aero: 1.6, paint: 3, rim: '#111113', caliper: '#f6d10f', usd: 2200000, desc: 'V10 twin-turbo · 1,600 PS', jp: '火災' },
   { id: 'minitora', name: 'AMBOOLA Mini Tora', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_minitora', wing: 'none', manual: true, kw: 294, redline: 7500, mass: 980, vmax: 280, drive: 'RWD', engine: 'i3t', gears: 6, zero: 3.8, grip: 1.35, aero: 0.2, paint: 35, rim: '#c8141b', caliper: '#c8141b', usd: 95000, desc: 'Turbo four · 400 PS', jp: '子虎' },
   { id: 'torazero', name: 'AMBOOLA Tora Zero', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_torazero', wing: 'none', kw: 2206, redline: 22000, mass: 1200, vmax: 540, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.5, grip: 2.2, aero: 2.5, paint: 14, rim: '#c8141b', caliper: '#c8141b', usd: 8000000, desc: 'Fan car · 3,000 PS · 540 km/h', jp: '虎ゼロ' },
+  // the AMBOOLA Jet: not a car - press DRIVE (FLY) with it to take off. 20,000 km/h, lands in every country
+  { id: 'amboolajet', name: 'AMBOOLA Jet', brand: 'Amboola', cat: 'AMBOOLA', jet: true, body: 'amb_jet', wing: 'none', kw: 60000, redline: 20000, mass: 9000, vmax: 20000, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.2, grip: 1, aero: 0, paint: 35, rim: '#c8141b', caliper: '#c8141b', usd: 100000, desc: 'Flies at 20,000 km/h · to Cyprus, Italy & Dubai' },
 ];
 
 /* =====================================================================
@@ -1092,14 +1114,14 @@ function buildRain() {
 const WET_SHADER = {
   name: 'WetRoad',
   uniforms: { color: { value: null }, tDiffuse: { value: null }, textureMatrix: { value: null }, uTime: { value: 0 }, uWet: { value: 0 }, uRefl: { value: 1 },
-    uFogC: { value: new THREE.Color() }, uFogD: { value: .001 }, uSheen: { value: new THREE.Color() }, uShore: { value: 0 }, uIsland: { value: new THREE.Vector4(0, 0, 1, 1) } },
+    uFogC: { value: new THREE.Color() }, uFogD: { value: .001 }, uSheen: { value: new THREE.Color() }, uShore: { value: 0 }, uIsland: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, -1, -1)) } },
   vertexShader: `uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vW;
     #include <common>
     #include <logdepthbuf_pars_vertex>
     void main(){ vUv = textureMatrix * vec4(position, 1.); vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w;
       #include <logdepthbuf_vertex>
     }`,
-  fragmentShader: `uniform vec3 color, uFogC, uSheen; uniform sampler2D tDiffuse; uniform float uTime, uWet, uRefl, uFogD, uShore; uniform vec4 uIsland;
+  fragmentShader: `uniform vec3 color, uFogC, uSheen; uniform sampler2D tDiffuse; uniform float uTime, uWet, uRefl, uFogD, uShore; uniform vec4 uIsland[4];
     varying vec4 vUv; varying vec3 vW;
     #include <logdepthbuf_pars_fragment>
     float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -1117,7 +1139,7 @@ const WET_SHADER = {
     }
     void main(){
       #include <logdepthbuf_fragment>
-      float land = max(step(vW.z, uShore), step(uIsland.x, vW.x) * step(vW.x, uIsland.z) * step(uIsland.y, vW.z) * step(vW.z, uIsland.w));
+      float land = step(vW.z, uShore); for (int i = 0; i < 4; i++) { vec4 r = uIsland[i]; land = max(land, step(r.x, vW.x) * step(vW.x, r.z) * step(r.y, vW.z) * step(vW.z, r.w)); }
       if (land < .5 || uWet < .01) discard;
       vec3 toCam = cameraPosition - vW; float dist = length(toCam); vec3 V = toCam / dist;
       float puddle = smoothstep(.45, .8, vnoise(vW.xz * .08) * .65 + vnoise(vW.xz * .31) * .35);
@@ -1148,7 +1170,7 @@ function buildWetFilm() {
   } else film = new Reflector(geo, { textureWidth: Math.round(innerWidth * pr * k), textureHeight: Math.round(innerHeight * pr * k), clipBias: .002, multisample: 0, color: 0xd8dde6, shader: WET_SHADER });
   Object.assign(film.material, { transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   film.rotation.x = -Math.PI / 2; film.position.y = .075; film.renderOrder = 2; film.frustumCulled = false;
-  const U = film.material.uniforms; U.uShore.value = HALF + 40; U.uIsland.value.set(BEACH.x0, BEACH.z0, BEACH.x1, BEACH.sand);   // the beach town's streets are land too
+  const U = film.material.uniforms; U.uShore.value = HALF + 40; U.uIsland.value = [new THREE.Vector4(BEACH.x0, BEACH.z0, BEACH.x1, BEACH.sand), ...COUNTRIES.map(C => new THREE.Vector4(C.x0, C.z0, C.x1, C.z1))];   // island towns are land too
   scene.add(film); WX.film = film;
 }
 function setWeather(w) {
@@ -1196,12 +1218,14 @@ async function buildWorld() {
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
   const land = new THREE.Mesh(new THREE.PlaneGeometry(26000, 26000), new THREE.MeshStandardMaterial({ color: 0x3b4336, roughness: 1 }));
   land.rotation.x = -Math.PI / 2; land.position.set(0, -.2, -13000 + HALF + 40); scene.add(land);
-  ocean = new THREE.Mesh(new THREE.PlaneGeometry(26000, 12000), new THREE.MeshStandardMaterial({ color: 0x1d4f73, roughness: .08, metalness: .6 }));
-  ocean.rotation.x = -Math.PI / 2; ocean.position.set(0, -1.2, HALF + 40 + 6000); scene.add(ocean);
+  ocean = new THREE.Mesh(new THREE.PlaneGeometry(80000, 40000), new THREE.MeshStandardMaterial({ color: 0x1d4f73, roughness: .08, metalness: .6 }));
+  ocean.rotation.x = -Math.PI / 2; ocean.position.set(0, -1.2, HALF + 40 + 20000); scene.add(ocean);
   // seawall
   const sea = new GB(); sea.box(0, -1.5, HALF + 41, HALF * 2 + 80, 1.8, 2, 16, 32, 0, [.6, .6, .6]);
   scene.add(new THREE.Mesh(sea.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9 })));
-  for (const z of [-HALF - 6, HALF + 6]) addCol(-HALF - 50, z - 1 + (z > 0 ? 0 : -0), HALF + 50, z + 1);
+  const edgeWall = (z, gaps) => { let x = -HALF - 50; for (const g of [...gaps].sort((a, b) => a - b)) { addCol(x, z - 1, g - 9, z + 1); x = g + 9; } addCol(x, z - 1, HALF + 50, z + 1); };
+  edgeWall(-HALF - 6, [rc(1)]);                              // north: the Snow Pass gate
+  edgeWall(HALF + 6, COUNTRY_DEFS.map(d => d.gx));           // south harbour: the three country bridges
 
   // ---- roads
   const rg = new GB(), ig = new GB(), xg = new GB();
@@ -1450,6 +1474,8 @@ async function buildWorld() {
   buildMountain();
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
   buildWangan(); buildSnowArea();
+  setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
+  buildCountries();
   buildMinimapImage();
 }
 
@@ -1695,6 +1721,7 @@ Object.assign(BODIES, {
   amb_hoshi: { ...BODIES.fgt, L: 4.95, W: 1.98, wr: 0.35, fX: 1.45, rX: -1.45 },
   amb_kasai: { ...BODIES.lambo, L: 4.8, W: 2.04, wr: 0.35, fX: 1.375, rX: -1.375 },
   amb_minitora: { ...BODIES.ferrari, L: 3.95, W: 1.98, wr: 0.35, fX: 1.175, rX: -1.175 },
+  amb_jet: { ...BODIES.mclaren, L: 22, W: 17, wr: .35, fX: 6, rX: -6 },
   amb_torazero: { ...BODIES.lambo, L: 5.0, W: 2.08, wr: 0.35, fX: 1.425, rX: -1.425 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
@@ -1819,6 +1846,7 @@ function buildCar(spec, paintHex, metal = .4, rough) {
   const B = BODIES[spec.body];
   const lift = spec.dakar ? .07 : 0;
   const paint = new THREE.MeshPhysicalMaterial({ color: paintHex, metalness: metal, roughness: rough ?? (metal > .6 ? .3 : .36), clearcoat: rough ? 0 : 1, clearcoatRoughness: .07 });
+  if (spec.jet) return buildJet(spec, paintHex);
   if (MODELS[spec.id]) return buildModelCar(spec, MODELS[spec.id], paint);
   const group = new THREE.Group(); const orient = new THREE.Group(); orient.rotation.y = -Math.PI / 2; group.add(orient);
   const body = new THREE.Group(); orient.add(body);
@@ -2247,6 +2275,13 @@ class AudioSys {
     this.rainHi.g.gain.setTargetAtTime(raining ? (interior ? .05 : .11) : 0, t, .4);
     this.rainLo.g.gain.setTargetAtTime(raining ? (interior ? .1 : .14) : 0, t, .4);
     this.wetHiss.g.gain.setTargetAtTime(wet * clamp(speed / 30, 0, 1) * .16, t, .1); this.wetHiss.f[0].frequency.setTargetAtTime(1600 + speed * 25, t, .1);
+  }
+  jet(thr, v, stop) {   // two noise layers: a low rumble and a high afterburner roar
+    if (!this.ctx) return; const t = this.ctx.currentTime;
+    if (!this.jetLo) { this.jetLo = this.loopNoise(this.brown, [['lowpass', 180, .6]], 0); this.jetHi = this.loopNoise(this.white, [['bandpass', 900, .5], ['lowpass', 4000, .5]], 0); }
+    if (this.eng) this.eng.out.gain.setTargetAtTime(0, t, .1);
+    this.jetLo.g.gain.setTargetAtTime(stop ? 0 : .25 + thr * .35, t, .2); this.jetHi.g.gain.setTargetAtTime(stop ? 0 : thr * .22, t, .2);
+    this.jetHi.f[0].frequency.setTargetAtTime(600 + thr * 1400, t, .2);
   }
   thunder(delay) {
     if (!this.ctx) return; const ctx = this.ctx, t = ctx.currentTime + delay, src = ctx.createBufferSource(); src.buffer = this.brown; src.loop = true;
@@ -2794,6 +2829,8 @@ const MISSIONS = [
   { id: 'rich', n: 'MILLIONAIRE', d: 'Have $1,000,000 in your wallet', goal: 1e6, v: () => wallet.usd, r: 50000, money: true },
   { id: 'beach', n: 'BEACH TRIP', d: 'Drive the Wangan Highway to Amboola Beach', goal: 1, v: () => ST.visited?.includes('wangan') ? 1 : 0, r: 10000 },
   { id: 'snow', n: 'SNOW CHASER', d: 'Climb the Snow Pass to the Ski Village', goal: 1, v: () => ST.visited?.includes('snow') ? 1 : 0, r: 15000 },
+  { id: 'world', n: 'WORLD TRAVELLER', d: 'Visit Cyprus, Italy and Dubai', goal: 3, v: () => ['cyprus', 'italy', 'dubai'].filter(c => ST.visited?.includes(c)).length, r: 100000 },
+  { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
 ];
 let achvQ = [], achvBusy = false;
@@ -3009,6 +3046,7 @@ function updateCamera(dt, p) {
 const keys = {}; const touchState = { l: 0, r: 0, g: 0, b: 0, h: 0, n: 0 };
 addEventListener('keydown', e => {
   if (state === 'ad' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endAd(); return; }
+  if (state === 'fly' && !keys[e.code]) { if (e.code === 'KeyL') landJet(); if (e.code === 'Escape') { endFlight(); enterGarage(); } }
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
   if (keys[e.code]) return; keys[e.code] = true;
@@ -3090,7 +3128,7 @@ function buildGarage() {
 }
 function showGarageCar() {
   if (gCar) gScene.remove(gCar.group);
-  const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08;
+  const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08; if (CARS[carIdx].jet) { gCar.group.scale.setScalar(.3); gCar.group.position.y = .7; }
   gCar.headMat.emissiveIntensity = 2.5; gCar.tailMat.emissiveIntensity = 2;
   gCar.group.traverse(o => { if (o.isMesh) o.castShadow = true; });
   gScene.add(gCar.group);
@@ -3115,7 +3153,7 @@ const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-tur
 function garageGo() {
   const c = CARS[carIdx];
   if (owns(c)) return startDrive();
-  if (buyCar(c)) { audio.init(); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); updateMenu(); if (!adSeen()) setTimeout(() => playAd(c, 'buy'), 350); }
+  if (buyCar(c)) { audio.init(); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); updateMenu(); if (!adSeen() && !c.jet) setTimeout(() => playAd(c, 'buy'), 350); }
 }
 /* =====================================================================
    CAR COMMERCIAL ("reklama") — a 13-second TV-style ad that plays when the game opens (a different Lamborghini each
@@ -3221,7 +3259,7 @@ function bootAd(done) {
   playAd(lambos[i], 'boot', done);
 }
 // garage mode buttons only work with a car you own
-const ownedOnly = fn => () => { if (!owns(CARS[carIdx])) { const d = $('drive'); d.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; } fn(); };
+const ownedOnly = fn => () => { if (!owns(CARS[carIdx]) || CARS[carIdx].jet) { const d = $('drive'); d.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; } fn(); };
 function selectCar(i) { closeCust(); carIdx = i; paintIdx = savedPaint(CARS[i]); localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
@@ -3233,14 +3271,15 @@ function updateMenu() {
   const own = owns(c), pr = $('price'), dv = $('drive');
   const u = upgOf(c), t = tunedSpec(c);
   pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : `PRICE ${fmtUSD(c.usd)}`;
-  $('upgBtn').classList.toggle('hidden', !own); $('custBtn').classList.toggle('hidden', !own);
+  $('upgBtn').classList.toggle('hidden', !own || !!c.jet); $('custBtn').classList.toggle('hidden', !own);
   const sb = $('sellBtn'); sb.classList.toggle('hidden', !own || wallet.owned.size <= 1); sb.classList.remove('confirm'); sb.textContent = `SELL FOR ${fmtUSD(sellValue(c))}`;
   $('misCount').textContent = `${ST.done.length}/${MISSIONS.length}`;
   dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
   dv.textContent = own ? 'DRIVE' : wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`;
-  for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own ? 1 : .35;
+  for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own && !c.jet ? 1 : .35;
+  if (c.jet && own) dv.textContent = '✈ FLY';
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
-  $('sName').textContent = c.name; $('sSub').textContent = `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
+  $('sName').textContent = c.name; $('sSub').textContent = c.jet ? 'Twin-engine jet · Mach 16 · lands at every airport' : `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
   const z = t === c ? c.zero : c.zero * simSprint(t).t100 / simSprint(c).t100;
   $('vPow').textContent = `${Math.round(t.kw * 1.36)} PS`; $('bPow').style.width = clamp(t.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${t.vmax} km/h`; $('bTop').style.width = clamp((t.vmax - 180) / 1.7, 5, 100) + '%';
@@ -4931,7 +4970,13 @@ const AREAS = [
 ];
 function areaAt(x, z) {
   if (Math.abs(x) < HALF + 9 && Math.abs(z) < HALF + 9) return null;
-  for (const A of AREAS) { const [x0, z0, x1, z1] = A.box; if (x >= x0 && x <= x1 && z >= z0 && z <= z1) return A; }
+  let best = null, bd = Infinity;
+  for (const A of AREAS) {
+    const [x0, z0, x1, z1] = A.box; if (x < x0 || x > x1 || z < z0 || z > z1) continue;
+    const d = A.pads.some(P => P.inside(x, z, 4)) ? 0 : (A.R.near(x, z, 60)?.d ?? 1e6);
+    if (d < bd) { bd = d; best = A; }
+  }
+  return best;
   return null;
 }
 const areaOf = p => areaAt(p.x, p.z)?.id || null;
@@ -4951,7 +4996,7 @@ function areaCollide(p) {
   return A.R.collide(p);
 }
 // a city gate lets the car through the edge wall onto an area's road
-const atGate = p => AREAS.some(A => A.gate[0] === HALF ? p.x > 0 && Math.abs(p.z - A.gate[1]) < 7.5 : p.z < 0 && Math.abs(p.x - A.gate[0]) < 7.5);
+const atGate = p => AREAS.some(A => { const [gx, gz] = A.gate; return Math.abs(gx) === HALF ? Math.sign(p.x) === Math.sign(gx) && Math.abs(p.z - gz) < 7.5 : Math.sign(p.z) === Math.sign(gz) && Math.abs(p.x - gx) < 7.5; });
 function areaGround(x, z) {   // terrain height for the camera
   if (Math.hypot(x - SNOW.cx, z - SNOW.cz) < SNOW.R + 60) return snowHeight(x, z);
   if (x > ISLAND.x0 - 40 && x < ISLAND.x1 + 40 && z > ISLAND.z0 - 40 && z < ISLAND.z1 + 40) return BEACH_PAD.inside(x, z) ? BEACH_PAD.yAt(x, z) : 0;
@@ -4969,9 +5014,10 @@ function drawAreasMap(g) {
   g.fillStyle = '#5c6470'; g.fillRect(BEACH.x0, BEACH.z0, BEACH.x1 - BEACH.x0, BEACH.sand - BEACH.z0);
   g.fillStyle = 'rgba(226,236,246,.9)'; g.beginPath(); g.arc(SNOW.cx, SNOW.cz, SNOW.R, 0, 7); g.fill();
   for (const A of AREAS) {
-    const R = A.R; g.strokeStyle = A.id === 'wangan' ? '#e0a030' : '#b8a07a'; g.lineWidth = R.w * 1.1; g.lineJoin = 'round';
-    g.beginPath(); for (let i = 0; i < R.n; i += 3) i ? g.lineTo(R.x[i], R.z[i]) : g.moveTo(R.x[i], R.z[i]); g.lineTo(R.x[R.n - 1], R.z[R.n - 1]); g.stroke();
-    for (const P of A.pads) { g.fillStyle = A.id === 'snow' ? '#b9c3cf' : 'rgba(92,100,112,.0)'; for (const [x0, z0, x1, z1] of P.rects) g.fillRect(x0, z0, x1 - x0, z1 - z0); }
+    const R = A.R; g.strokeStyle = A.id === 'snow' ? '#b8a07a' : '#e0a030'; g.lineWidth = R.w * 1.1; g.lineJoin = 'round';
+    const st = Math.max(3, Math.round(R.n / 300)); g.beginPath(); for (let i = 0; i < R.n; i += st) i ? g.lineTo(R.x[i], R.z[i]) : g.moveTo(R.x[i], R.z[i]); g.lineTo(R.x[R.n - 1], R.z[R.n - 1]); g.stroke();
+    if (A.country) { g.fillStyle = 'rgba(214,196,150,.95)'; g.fillRect(A.country.x0 - 40, A.country.z0 - 40, A.country.x1 - A.country.x0 + 80, A.country.z1 - A.country.z0 + 80); }
+    for (const P of A.pads) { g.fillStyle = A.id === 'snow' ? '#b9c3cf' : A.country ? '#5c6470' : 'rgba(92,100,112,.0)'; for (const [x0, z0, x1, z1] of P.rects) g.fillRect(x0, z0, x1 - x0, z1 - z0); }
   }
 }
 function updateAreas(dt, p) {
@@ -4983,6 +5029,415 @@ function updateAreas(dt, p) {
   if (SNOW.steam && p && Math.hypot(p.x - SNOW.vx, p.z - SNOW.vz) < 400 && Math.random() < dt * 6) { const [x, y, z] = SNOW.steam; smoke.emit(x + rr(-2, 2), z + rr(-2, 2), 0, 0, .7, y - .35); }
   if (WX.surf) WX.surf.material.opacity = .45 + Math.sin(t * .9) * .25;
 }
+
+/* =====================================================================
+   COUNTRIES — Cyprus, Italy and Dubai, each about 20 km out to sea, joined to Tokyo by long sea bridges
+   that leave from three gates on the harbour edge (south of the city). By car the trip takes a few minutes;
+   the AMBOOLA Jet (20,000 km/h) gets you there in seconds.
+   Each country is a Pad (flat island town, free roam) at the end of a Route (a 6-lane bridge with barriers,
+   piers, lamps and signs). The bridge is built in 1 km chunks that are hidden when far away.
+   ===================================================================== */
+const COUNTRY_DEFS = [
+  { id: 'cyprus', name: 'Cyprus', local: 'ΚΥΠΡΟΣ', hello: 'WELCOME TO CYPRUS · ΚΑΛΩΣ ΗΡΘΑΤΕ', gx: rc(3), col: '#d7832f',
+    rect: [-11700, 14000, -10500, 14900],
+    pts: [[rc(3), HALF - 8, 0], [rc(3), HALF + 60, 0], [rc(3) - 40, 1100, 6], [-1200, 2500, 14], [-4000, 6000, 15], [-8000, 10500, 15], [-10600, 13100, 9], [-11050, 13750, 1.5], [-11100, 14000, 0], [-11100, 14160, 0]] },
+  { id: 'italy', name: 'Italy', local: 'ITALIA', hello: 'WELCOME TO ITALY · BENVENUTI', gx: rc(10), col: '#2fa85a',
+    rect: [-600, 20450, 600, 21350],
+    pts: [[0, HALF - 8, 0], [0, HALF + 60, 0], [0, 1100, 6], [60, 2500, 14], [400, 6000, 15], [-400, 10000, 16], [350, 14000, 15], [-150, 17500, 14], [0, 19800, 8], [0, 20300, 1], [0, 20450, 0], [0, 20620, 0]] },
+  { id: 'dubai', name: 'Dubai', local: 'دبي', hello: 'WELCOME TO DUBAI · أهلاً وسهلاً', gx: rc(17), col: '#d5b46a',
+    rect: [13300, 14000, 14700, 14950],
+    pts: [[rc(17), HALF - 8, 0], [rc(17), HALF + 60, 0], [rc(17) + 40, 1100, 6], [800, 2900, 14], [3000, 6000, 15], [8000, 10500, 15], [12500, 13200, 9], [13650, 13800, 1.5], [13700, 14000, 0], [13700, 14160, 0]] },
+];
+const COUNTRIES = COUNTRY_DEFS.map(d => {
+  const R = new Route({ id: d.id, name: `${d.name} Bridge`, w: 24, rail: .45, median: true, pts: d.pts });
+  const [x0, z0, x1, z1] = d.rect;
+  const P = new Pad({ name: d.name, rects: [d.rect], y: 0 });
+  return { ...d, R, P, x0, z0, x1, z1, cx: (x0 + x1) / 2, cz: (z0 + z1) / 2 };
+});
+function buildBridgeRoad(R, P, label) {
+  const conc = new THREE.MeshStandardMaterial({ color: 0xb9b7b0, roughness: .85, side: THREE.DoubleSide });
+  const roadMat = new THREE.MeshStandardMaterial({ map: HWY_TEX(), roughness: .75, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
+  const iMouth = (() => { for (let i = 0; i < R.n; i++) if (P.inside(R.x[i], R.z[i])) return i; return R.n - 1; })();
+  const i0 = (() => { for (let i = 0; i < R.n; i++) if (R.z[i] > HALF + 8) return i; return 0; })();
+  P.mouths.push({ x: R.x[iMouth], z: R.z[iMouth], r: R.w / 2 + 3 }); R.iMouth = iMouth;
+  // 1 km chunks so far-away parts can be culled
+  const CH = 500; R.chunks = [];
+  for (let a = 0; a < iMouth + 4; a += CH) {
+    const b = Math.min(a + CH, iMouth + 4, R.n - 1), s0 = Math.max(a, i0), road = new GB(), bar = new GB();
+    ribbon(R, road, -12, 12, .06, .06, a, b, 20);
+    if (b > s0) {
+      const e = Math.min(b, iMouth);
+      for (const s of [-1, 1]) { ribbon(R, bar, s * 12, s * 12.25, .06, 1.05, s0, e); ribbon(R, bar, s * 12.25, s * 12.45, 1.05, 1.05, s0, e); ribbon(R, bar, s * 12.45, s * 12.45, 1.05, -2.6, s0, e); }
+      ribbon(R, bar, -.35, -.15, .06, .95, s0, e); ribbon(R, bar, -.15, .15, .95, .95, s0, e); ribbon(R, bar, .15, .35, .95, .06, s0, e);
+      ribbon(R, bar, -12.45, 12.45, -2.6, -2.6, s0, e);
+    }
+    const g = new THREE.Group(); const rm = new THREE.Mesh(road.build(), roadMat); rm.receiveShadow = true; g.add(rm);
+    if (!bar.empty) { const bm = new THREE.Mesh(bar.build(), conc); bm.receiveShadow = true; g.add(bm); }
+    const m = (a + b) >> 1; g.userData.c = [R.x[m], R.z[m]]; scene.add(g); R.chunks.push(g);
+  }
+  const piers = [], lamps = [], pools = [];
+  for (let i = i0; i < iMouth; i += 20) {
+    const ry = Math.atan2(R.tx[i], R.tz[i]);
+    if (R.y[i] > 3.2) piers.push([R.x[i], -3, R.z[i], ry, 1, R.y[i] - 2.6 + 3, 1]);
+    if (i % 40 === 0) { const s = (i / 40) % 2 ? 1 : -1, p = routePt(R, i, s * 12.35); lampsAlong(lamps, pools, p.x, R.y[i], p.z, ry + (s > 0 ? -Math.PI / 2 : Math.PI / 2), 5.5, 18); }
+  }
+  instanced(new THREE.BoxGeometry(3.2, 1, 2.4).translate(0, .5, 0), conc, piers);
+  instanced(new THREE.BoxGeometry(23, 1.4, 2.8).translate(0, -.7, 0), conc, piers.map(([x, y, z, ry, sx, sy]) => [x, y + sy, z, ry]));
+  buildLamps(lamps, pools, 10.5, 0xffe1b0);
+  // distance signs every 5 km on the outbound side, "TOKYO" on the way back
+  const sign = (i, t1, t2, back) => {
+    const ry = Math.atan2(R.tx[i], R.tz[i]) + (back ? Math.PI : 0), g = new THREE.Group(); g.position.set(R.x[i], R.y[i], R.z[i]); g.rotation.y = ry; scene.add(g);
+    const tex = signTex(1024, 384, '#14663f', [[t1, .34, .26, JP, '#fff'], [t2, .72, .2, OR, '#fff']], '#fff'), m = new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: .25, roughness: .6 });
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(9.5, 3.6), m); board.position.set(6.3, 7.6, -.3); board.rotation.y = Math.PI; g.add(board);
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(26, .5, .5), conc); beam.position.y = 9.6; g.add(beam);
+    for (const x of [-12.9, 12.9]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.5, 9.8, .5), conc); p.position.set(x, 4.9, 0); g.add(p); }
+  };
+  for (let s = 400; s < iMouth * R.step - 600; s += 5000) { const i = Math.round(s / R.step); sign(i, label.local, `${label.name.toUpperCase()}  ${((iMouth * R.step - s) / 1000).toFixed(0)} km`); }
+  for (let s = iMouth * R.step - 1500; s > 2000; s -= 6000) { const i = Math.round(s / R.step); sign(i, '東京', `TOKYO  ${(s / 1000).toFixed(0)} km`, true); }
+}
+// island ground: flat town, sandy edges sloping into the sea
+function countryGround(C, sandCol, groundCol) {
+  const ex = 70, [x0, z0, x1, z1] = [C.x0 - 40, C.z0 - 40, C.x1 + 40, C.z1 + 40], gx = Math.round((x1 - x0 + ex * 2) / 10), gz = Math.round((z1 - z0 + ex * 2) / 10);
+  const geo = new THREE.PlaneGeometry(x1 - x0 + ex * 2, z1 - z0 + ex * 2, gx, gz); geo.rotateX(-Math.PI / 2); geo.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
+  const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), sand = new THREE.Color(sandCol), gr = new THREE.Color(groundCol), c = new THREE.Color();
+  for (let v = 0; v < pos.count; v++) {
+    const x = pos.getX(v), z = pos.getZ(v), out = Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1)), inner = Math.min(x - C.x0, C.x1 - x, z - C.z0, C.z1 - z);
+    pos.setY(v, out > 0 ? Math.max(-4, -out * .06 - .1) : 0);
+    c.copy(inner < 12 ? sand : gr).multiplyScalar(.92 + Math.sin(x * .3) * Math.sin(z * .27) * .05); cols.set([c.r, c.g, c.b], v * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3)); geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })); m.receiveShadow = true; return m;
+}
+// a town: a street grid with houses whose look comes from the country's style
+function countryTown(C, S, group) {
+  const P = C.P, rnd = mulberry32(C.id.length * 977), streets = [];
+  const xs = [], zs = [];
+  for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x);
+  for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z);
+  const rg = new GB(), tex = ROAD_TEX();
+  for (const x of xs) { rg.quad([x - 7, .05, C.z0 + 20], [x + 7, .05, C.z0 + 20], [x + 7, .05, C.z1 - 20], [x - 7, .05, C.z1 - 20], [0, C.z0 / 16, 1, C.z1 / 16]); streets.push(['x', x]); }
+  for (const z of zs) { rg.quad([C.x0 + 20, .05, z + 7], [C.x0 + 20, .05, z - 7], [C.x1 - 20, .05, z - 7], [C.x1 - 20, .05, z + 7], [0, C.x0 / 16, 1, C.x1 / 16]); streets.push(['z', z]); }
+  { const mx = C.R.x[C.R.n - 1]; rg.quad([mx - 8, .05, C.z0], [mx + 8, .05, C.z0], [mx + 8, .05, zs[0] + 8], [mx - 8, .05, zs[0] + 8], [0, 0, 1, (zs[0] - C.z0) / 16]); streets.push(['x', mx]); }
+  const rm = new THREE.Mesh(rg.build(), new THREE.MeshStandardMaterial({ map: tex, roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 })); rm.receiveShadow = true; group.add(rm);
+  const onStreet = (x, z, m) => streets.some(([a, v]) => a === 'x' ? Math.abs(x - v) < 7 + m : Math.abs(z - v) < 7 + m);
+  const keep = [...(S.keep || []), [C.x0 + 140, C.z0 + 70, 135], [C.R.x[C.R.n - 1], C.z0 + 30, 30]];   // landmark plots, the airport and the town gate stay empty
+  const wall = new GB(), roof = new GB(), tile = new GB(), b = [];
+  for (let k = 0; k < 2600 && b.length < S.count; k++) {
+    const x = rr(C.x0 + 30, C.x1 - 30), z = rr(C.z0 + 40, C.z1 - 30), w = rr(S.w[0], S.w[1]), d = rr(S.w[0], S.w[1]);
+    if (onStreet(x, z, Math.max(w, d) / 2 + 5)) continue;
+    if (keep.some(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) < kr + Math.max(w, d))) continue;
+    if (b.some(o => Math.abs(o.x - x) < (o.w + w) / 2 + 4 && Math.abs(o.z - z) < (o.d + d) / 2 + 4)) continue;
+    const h = S.h(rnd), col = new THREE.Color(pick(S.walls)).toArray();
+    wall.box(x, 0, z, w, h, d, 8, 8, rnd(), col, S.roof === 'gable' ? null : roof);
+    if (S.roof === 'gable') tile.gable(x, h, z, w, d, Math.min(w, d) * .28, .6, new THREE.Color(pick(S.roofs)).toArray());
+    P.addCol(x - w / 2, z - d / 2, x + w / 2, z + d / 2); b.push({ x, z, w, d, h });
+  }
+  const wm = new THREE.Mesh(wall.build(), S.wallMat); wm.castShadow = wm.receiveShadow = true; group.add(wm);
+  if (!roof.empty) { const r = new THREE.Mesh(roof.build(), new THREE.MeshStandardMaterial({ color: 0xd0cbc0, roughness: .9, vertexColors: true })); group.add(r); }
+  if (!tile.empty) { const r = new THREE.Mesh(tile.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .7, side: THREE.DoubleSide })); r.castShadow = true; group.add(r); }
+  // street lamps and trees along the streets
+  const lamps = [], pools = [], trees = [];
+  for (const [a, v] of streets) for (let t = (a === 'x' ? C.z0 : C.x0) + 60; t < (a === 'x' ? C.z1 : C.x1) - 40; t += 55) {
+    const [x, z] = a === 'x' ? [v + 8.5, t] : [t, v + 8.5]; if (onStreet(x, z, -1)) continue;
+    if (b.some(o => Math.abs(o.x - x) < o.w / 2 + 1 && Math.abs(o.z - z) < o.d / 2 + 1)) continue;
+    lampsAlong(lamps, pools, x, 0, z, a === 'x' ? -Math.PI / 2 : Math.PI); P.addCol(x - .25, z - .25, x + .25, z + .25);
+    const [tx, tz] = a === 'x' ? [v - 9, t + 20] : [t + 20, v - 9];
+    if (!onStreet(tx, tz, -1) && !b.some(o => Math.abs(o.x - tx) < o.w / 2 + 2 && Math.abs(o.z - tz) < o.d / 2 + 2)) { trees.push([tx, 0, tz, rr(0, 6), rr(.8, 1.2)]); P.addCol(tx - .5, tz - .5, tx + .5, tz + .5); }
+  }
+  buildLamps(lamps, pools);
+  S.trees(trees, group);
+  return b;
+}
+const _stdTrunk = () => { const g = new THREE.CylinderGeometry(.2, .32, 9, 7, 6); g.translate(0, 4.5, 0); const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setX(i, p.getX(i) + (p.getY(i) / 9) ** 2 * 1.2); g.computeVertexNormals(); return g; };
+function palmTrees(list) {
+  const leaves = []; for (let k = 0; k < 8; k++) { const l = new THREE.ConeGeometry(.6, 4.2, 4); l.rotateX(Math.PI / 2); l.scale(1, .18, 1); l.translate(0, 0, 2.1); l.rotateX(.45); l.rotateY(k / 8 * Math.PI * 2); l.translate(1.2, 9, 0); leaves.push(l); }
+  instanced(_stdTrunk(), new THREE.MeshStandardMaterial({ color: 0x7a5c3e, roughness: .9 }), list);
+  instanced(mergeGeometries(leaves), new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, flatShading: true, side: THREE.DoubleSide }), list);
+}
+function roundTrees(list, col) {
+  const t = new THREE.CylinderGeometry(.18, .26, 2.6, 6); t.translate(0, 1.3, 0);
+  instanced(t, new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 }), list);
+  instanced(new THREE.IcosahedronGeometry(2.2, 0).translate(0, 3.6, 0), new THREE.MeshStandardMaterial({ color: col, roughness: .9, flatShading: true }), list);
+}
+function cypressTrees(list) {
+  instanced(new THREE.ConeGeometry(1.1, 11, 8).translate(0, 5.8, 0), new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9, flatShading: true }), list);
+}
+function welcomeArch(C, text, col) {
+  const mx = C.R.x[C.R.n - 1], g = new THREE.Group(); g.position.set(mx, 0, C.z0 + 30); scene.add(g);
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(1.2, 10, 1.2), new THREE.MeshStandardMaterial({ color: col, roughness: .5 })); p.position.set(s * 10.5, 5, 0); g.add(p); C.P.addCol(mx + s * 10.5 - .7, C.z0 + 29.3, mx + s * 10.5 + .7, C.z0 + 30.7); }
+  const t = signTex(1024, 192, '#0d1b2a', [[text, .55, .42, OR, '#fff']], col), m = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(m);
+  const bd = new THREE.Mesh(new THREE.BoxGeometry(22, 2.4, .5), new THREE.MeshStandardMaterial({ color: 0x0d1b2a })); bd.position.y = 10.6; g.add(bd);
+  for (const s of [1, -1]) { const sp = new THREE.Mesh(new THREE.PlaneGeometry(21.6, 2.2), m); sp.position.set(0, 10.6, s * .26); if (s < 0) sp.rotation.y = Math.PI; g.add(sp); }
+  return g;
+}
+const WIN_TEX = (wall, win) => canvasTex(256, 256, (g, w, h) => { g.fillStyle = wall; g.fillRect(0, 0, w, h); noise(g, w, h, 8); for (const x of [40, 168]) for (const y of [36, 164]) { g.fillStyle = win; g.fillRect(x, y, 48, 70); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x, y, 48, 6); } }, { repeat: true });
+const WIN_EMIS = () => canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffcf8a'; g.fillRect(40, 36, 48, 70); g.fillStyle = '#ffe0b0'; g.fillRect(168, 164, 48, 70); }, { repeat: true });
+function townMat(wall, win) { const m = new THREE.MeshStandardMaterial({ map: WIN_TEX(wall, win), emissiveMap: WIN_EMIS(), emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: .8 }); dynMats.windows.push(m); return m; }
+
+/* ---- Cyprus: whitewashed and sandstone houses with terracotta roofs, Kolossi castle, Kourion columns, Aphrodite's Rock */
+function buildCyprus(C, g) {
+  const ox = C.cx, oz = C.cz;
+  const keep = [[ox - 425, oz - 115, 40], [ox + 255, oz + 35, 50], [ox - 85, oz - 265, 25]];   // block centres, clear of the streets
+  countryTown(C, { count: 170, w: [12, 22], h: r => 5 + Math.floor(r() * 3) * 3, walls: ['#ffffff', '#f4ead8', '#e8d3a9', '#f7f1e6'], roof: 'gable', roofs: ['#b5532f', '#c8693a', '#a8482a'], keep,
+    wallMat: townMat('#ffffff', '#2f6f9f'), trees: (list) => { palmTrees(list.filter((_, i) => i % 2)); roundTrees(list.filter((_, i) => !(i % 2)), 0x6a8a3a); } }, g);
+  const stone = new THREE.MeshStandardMaterial({ color: 0xc9a777, roughness: .9 });
+  // Kolossi castle: a square stone keep with battlements
+  const [kx, kz] = keep[0], keepM = new THREE.Mesh(new THREE.BoxGeometry(22, 24, 22), stone); keepM.position.set(kx, 12, kz); keepM.castShadow = true; g.add(keepM);
+  const merl = []; for (let i = 0; i < 8; i++) for (const s of [-1, 1]) { merl.push([kx - 10 + i * 2.85, 24, kz + s * 10.5]); merl.push([kx + s * 10.5, 24, kz - 10 + i * 2.85]); }
+  const mi = instanced(new THREE.BoxGeometry(1.6, 2, 1.6).translate(0, 1, 0), stone, merl); g.add(mi);
+  C.P.addCol(kx - 11, kz - 11, kx + 11, kz + 11);
+  // Kourion: a ring of white columns round an old stone stage
+  const [cx, cz] = keep[1], cols = [];
+  for (let i = 0; i < 18; i++) { const a = Math.PI + i / 17 * Math.PI; cols.push([cx + Math.cos(a) * 38, 0, cz + Math.sin(a) * 38]); C.P.addCol(cx + Math.cos(a) * 38 - .9, cz + Math.sin(a) * 38 - .9, cx + Math.cos(a) * 38 + .9, cz + Math.sin(a) * 38 + .9); }
+  instanced(new THREE.CylinderGeometry(.8, .9, 9, 12).translate(0, 4.5, 0), new THREE.MeshStandardMaterial({ color: 0xf2ece0, roughness: .7 }), cols);
+  for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.CylinderGeometry(30 - k * 6, 30 - k * 6, 1.2, 40, 1, false, Math.PI, Math.PI), stone); st.position.set(cx, .6 + k * 1.2, cz + 6); g.add(st); }
+  C.P.addCol(cx - 30, cz - 24, cx + 30, cz + 6);
+  // Aphrodite's Rock: the sea stack off the south beach
+  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(26, 1), new THREE.MeshStandardMaterial({ color: 0xbfae94, roughness: 1, flatShading: true })); rock.scale.set(1, 1.3, .8); rock.position.set(ox + 120, 6, C.z1 + 110); g.add(rock);
+  // a church with a dome
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(18, 12, 26), new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: .8 })); ch.position.set(ox - 85, 6, oz - 265); g.add(ch);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(7, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xb5532f, roughness: .6 })); dome.position.set(ox - 85, 12, oz - 265); g.add(dome);
+  C.P.addCol(ox - 94, oz - 278, ox - 76, oz - 252);
+  return [[ox - 425, oz - 115, 'Kolossi Castle'], [ox + 255, oz + 35, 'Kourion'], [ox + 120, C.z1 + 110, "Aphrodite's Rock"]];
+}
+/* ---- Italy: ochre and terracotta palazzi, the Colosseum, a leaning tower, a fountain piazza, cypress trees */
+function buildItaly(C, g) {
+  const ox = C.cx, oz = C.cz, col = [ox + 255, oz + 35], tow = [ox - 255, oz - 115], piazza = [ox - 85, oz + 185];   // block centres
+  countryTown(C, { count: 160, w: [16, 26], h: r => 10 + Math.floor(r() * 4) * 3.5, walls: ['#e3a95f', '#d98a4e', '#e9c48a', '#c96a45', '#f0d9a8'], roof: 'gable', roofs: ['#b5532f', '#a8482a'],
+    keep: [[...col, 90], [...tow, 25], [...piazza, 40]], wallMat: townMat('#ffffff', '#4a5a3a'), trees: cypressTrees }, g);
+  const trav = new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: .9 });
+  // Colosseum: an oval of arches in three tiers, partly ruined
+  const [cx, cz] = col, a = 72, b = 57, segs = 60, arches = [];
+  for (let i = 0; i < segs; i++) {
+    const t = i / segs * Math.PI * 2, x = cx + Math.cos(t) * a, z = cz + Math.sin(t) * b, ry = -t + Math.PI / 2;
+    const tiers = i > 38 && i < 49 ? 2 : 4;
+    for (let k = 0; k < tiers; k++) arches.push([x, k * 11, z, ry]);
+  }
+  instanced(mergeGeometries([new THREE.BoxGeometry(1.6, 11, 2.2).translate(-3.2, 5.5, 0), new THREE.BoxGeometry(7.9, 2, 2.2).translate(0, 10, 0)]), trav, arches);
+  for (let i = 0; i < segs; i += 2) { const t = i / segs * Math.PI * 2; C.P.addCol(cx + Math.cos(t) * a - 3, cz + Math.sin(t) * b - 3, cx + Math.cos(t) * a + 3, cz + Math.sin(t) * b + 3); }
+  const arena = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshStandardMaterial({ color: 0xc9a777, roughness: 1 })); arena.scale.set(a - 4, b - 4, 1); arena.rotation.x = -Math.PI / 2; arena.position.set(cx, .06, cz); g.add(arena);
+  // the leaning tower: stacked white arcades, tilted
+  const [tx, tz] = tow, tower = new THREE.Group(); tower.position.set(tx, 0, tz); tower.rotation.z = .07; g.add(tower);
+  const marble = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: .5 });
+  for (let k = 0; k < 8; k++) { const ring = new THREE.Mesh(new THREE.CylinderGeometry(7.6, 7.6, 6.4, 24), marble); ring.position.y = 3.2 + k * 7; ring.castShadow = true; tower.add(ring); const band = new THREE.Mesh(new THREE.CylinderGeometry(8.1, 8.1, .7, 24), marble); band.position.y = 6.7 + k * 7; tower.add(band); }
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 6, 20), marble); top.position.y = 59; tower.add(top);
+  C.P.addCol(tx - 9, tz - 9, tx + 9, tz + 9);
+  // piazza fountain
+  const [px, pz] = piazza, basin = new THREE.Mesh(new THREE.CylinderGeometry(9, 9.5, 1.2, 32), new THREE.MeshStandardMaterial({ color: 0xe8e2d4, roughness: .6 })); basin.position.set(px, .6, pz); g.add(basin);
+  const water = new THREE.Mesh(new THREE.CircleGeometry(8.4, 32), new THREE.MeshStandardMaterial({ color: 0x3fa6c8, roughness: .1, metalness: .3 })); water.rotation.x = -Math.PI / 2; water.position.set(px, 1.1, pz); g.add(water);
+  const statue = new THREE.Mesh(new THREE.CylinderGeometry(.8, 1.2, 5, 10), marble); statue.position.set(px, 3.5, pz); g.add(statue);
+  C.P.addCol(px - 9.5, pz - 9.5, px + 9.5, pz + 9.5);
+  return [[cx, cz, 'Colosseum'], [tx, tz, 'Leaning Tower'], [px, pz, 'Piazza Fountain']];
+}
+/* ---- Dubai: glass towers, the Burj Khalifa, the sail-shaped Burj Al Arab, gold domes, palms and sand */
+function buildDubai(C, g) {
+  const ox = C.cx, oz = C.cz, burj = [ox - 15, oz - 140], sail = [ox + 420, C.z1 + 150], dome = [ox - 525, oz + 160];   // block centres
+  const glass = new THREE.MeshStandardMaterial({ map: WIN_TEX('#5d7b94', '#9fc4dc'), emissiveMap: WIN_EMIS(), emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: .2, metalness: .6 }); dynMats.windows.push(glass);
+  const towers = countryTown(C, { count: 90, w: [22, 40], h: r => 30 + r() * r() * 190, walls: ['#d8e2ea', '#c2d2de', '#e8d9b5', '#b9c9d6'], roof: 'flat', keep: [[...burj, 50], [...dome, 40]],
+    wallMat: glass, trees: palmTrees }, g);
+  const steel = new THREE.MeshStandardMaterial({ color: 0xa9b8c6, roughness: .38, metalness: .55 });
+  // Burj Khalifa: stepped, tapering tiers up to a spire (about 450 m here)
+  const [bx, bz] = burj; let h = 0;
+  for (let k = 0; k < 12; k++) { const r = 22 - k * 1.7, th = 34 - k * 1.2; const tier = new THREE.Mesh(new THREE.CylinderGeometry(r * .85, r, th, 3 + 3), steel); tier.position.set(bx, h + th / 2, bz); tier.rotation.y = k * .35; tier.castShadow = true; g.add(tier); h += th; }
+  const spire = new THREE.Mesh(new THREE.ConeGeometry(2, 90, 8), steel); spire.position.set(bx, h + 45, bz); g.add(spire);
+  const tipM = new THREE.MeshBasicMaterial({ color: 0xff2020 }); dynMats.lamps.push(tipM); const tip = new THREE.Mesh(new THREE.SphereGeometry(1.4, 8, 6), tipM); tip.position.set(bx, h + 92, bz); g.add(tip);
+  C.P.addCol(bx - 22, bz - 22, bx + 22, bz + 22);
+  // Burj Al Arab: a white sail on its own island off the beach
+  const [sx, sz] = sail, sg = new THREE.Group(); sg.position.set(sx, 0, sz); g.add(sg);
+  const isl = new THREE.Mesh(new THREE.CylinderGeometry(40, 46, 4, 32), new THREE.MeshStandardMaterial({ color: 0xe8d9b5, roughness: .9 })); isl.position.y = -1; sg.add(isl);
+  const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(60, 120, 8, 230); sh.lineTo(-6, 230); sh.lineTo(-6, 0); sh.closePath();
+  const sailM = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 40, bevelEnabled: false }), new THREE.MeshStandardMaterial({ color: 0xf6f8fa, roughness: .35, emissive: 0x6ab0ff, emissiveIntensity: 0 })); sailM.position.set(-10, 1, -20); sailM.castShadow = true; sg.add(sailM); dynMats.windows.push(sailM.material);
+  // gold dome and minarets
+  const [dx, dz] = dome, gold = new THREE.MeshStandardMaterial({ color: 0xd5b46a, roughness: .25, metalness: 1 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(40, 14, 40), new THREE.MeshStandardMaterial({ color: 0xf6f2ea, roughness: .7 })); base.position.set(dx, 7, dz); g.add(base);
+  const dm = new THREE.Mesh(new THREE.SphereGeometry(14, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), gold); dm.position.set(dx, 14, dz); g.add(dm);
+  for (const [ax, az] of [[-22, -22], [22, -22], [-22, 22], [22, 22]]) { const mn = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, 46, 10), new THREE.MeshStandardMaterial({ color: 0xf6f2ea })); mn.position.set(dx + ax, 23, dz + az); g.add(mn); const cap = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 10), gold); cap.position.set(dx + ax, 48.5, dz + az); g.add(cap); C.P.addCol(dx + ax - 2, dz + az - 2, dx + ax + 2, dz + az + 2); }
+  C.P.addCol(dx - 20, dz - 20, dx + 20, dz + 20);
+  return [[bx, bz, 'Burj Khalifa'], [sx, sz, 'Burj Al Arab'], [dx, dz, 'Grand Mosque']];
+}
+function buildCountries() {
+  const builders = { cyprus: [buildCyprus, '#e9d6a8', '#cdbb8e'], italy: [buildItaly, '#e9d6a8', '#9fa86a'], dubai: [buildDubai, '#f0dcae', '#e5cf9c'] };
+  for (const C of COUNTRIES) {
+    buildBridgeRoad(C.R, C.P, C);
+    const g = new THREE.Group(); scene.add(g); C.group = g;
+    const [fn, sand, ground] = builders[C.id];
+    g.add(countryGround(C, sand, ground));
+    C.sights = fn(C, g);
+    welcomeArch(C, C.hello, C.col);
+    // the airport: a runway near the bridge end where the jet lands
+    const rx = C.x0 + 140, rz = C.z0 + 70, rw = new THREE.Mesh(new THREE.PlaneGeometry(260, 40), new THREE.MeshStandardMaterial({ map: TRACK_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -1 }));
+    rw.rotation.x = -Math.PI / 2; rw.position.set(rx, .055, rz); g.add(rw); C.airport = [rx, rz];
+    landmarks.push({ x: C.cx, z: C.cz, c: C.col, n: C.name });
+  }
+  // gates on the harbour edge with big signs
+  for (const C of COUNTRIES) {
+    const g = new THREE.Group(); g.position.set(C.gx, 0, HALF + 14); scene.add(g);
+    const t = signTex(1024, 256, '#0e1a26', [[`${C.local}`, .38, .32, OR, '#fff'], [`${C.name.toUpperCase()} · ${(C.R.iMouth * C.R.step / 1000).toFixed(0)} KM BY BRIDGE`, .78, .17, OR, C.col]], C.col);
+    const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
+    for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), sm); p.position.set(0, 11, s * .06); if (s < 0) p.rotation.y = Math.PI; g.add(p); }
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.8, 13, .8), new THREE.MeshStandardMaterial({ color: 0x2a2d35 })); p.position.set(s * 9, 6.5, 0); g.add(p); }
+  }
+}
+
+for (const C of COUNTRIES) {
+  const xs = [...C.R.x, C.x0, C.x1], zs = [...C.R.z, C.z0, C.z1];
+  AREAS.push({ id: C.id, name: C.name, R: C.R, pads: [C.P], gate: [C.gx, HALF], col: C.col, country: C,
+    box: [Math.min(...xs) - 200, Math.max(HALF + 9, Math.min(...zs) - 200), Math.max(...xs) + 200, Math.max(...zs) + 400], visit: { n: C.name.toUpperCase(), jp: C.local, pad: C.P } });
+}
+// hide bridge chunks and towns that are far from the camera
+let cullT = 0;
+function updateCountryCulling(dt) {
+  const cx = camera.position.x, cz = camera.position.z;   // every frame: a teleport or the jet moves the camera kilometres at once
+  for (const C of COUNTRIES) { for (const g of C.R.chunks || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 7500; if (C.group) C.group.visible = Math.hypot(C.cx - cx, C.cz - cz) < 12000; }
+}
+
+/* =====================================================================
+   THE AMBOOLA JET — buy it in the garage ($100,000), press DRIVE and you are flying above Tokyo.
+   W/S throttle (up to 20,000 km/h), A/D turn, ↑/↓ climb/dive, click a destination to let the autopilot steer,
+   L to land when an airport is close. You land in your last car, ready to drive.
+   ===================================================================== */
+const JET_MAX = 20000 / 3.6;   // m/s
+function buildJet(spec, paintHex) {
+  const group = new THREE.Group(), orient = new THREE.Group(); group.add(orient); const body = new THREE.Group(); orient.add(body);
+  const paint = new THREE.MeshPhysicalMaterial({ color: paintHex, metalness: .4, roughness: .3, clearcoat: 1, clearcoatRoughness: .07 });
+  const red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .4 }), dark = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: .5, metalness: .6 });
+  // fuselage: a lathe from the needle nose to the twin-engine tail (built along +Z = forward)
+  const prof = [[0, 11], [.25, 10], [.7, 8], [1.15, 5.5], [1.35, 2], [1.4, -3], [1.3, -7], [1.15, -9.6], [0, -9.7]].map(([r, z]) => new THREE.Vector2(r, z));
+  const fus = new THREE.Mesh(new THREE.LatheGeometry(prof, 28).rotateX(Math.PI / 2).rotateX(Math.PI), paint); fus.scale.set(1, .82, 1); fus.castShadow = true; body.add(fus);
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), glassMat); canopy.scale.set(.75, .55, 2.6); canopy.position.set(0, .95, 4.6); body.add(canopy);
+  // delta wings and canards, tiger stripes on the wings
+  const wingShape = new THREE.Shape(); wingShape.moveTo(0, 3); wingShape.lineTo(8.5, -5.5); wingShape.lineTo(8.5, -7.2); wingShape.lineTo(0, -7.2); wingShape.closePath();
+  for (const s of [-1, 1]) {
+    const w = new THREE.Mesh(new THREE.ExtrudeGeometry(wingShape, { depth: .28, bevelEnabled: false }), paint); w.rotation.x = Math.PI / 2; w.scale.x = s; w.position.y = -.1; w.castShadow = true; body.add(w);
+    for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.BoxGeometry(.5, .05, 3.6), red); st.position.set(s * (2.2 + k * 1.6), .14, -2.4 - k * .9); st.rotation.y = s * .55; body.add(st); }
+    const can = new THREE.Mesh(new THREE.BoxGeometry(2.6, .14, 1.2), paint); can.position.set(s * 1.9, .2, 6.5); can.rotation.y = -s * .3; body.add(can);
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(.18, 3.4, 3.4), paint); fin.position.set(s * .9, 2, -7.6); fin.rotation.set(-.45, 0, s * .28); body.add(fin);
+    const finSt = new THREE.Mesh(new THREE.BoxGeometry(.2, .45, 2.2), red); finSt.position.set(s * 1.25, 3.2, -8.4); finSt.rotation.set(-.45, 0, s * .28); body.add(finSt);
+    const noz = new THREE.Mesh(new THREE.CylinderGeometry(.62, .52, 1.4, 16, 1, true).rotateX(Math.PI / 2), dark); noz.position.set(s * .62, -.05, -10.2); body.add(noz);
+  }
+  for (let k = 0; k < 5; k++) for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(.06, .5, 1.3), red); st.position.set(s * 1.26, .2, 1.5 - k * 2.1); st.rotation.x = .5; body.add(st); }
+  // spike crest along the spine (the AMBOOLA signature)
+  for (let k = 0; k < 7; k++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(.12, .7, 6), red); sp.position.set(0, 1.25, 1 - k * 1.1); body.add(sp); }
+  // afterburner flames (scaled by throttle at runtime)
+  const flameM = new THREE.MeshBasicMaterial({ color: 0xff8a3a, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false });
+  const flames = []; for (const s of [-1, 1]) { const f = new THREE.Mesh(new THREE.ConeGeometry(.5, 4, 12).rotateX(-Math.PI / 2).translate(0, 0, -2), flameM); f.position.set(s * .62, -.05, -10.8); body.add(f); flames.push(f); }
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0 }), tailMat = new THREE.MeshStandardMaterial({ color: 0x3a0000, emissive: 0xff1010, emissiveIntensity: 1.5 });
+  for (const [x, m] of [[8.5, new THREE.MeshBasicMaterial({ color: 0x20ff40 })], [-8.5, new THREE.MeshBasicMaterial({ color: 0xff2020 })]]) { const l = new THREE.Mesh(new THREE.SphereGeometry(.18, 8, 6), m); l.position.set(x, 0, -6.4); body.add(l); }
+  return { group, body, wheels: [], headMat, tailMat, paint, flames, B: BODIES[spec.body], jet: true };
+}
+let flight = null;
+function startFlight(spec) {
+  const back = player && !player.spec.jet ? player : null;
+  if (back) { back.car.group.visible = false; }
+  const p = PAINTS[paintIdx], car = buildJet(spec, p.c); scene.add(car.group);
+  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500);
+  flight = { car, x: player ? player.x : 0, z: player ? player.z : 150, y: 320, yaw: player ? player.heading : Math.PI, pitch: 0, roll: 0, v: 160, thr: .15, target: null, landing: 0, from: near?.name || 'Tokyo' };
+  if (flight.y < 320) flight.y = 320;
+  camPos.set(flight.x - Math.sin(flight.yaw) * 40, flight.y + 10, flight.z - Math.cos(flight.yaw) * 40);
+  $('menu').classList.add('hidden'); $('hud').classList.add('hidden'); $('flyhud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
+  renderPass.scene = scene; renderPass.camera = camera; applyTime(timeName);
+  audio.init(); state = 'fly';
+  renderFlyTargets();
+  toast('AMBOOLA JET · 20,000 KM/H', 'W/S THROTTLE · A/D TURN · ↑↓ CLIMB · L TO LAND');
+}
+const flyDests = () => [{ n: 'Tokyo', x: 0, z: 150, air: [-5.7, 150] }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], air: C.airport, C }))];
+function renderFlyTargets() {
+  $('flyDest').innerHTML = flyDests().map((d, i) => `<button data-i="${i}" class="${flight?.target === d.n ? 'on' : ''}">✈ ${d.n.toUpperCase()}<small id="fd${i}">—</small></button>`).join('');
+  $('flyDest').querySelectorAll('button').forEach(b => b.onclick = () => { flight.target = flyDests()[+b.dataset.i].n; renderFlyTargets(); toast(`AUTOPILOT · ${flight.target.toUpperCase()}`, 'STEERING FOR YOU · W FOR MORE SPEED'); });
+}
+function updateFlight(dt) {
+  const F = flight, k = keys, dests = flyDests();
+  if (!F) return;
+  if (F.landing > 0) { F.landing -= dt; $('flyFade').style.opacity = clamp(1 - F.landing / .7, 0, 1); if (F.landing <= 0) { finishLanding(); return; } }
+  const thrUp = k.KeyW || touchState.g, thrDn = k.KeyS || touchState.b, left = k.KeyA || touchState.l, right = k.KeyD || touchState.r, climb = k.ArrowUp || touchState.h, dive = k.ArrowDown || touchState.n;
+  F.thr = clamp(F.thr + ((thrUp ? 1 : 0) - (thrDn ? 1 : 0)) * dt * .45, 0, 1);
+  let vT = 90 + F.thr * F.thr * (JET_MAX - 90);
+  // turning: D turns right (yaw goes down, like the cars), A left; the autopilot steers when you don't
+  let turn = (left ? 1 : 0) - (right ? 1 : 0);
+  const T = dests.find(d => d.n === F.target);
+  if (T) {
+    const dist = Math.hypot(T.x - F.x, T.z - F.z); let d = Math.atan2(T.x - F.x, T.z - F.z) - F.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
+    if (!turn) turn = clamp(d * 2.5, -1, 1);
+    // slow down for big turns and for the approach, so it never circles past the airport
+    vT = Math.min(vT, Math.abs(d) > .35 ? 500 : Math.max(220, dist * .45));
+  }
+  F.v += clamp(vT - F.v, -1400 * dt, 1100 * dt);
+  const turnRate = 1.25 / (1 + F.v / 2500);
+  F.yaw += turn * turnRate * dt; F.roll = damp(F.roll, turn * .75, 4, dt);
+  const ground = Math.max(0, areaGround(F.x, F.z), mtnHeight(F.x, F.z)) + 60;
+  let pT = climb ? .32 : dive ? -.32 : 0;
+  if (T && !climb && !dive) { const dist = Math.hypot(T.x - F.x, T.z - F.z); pT = clamp(((dist < 3000 ? 250 : 600) - F.y) / 400, -.25, .25); }
+  if (F.y < ground + 40 && pT < .1) pT = .25;   // never fly into the ground or the sea
+  F.pitch = damp(F.pitch, pT, 2.5, dt);
+  F.x += Math.sin(F.yaw) * Math.cos(F.pitch) * F.v * dt; F.z += Math.cos(F.yaw) * Math.cos(F.pitch) * F.v * dt;
+  F.y = clamp(F.y + Math.sin(F.pitch) * Math.min(F.v, 600) * dt, ground, 6000);
+  F.x = clamp(F.x, -30000, 30000); F.z = clamp(F.z, -20000, 30000);
+  const g = F.car.group; g.position.set(F.x, F.y, F.z); g.rotation.order = 'YXZ'; g.rotation.set(-F.pitch, F.yaw, F.roll);
+  for (const f of F.car.flames) { f.scale.set(.6 + F.thr * .6, .6 + F.thr * .6, .3 + F.thr * 2.4); f.material.opacity = .3 + F.thr * .6; }
+  // chase camera, pulled back as speed grows
+  const fx = Math.sin(F.yaw), fz = Math.cos(F.yaw), back = 34 + Math.min(F.v, 2000) * .012;
+  camPos.set(F.x - fx * back, F.y + 8 + F.pitch * -12, F.z - fz * back);   // locked behind the jet (a lagging camera loses it at Mach 16)
+  camera.position.copy(camPos); camera.lookAt(F.x + fx * 30, F.y + 2, F.z + fz * 30); camera.fov = 62 + Math.min(F.v / JET_MAX, 1) * 14; camera.updateProjectionMatrix();
+  sky.position.copy(camera.position);
+  sun.position.set(F.x + sunDir.x * 400, F.y + sunDir.y * 400, F.z + sunDir.z * 400); sun.target.position.set(F.x, F.y, F.z);
+  scene.fog.density = fogDensity() * .35;
+  audio.jet?.(F.thr, F.v);
+  // HUD
+  const kmh = F.v * 3.6;
+  $('flySpd').textContent = Math.round(kmh).toLocaleString('en-US'); $('flyMach').textContent = `MACH ${(F.v / 343).toFixed(1)}`; $('flyAlt').textContent = `${Math.round(F.y)} m`;
+  $('flyThr').style.width = (F.thr * 100) + '%';
+  dests.forEach((d, i) => { const dist = Math.hypot(d.x - F.x, d.z - F.z), el = $('fd' + i); if (el) el.textContent = `${(dist / 1000).toFixed(1)} km · ${F.v > 20 ? Math.ceil(dist / F.v) + ' s' : '—'}`; });
+  const near = dests.find(d => Math.hypot(d.x - F.x, d.z - F.z) < 3000);
+  $('flyLand').classList.toggle('ready', !!near); $('flyLand').textContent = near ? `🛬 LAND AT ${near.n.toUpperCase()} [L]` : '🛬 LAND [L] · fly within 3 km of an airport';
+  F.near = near;
+  drawFlyMap(F, dests);
+}
+function drawFlyMap(F, dests) {
+  const cv = $('minimap'), g = cv.getContext('2d'), W = cv.width, c = W / 2, R = c - 6, sc = .006;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W); g.save(); g.beginPath(); g.arc(c, c, R, 0, 7); g.clip(); g.fillStyle = '#0c2233'; g.fill();
+  const fx = Math.sin(F.yaw), fz = Math.cos(F.yaw), rx = -fz, rz = fx, a = sc * rx, b = -sc * fx, cc = sc * rz, d = -sc * fz;
+  g.setTransform(a, b, cc, d, c - a * F.x - cc * F.z, c - b * F.x - d * F.z);
+  g.fillStyle = '#2b3240'; g.fillRect(-HALF, -9000, HALF * 2, 9000 + HALF);
+  for (const C of COUNTRIES) { g.fillStyle = C.col; g.fillRect(C.x0, C.z0, C.x1 - C.x0, C.z1 - C.z0); g.strokeStyle = 'rgba(224,160,48,.8)'; g.lineWidth = 120; g.beginPath(); for (let i = 0; i < C.R.n; i += 40) i ? g.lineTo(C.R.x[i], C.R.z[i]) : g.moveTo(C.R.x[i], C.R.z[i]); g.stroke(); }
+  g.restore(); g.setTransform(1, 0, 0, 1, 0, 0);
+  g.font = `700 22px ${OR}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const D of dests) { // label at the rim if off the map
+    let dx = D.x - F.x, dz = D.z - F.z, sx = (dx * rx + dz * rz) * sc, sy = -(dx * fx + dz * fz) * sc; const L = Math.hypot(sx, sy); if (L > R - 26) { sx *= (R - 26) / L; sy *= (R - 26) / L; }
+    g.fillStyle = D.n === F.target ? '#2fe0ff' : '#fff'; g.fillText(D.n.toUpperCase(), c + sx, c + sy);
+  }
+  g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 3; g.beginPath(); g.arc(c, c, R, 0, 7); g.stroke();
+  g.fillStyle = '#ff5a1f'; g.beginPath(); g.moveTo(c, c - 18); g.lineTo(c + 12, c + 12); g.lineTo(c, c + 6); g.lineTo(c - 12, c + 12); g.closePath(); g.fill();
+}
+function landJet() {
+  if (!flight || flight.landing > 0) return;
+  if (!flight.near) { toast('NO AIRPORT NEARBY', 'FLY WITHIN 3 KM OF TOKYO, CYPRUS, ITALY OR DUBAI'); return; }
+  flight.landing = .7; flight.landAt = flight.near; audio.beep(660, .15);
+}
+function finishLanding() {
+  const F = flight, D = F.landAt; endFlight();
+  // land in your last car (or your cheapest one) at the airport, then drive
+  let ci = lastCarIdx(); carIdx = ci; paintIdx = savedPaint(CARS[ci]);
+  const hadPlayer = player; if (player) { player.dispose(); player = null; }
+  startDrive();
+  const [ax, az] = D.air; Object.assign(player, { x: ax, z: az, heading: D.C ? Math.PI / 2 : Math.PI, vx: 0, vz: 0, y: 0 });
+  camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
+  if (D.C && !ST.visited?.includes(D.C.id)) { ST.visited = [...(ST.visited || []), D.C.id]; saveStats(); checkMissions(); }
+  bump('flights');
+  toast(D.C ? D.C.hello : 'WELCOME BACK TO TOKYO · おかえり', `LANDED BY JET · ${CARS[ci].name.toUpperCase()}`);
+}
+function endFlight() {
+  if (!flight) return; scene.remove(flight.car.group); flight = null;
+  $('flyhud').classList.add('hidden'); $('flyFade').style.opacity = 0; audio.jet?.(0, 0, true);
+  camera.fov = 62; camera.updateProjectionMatrix();
+  if (player) player.car.group.visible = true;
+}
+function lastCarIdx() {
+  const saved = +localStorage.getItem('amboola.lastcar');
+  if (CARS[saved] && !CARS[saved].jet && owns(CARS[saved])) return saved;
+  const own = CARS.filter(c => owns(c) && !c.jet).sort((a, b) => a.usd - b.usd)[0]; return CARS.indexOf(own || CARS.find(c => c.id === 'gr86'));
+}
+$('flyLand').onclick = landJet;
+$('flyExit').onclick = () => { endFlight(); enterGarage(); };
 
 /* =====================================================================
    BIG MAP + SEARCH + GPS — click the minimap (or press N): search places,
@@ -4999,12 +5454,18 @@ function buildPlaces() {
     const T = TRACKS.find(t => t.name === l.n);
     if (T) { P.push({ n: T.name, jp: T.jp, type: `Race track · ${(T.L / 1000).toFixed(2)} km · ${T.laps} laps`, kind: 'track', track: T, x: T.marker.x, z: T.marker.z, mapX: T.x[0], mapZ: T.z[0], col: T.col }); continue; }
     if (l.n === 'Mt. Amboola Viewpoint') { P.push({ n: 'Mt. Amboola Viewpoint', jp: 'アンブーラ山 展望台', type: `Mountain summit · ${Math.round(MTN.plazaY)} m`, kind: 'mountain', zone: 'mountain', end: [MTN.cx, MTN.cz], idx: MTN.n - 1, x: MTN.cx, z: MTN.cz, col: '#7ee04c' }); continue; }
-    if (['Amboola Bay Bridge', 'Amboola Beach Pier', 'Shirayuki Ski Village'].includes(l.n)) continue;
+    if (['Amboola Bay Bridge', 'Amboola Beach Pier', 'Shirayuki Ski Village', 'Cyprus', 'Italy', 'Dubai'].includes(l.n)) continue;
     const names = { 'GT Center': ['Amboola GT Center', 'GTセンター', 'Car showroom'], Tower: ['Tokyo Tower', '東京タワー', 'Landmark'], Temple: ['Sensō-ji Temple', '浅草寺', 'Temple & pagoda'] }[l.n] || [l.n, '', 'Landmark'];
     P.push({ n: names[0], jp: names[1], type: names[2], kind: 'city', x: l.x, z: l.z, col: l.c });
   }
   P.push({ n: 'Mountain Gate', jp: '山門', type: 'Road to Mt. Amboola', kind: 'city', x: -HALF, z: MTN.gateZ, col: '#c8301c' });
   // the new areas
+  for (const C of COUNTRIES) {
+    const mx = C.R.x[C.R.n - 1], km = (C.R.iMouth * C.R.step / 1000).toFixed(0);
+    P.push({ n: C.name, jp: C.local, type: `Country · ${km} km sea bridge · ${C.sights.map(s => s[2]).join(', ')}`, kind: 'area', zone: C.id, idx: C.R.n - 1, end: [mx, C.z0 + 70], x: C.cx, z: C.cz, col: C.col });
+    P.push({ n: `${C.name} Bridge`, jp: '', type: `Sea bridge · ${km} km · 6 lanes`, kind: 'area', zone: C.id, idx: Math.round(C.R.n / 3), x: C.R.x[Math.round(C.R.n / 3)], z: C.R.z[Math.round(C.R.n / 3)], col: C.col });
+    P.push({ n: `${C.name} Gate`, jp: '', type: `Harbour gate · bridge to ${C.name}`, kind: 'city', x: C.gx, z: HALF, col: C.col });
+  }
   const bc = [1982, BEACH.z0 + 60], wl = WANGAN.L;
   P.push({ n: 'Amboola Beach', jp: 'アンブーラビーチ', type: 'Beach town · pier & Ferris wheel', kind: 'area', zone: 'wangan', idx: WANGAN.n - 1, end: bc, x: bc[0], z: bc[1], col: '#ff5fa2' });
   P.push({ n: 'Beach Pier', jp: '桟橋', type: 'Pier · Ferris wheel', kind: 'area', zone: 'wangan', idx: WANGAN.n - 1, end: [BEACH.pierX, 2420], x: BEACH.pierX, z: 2420, col: '#ff5fa2' });
@@ -5026,6 +5487,7 @@ function snapToRoad(x, z) {
 // zones the GPS knows: the city grid, and roads out of it (each starts at its city gate, sample 0)
 const zoneAt = (x, z) => inMountain({ x, z }) ? 'mountain' : areaAt(x, z)?.id || 'city';
 const ZONES = { mountain: { R: MTN, gate: [-HALF, MTN.gateZ] }, wangan: { R: WANGAN, gate: [HALF, WANGAN_Z] }, snow: { R: SNOW_ROUTE, gate: [SNOW.gateX, -HALF] } };
+for (const C of COUNTRIES) ZONES[C.id] = { R: C.R, gate: [C.gx, HALF] };
 function navGroundY(x, z) {
   const zn = zoneAt(x, z);
   if (zn === 'mountain') {
@@ -5089,7 +5551,7 @@ function travelTo(d) {
   if (crime) { toast('NO FAST TRAVEL', 'NOT DURING OUTLAW / POLICE'); return false; }
   if (taxi) { toast('TAXI SHIFT ACTIVE', 'NO FAST TRAVEL DURING A SHIFT'); return false; }
   const p = player;
-  if (d.zone === 'wangan' || d.zone === 'snow') {
+  if (d.zone && d.zone !== 'mountain' && d.zone !== 'city') {
     const Z = ZONES[d.zone];
     if (d.end) { const [ex, ez] = d.end, i = Z.R.n - 1; Object.assign(p, { x: ex, z: ez, heading: Math.atan2(Z.R.tx[i], Z.R.tz[i]) }); p.y = navGroundY(ex, ez) - .13; }
     else Z.R.place(p, d.idx, -1);
@@ -5453,6 +5915,8 @@ function startDrive() {
   closeCust();
   audio.init();
   const spec = CARS[carIdx];
+  if (spec.jet) return startFlight(spec);
+  localStorage.setItem('amboola.lastcar', carIdx);
   let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
   player = new Player(tunedSpec(spec), paintIdx);
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
@@ -5512,6 +5976,7 @@ function frame() {
 }
 function tick(dt) {
   if (state === 'ad') { updateAd(dt); return; }
+  if (state === 'fly') { updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
     gCamera.position.set(Math.sin(gAngle) * gDist, 1.9, Math.cos(gAngle) * gDist); gCamera.lookAt(0, .7, 0);
@@ -5536,7 +6001,7 @@ function tick(dt) {
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); // above the haze: the city view clears up
     sky.position.copy(camera.position);
-    updateWeather(dt, player); updateAreas(dt, player);
+    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt);
     audio.weather(WX.wet, player.speed, camMode >= 2);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 });
     // big screens cycle
@@ -5578,7 +6043,7 @@ async function boot() {
   bootAd(() => { checkDaily(); checkMissions(); });
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg };
+window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

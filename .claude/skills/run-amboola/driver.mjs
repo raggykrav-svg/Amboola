@@ -86,7 +86,7 @@ if (mode === 'shots') {
   await page.click('#drive'); await page.waitForTimeout(500);
   const rows = await page.evaluate(() => {
     const A = window.amboola, P = A.player.constructor, out = [];
-    for (const spec of A.CARS) {
+    for (const spec of A.CARS.filter(c => !c.jet)) {
       const p = Object.create(P.prototype); Object.assign(p, { spec, x: 0, z: 0, heading: 0, vx: 0, vz: 0, yawRate: 0, steer: 0, gear: 1, rpm: spec.idle, reverse: false, shiftT: 0, manual: false, throttle: 0 });
       const dt = 1 / 180; let t = 0, t100 = null, vmax = 0;
       for (let i = 0; i < 180 * 60; i++) { p.update(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }); t += dt; const k = p.speed * 3.6; if (!t100 && k >= 100) t100 = t; vmax = Math.max(vmax, k); }

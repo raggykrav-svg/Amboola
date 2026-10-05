@@ -130,6 +130,17 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 
 - **AMBOOLA Sport:** 20 concept cars at CARS indices 60–79 (ids `tora` … `torazero`, bodies `amb_<id>`, models from `amboola_concepts.py`; their stripes are a fixed `Stripe` material baked into the model). Grip goes up to 2.2 (Tora Zero), the highest in the game. The `zero` values come from `driver.mjs bench`.
 
+## Countries and the jet
+
+- **Countries:** `COUNTRIES` (Cyprus, Italy, Dubai) are generic areas: a 20 km `Route` (built in 1 km chunks that `updateCountryCulling` hides past 7.5 km) plus a `Pad` town. Their gates are on the south edge at `rc(3)`, `rc(10)` and `rc(17)`. The city edge walls (`edgeWall`) have gaps at every gate. The north wall used to block the Snow Pass gate, and that is now fixed.
+- **Overlapping areas:** `areaAt` picks the nearest area when area boxes overlap (the Dubai bridge runs inside the Wangan box).
+- **The jet:** `amboolajet` (CARS index 80, `jet: true`):
+  - `startDrive()` hands it to `startFlight()` and `state = 'fly'`; `updateFlight` runs the jet, the HUD (`#flyhud`) and the minimap;
+  - `landJet()` / `finishLanding()` put you in `lastCarIdx()` at the airport;
+  - the autopilot caps speed for turns and approaches, because at Mach 16 the turning circle is about 25 km;
+  - `driver.mjs bench` skips the jet.
+- **Testing:** `window.amboola.flyStep(dt)` steps the flight without rendering (rendering every frame in SwiftShader is far too slow for whole flights). `COUNTRIES[i].R.place()` puts a car on a bridge.
+
 ## Car commercials
 
 - **What plays:** `playAd(car, 'boot'|'buy', done)` runs a 13 s ad in `state = 'ad'`; `tick` calls `updateAd(dt)`. The shot times are `AD_T`:
