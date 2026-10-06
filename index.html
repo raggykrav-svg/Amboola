@@ -3005,7 +3005,7 @@ function checkDaily() {
 const sellValue = c => Math.round((c.usd * .6 + upgSpent(c) * .5) / 100) * 100;
 function sellCar(c) {
   if (!owns(c) || wallet.owned.size <= 1) return false;
-  wallet.usd += sellValue(c); wallet.owned.delete(c.id); delete upg[c.id]; localStorage.removeItem('amboola.custom.' + c.id); saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
+  wallet.usd += sellValue(c); wallet.owned.delete(c.id); delete upg[c.id]; localStorage.removeItem('amboola.custom.' + c.id); delete DMG[c.id]; saveDmg(); saveWallet(); localStorage.setItem('amboola.upg', JSON.stringify(upg)); return true;
 }
 function toast(a, b) { const t = $('toast'); t.innerHTML = `${a}<small>${b || ''}</small>`; t.style.opacity = 1; toastT = 2.4; }
 
@@ -3663,7 +3663,7 @@ function pickRivals(spec, n) {
   return CARS.filter(c => c.id !== spec.id).map(c => ({ c, d: Math.abs(Math.log((c.kw / c.mass) / pw)) + Math.random() * .3 })).sort((a, b) => a.d - b.d).slice(0, n).map(o => o.c);
 }
 function startRace(T) {
-  endCrime(true);
+  endMeetRace(false, true); endCrime(true);
   clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -3873,7 +3873,7 @@ function pickDragRival(me) {
   return pick(opts).c;
 }
 function startDrag(ev, rivalSpec) {
-  endCrime(true); clearNav(true); $('navhud').classList.add('hidden');
+  endMeetRace(false, true); endCrime(true); clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false); if (taxi) endTaxi(); if (drag) endDrag(false);
   $('pause').classList.add('hidden'); $('races').classList.add('hidden'); $('results').classList.add('hidden'); $('raceprompt').classList.add('hidden');
   if (audio.ctx) audio.ctx.resume();
@@ -4162,7 +4162,7 @@ function taxiRoute(px, pz, tx, tz) {
 const routeLen = (px, pz, pts) => { let L = 0, x = px, z = pz; for (const [a, b] of pts) { L += Math.hypot(a - x, b - z); x = a; z = b; } return L; };
 const fmtUSD = v => '$' + Math.round(v).toLocaleString('en-US');
 function startTaxi() {
-  endCrime(true);
+  endMeetRace(false, true); endCrime(true);
   clearNav(true);
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -6804,6 +6804,7 @@ function crimeBump(r) {
 }
 let crime = null;
 function startCrime(role) {
+  endMeetRace(false, true);
   if (race) endRace(false);
   if (taxi) endTaxi();
   endCrime(true); clearNav(true); buildHideouts();
