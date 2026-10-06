@@ -314,6 +314,7 @@
     #brand { left:14px; top:12px; }
     #tacho { width:180px; height:180px; } #minimap { width:140px; height:140px; bottom:auto; top:70px; left:auto; right:12px; }
     #scorebox { display:none; }
+    #dmgHud { right:auto; left:12px; top:62px; bottom:auto; width:30px; height:49px; }
   }
   /* ---------- races ---------- */
   #racehud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:22px; background:var(--panel); padding:6px 18px;
@@ -337,6 +338,11 @@
   #rallyhud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:22px; background:var(--panel); padding:6px 18px; border-bottom:2px solid #ffc21f; backdrop-filter:blur(6px); text-align:center; }
   #rallyhud small { display:block; font-size:11px; letter-spacing:.25em; color:#e9c98c; } #rallyhud b { font-family:'Orbitron',sans-serif; font-size:20px; }
   #rlArrow { display:inline-block; color:#ffc21f; transition:transform .1s linear; }
+  @media (max-width: 760px) {   /* phones: compact race HUDs that leave the minimap clear */
+    #rallyhud, #meethud { top:4px; gap:10px; padding:3px 10px; white-space:nowrap; } #rallyhud b, #meethud b { font-size:13px; } #rallyhud small, #meethud small { font-size:8px; letter-spacing:.08em; }
+    #rallyhud > div:nth-child(3), #meethud > div:nth-child(4) { display:none; }
+    #meetprompt { max-width:92vw; font-size:13px; bottom:200px; padding:8px 12px; } #meetprompt small { font-size:11px; }
+  }
   #racehud b { font-family:'Orbitron',sans-serif; font-size:20px; }
   #rBoard { position:absolute; right:22px; top:150px; font-size:14px; letter-spacing:.05em; text-shadow:0 1px 4px #000; text-align:left; }
   #rBoard div { padding:2px 8px; background:rgba(10,12,18,.55); margin-bottom:2px; }
@@ -6243,18 +6249,22 @@ function loopMesh(L) {
   const tm = new THREE.Mesh(tr.build(), stuntMats.loop); tm.castShadow = true; tm.receiveShadow = true;
   const rm = new THREE.Mesh(rail.build(), stuntMats.rail); rm.castShadow = true;
   g.add(tm, rm);
-  // two lattice towers beside the ring and a beam over the top that the ring hangs from
-  const steel = stuntMats.steel, top = 2 * L.R + 1.6;
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(.6, 1.1, 2 * L.R + 4), stuntMats.rail); bar.position.set(L.x + L.rx * (-hw - 1.5), .55, L.z + L.rz * (-hw - 1.5)); bar.rotation.y = L.ry; g.add(bar);
-  for (const v of [L.off + hw + 1.5]) {
-    const t = new THREE.Mesh(new THREE.BoxGeometry(.7, top, .7), steel); t.position.set(L.x + L.rx * v, top / 2, L.z + L.rz * v); t.castShadow = true; g.add(t);
-    for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(.25, top * .9, .25), steel); b.position.set(L.x + L.rx * v + L.fx * s * 1.8, top * .45, L.z + L.rz * v + L.fz * s * 1.8); b.rotation.order = 'YXZ'; b.rotation.y = L.ry; b.rotation.x = -s * .2; g.add(b); }
+  // two legs hold the ring at its sides (so nothing stands in the middle of the view), low barriers along both lanes
+  const steel = stuntMats.steel, at = (u, v, y) => [L.x + L.fx * u + L.rx * v, y, L.z + L.fz * u + L.rz * v];
+  for (const th of [Math.PI / 2, Math.PI * 1.5]) {
+    const u = Math.sin(th) * (L.R + .55), v = L.off * th / TWO_PI, [x, , z] = at(u, v, 0);
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(.8, L.R, L.W * .7), steel); leg.position.set(x, L.R / 2, z); leg.rotation.y = L.ry + Math.PI / 2; leg.castShadow = true; g.add(leg);
+    const e = [at(u - .5, v - L.W * .36, 0), at(u + .5, v + L.W * .36, 0)]; L.addCol?.(Math.min(e[0][0], e[1][0]), Math.min(e[0][2], e[1][2]), Math.max(e[0][0], e[1][0]), Math.max(e[0][2], e[1][2]));
+    for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(.3, L.R * .95, .3), steel), [bx, , bz] = at(u + Math.sign(u) * 1.6, v + s * L.W * .35, 0); b.position.set(bx, L.R * .45, bz); b.rotation.order = 'YXZ'; b.rotation.y = L.ry; b.rotation.x = Math.sign(u) * .17; g.add(b); }
   }
-  const span = L.off + L.W + 3, beam = new THREE.Mesh(new THREE.BoxGeometry(span, .6, .6), steel);
-  beam.position.set(L.x + L.rx * L.off / 2, top, L.z + L.rz * L.off / 2); beam.rotation.y = L.ry; g.add(beam);
+  for (const v of [-hw - 1.5, L.off + hw + 1.5]) { const bar = new THREE.Mesh(new THREE.BoxGeometry(.6, 1.1, 2 * L.R + 4), stuntMats.rail); bar.position.set(...at(0, v, .55)); bar.rotation.y = L.ry; g.add(bar); }
+  // the sign on its own posts beside the run-up, facing the cars coming in
   const t = signTex(1024, 256, '#0d1b2a', [['AMBOOLA LOOP', .4, .34, OR, '#fff'], ['70+ km/h · ループ', .78, .2, OR, '#ffd21f']], '#ff6a1a');
   const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
-  for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(span - 1, (span - 1) / 4), sm); p.position.set(beam.position.x - L.fx * s * .32, top + 2.1, beam.position.z - L.fz * s * .32); p.rotation.y = L.ry + (s > 0 ? Math.PI : 0); g.add(p); }
+  const sg = new THREE.Group(); sg.position.set(...at(-16, -hw - 4.5, 0)); sg.rotation.y = L.ry + Math.PI; g.add(sg);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(8, 2), sm); board.position.y = 4.4; sg.add(board);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(8.2, 2.2, .12), blackMat); back.position.set(0, 4.4, -.08); sg.add(back);
+  for (const s of [-1, 1]) { const pst = new THREE.Mesh(new THREE.BoxGeometry(.2, 4.4, .2), blackMat); pst.position.set(s * 3.6, 2.2, -.1); sg.add(pst); const [px, , pz] = at(-16, -hw - 4.5 - s * 3.6, 0); L.addCol?.(px - .25, pz - .25, px + .25, pz + .25); }
   // ENTER arrows on the ground in front of the entry lane
   const ar = new THREE.Mesh(new THREE.PlaneGeometry(L.W - .6, 9), stuntMats.arrow); ar.rotation.order = 'YXZ'; ar.rotation.y = L.ry + Math.PI; ar.rotation.x = -Math.PI / 2;
   ar.position.set(L.x - L.fx * 7, .07, L.z - L.fz * 7); g.add(ar);

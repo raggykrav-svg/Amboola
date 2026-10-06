@@ -252,6 +252,8 @@ Each car's physics is built from its real published figures: power, weight, redl
 
 ## 🏎 More driving fun
 
+![Stunts, dents, speed cameras, night meets and the Dubai desert](media/driving-fun.jpg)
+
 ### Stunt ramps and loops 🛹
 - **AMBOOLA Stunt Park:** two city blocks right next to where you start (on your left, behind the big orange sign). It has a kicker that sends you over the road onto a landing ramp, a Hot-Wheels-style **loop**, a tabletop, a kicker back the other way, and a little flip wedge.
 - **In every country** the streets have no traffic, so the ramps are right on the roads: a **street jump** over a crossroads, a **loop**, a **MEGA RAMP** (fly about 20 m high) and flip wedges. The orange shapes on the map show where they are.
