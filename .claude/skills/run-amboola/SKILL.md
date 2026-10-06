@@ -166,6 +166,40 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
   - The GPS treats each area (and Mt. Amboola) as a zone with a gate: `zoneAt`, `ZONES`, `navRoute`.
 - **Testing:** `window.amboola` exposes `AREAS`, `WANGAN`, `SNOW_ROUTE`, `SNOW`, `BEACH`, `WX`, `setWeather` and `hwyTraffic`. `WANGAN.place(player, i, -1)` puts the car on the highway at sample `i`. To check a route end to end, drive it with an autopilot `eval` that calls `simStep` with steering toward the sample about 12 ahead. Both routes were run both ways like this.
 
+## Stunts, damage, speed cameras, night meets, desert
+
+- **Flying:** `Player` has `vy`, `air`, `ap`/`ar` (pitch/roll in the air), `loop`, `wreckT`, `surf`, `gx`/`gz` (ground slope) and `terrain`.
+  - `collideWorld` sets `p.surf`: `city`, `pad` (a pad with `air: true`, i.e. country towns and the desert), `glue` (other pads), `route`, `mtn`, `track`, `drag`.
+  - `stuntStep(p, dt, px, pz, yPrev, inp)` runs after `collideWorld` in every `simStep` sub-step. On `city`/`pad` ground it adds ramp heights, makes too-tall faces into walls, and integrates `vy`. The car takes off when the ground drops faster than gravity (a lip: `yBall > G + .06`; a crest: `(vyG - vy)/dt < -12.5`).
+  - Everywhere else the car stays glued to the road as before.
+  - `takeoff` splits the along-ramp speed into horizontal and vertical (no free energy). `landCar` checks the up vector against the ground: if `up < .4` it is a `wipeout`, otherwise `scoreJump`.
+  - `Player.airUpdate` handles the air controls. Throttle/brake/steer held at take-off are "armed" only after release.
+- **Ramps and loops:** in `STUNTS` (`addRamp` with profiles `kick`/`land`/`wedge`/`table`, `addLoop`).
+  - `buildStuntPark()` uses city blocks (9,11) and (8,11). They are flagged `'stunt'` in `special`: generated normally and then dropped (`genSnap`/`genDrop`, `colMute`), so the random city stays identical.
+  - `buildCountryStunts(C)` places ramps on the country streets.
+  - A loop is ridden on rails by `loopStep` (energy along the ring; it drops off when `v²/R + g·cos θ < 0`), and the camera watches from the side (`L.cam`).
+  - `window.amboola.STUNTS`. Test with physics-only `simStep` loops: put the car 40 m before a ramp, heading `S.ry`, at 26 m/s.
+- **Damage:** `carHit(p, dvx, dvz, hit, zone)` gets the velocity change from `simStep`, traffic, the race AI and stunt crashes.
+  - It adds a dent `[x, y, z, r, depth, zone]` in car space (+Z front, +X = the car's left) to `DMG[id]` (`amboola.damage`).
+  - `dentCar(car, dents)` clones the body geometry once, then rebuilds positions and normals from the originals for every dent. Trim gets 86% of the push so it stays on top of the paint, and the paint gets vertex-colour scuffs.
+  - `dmgZones`, `repairCost`, `repairCar`; `#repairBtn` in the garage; `#dmgHud` in the HUD.
+- **Speed cameras:** `SPEEDCAMS` (`buildSpeedCams`, 7 gantries).
+  - `updateSpeedCams` triggers 24 m before the gantry when `areaNow.R` is that bridge.
+  - `snapCam` updates `camBoard` (`amboola.speedcams`: top runs plus the best photo as a JPEG data URL), pays out, and sets `camPhotoReq`.
+  - `takeCamPhoto()` runs right after `composer.render` in `tick`: one plain `renderer.render(scene, photoCam)` to the canvas, then `drawImage` into a 480×270 card (the flash overlay hides that frame).
+  - The leaderboard is `#camPanel` (`openCamPanel`).
+- **Night meets:** `MEETS` (stunt park and the harbour lot, block (12,19) via `buildMeetLot`), with racers from `NEON_CREW`.
+  - `updateMeets` shows the parked neon cars only when `timeName === 'night'`, and sets `meetNear` → `#meetprompt` → `openMeet`.
+  - `startMeetRace` builds `streetPath` (the `taxiRoute` corners, rounded and shifted 3.9 m left) for a `StreetRacer` (curvature speed limits plus a rubber band) and sets the GPS to the finish. `updateMeetRace` runs in `simStep`, and `endMeetRace` hands over the car (owned, nearest paint, `cust.glow`) or takes the stake.
+  - Beaten racers go to `amboola.meet.beaten`.
+  - Underglow is `addUnderglow(car, col)`, also a customize option (`GLOWS`, `cust.glow`).
+- **Desert:** `DESERT` east of Dubai is an extra rectangle on Dubai's pad.
+  - `C.P.y = duneH`, `C.P.grad = duneGrad`, `C.P.terrain` returns `'sand'` or `'water'` (the oasis). `Player.update` uses `offroadOf(spec)` for grip and sand drag.
+  - `buildDesert` builds a 5 m-grid mesh with ripple texture and vertex colours, the oasis, rocks, camels (`MODELS.camel` from `models/camel.glb.js`, made by `models/blender/camel.py` with the Skin modifier), and the rally gates.
+  - `updateRally` and `finishRally` use `RALLY_PTS` (index 0 is the start/finish arch); the best time is in `amboola.rally`.
+  - Test with `travelTo(PLACES.find(q => q.n === 'Dubai Desert'))` and an autopilot to `RALLY_PTS[rally.i]`. The Yuki finishes in about 1:20 (shift manual cars like the GR86 yourself, or they stay in 1st).
+- **Skill chains** are capped at ×5 and $20,000 a chain, and sliding on sand scores at a quarter of the rate. A long desert drift once banked $540k.
+
 ## Rebuild the Blender car models
 
 All 14 Porsches are Blender models:

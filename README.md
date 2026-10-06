@@ -34,7 +34,11 @@ Ways to earn money:
 | **Taxi** | VIP fares, about $350–2,000 each, plus a tip for arriving fast without crashing |
 | **Outlaw** | Money safes hold $2,000–8,000; you keep what you stash at a hideout (busted = you lose what you carry) |
 | **Police** | Arrest the outlaw: his cash + a $3,500 reward |
-| **Drift** | Drift and skill chains pay 15¢ per point when the chain is banked |
+| **Drift** | Drift and skill chains pay 15¢ per point when the chain is banked (up to $20,000 a chain) |
+| **Stunts** | Jumps, flips, spins, barrel rolls and loops add points to your skill chain, which pays out the same way |
+| **Speed cameras** | A new personal best pays $12 for every km/h over 150; beating the #1 racer on a camera pays $10,000 |
+| **Night meets** | Win a street race and you win the other racer's car. If you lose, you pay the stake |
+| **Desert rally** | $6,000 a finish, more for a record or a fast time, and **double in the AMBOOLA Yuki** |
 
 Your wallet shows in yellow at the top right while driving and next to the title in the garage. It is saved in the browser. Press **💾 SAVE & QUIT** in the garage to save everything (money, cars, upgrades, your car and its paint colour, time of day) and stop. Next time you open the game, you carry on where you left off. Older saves that still held yen are converted once, at ¥150 = $1.
 
@@ -71,10 +75,11 @@ The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes y
 
 ## Missions, daily bonus, selling cars
 
-- **🏆 Missions** (garage button): 18 goals that pay automatically when you reach them, with a banner and a sound.
+- **🏆 Missions** (garage button): 24 goals that pay automatically when you reach them, with a banner and a sound.
   - **Driving:** win a drag race ($2,000), win 10 drag races ($25,000), win a circuit race ($5,000), win 5 circuit races ($40,000), deliver 10 taxi passengers ($8,000), arrest 3 outlaws ($15,000), stash $50,000 as the outlaw ($20,000), bank a 2,500-point drift chain ($10,000).
   - **Building your garage:** max every upgrade on one car ($30,000), own 5 cars ($25,000), own a $1M+ car ($100,000), own a Bugatti ($250,000), have $1,000,000 in your wallet ($50,000).
-  - **Exploring:** drive the Wangan Highway to Amboola Beach ($10,000), climb the Snow Pass to the Ski Village ($15,000).
+  - **Exploring:** drive the Wangan Highway to Amboola Beach ($10,000), climb the Snow Pass to the Ski Village ($15,000), visit all three countries ($100,000), land the jet ($20,000).
+  - **Driving fun:** land a flip ($5,000), land 10 flips ($25,000), ride a loop ($8,000), get photographed at 300 km/h ($15,000), win a night street race ($10,000), finish the desert rally ($20,000).
   - **Final goal:** beat all 3 drag bosses ($500,000).
 - **📅 Daily bonus:** come back on a new day and collect free money. It grows every day you keep your streak: $5,000 on day 1, up to $20,000 on day 7 and after. Miss a day and the streak starts again.
 - **💸 Sell cars:** the red **SELL** button under UPGRADE sells the car for 60% of its price plus half of what you spent upgrading it. Tap twice to confirm. You always keep at least one car.
@@ -86,6 +91,7 @@ Pick a car you own in the garage and press **🎨 CUSTOMIZE**. Everything is fre
 - **Brake calipers:** red, yellow, acid green, blue, orange, pink, black or silver.
 - **Window tint:** light, limo black, blue mirror, gold mirror or an oil-slick rainbow.
 - **Decals & stickers:** racing stripes, a side stripe, a race number (each car has its own number), flames, a Tokyo livery with 東京 on the doors, a checkered band, or a set of sponsor stickers. Choose from 8 decal colours.
+- **Neon underglow:** a glowing light under the car in pink, cyan, lime, purple, red, gold or ice white. It looks best at night.
 - **RESET** puts the car back to stock. Selling a car also clears its customizing.
 
 The decals are painted inside the car's own paint, so they follow every curve and never flicker or float off the body.
@@ -104,6 +110,8 @@ The decals are painted inside the car's own paint, so they follow every curve an
 | `T` | Time of day: day / sunset / night |
 | `Y` | Weather: rain / clear |
 | `R` | Put the car back on the road |
+| In the air | `S` backflip · `W` front flip · `A` `D` spin · `Space` + `A` `D` barrel roll · `Shift` nitro rocket |
+| `Enter` | Start a race at a race marker, or challenge a racer at a night meet |
 | `P` / `Esc` | Pause, change car, sound on/off |
 | `H` | Show controls |
 
@@ -241,6 +249,37 @@ Two more brands, built in Blender the same way: [`models/blender/koenigsegg.py`]
 They have their own engine sounds: the Supra's straight-six, the GR86's boxer rumble and the GR Yaris/Corolla three-cylinder. They also bring new paints: Tang Orange, Naked Carbon, Emotional Red, Nitro Yellow and Precious Metal.
 
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
+
+## 🏎 More driving fun
+
+### Stunt ramps and loops 🛹
+- **AMBOOLA Stunt Park:** two city blocks right next to where you start (on your left, behind the big orange sign). It has a kicker that sends you over the road onto a landing ramp, a Hot-Wheels-style **loop**, a tabletop, a kicker back the other way, and a little flip wedge.
+- **In every country** the streets have no traffic, so the ramps are right on the roads: a **street jump** over a crossroads, a **loop**, a **MEGA RAMP** (fly about 20 m high) and flip wedges. The orange shapes on the map show where they are.
+- **Tricks:** in the air press **S** for a backflip, **W** for a front flip, **A/D** to spin, and **Space + A/D** to barrel roll. Nitro fires you along like a rocket. If you hold the gas when you leave the ramp, the car flies straight until you let go, so you don't flip by accident.
+- **Points:** air time, distance and height, plus 2,200 for each flip, 1,600 for each roll and 1,100 for each 360° spin. Combos are worth more, and a **PERFECT LANDING** gives ×1.5. Land on your roof and it's a **WIPEOUT**: the chain is lost and the roof gets dented.
+- **Loops:** go in at about **70 km/h or more** and you ride all the way round (+2,500). Too slow and you roll back, or fall off the top.
+
+### Car damage 🔧
+- Crashes dent the car exactly where it was hit: the **front or rear bumper**, the **doors** on either side, or the **roof** after a wipeout. The bodywork really bends and gets scuffed.
+- A small car picture next to the speedometer turns yellow, orange and red as each part gets hurt. A smashed front smokes and loses a little power.
+- Dents stay on the car (they are saved). Fix them in the garage with **🔧 REPAIR DENTS**. The price depends on the damage and on how expensive the car is.
+
+### Speed cameras 📸 (オービス)
+- Seven camera gantries: two on each sea bridge (Cyprus, Italy, Dubai) and one on the Wangan Highway.
+- Drive at one fast and it **FLASHES**: you get a photo of your car with your speed printed on it, the camera's LED board shows your speed, and you go on its leaderboard against the AMBOOLA street racers (the top one is over 400 km/h).
+- See every board and your best photos with **📸 SPEED CAMS** in the garage or the pause menu.
+
+### Night street-race meets 🌙
+- After dark (press **T**, or **🌙 NIGHT MEET** in the pause menu, which also sets a GPS route), street racers park their neon cars in the **Stunt Park** and in the new **harbour car park**.
+- Stop in front of them and press **Enter** (or tap the pink sign) to see three racers. Each one shows their car, its power and your stake.
+- The race goes to a finish across the city: follow the arrows, or take any shortcut you like. **Win and their car is yours**, in their colour and with its neon underglow. **Lose and you pay the stake.** If you already own that car, you win money instead.
+- There are 9 racers, from Midnight Sora in a GR Yaris to **The Midnight King** in a Bugatti Chiron Super Sport.
+
+### Dubai desert 🏜 (for the AMBOOLA Yuki)
+- Drive east out of Dubai town (or pick **Dubai Desert** on the map) into nearly 2 × 1.5 km of golden dunes. They have gentle slopes on one side and steep drops on the other, so you **fly off the crests**.
+- **Soft sand:** low supercars slide about and slow down, AWD cars cope, and rally cars keep their grip. The **AMBOOLA Yuki** is best of all, followed by the 911 Dakar, the Huracán Sterrato and the Land Cruiser. Sand flies up behind the wheels.
+- **The desert rally:** drive through the start arch and race through **10 flag gates**. The next gate has a gold light beam, and the HUD arrow points to it. Your best time is saved, and the prize is **doubled in the Yuki**.
+- An oasis you can splash through, palm trees, rocks, and camels with red saddle blankets. The camel was made in Blender (`models/blender/camel.py`).
 
 ## The world
 
