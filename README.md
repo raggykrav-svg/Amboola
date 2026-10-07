@@ -283,6 +283,9 @@ Made in Blender too (`models/blender/merc_rolls.py`).
 
 The Mercedes cars have the vertical-slat grille with the three-pointed star. The G 63 has round lamps, side pipes and a spare wheel on the back. The Rolls-Royces have the tall chrome grille and the little silver Spirit of Ecstasy on the bonnet.
 
+### Ford, Chevrolet, Nissan, Honda and Pagani
+Made in Blender (`models/blender/more_brands.py`): the **Ford Mustang Dark Horse** (5.0 V8, manual, three-bar tail lights, $60,000), the **Chevrolet Corvette Z06** (mid-engine flat-plane V8, 680 PS, $115,000), the **Nissan GT-R NISMO** "Godzilla" (four round tail lights, 600 PS, $220,000), the **Honda NSX Type S** (hybrid V6, 608 PS, $170,000) and the **Pagani Utopia** (twin-turbo V12 with a manual gearbox and the four-pipe exhaust, 864 PS, $3,100,000).
+
 ## 🏎 More driving fun
 
 ![Stunts, dents, speed cameras, night meets and the Dubai desert](media/driving-fun.jpg)
