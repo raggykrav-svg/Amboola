@@ -3003,7 +3003,7 @@ const MISSIONS = [
   { id: 'treasure', n: 'TREASURE HUNTER', d: 'Find all 7 secret cars', goal: 7, v: () => typeof secretsFound === 'function' ? secretsFound() : 0, r: 500000 },
   { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
   { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
-  { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 6 countries', goal: 6, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
+  { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 8 countries', goal: 8, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
   { id: 'flip', n: 'STUNT STAR', d: 'Land a flip or a barrel roll off a ramp', goal: 1, v: () => ST.flips || 0, r: 5000 },
   { id: 'flip10', n: 'FLIP MASTER', d: 'Land 10 flips', goal: 10, v: () => ST.flips || 0, r: 25000 },
   { id: 'loop', n: 'LOOP THE LOOP', d: 'Ride all the way round a loop', goal: 1, v: () => ST.loops || 0, r: 8000 },
@@ -5311,6 +5311,7 @@ function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
   updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); } if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
@@ -5598,6 +5599,12 @@ const COUNTRY_DEFS = [
   { id: 'alps', name: 'Swiss Alps', local: 'SCHWEIZ · SUISSE', hello: 'WELCOME TO THE SWISS ALPS · GRÜEZI', gx: rc(1), col: '#e8f2ff', raceName: 'Alpine Grand Prix', snowy: true,
     rect: [-17200, 5600, -16000, 6500],
     pts: [[rc(1), HALF - 8, 0], [rc(1), HALF + 60, 0], [rc(1) - 60, 1050, 6], [-2600, 1900, 14], [-7000, 3600, 15], [-12000, 4600, 15], [-15000, 4800, 12], [-16300, 5000, 6], [-16580, 5350, 1.5], [-16600, 5600, 0], [-16600, 5760, 0]] },
+  { id: 'london', name: 'London', local: 'LONDON', hello: 'WELCOME TO LONDON · CHEERIO!', gx: rc(8), col: '#c8141b', raceName: 'London Grand Prix',
+    rect: [-3000, 28400, -1800, 29300],
+    pts: [[rc(8), HALF - 8, 0], [rc(8), HALF + 60, 0], [rc(8) - 10, 1100, 6], [-220, 2500, 14], [-700, 6000, 15], [-1200, 11000, 15], [-1500, 17000, 15], [-2000, 23000, 15], [-2380, 27900, 9], [-2395, 28150, 1.5], [-2400, 28400, 0], [-2400, 28560, 0]] },
+  { id: 'egypt', name: 'Egypt', local: 'مصر · EGYPT', hello: 'WELCOME TO EGYPT · أهلاً', gx: rc(15), col: '#e2b33c', raceName: 'Pyramids Grand Prix',
+    rect: [8700, 27800, 9900, 28700],
+    pts: [[rc(15), HALF - 8, 0], [rc(15), HALF + 60, 0], [rc(15) + 15, 1100, 6], [600, 2500, 14], [2200, 6000, 15], [6000, 11000, 15], [7600, 17000, 15], [8600, 23000, 15], [9250, 27300, 9], [9295, 27550, 1.5], [9300, 27800, 0], [9300, 27960, 0]] },
 ];
 const COUNTRIES = COUNTRY_DEFS.map(d => {
   const R = new Route({ id: d.id, name: `${d.name} Bridge`, w: 24, rail: .45, median: true, pts: d.pts });
@@ -5888,9 +5895,69 @@ function buildAlps(C, g) {
   mk(C.x0 - 500, oz, 600, 1400, false); mk(ox - 200, C.z1 + 700, 520, 1900, true); mk(C.x1 + 550, oz - 200, 650, 1300, false); mk(ox + 400, C.z1 + 600, 480, 1150, false); mk(C.x0 - 300, C.z1 + 500, 420, 1000, false);
   return [[cx, cz, 'Village Church'], [fx, fz, 'Fondue Hut'], [ox - 200, C.z1 + 700, 'Matterhorn']];
 }
+/* ---- London: brick terraces, Big Ben, the London Eye, red buses and phone boxes, and a palace with guards */
+function buildLondon(C, g) {
+  const ox = C.cx, oz = C.cz, ben = [ox - 85, oz - 115], eye = [ox + 255, oz + 185], palace = [ox - 425, oz + 185];
+  countryTown(C, { count: 150, w: [14, 24], h: r => 10 + Math.floor(r() * 3) * 4, walls: ['#8a4a3a', '#9b5a46', '#7a3e30', '#b8a48a', '#e8e0cc'], roof: 'gable', roofs: ['#3a3f46', '#45403a', '#4e5763'], keep: [[...ben, 30], [...eye, 70], [...palace, 60]],
+    wallMat: townMat('#ffffff', '#2a3040'), trees: list => roundTrees(list, 0x3f6f34) }, g);
+  const stone = new THREE.MeshStandardMaterial({ color: 0xc9b98e, roughness: .8 }), dark = new THREE.MeshStandardMaterial({ color: 0x2f3a3a, roughness: .5, metalness: .4 }), gold = new THREE.MeshStandardMaterial({ color: 0xd8b04a, metalness: .7, roughness: .3 });
+  // Big Ben: a tall stone tower, four clock faces, a dark spire
+  const [bx, bz] = ben, tw = new THREE.Mesh(new THREE.BoxGeometry(12, 70, 12), stone); tw.position.set(bx, 35, bz); tw.castShadow = true; g.add(tw); C.P.addCol(bx - 6, bz - 6, bx + 6, bz + 6);
+  const belfry = new THREE.Mesh(new THREE.BoxGeometry(13.5, 14, 13.5), gold); belfry.position.set(bx, 77, bz); g.add(belfry);
+  const clock = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#f4ecd2'; c.beginPath(); c.arc(128, 128, 120, 0, 7); c.fill(); c.strokeStyle = '#111'; c.lineWidth = 8; c.stroke(); for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; c.fillStyle = '#111'; c.fillRect(128 + Math.sin(a) * 96 - 4, 128 - Math.cos(a) * 96 - 10, 8, 20); } c.lineWidth = 10; c.beginPath(); c.moveTo(128, 128); c.lineTo(128, 50); c.moveTo(128, 128); c.lineTo(185, 128); c.stroke(); });
+  const cm = new THREE.MeshBasicMaterial({ map: clock }); dynMats.lamps.push(cm);
+  for (const [dx, dz, ry] of [[0, 6.8, 0], [0, -6.8, Math.PI], [6.8, 0, Math.PI / 2], [-6.8, 0, -Math.PI / 2]]) { const f = new THREE.Mesh(new THREE.CircleGeometry(5, 32), cm); f.position.set(bx + dx, 77, bz + dz); f.rotation.y = ry; g.add(f); }
+  const spire = new THREE.Mesh(new THREE.ConeGeometry(9, 24, 4), dark); spire.position.set(bx, 96, bz); spire.rotation.y = Math.PI / 4; g.add(spire);
+  // the London Eye: a huge wheel with pods, slowly turning
+  const [ex, ez] = eye, wheel = new THREE.Group(); wheel.position.set(ex, 68, ez); wheel.rotation.y = Math.PI / 2; g.add(wheel); C.eye = wheel;
+  const white = new THREE.MeshStandardMaterial({ color: 0xf0f2f4, roughness: .4, metalness: .5 });
+  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(60, 1, 8, 64), white));
+  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, sp = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 60, 6), white); sp.position.set(Math.cos(a) * 30, Math.sin(a) * 30, 0); sp.rotation.z = a - Math.PI / 2; wheel.add(sp);
+    const pod = new THREE.Mesh(new THREE.SphereGeometry(2.4, 12, 8).scale(1.4, 1, 1), new THREE.MeshStandardMaterial({ color: 0xbfe2f4, roughness: .1, metalness: .3 })); pod.position.set(Math.cos(a) * 60, Math.sin(a) * 60, 0); wheel.add(pod); }
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, 75, 8), white); leg.position.set(ex, 34, ez + s * 18); leg.rotation.x = s * .26; g.add(leg); C.P.addCol(ex - 2, ez + s * 26 - 2, ex + 2, ez + s * 26 + 2); }
+  // the palace: a long pale front with a flag, and guards in red with tall black hats
+  const [px, pz] = palace, front = new THREE.Mesh(new THREE.BoxGeometry(90, 22, 24), new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: .7 })); front.position.set(px, 11, pz - 20); front.castShadow = true; g.add(front); C.P.addCol(px - 45, pz - 32, px + 45, pz - 8);
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(8, 5), new THREE.MeshBasicMaterial({ map: canvasTex(128, 80, (c, w, h) => { c.fillStyle = '#1d3a8a'; c.fillRect(0, 0, w, h); c.strokeStyle = '#fff'; c.lineWidth = 16; c.beginPath(); c.moveTo(0, 0); c.lineTo(w, h); c.moveTo(w, 0); c.lineTo(0, h); c.stroke(); c.strokeStyle = '#c8141b'; c.lineWidth = 6; c.stroke(); c.lineWidth = 22; c.strokeStyle = '#fff'; c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2, h); c.moveTo(0, h / 2); c.lineTo(w, h / 2); c.stroke(); c.lineWidth = 12; c.strokeStyle = '#c8141b'; c.stroke(); }), side: THREE.DoubleSide }));
+  flag.position.set(px + 4, 30, pz - 20); g.add(flag); const fp = new THREE.Mesh(new THREE.CylinderGeometry(.15, .15, 10, 6), dark); fp.position.set(px, 27, pz - 20); g.add(fp);
+  const red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .6 }), black = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: .8 });
+  for (const s of [-1, 1]) { const gd = new THREE.Group(); gd.position.set(px + s * 12, 0, pz - 6); g.add(gd);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(.6, 1.1, .4), red); body.position.y = 1.35; gd.add(body); const legs = new THREE.Mesh(new THREE.BoxGeometry(.5, .8, .35), black); legs.position.y = .4; gd.add(legs);
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(.24, .26, .7, 10), black); hat.position.y = 2.3; gd.add(hat); const face = new THREE.Mesh(new THREE.SphereGeometry(.17, 8, 6), new THREE.MeshStandardMaterial({ color: 0xe8c4a0 })); face.position.y = 2.0; gd.add(face); }
+  // red phone boxes and double-decker buses parked by the streets
+  const { xs, zs } = cStreets(C);
+  for (let k = 0; k < 6; k++) { const x = xs[k % xs.length] + 10.5, z = zs[0] + 40 + k * 63, pb = new THREE.Mesh(new THREE.BoxGeometry(1, 2.5, 1), red); pb.position.set(x, 1.25, z); g.add(pb); C.P.addCol(x - .6, z - .6, x + .6, z + .6); }
+  for (let k = 0; k < 4; k++) { const x = xs[(k + 1) % xs.length] - 10, z = zs[1] + 30 + k * 70, bus = new THREE.Group(); bus.position.set(x, 0, z); g.add(bus);
+    const lo = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.2, 10), red); lo.position.y = 1.5; bus.add(lo); const up = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.9, 10), red); up.position.y = 3.6; bus.add(up);
+    for (const y of [1.9, 3.8]) { const w = new THREE.Mesh(new THREE.BoxGeometry(2.56, .7, 9.2), glassMat); w.position.y = y; bus.add(w); } C.P.addCol(x - 1.3, z - 5, x + 1.3, z + 5); }
+  return [[bx, bz, 'Big Ben'], [ex, ez, 'London Eye'], [px, pz, 'The Palace']];
+}
+/* ---- Egypt: sand-coloured flat-roof houses, palms, the three great pyramids, the Sphinx and an obelisk */
+function buildEgypt(C, g) {
+  const ox = C.cx, oz = C.cz, sphinx = [ox - 85, oz + 35], obelisk = [ox + 255, oz - 115];
+  countryTown(C, { count: 120, w: [12, 20], h: r => 5 + Math.floor(r() * 3) * 3, walls: ['#e2c590', '#d8b678', '#ecd4a4', '#c9a468'], roof: 'flat', keep: [[...sphinx, 40], [...obelisk, 20]],
+    wallMat: townMat('#ffffff', '#5a3a1a'), trees: list => palmTrees(list.map(([x, y, z, r]) => [x, y, z, r, 1])) }, g);
+  const sand = new THREE.MeshStandardMaterial({ color: 0xd8b678, roughness: 1, flatShading: true });
+  // the great pyramids, south of the town in the desert (a gold cap on the biggest)
+  const desert = new THREE.Mesh(new THREE.PlaneGeometry(2600, 1400), new THREE.MeshStandardMaterial({ color: 0xe6c98c, roughness: 1 })); desert.rotation.x = -Math.PI / 2; desert.position.set(ox, -.3, C.z1 + 750); g.add(desert);
+  for (const [dx, dz, s] of [[-300, 700, 1], [150, 900, .85], [480, 1050, .55]]) {
+    const py = new THREE.Mesh(new THREE.ConeGeometry(160 * s, 140 * s, 4), sand); py.position.set(ox + dx, 70 * s - .3, C.z1 + dz); py.rotation.y = Math.PI / 4; py.castShadow = true; g.add(py);
+    if (s === 1) { const cap = new THREE.Mesh(new THREE.ConeGeometry(16, 14, 4), new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: .8, roughness: .2 })); cap.position.set(ox + dx, 133, C.z1 + dz); cap.rotation.y = Math.PI / 4; g.add(cap); }
+  }
+  // the Sphinx: a lying lion with a pharaoh's head-dress
+  const [sx, sz] = sphinx, stone = new THREE.MeshStandardMaterial({ color: 0xc9a468, roughness: .95, flatShading: true }), add = (geo, x, y, z) => { const m = new THREE.Mesh(geo, stone); m.position.set(sx + x, y, sz + z); m.castShadow = true; g.add(m); return m; };
+  add(new THREE.BoxGeometry(10, 6, 30), 0, 3, 4); add(new THREE.BoxGeometry(9, 9, 8), 0, 9, -11); add(new THREE.BoxGeometry(12, 3, 10), 0, 13.5, -11);
+  add(new THREE.BoxGeometry(3, 2.5, 14), -3, 1.25, -16); add(new THREE.BoxGeometry(3, 2.5, 14), 3, 1.25, -16);
+  const hd = add(new THREE.ConeGeometry(7, 10, 4), 0, 11, -10); hd.rotation.y = Math.PI / 4;
+  C.P.addCol(sx - 6, sz - 23, sx + 6, sz + 19);
+  // the obelisk
+  const [obx, obz] = obelisk, ob = new THREE.Mesh(new THREE.BoxGeometry(3, 30, 3), stone); ob.position.set(obx, 15, obz); g.add(ob);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(2.2, 3, 4), new THREE.MeshStandardMaterial({ color: 0xffd23a, metalness: .8, roughness: .2 })); tip.position.set(obx, 31.5, obz); tip.rotation.y = Math.PI / 4; g.add(tip);
+  C.P.addCol(obx - 2, obz - 2, obx + 2, obz + 2);
+  return [[sx, sz, 'The Sphinx'], [ox - 300, C.z1 + 700, 'Great Pyramid'], [obx, obz, 'Obelisk']];
+}
 function buildCountries() {
   const builders = { cyprus: [buildCyprus, '#e9d6a8', '#cdbb8e'], italy: [buildItaly, '#e9d6a8', '#9fa86a'], dubai: [buildDubai, '#f0dcae', '#e5cf9c'],
-    paris: [buildParis, '#d8d0bc', '#8fa36a'], newyork: [buildNewYork, '#c9c3b4', '#7d9a5c'], alps: [buildAlps, '#f4f8fc', '#e9eff6'] };
+    paris: [buildParis, '#d8d0bc', '#8fa36a'], london: [buildLondon, '#c9c3b4', '#6f9a52'], egypt: [buildEgypt, '#ecc98c', '#e2c590'], newyork: [buildNewYork, '#c9c3b4', '#7d9a5c'], alps: [buildAlps, '#f4f8fc', '#e9eff6'] };
   for (const C of COUNTRIES) {
     buildBridgeRoad(C.R, C.P, C);
     const g = new THREE.Group(); scene.add(g); C.group = g;
@@ -6875,7 +6942,8 @@ function endCRace(pos, quit) {
 }
 /* ---------- delivery jobs ---------- */
 const JOBS = { cyprus: ['🧀', 'Halloumi delivery', 'Cheese for the tavernas', 2500], italy: ['🍕', 'Pizza delivery', 'Hot pizza, fast!', 3000], dubai: ['💰', 'Gold delivery', 'Gold bars to the towers', 6000],
-  paris: ['🥐', 'Croissant delivery', 'Fresh from the bakery', 2800], newyork: ['🌭', 'Hot-dog delivery', 'Lunch for Manhattan', 3200], alps: ['🍫', 'Chocolate delivery', 'Swiss chocolate to the chalets', 3500] };
+  paris: ['🥐', 'Croissant delivery', 'Fresh from the bakery', 2800], newyork: ['🌭', 'Hot-dog delivery', 'Lunch for Manhattan', 3200], alps: ['🍫', 'Chocolate delivery', 'Swiss chocolate to the chalets', 3500],
+  london: ['☕', 'Tea delivery', 'Tea for the palace guards', 3000], egypt: ['🏺', 'Treasure delivery', 'Ancient treasures to the museum', 4500] };
 let delivMark = null;
 function delivTarget(C, fx, fz) {
   const { xs, zs } = cStreets(C);
