@@ -282,6 +282,17 @@
   #storyhud { position:absolute; left:22px; top:88px; max-width:min(520px, 60vw); font-size:13px; letter-spacing:.06em; color:#ffc1dc; text-shadow:0 1px 4px #000; cursor:pointer; pointer-events:auto; }
   @media (max-width: 600px) { #storyhud { max-width:52vw; font-size:11px; top:84px; } }
   #storyhud b { color:#ff5fa2; letter-spacing:.12em; } #storyhud i { font-style:normal; color:#ffd21f; margin-left:4px; }
+  #dailyhud { position:absolute; left:22px; top:108px; max-width:min(520px, 60vw); font-size:12px; letter-spacing:.06em; color:#ffe9a8; text-shadow:0 1px 4px #000; }
+  #dailyhud b { color:#ffc21f; letter-spacing:.12em; } #dailyhud i { font-style:normal; color:#2fe0ff; }
+  #radiohud { position:absolute; right:48px; bottom:318px; font-size:12px; letter-spacing:.14em; color:#2fe0ff; text-shadow:0 1px 4px #000; }
+  #fuelBar { position:absolute; right:48px; bottom:300px; width:200px; height:10px; background:rgba(0,0,0,.5); border:1px solid #ff8a1f; }
+  #fuelBar small { position:absolute; left:-26px; top:-5px; font-size:13px; } #fuelBar i { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#ff5a1f,#ffc21f); }
+  #fuelBar.low { border-color:#ff2a2a; animation:pulse 1s infinite; } #fuelBar.low i { background:#ff2a2a; }
+  @keyframes pulse { 50% { opacity:.4; } }
+  #photoUI { position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px; background:linear-gradient(transparent, rgba(0,0,0,.7)); pointer-events:none; }
+  #photoUI.hidden { display:none; } #phTitle { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.3em; color:#fff; } #phHelp { font-size:12px; letter-spacing:.12em; color:#cfd2d8; text-align:center; }
+  #phBtns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; pointer-events:auto; } #phBtns button { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.1em; padding:10px 18px; color:#111; background:#ffc21f; border:none; cursor:pointer; } #phBtns #phExit { background:#444; color:#fff; }
+  @media (max-width: 600px) { #dailyhud { top:122px; font-size:10px; max-width:52vw; } #fuelBar { width:120px; } }
   #helpbtn { position:absolute; left:22px; top:66px; font-size:13px; letter-spacing:.2em; color:var(--dim); text-shadow:0 1px 4px #000; }
   #help { position:absolute; left:22px; top:92px; background:var(--panel); padding:12px 16px; font-size:15px; line-height:1.55; letter-spacing:.05em;
     border-left:3px solid var(--accent); backdrop-filter:blur(6px); }
@@ -445,10 +456,13 @@
   <div id="carname"></div>
   <div id="helpbtn">[H] CONTROLS</div>
   <div id="storyhud"></div>
+  <div id="dailyhud"></div>
+  <div id="radiohud"></div>
+  <div id="fuelBar"><small>⛽</small><i></i></div>
   <div id="help" class="hidden">
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
     <div><kbd>SPACE</kbd>Handbrake (drift)</div><div><kbd>SHIFT / X</kbd>Nitro (upgrade it first)</div><div><kbd>C</kbd>Camera view</div><div><kbd>M</kbd>Auto / Manual gearbox</div>
-    <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>Y</kbd>Weather: rain / clear</div><div><kbd>U</kbd>Season</div><div><kbd>R</kbd>Reset car to road</div>
+    <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>Y</kbd>Weather: rain / clear</div><div><kbd>U</kbd>Season</div><div><kbd>F</kbd>Photo mode</div><div><kbd>B</kbd>Radio</div><div><kbd>R</kbd>Reset car to road</div>
     <div><kbd>IN THE AIR</kbd>S backflip · W front flip · A/D spin · SPACE+A/D roll</div>
     <div><kbd>G</kbd>Outlaw: route to a hideout</div><div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
@@ -496,6 +510,7 @@
   <div id="flyHelp">W/S throttle · A/D turn · ↑/↓ climb &amp; dive · click a place for autopilot · L land</div>
 </div>
 <div id="flyFade"></div>
+<div id="photoUI" class="hidden"><div id="phTitle">📷 PHOTO MODE</div><div id="phHelp">DRAG / ARROWS: TURN · W S / WHEEL: ZOOM · Q E: UP DOWN</div><div id="phBtns"><button id="phFilter">🎨 NORMAL</button><button id="phSave">📸 SAVE PICTURE</button><button id="phExit">✕ EXIT</button></div></div>
 <div id="custPanel" class="hidden"><h2>CUSTOMIZE</h2><div id="custCar"></div><div id="custRows"></div><div class="rbtns"><button id="custReset">RESET</button><button id="custDone">DONE</button></div></div>
 <div id="ad" class="hidden"><div class="adBar"></div><div class="adBar bot"></div><div id="adTxt"></div><div id="adFlash"></div><div id="adFade"></div>
   <div id="adFine"></div><button id="adSkip">SKIP ▸▸</button><button id="adSound">🔊 TAP FOR SOUND</button><div id="adTag">AD · 広告</div></div>
@@ -521,6 +536,8 @@
   <button id="bResume">RESUME</button>
   <button id="bTime">TIME OF DAY</button>
   <button id="bWeather">WEATHER</button>
+  <button id="bPhoto">📷 PHOTO MODE</button>
+  <button id="bRadio">📻 RADIO</button>
   <button id="bSeason">SEASON</button>
   <button id="bRaces">RACES</button>
   <button id="bLeave" class="hidden">LEAVE RACE</button>
@@ -2945,8 +2962,8 @@ function renderUpg() {
 /* ---- stats + missions: counters saved in amboola.stats; each mission pays once, automatically */
 const ST = { dragWins: 0, raceWins: 0, fares: 0, arrests: 0, stashed: 0, driftBest: 0, bosses: [], done: [], ...JSON.parse(localStorage.getItem('amboola.stats') || '{}') };
 const saveStats = () => localStorage.setItem('amboola.stats', JSON.stringify(ST));
-const bump = (k, v = 1) => { ST[k] = (ST[k] || 0) + v; saveStats(); checkMissions(); };
-const best = (k, v) => { if (v > (ST[k] || 0)) { ST[k] = v; saveStats(); checkMissions(); } };
+const bump = (k, v = 1) => { ST[k] = (ST[k] || 0) + v; saveStats(); checkMissions(); dailyAdd(k, v); };
+const best = (k, v) => { if (v > (ST[k] || 0)) { ST[k] = v; saveStats(); checkMissions(); } dailyAdd(k, v, true); };
 const ownedCars = () => CARS.filter(c => wallet.owned.has(c.id));
 const MISSIONS = [
   { id: 'drag1', n: 'FIRST LAUNCH', d: 'Win a drag race', goal: 1, v: () => ST.dragWins, r: 2000 },
@@ -3201,6 +3218,7 @@ const keys = {}; const touchState = { l: 0, r: 0, g: 0, b: 0, h: 0, n: 0 };
 addEventListener('keydown', e => {
   if (state === 'ad' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endAd(); return; }
   if (state === 'ferry' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endFerry(true); return; }
+  if (state === 'photo' && (e.code === 'Escape' || e.code === 'KeyF') && !keys[e.code]) { keys[e.code] = true; endPhoto(); return; }
   if (state === 'fly' && !keys[e.code]) { if (e.code === 'KeyL') landJet(); if (e.code === 'Escape') { endFlight(); enterGarage(); } }
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
@@ -3213,7 +3231,9 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyM') { player.manual = !player.manual; toast(player.manual ? 'MANUAL' : 'AUTOMATIC', 'GEARBOX'); }
     if (e.code === 'KeyE' && player.manual) player.doShift(1);
     if (e.code === 'KeyQ' && player.manual) player.doShift(-1);
-    if (e.code === 'KeyR') race ? raceReset() : player.resetToRoad();
+    if (e.code === 'KeyR') race ? raceReset() : roadsideHelp() || player.resetToRoad();
+    if (e.code === 'KeyF') { startPhoto(); return; }
+    if (e.code === 'KeyB') cycleRadio();
     if (e.code === 'Enter' && nearMarker && !race) startRace(nearMarker);
     if (e.code === 'Enter' && meetNear && !meet && !nearMarker) openMeet(meetNear);
     if (e.code === 'Enter' && actNear && !busyAct() && !nearMarker) actNear.go();
@@ -5271,7 +5291,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); } if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
@@ -6926,7 +6946,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops(); buildSecrets();
+  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations();
 }
 
 /* =====================================================================
@@ -7312,6 +7332,217 @@ function openStory() {
   $('meetPanel').classList.remove('hidden');
 }
 
+/* =====================================================================
+   DAILY CHALLENGE — one mini-mission a day (the same for everyone on that date), worth $30,000. Shown under the
+   story line; progress comes from the same counters as the missions (bump / best) plus speed and distance.
+   ===================================================================== */
+const DAILY_LIST = [
+  { k: 'jumpBest', best: true, goal: 40, t: 'Jump 40 m in one go' }, { k: 'driftBest', best: true, goal: 15000, t: 'Drift 15,000 points in one chain' },
+  { k: 'speed', best: true, goal: 300, t: 'Reach 300 km/h' }, { k: 'wins', goal: 1, t: 'Win any race' }, { k: 'escapes', goal: 1, t: 'Escape from the police' },
+  { k: 'flips', goal: 5, t: 'Do 5 flips or rolls' }, { k: 'loops', goal: 2, t: 'Drive round 2 loops' }, { k: 'busPeople', goal: 50, t: 'Carry 50 bus passengers' },
+  { k: 'fares', goal: 3, t: 'Give 3 taxi rides' }, { k: 'km', goal: 15, t: 'Drive 15 km' }, { k: 'ferries', goal: 1, t: 'Take the ferry' },
+  { k: 'camBest', best: true, goal: 250, t: 'Flash a speed camera at 250 km/h' }, { k: 'deliveries', goal: 1, t: 'Finish a delivery job' }, { k: 'washes', goal: 1, t: 'Wash your car' },
+];
+const WIN_KEYS = ['raceWins', 'dragWins', 'cRaceWins', 'meetWins', 'worldWins'];
+let DAY = (() => { try { return JSON.parse(localStorage.getItem('amboola.challenge')) || {}; } catch (e) { return {}; } })();
+function dailyToday() {
+  const d = dayStr(new Date());
+  if (DAY.date !== d) { let h = 0; for (const ch of d) h = (h * 31 + ch.charCodeAt(0)) >>> 0; DAY = { date: d, i: h % DAILY_LIST.length, v: 0, done: false }; saveDay(); }
+  return DAILY_LIST[DAY.i];
+}
+const saveDay = () => { try { localStorage.setItem('amboola.challenge', JSON.stringify(DAY)); } catch (e) { } };
+function dailyAdd(k, v, isBest) {
+  const C = dailyToday(); if (DAY.done) return;
+  const key = WIN_KEYS.includes(k) ? 'wins' : k; if (key !== C.k) return;
+  DAY.v = isBest ? Math.max(DAY.v, v) : DAY.v + v; saveDay();
+  if (DAY.v >= C.goal) { DAY.done = true; saveDay(); earn(30000); bump('dailies'); banner('⭐ DAILY CHALLENGE DONE!', '+$30,000', C.t); }
+}
+let dailyT = 0, dailyKm = 0;
+function updateDaily(dt, p) {
+  dailyKm += (p.speed || 0) * dt; if (dailyKm > 1000) { dailyKm -= 1000; dailyAdd('km', 1); }
+  if (p.speed * 3.6 > (DAY.v || 0) && dailyToday().k === 'speed') dailyAdd('speed', Math.round(p.speed * 3.6), true);
+  if ((dailyT -= dt) > 0) return; dailyT = 1;
+  const C = dailyToday(), h = $('dailyhud');
+  h.innerHTML = DAY.done ? `⭐ DAILY CHALLENGE DONE · <i>COME BACK TOMORROW</i>` : `⭐ <b>DAILY</b> · ${C.t} <i>${Math.min(Math.floor(DAY.v), C.goal).toLocaleString()}/${C.goal.toLocaleString()}</i> · $30,000`;
+}
+
+/* =====================================================================
+   PHOTO MODE — F (or 📷 in the pause menu) freezes the game: drag or use the arrow keys to swing the camera round your
+   car, W/S (or the mouse wheel) to zoom, Q/E to go up and down, choose a filter, and save the picture.
+   ===================================================================== */
+const PHOTO_FILTERS = [['NORMAL', 'none'], ['BLACK & WHITE', 'grayscale(1) contrast(1.15)'], ['OLD PHOTO', 'sepia(.85) contrast(1.05)'], ['VIVID', 'saturate(1.6) contrast(1.1)'], ['DREAM', 'saturate(1.3) brightness(1.1) hue-rotate(-12deg)']];
+let photo = null;
+function startPhoto() {
+  if (state !== 'drive' && state !== 'pause') return;
+  $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.suspend();
+  const p = player, dx = camera.position.x - p.x, dz = camera.position.z - p.z;
+  photo = { yaw: Math.atan2(dx, dz), pitch: .25, dist: Math.max(5, Math.hypot(dx, dz)), lift: 0, f: 0, drag: null };
+  state = 'photo'; $('hud').classList.add('hidden'); $('photoUI').classList.remove('hidden'); photoFilter(0);
+}
+function endPhoto() {
+  if (!photo) return; photo = null; $('photoUI').classList.add('hidden'); $('hud').classList.remove('hidden'); canvas.style.filter = '';
+  state = 'drive'; if (audio.ctx) audio.ctx.resume(); for (const k in keys) keys[k] = false;
+}
+function photoFilter(i) { photo.f = i; canvas.style.filter = PHOTO_FILTERS[i][1] === 'none' ? '' : PHOTO_FILTERS[i][1]; $('phFilter').textContent = '🎨 ' + PHOTO_FILTERS[i][0]; }
+function updatePhoto(dt) {
+  const P = photo, p = player, k = keys;
+  P.yaw += ((k.ArrowLeft || k.KeyA ? 1 : 0) - (k.ArrowRight || k.KeyD ? 1 : 0)) * dt * 1.2;
+  P.pitch = clamp(P.pitch + ((k.ArrowUp ? 1 : 0) - (k.ArrowDown ? 1 : 0)) * dt * .8, -.05, 1.45);
+  P.dist = clamp(P.dist * (1 + ((k.KeyS ? 1 : 0) - (k.KeyW ? 1 : 0)) * dt * 1.2), 2.5, 60);
+  P.lift = clamp(P.lift + ((k.KeyE ? 1 : 0) - (k.KeyQ ? 1 : 0)) * dt * 3, -1, 20);
+  const y0 = (p.y || 0) + .8 + P.lift;
+  camera.position.set(p.x + Math.sin(P.yaw) * Math.cos(P.pitch) * P.dist, y0 + Math.sin(P.pitch) * P.dist, p.z + Math.cos(P.yaw) * Math.cos(P.pitch) * P.dist);
+  camera.lookAt(p.x, y0, p.z); sky.position.copy(camera.position);
+  composer.render(dt);
+}
+function savePhoto() {
+  composer.render(0);
+  const src = renderer.domElement, c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const g = c.getContext('2d'); g.filter = PHOTO_FILTERS[photo.f][1]; g.drawImage(src, 0, 0);
+  g.filter = 'none'; g.font = `900 ${Math.round(c.height * .03)}px ${OR}`; g.fillStyle = 'rgba(255,255,255,.85)'; g.textAlign = 'right';
+  g.fillText(`AMBOOLA · ${player.spec.name.toUpperCase()}`, c.width - c.height * .03, c.height * .96);
+  const a = document.createElement('a'); a.download = `amboola-${player.spec.id}-${Date.now()}.png`; a.href = c.toDataURL('image/png'); a.click();
+  bump('photos'); const f = $('flyFade'); f.style.background = '#fff'; f.style.opacity = .9; setTimeout(() => { f.style.opacity = 0; setTimeout(() => f.style.background = '', 200); }, 90);
+  audio.beep?.(1800, .05);
+}
+
+/* =====================================================================
+   RADIO — three stations of music made live by the Web Audio API (no music files): AMBOOLA FM (synth-pop), TOKYO
+   LO-FI (slow and chill) and HIGHWAY ROCK. B changes station (and turns it off). Every station loops a four-chord
+   song with drums, bass, chords and a little melody, a bit different each bar.
+   ===================================================================== */
+const RADIO = [{ n: 'AMBOOLA FM', jp: 'アンブーラFM · SYNTH POP', bpm: 122, s: 'synth' }, { n: 'TOKYO LO-FI', jp: '東京ローファイ · CHILL', bpm: 78, s: 'lofi' }, { n: 'HIGHWAY ROCK', jp: 'ハイウェイロック', bpm: 146, s: 'rock' }];
+const radio = { st: +(localStorage.getItem('amboola.radio') ?? -1), next: 0, step: 0, out: null, noise: null, dist: null };
+function cycleRadio() {
+  radio.st = radio.st >= RADIO.length - 1 ? -1 : radio.st + 1; localStorage.setItem('amboola.radio', radio.st); radio.step = 0; radio.next = 0;
+  const R = RADIO[radio.st]; toast(R ? `📻 ${R.n}` : '📻 RADIO OFF', R ? R.jp : 'PRESS B FOR MUSIC'); updateRadioHud();
+}
+const updateRadioHud = () => { const R = RADIO[radio.st], h = $('radiohud'); if (h) h.textContent = R ? `📻 ${R.n}` : ''; };
+function radioInit() {
+  const ctx = audio.ctx; if (!ctx || radio.out) return !!radio.out;
+  radio.out = ctx.createGain(); radio.out.gain.value = .2; radio.out.connect(audio.master);
+  const n = ctx.sampleRate, b = ctx.createBuffer(1, n, n), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; radio.noise = b;
+  radio.dist = ctx.createWaveShaper(); const cv = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(x * 4); } radio.dist.curve = cv; radio.dist.connect(radio.out);
+  return true;
+}
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+function rTone(t, f, dur, type, vol, cut = 4000, to = radio.out) {
+  const ctx = audio.ctx, o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  o.type = type; o.frequency.value = f; lp.frequency.value = cut; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(lp).connect(g).connect(to); o.start(t); o.stop(t + dur + .05);
+}
+function rNoise(t, dur, vol, type, freq) {
+  const ctx = audio.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  s.buffer = radio.noise; f.type = type; f.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f).connect(g).connect(radio.out); s.start(t, Math.random() * .5, dur + .05);
+}
+function rKick(t, v = .9) { const ctx = audio.ctx, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .3); o.connect(g).connect(radio.out); o.start(t); o.stop(t + .35); }
+function updateRadio() {
+  const R = RADIO[radio.st], ctx = audio.ctx;
+  if (!R || !ctx || ctx.state !== 'running' || state !== 'drive') return;
+  if (!radioInit()) return;
+  const sp = 60 / R.bpm / 4; if (radio.next < ctx.currentTime) radio.next = ctx.currentTime + .05;
+  const prog = R.s === 'rock' ? [52, 48, 55, 50] : R.s === 'lofi' ? [50, 55, 48, 57] : [57, 53, 48, 55];
+  while (radio.next < ctx.currentTime + .25) {
+    const t = radio.next, st = radio.step % 16, bar = Math.floor(radio.step / 16), root = prog[bar % 4], minor = R.s !== 'rock' && (bar % 4 === 0), third = minor ? 3 : 4;
+    const swing = R.s === 'lofi' && st % 2 ? sp * .3 : 0, T = t + swing;
+    if (R.s === 'synth') {
+      if (st % 4 === 0) rKick(T); if (st === 4 || st === 12) rNoise(T, .16, .5, 'bandpass', 1800); if (st % 2 === 0) rNoise(T, .04, .2, 'highpass', 7000);
+      if ([0, 3, 6, 8, 11, 14].includes(st)) rTone(T, mtof(root - 24), sp * 1.8, 'sawtooth', .35, 700);
+      rTone(T, mtof(root + [0, third, 7, 12][st % 4]), sp * .9, 'square', .06, 2600);
+      if ((st === 0 || st === 6 || st === 10) && Math.sin(bar * 7.1 + st) > -.3) rTone(T, mtof(root + 12 + [0, 3, 5, 7, 10][(bar * 3 + st) % 5]), sp * 3, 'triangle', .14, 5000);
+    } else if (R.s === 'lofi') {
+      if (st === 0 || st === 7 || st === 10) rKick(T, .6); if (st === 4 || st === 12) rNoise(T, .2, .25, 'bandpass', 1200); if (st % 2 === 0) rNoise(T, .03, .07, 'highpass', 6000);
+      if (st === 0 || st === 8) for (const iv of [0, third, 7, 10, 14]) rTone(T, mtof(root + iv), sp * 7, 'sine', .07, 1800);
+      if (st === 0 || st === 10) rTone(T, mtof(root - 12), sp * 6, 'triangle', .3, 500);
+      if ([3, 6, 13].includes(st) && Math.sin(bar * 3.3 + st) > 0) rTone(T, mtof(root + 12 + [0, 2, 4, 7, 9][(bar + st) % 5]), sp * 4, 'sine', .08, 3000);
+    } else {
+      if (st % 8 === 0 || st === 10) rKick(T); if (st === 4 || st === 12) rNoise(T, .2, .7, 'bandpass', 2000); rNoise(T, .05, .12, 'highpass', 8000);
+      if (st % 2 === 0) { rTone(T, mtof(root - 12), sp * 1.8, 'sawtooth', .18, 2500, radio.dist); rTone(T, mtof(root - 5), sp * 1.8, 'sawtooth', .14, 2500, radio.dist); }
+      if (st % 2 === 0) rTone(T, mtof(root - 24), sp * 1.8, 'square', .25, 400);
+    }
+    radio.next += sp; radio.step++;
+  }
+}
+
+/* =====================================================================
+   FUEL, GAS STATIONS AND THE CAR WASH — driving uses fuel (electric cars use battery): a full tank lasts about 90 km.
+   When it runs low the gauge turns red; empty, the engine stops (press R for roadside help, $500). Fill up at any
+   ⛽ station (Tokyo, every country town, Mt. Fuji). Desert sand, snow and rain make the car dirty; the AMBOOLA car
+   wash makes it shine again. Races and jobs don't use fuel.
+   ===================================================================== */
+const FUEL_RANGE = 90000;
+let fuel = clamp(+(localStorage.getItem('amboola.fuel') ?? 1) || 0, 0, 1), dirt = clamp(+(localStorage.getItem('amboola.dirt') ?? 0) || 0, 0, 1), fuelSaveT = 0, fuelWarned = false;
+const GAS = [];
+function buildGasStations() {
+  const spots = [[rc(4) + 4, rc(6), 'tokyo'], [rc(16) + 4, rc(4), 'tokyo'], [rc(5) + 4, rc(15), 'tokyo'], [rc(17) + 4, rc(14), 'tokyo'], [-3476, -4250, 'fuji']];
+  for (const C of COUNTRIES) spots.push([C.R.x[C.R.n - 1] - 9, C.z0 + 48, C.id, C]);
+  const roofM = new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: .4 }), red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .5 }), lightM = new THREE.MeshBasicMaterial({ color: 0xfff2d8 }); dynMats.lamps.push(lightM);
+  for (const [x, z, area, C] of spots) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); (C?.group || scene).add(g);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(12, .6, 9), roofM); roof.position.y = 5.6; g.add(roof);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(12.1, .35, 9.1), red); band.position.y = 5.2; g.add(band);
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(11, 8), lightM); glow.rotation.x = Math.PI / 2; glow.position.y = 5.28; g.add(glow);
+    for (const sx of [-5.4, 5.4]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.35, 5.4, .35), roofM); post.position.set(sx, 2.7, 0); g.add(post); }
+    GAS.push({ x, z, area });
+    addAct({ x, z, r: 8, col: '#ff5a1f', title: '⛽ Gas Station', sub: 'FILL UP YOUR TANK (OR CHARGE)', sign: 'AMBOOLA GAS ⛽ ⚡', parent: C?.group, go: refuel, face: C ? Math.PI : 0 });
+  }
+  // the car wash: an arch with big spinning brushes, in the city near the start
+  const W = { x: rc(8) + 4, z: rc(12) }; CARWASH.x = W.x; CARWASH.z = W.z;
+  const g = new THREE.Group(); g.position.set(W.x, 0, W.z); scene.add(g); CARWASH.g = g;
+  const blue = new THREE.MeshStandardMaterial({ color: 0x1d5fc4, roughness: .4 });
+  for (const sx of [-5, 5]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.6, 5, 6), blue); post.position.set(sx, 2.5, 0); g.add(post); }
+  const top = new THREE.Mesh(new THREE.BoxGeometry(10.6, 1, 6), blue); top.position.y = 5.3; g.add(top);
+  const brushM = new THREE.MeshStandardMaterial({ color: 0x2fe0ff, roughness: 1, flatShading: true });
+  CARWASH.brushes = [-2.8, 2.8].map(sx => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 3.8, 10), brushM); b.position.set(sx, 2.1, 0); g.add(b); return b; });
+  const t = signTex(1024, 192, '#1d5fc4', [['🫧 AMBOOLA CAR WASH · 洗車', .55, .42, OR, '#fff']], '#2fe0ff'), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.9), sm); sg.position.set(0, 6.8, 0); g.add(sg);
+  addAct({ x: W.x, z: W.z, r: 6, col: '#2fe0ff', title: '🫧 Car Wash', sub: 'MAKE YOUR CAR SHINE · $50', sign: 'CAR WASH', go: startWash });
+}
+const CARWASH = { x: 0, z: 0, t: 0 };
+function refuel() {
+  const ev = player.spec.engine === 'ev', need = 1 - fuel, cost = Math.max(10, Math.round(need * (ev ? 150 : 300)));
+  if (need < .02) { toast(ev ? '⚡ BATTERY FULL' : '⛽ TANK FULL', 'NOTHING TO FILL'); return; }
+  if (wallet.usd < cost) { toast('NOT ENOUGH MONEY', fmtUSD(cost)); return; }
+  wallet.usd -= cost; saveWallet(); fuel = 1; fuelWarned = false; localStorage.setItem('amboola.fuel', 1);
+  audio.beep(660, .1); setTimeout(() => audio.beep(990, .2), 120); toast(ev ? '⚡ FULLY CHARGED' : '⛽ FULL TANK', `−${fmtUSD(cost)} · ABOUT 90 KM`);
+}
+function startWash() {
+  if (wallet.usd < 50) { toast('NOT ENOUGH MONEY', '$50'); return; }
+  wallet.usd -= 50; saveWallet(); CARWASH.t = 4; Object.assign(player, { x: CARWASH.x, z: CARWASH.z, heading: 0, vx: 0, vz: 0 });
+  toast('🫧 WASHING…', 'BRUSHES, FOAM AND WAX');
+}
+const freeFuel = () => race || drag || cRace || worldRace || meet || crime || (typeof soccer !== 'undefined' && soccer);
+function fuelInput(inp) {
+  if (fuel > 0 || freeFuel()) return inp;
+  return { ...inp, throttle: 0, nitro: false };
+}
+function applyDirt(car) {
+  if (!car?.paint) return; const m = car.paint; m.userData.base ??= m.color.clone();
+  m.color.copy(m.userData.base).lerp(new THREE.Color(0x6b5a44), dirt * .5); m.roughness = (m.userData.r0 ??= m.roughness) + dirt * .4;
+}
+function updateFuel(dt, p) {
+  if (!freeFuel() && fuel > 0) {
+    fuel = Math.max(0, fuel - (p.speed || 0) * dt / FUEL_RANGE * (.55 + .45 * (p.throttle || 0)));
+    if (fuel < .15 && !fuelWarned) { fuelWarned = true; toast(p.spec.engine === 'ev' ? '⚡ BATTERY LOW' : '⛽ FUEL LOW', 'FIND A GAS STATION (ON THE MAP)'); }
+    if (fuel <= 0) toast(p.spec.engine === 'ev' ? '⚡ BATTERY EMPTY!' : '⛽ OUT OF FUEL!', 'PRESS R FOR ROADSIDE HELP · $500');
+  }
+  // dirt: sand, snow and wet roads
+  const mud = (p.terrain ? .02 : 0) + (WX.snowy ? .006 : 0) + WX.wet * .004;
+  if (mud && p.speed > 3 && dirt < 1) { dirt = Math.min(1, dirt + mud * dt * Math.min(1, p.speed / 20)); applyDirt(p.car); }
+  if ((fuelSaveT -= dt) < 0) { fuelSaveT = 2; localStorage.setItem('amboola.fuel', fuel.toFixed(4)); localStorage.setItem('amboola.dirt', dirt.toFixed(3)); }
+  const fb = $('fuelBar'); fb.firstElementChild.textContent = p.spec.engine === 'ev' ? '⚡' : '⛽'; fb.lastElementChild.style.width = (fuel * 100) + '%'; fb.classList.toggle('low', fuel < .15);
+  // the car wash
+  if (CARWASH.t > 0) {
+    CARWASH.t -= dt; Object.assign(p, { x: CARWASH.x, z: CARWASH.z, vx: 0, vz: 0 });
+    for (const b of CARWASH.brushes) b.rotation.y += dt * 14;
+    CARWASH.brushes[0].position.z = CARWASH.brushes[1].position.z = Math.sin(CARWASH.t * 1.6) * 2.4;
+    if (Math.random() < dt * 40) spray.spray(p.x + rr(-1.5, 1.5), p.z + rr(-2, 2), 0, 0, 1, 1.5);
+    if (CARWASH.t <= 0) { dirt = 0; applyDirt(p.car); bump('washes'); skill.bank += 1000; audio.beep(1320, .3); banner('✨ SPARKLING CLEAN!', 'YOUR CAR SHINES', '+1,000 skill points'); }
+  }
+}
+function roadsideHelp() { if (fuel > 0 || wallet.usd < 500) return false; wallet.usd -= 500; saveWallet(); fuel = .25; fuelWarned = false; toast('🚚 ROADSIDE HELP', 'A QUARTER TANK · −$500'); return true; }
+
 function actCards() {
   return [`<div class="rcard" data-x="world" style="border-left-color:#2fe0ff"><b>🌍 WORLD RACE · $1,000,000</b><span>Tokyo → Italy → Dubai · about 60 km · 3 rivals</span><span>Over the sea bridges, round the block in Italy, back to Tokyo and over to Dubai</span></div>`,
     ...COUNTRIES.map(C => `<div class="rcard" data-x="c:${C.id}" style="border-left-color:${C.col}"><b>🏁 ${C.raceName.toUpperCase()}</b><span>${C.local} · street race · 2 laps · 3 rivals · $25,000 to win</span><span>BEST ${fmtTime(+localStorage.getItem('amboola.gp.' + C.id) || null)}</span></div>`)].join('');
@@ -7565,6 +7796,8 @@ function buildPlaces() {
   P.push({ n: 'Fuji Five Lakes', jp: '富士五湖', type: 'Lake village under Mt. Fuji · onsen · airstrip', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [-3480, -4380], x: FUJI.cx, z: FUJI.cz, col: '#ff7aa8' });
   P.push({ n: 'Chureito Pagoda', jp: '忠霊塔', type: 'Five-storey pagoda · cherry blossom · Fuji view', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [FUJI.pagoda[0], FUJI.pagoda[1] + 40], face: Math.PI, x: FUJI.pagoda[0], z: FUJI.pagoda[1], col: '#ff7aa8' });
   P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
+  GAS.filter(g => g.area === 'tokyo').forEach((g, k) => P.push({ n: `Gas Station ${k + 1}`, jp: 'ガソリンスタンド', type: 'Fuel and charging', kind: 'city', x: g.x, z: g.z, col: '#ff5a1f' }));
+  P.push({ n: 'Car Wash', jp: '洗車', type: 'Make your car shine · $50', kind: 'city', x: CARWASH.x, z: CARWASH.z, col: '#2fe0ff' });
   P.push({ n: 'Ferry Terminal', jp: 'フェリー乗り場', type: 'Car ferry to 6 countries', kind: 'city', x: FERRY_X, z: HALF - 3, col: '#2fa6ff' });
   P.push({ n: 'Fuji Gate', jp: '富士方面', type: 'West gate · road to Mt. Fuji', kind: 'city', x: -HALF, z: FUJI.gateZ, col: '#ff7aa8' });
   P.push({ n: 'Wangan Gate', jp: '湾岸線入口', type: 'Toll gate · road to the beach', kind: 'city', x: HALF, z: WANGAN_Z, col: '#2fe0ff' });
@@ -8017,7 +8250,7 @@ function startDrive() {
   }
   localStorage.setItem('amboola.lastcar', carIdx);
   let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
-  player = new Player(tunedSpec(spec), paintIdx);
+  player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); updateRadioHud();
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
   audio.setCar(spec);
   camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
@@ -8036,6 +8269,13 @@ function setPause(on) {
 function cycleTime() { const n = TIME_ORDER[(TIME_ORDER.indexOf(timeName) + 1) % 3]; applyTime(n); toast(n.toUpperCase(), 'TIME OF DAY'); }
 $('bResume').onclick = () => setPause(false);
 $('bSeason').onclick = () => cycleSeason();
+$('bPhoto').onclick = () => startPhoto();
+$('bRadio').onclick = () => { cycleRadio(); $('bRadio').textContent = '📻 ' + (RADIO[radio.st]?.n || 'RADIO OFF'); };
+$('phSave').onclick = () => savePhoto(); $('phFilter').onclick = () => photoFilter((photo.f + 1) % PHOTO_FILTERS.length); $('phExit').onclick = () => endPhoto();
+canvas.addEventListener('pointerdown', e => { if (photo) photo.drag = [e.clientX, e.clientY]; });
+addEventListener('pointermove', e => { if (photo?.drag) { photo.yaw -= (e.clientX - photo.drag[0]) * .006; photo.pitch = clamp(photo.pitch + (e.clientY - photo.drag[1]) * .005, -.05, 1.45); photo.drag = [e.clientX, e.clientY]; } });
+addEventListener('pointerup', () => { if (photo) photo.drag = null; });
+canvas.addEventListener('wheel', e => { if (photo) photo.dist = clamp(photo.dist * (1 + Math.sign(e.deltaY) * .1), 2.5, 60); }, { passive: true });
 $('bWeather').onclick = () => { cycleWeather(); $('bWeather').textContent = 'WEATHER: ' + (weather === 'rain' ? 'RAIN' : 'CLEAR'); };
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
@@ -8054,6 +8294,7 @@ function enterGarage() {
    ===================================================================== */
 // one gameplay tick (physics, collisions, race/traffic, pickups); also driven directly by the headless test driver
 function simStep(dt, inp) {
+  inp = fuelInput(inp);
   const sub = 3, h = dt / sub;
   if (dentCool > 0) dentCool -= dt;
   for (let k = 0; k < sub; k++) {
@@ -8082,6 +8323,7 @@ function frame() {
 }
 function tick(dt) {
   if (state === 'ad') { updateAd(dt); return; }
+  if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
   if (state === 'fly') { updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
@@ -8156,7 +8398,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
