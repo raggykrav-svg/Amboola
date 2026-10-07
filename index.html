@@ -1486,7 +1486,7 @@ async function buildWorld() {
   buildTracks(); buildDragway();
   buildMountain();
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
-  buildWangan(); buildSnowArea();
+  buildWangan(); buildSnowArea(); buildFujiArea();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs();
@@ -1589,19 +1589,20 @@ function buildExpressway() {
   for (const x of [-500, -100, 300, 650]) { const sgn = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshStandardMaterial({ map: signT, roughness: .6 })); sgn.position.set(x, y + 6, EXPRESS_Z); sgn.rotation.y = Math.PI / 2; scene.add(sgn); }
 }
 function buildFuji() {
-  const geo = new THREE.ConeGeometry(3000, 1500, 160, 30, true);
+  // a cylinder with a tiny top, not a ConeGeometry: with radiusTop 0 this three.js drops half the triangles of every ring below the tip
+  const geo = new THREE.CylinderGeometry(.01, 3400, 1700, 160, 30, true);
   const pos = geo.attributes.position, colors = [];
-  const snow = new THREE.Color(0xf4f7fb), rock = new THREE.Color(0x4a5566), c = new THREE.Color();
+  const snow = new THREE.Color(0xf4f7fb), rock = new THREE.Color(0x4a5566), forest = new THREE.Color(0x2c4630), c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i); const t = (y + 750) / 1500; const a = Math.atan2(pos.getZ(i), pos.getX(i));
+    const y = pos.getY(i); const t = (y + 850) / 1700; const a = Math.atan2(pos.getZ(i), pos.getX(i));
     const r = 1 + (Math.sin(a * 9) * .02 + Math.sin(a * 23) * .01) * (1 - t);
     pos.setX(i, pos.getX(i) * r * (t > .92 ? .9 : 1)); pos.setZ(i, pos.getZ(i) * r * (t > .92 ? .9 : 1));
     const line = .62 + Math.sin(a * 14) * .05 + Math.sin(a * 37) * .015, sn = clamp((t - line) / .05 + .5, 0, 1); // soft snow line
-    c.copy(rock).lerp(snow, sn * sn * (3 - 2 * sn)); colors.push(c.r, c.g, c.b);
+    c.copy(rock).lerp(snow, sn * sn * (3 - 2 * sn)); if (t < .3) c.lerp(forest, clamp((.3 - t) / .12, 0, 1)); colors.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
-  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, fog: false, transparent: true, opacity: .75 }));
-  m.position.set(-5600, 650, -6800); scene.add(m);
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, fog: false, transparent: true, opacity: .75, emissive: 0x2a303c }));
+  m.position.set(-6400, 750, -8000); m.userData.fuji = true; scene.add(m);   // FUJI.peak
 }
 
 /* =====================================================================
@@ -2917,6 +2918,7 @@ const MISSIONS = [
   { id: 'world', n: 'WORLD TRAVELLER', d: 'Visit Cyprus, Italy and Dubai', goal: 3, v: () => ['cyprus', 'italy', 'dubai'].filter(c => ST.visited?.includes(c)).length, r: 100000 },
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
+  { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
   { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 6 countries', goal: 6, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
   { id: 'flip', n: 'STUNT STAR', d: 'Land a flip or a barrel roll off a ramp', goal: 1, v: () => ST.flips || 0, r: 5000 },
   { id: 'flip10', n: 'FLIP MASTER', d: 'Land 10 flips', goal: 10, v: () => ST.flips || 0, r: 25000 },
@@ -5138,6 +5140,9 @@ function drawAreasMap(g) {
   g.fillStyle = 'rgba(214,196,150,.95)'; g.fillRect(ISLAND.x0, ISLAND.z0, ISLAND.x1 - ISLAND.x0, ISLAND.z1 - ISLAND.z0);
   g.fillStyle = '#5c6470'; g.fillRect(BEACH.x0, BEACH.z0, BEACH.x1 - BEACH.x0, BEACH.sand - BEACH.z0);
   g.fillStyle = 'rgba(226,236,246,.9)'; g.beginPath(); g.arc(SNOW.cx, SNOW.cz, SNOW.R, 0, 7); g.fill();
+  g.fillStyle = '#7f9a62'; g.fillRect(FUJI.x0, FUJI.z0, FUJI.x1 - FUJI.x0, FUJI.z1 - FUJI.z0);
+  g.fillStyle = '#2e6f96'; g.beginPath(); g.ellipse(FUJI.lake[0], FUJI.lake[1], FUJI.lake[2], FUJI.lake[3], 0, 0, 7); g.fill();
+  g.fillStyle = 'rgba(240,244,250,.5)'; g.beginPath(); g.arc(FUJI.peak[0], FUJI.peak[1], 900, 0, 7); g.fill();
   for (const A of AREAS) {
     const R = A.R; g.strokeStyle = A.id === 'snow' ? '#b8a07a' : '#e0a030'; g.lineWidth = R.w * 1.1; g.lineJoin = 'round';
     const st = Math.max(3, Math.round(R.n / 300)); g.beginPath(); for (let i = 0; i < R.n; i += st) i ? g.lineTo(R.x[i], R.z[i]) : g.moveTo(R.x[i], R.z[i]); g.lineTo(R.x[R.n - 1], R.z[R.n - 1]); g.stroke();
@@ -5153,11 +5158,131 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
+  updateFujiArea(dt, p);
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
   if (SNOW.steam && p && Math.hypot(p.x - SNOW.vx, p.z - SNOW.vz) < 400 && Math.random() < dt * 6) { const [x, y, z] = SNOW.steam; smoke.emit(x + rr(-2, 2), z + rr(-2, 2), 0, 0, .7, y - .35); }
   if (WX.surf) WX.surf.material.opacity = .45 + Math.sin(t * .9) * .25;
+}
+
+/* =====================================================================
+   MT. FUJI UP CLOSE — Fuji Five Lakes: a lake village right under the mountain, at the end of a 5 km country road
+   that leaves Tokyo through a gate on the west edge. Lake Kawaguchi with a red torii in the water, the five-storey
+   Chureito pagoda with cherry trees, an onsen with steam, old houses with dark tile roofs, cedar forest and a
+   little airstrip for the jet. The mountain itself turns solid when you are close.
+   ===================================================================== */
+const FUJI = { x0: -3800, x1: -3100, z0: -4660, z1: -4080, gateZ: rc(3), peak: [-6400, -8000], lake: [-3450, -4930, 470, 250], pagoda: [-3210, -4530], torii: [-3480, -4735], onsen: [-3690, -4190] };
+FUJI.cx = (FUJI.x0 + FUJI.x1) / 2; FUJI.cz = (FUJI.z0 + FUJI.z1) / 2; FUJI.air = [-3290, -4160];
+const FUJI_ROUTE = new Route({ id: 'fuji', name: 'Fuji Lakes Road', w: 11, rail: .8,
+  pts: [[-HALF + 6, FUJI.gateZ, 0], [-HALF - 60, FUJI.gateZ, 0], [-1150, FUJI.gateZ - 50, 0], [-1700, -900, 0], [-2500, -1350, 0], [-3150, -1800, 0], [-3650, -2450, 0],
+    [-3850, -3150, 0], [-3720, -3680, 0], [-3520, -3980, 0], [-3480, -4120, 0], [-3480, -4250, 0]] });
+const FUJI_PAD = new Pad({ name: 'Fuji Five Lakes', y: 0, rects: [[FUJI.x0, FUJI.z0, FUJI.x1, FUJI.z1]] });
+AREAS.push({ id: 'fuji', name: 'Fuji Five Lakes', R: FUJI_ROUTE, pads: [FUJI_PAD], gate: [-HALF, FUJI.gateZ], col: '#ff7aa8',
+  box: [FUJI.x0 - 300, FUJI.z0 - 200, -HALF - 9, FUJI.gateZ + 120], visit: { n: 'FUJI FIVE LAKES', jp: '富士五湖', pad: FUJI_PAD } });
+function buildFujiArea() {
+  const F = FUJI, R = FUJI_ROUTE, P = FUJI_PAD, g = new THREE.Group(); scene.add(g); F.group = g; F.mtn = scene.children.find(o => o.userData?.fuji);
+  const rnd = mulberry32(3776), rn = (a, b) => a + (b - a) * rnd();
+  const iMouth = (() => { for (let i = 0; i < R.n; i++) if (P.inside(R.x[i], R.z[i])) return i; return R.n - 1; })();
+  P.mouths.push({ x: R.x[iMouth], z: R.z[iMouth], r: R.w / 2 + 3 }); R.iMouth = iMouth;
+  // the road: two lanes with white guard rails and lamps
+  const road = new GB(), rail = new GB();
+  ribbon(R, road, -6, 6, .05, .05, 0, R.n - 1, 16);
+  for (const s of [-1, 1]) { ribbon(R, rail, s * 6.15, s * 6.15, .3, .85, 3, iMouth); ribbon(R, rail, s * 6.15, s * 6.35, .85, .85, 3, iMouth); }
+  const roadMat = new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
+  const rm = new THREE.Mesh(road.build(), roadMat); rm.receiveShadow = true; g.add(rm);
+  g.add(new THREE.Mesh(rail.build(), new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: .5, metalness: .4, side: THREE.DoubleSide })));
+  const lamps = [], pools = [], posts = [];
+  for (let i = 4; i < iMouth; i += 3) for (const s of [-1, 1]) { const p = routePt(R, i, s * 6.25); posts.push([p.x, 0, p.z]); }
+  instanced(new THREE.BoxGeometry(.14, .85, .14).translate(0, .42, 0), new THREE.MeshStandardMaterial({ color: 0xcfcfcf, roughness: .6 }), posts, false);
+  for (let i = 40; i < iMouth; i += 45) { const s = (i / 45) % 2 ? 1 : -1, p = routePt(R, i, s * 6.6); lampsAlong(lamps, pools, p.x, 0, p.z, Math.atan2(R.tx[i], R.tz[i]) + (s > 0 ? -Math.PI / 2 : Math.PI / 2), 3.5, 14); }
+  // the village: grass, streets, the lakeside promenade
+  const grassTex = GRASS_TEX(); grassTex.repeat.set((F.x1 - F.x0) / 8, (F.z1 - F.z0) / 8);
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(F.x1 - F.x0 + 60, F.z1 - F.z0 + 60), new THREE.MeshStandardMaterial({ map: grassTex, color: 0xc8e0a0, roughness: 1 }));
+  grass.rotation.x = -Math.PI / 2; grass.position.set(F.cx, .02, F.cz); grass.receiveShadow = true; g.add(grass);
+  const streets = [['x', -3480, F.z1 - 10, F.z0 + 20], ['z', -4400, F.x0 + 20, F.x1 - 20], ['z', F.z0 + 30, F.x0 + 20, F.x1 - 20], ['x', F.x0 + 120, -4400, F.z0 + 30]];
+  const sg = new GB();
+  for (const [a, v, s0, s1] of streets) { const lo = Math.min(s0, s1), hi = Math.max(s0, s1); a === 'x' ? sg.flat(v - 7, lo, v + 7, hi, .05, [0, lo / 16, 1, hi / 16]) : sg.quad([lo, .05, v + 7], [lo, .05, v - 7], [hi, .05, v - 7], [hi, .05, v + 7], [0, lo / 16, 1, hi / 16]); }
+  const sm = new THREE.Mesh(sg.build(), new THREE.MeshStandardMaterial({ map: ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 })); sm.receiveShadow = true; g.add(sm);
+  const onStreet = (x, z, m) => streets.some(([a, v, s0, s1]) => a === 'x' ? Math.abs(x - v) < 7 + m && z > Math.min(s0, s1) - m && z < Math.max(s0, s1) + m : Math.abs(z - v) < 7 + m && x > Math.min(s0, s1) - m && x < Math.max(s0, s1) + m);
+  // the airstrip for the jet (east of the entrance)
+  const rw = new THREE.Mesh(new THREE.PlaneGeometry(260, 40), new THREE.MeshStandardMaterial({ map: TRACK_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -1 }));
+  rw.rotation.x = -Math.PI / 2; rw.position.set(F.air[0], .055, F.air[1]); g.add(rw);
+  // the lake: Lake Kawaguchi, with the shore and a stone railing along the promenade
+  const [lx, lz, lrx, lrz] = F.lake;
+  const lake = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshStandardMaterial({ color: 0x2e6f96, roughness: .18, metalness: .3 })); lake.rotation.x = -Math.PI / 2; lake.scale.set(lrx, lrz, 1); lake.position.set(lx, .04, lz); g.add(lake); F.lakeMesh = lake;
+  const shore = new THREE.Mesh(new THREE.RingGeometry(1, 1.06, 64), new THREE.MeshStandardMaterial({ color: 0xb8ab8a, roughness: 1 })); shore.rotation.x = -Math.PI / 2; shore.scale.set(lrx, lrz, 1); shore.position.set(lx, .035, lz); g.add(shore);
+  const rails = []; for (let x = F.x0 + 4; x < F.x1; x += 4) rails.push([x, 0, F.z0 + 1.2]);
+  instanced(new THREE.BoxGeometry(.3, 1, .3).translate(0, .5, 0), new THREE.MeshStandardMaterial({ color: 0x8a8478, roughness: .9 }), rails, false);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(F.x1 - F.x0, .2, .4), new THREE.MeshStandardMaterial({ color: 0x8a8478, roughness: .9 })); top.position.set(F.cx, 1, F.z0 + 1.2); g.add(top);
+  // the red torii standing in the lake
+  const red = new THREE.MeshStandardMaterial({ color: 0xd1301e, roughness: .55 }), dark = new THREE.MeshStandardMaterial({ color: 0x1d1d1f, roughness: .6 });
+  { const [tx, tz] = F.torii, t = new THREE.Group(); t.position.set(tx, 0, tz); g.add(t);
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.55, .65, 13, 12), red); p.position.set(s * 6, 6.2, 0); t.add(p); }
+    const kasagi = new THREE.Mesh(new THREE.BoxGeometry(18, 1.1, 1.6), dark); kasagi.position.y = 13; t.add(kasagi);
+    const nuki = new THREE.Mesh(new THREE.BoxGeometry(15, .7, .9), red); nuki.position.y = 10.6; t.add(nuki);
+    const shimaki = new THREE.Mesh(new THREE.BoxGeometry(16.5, .7, 1.3), red); shimaki.position.y = 12.1; t.add(shimaki); }
+  // Chureito: a five-storey pagoda among cherry trees
+  { const [px, pz] = F.pagoda, t = new THREE.Group(); t.position.set(px, 0, pz); g.add(t);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(13, 1.4, 13), new THREE.MeshStandardMaterial({ color: 0x9a9286, roughness: .9 })); base.position.y = .7; t.add(base);
+    for (let k = 0; k < 5; k++) {
+      const w = 8.4 - k * 1.1, y = 1.4 + k * 5.2, body = new THREE.Mesh(new THREE.BoxGeometry(w, 4.2, w), red); body.position.y = y + 2.1; t.add(body);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(w * 1.12, 1.8, 4, 1, true), dark); roof.rotation.y = Math.PI / 4; roof.position.y = y + 4.9; t.add(roof);
+    }
+    const sorin = new THREE.Mesh(new THREE.CylinderGeometry(.18, .25, 7, 8), new THREE.MeshStandardMaterial({ color: 0xc9a14a, metalness: .7, roughness: .3 })); sorin.position.y = 31; t.add(sorin);
+    P.addCol(px - 6.5, pz - 6.5, px + 6.5, pz + 6.5); }
+  // houses: old Japanese houses with white plaster walls and dark tile roofs, and an onsen ryokan with steam
+  const wall = new GB(), tile = new GB(), b = [{ x: F.pagoda[0], z: F.pagoda[1], w: 50, d: 50 }, { x: F.air[0], z: F.air[1], w: 300, d: 70 }, { x: F.onsen[0], z: F.onsen[1], w: 46, d: 30 }];
+  for (let k = 0; k < 900 && b.length < 46; k++) {
+    const x = rn(F.x0 + 20, F.x1 - 20), z = rn(F.z0 + 50, F.z1 - 20), w = rn(9, 15), d = rn(8, 12), h = rnd() < .3 ? 6.5 : 4;
+    if (onStreet(x, z, Math.max(w, d) / 2 + 4) || b.some(o => Math.abs(o.x - x) < (o.w + w) / 2 + 5 && Math.abs(o.z - z) < (o.d + d) / 2 + 5)) continue;
+    wall.box(x, 0, z, w, h, d, 8, 8, rnd(), new THREE.Color(pick(['#f1ece0', '#e8e0cc', '#6b4a32', '#7a5a3c'])).toArray(), null);
+    tile.gable(x, h, z, w, d, Math.min(w, d) * .32, .8, new THREE.Color(pick(['#2f3338', '#3a3f46', '#45403a'])).toArray());
+    P.addCol(x - w / 2, z - d / 2, x + w / 2, z + d / 2); b.push({ x, z, w, d });
+  }
+  { const [ox, oz] = F.onsen; wall.box(ox, 0, oz, 40, 9, 24, 8, 8, 0, new THREE.Color('#7a5a3c').toArray(), null); tile.gable(ox, 9, oz, 40, 24, 7, 1.4, new THREE.Color('#2f3338').toArray()); P.addCol(ox - 20, oz - 12, ox + 20, oz + 12); F.steam = [ox + 14, 10, oz + 15]; }
+  const wm = new THREE.Mesh(wall.build(), townMat('#ffffff', '#3a2a1a')); wm.castShadow = wm.receiveShadow = true; g.add(wm);
+  const tm = new THREE.Mesh(tile.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6, side: THREE.DoubleSide })); tm.castShadow = true; g.add(tm);
+  // paper lanterns along the main street, lamps on the promenade
+  const lanM = new THREE.MeshStandardMaterial({ color: 0xff5040, emissive: 0xff3a20, emissiveIntensity: 1.2, roughness: .6 }); dynMats.neon.push(lanM);
+  const lans = []; for (let x = F.x0 + 30; x < F.x1 - 30; x += 16) for (const s of [-1, 1]) lans.push([x, 3.2, -4400 + s * 8.4, 0, 1, 1.3, 1]);
+  instanced(new THREE.SphereGeometry(.45, 10, 8), lanM, lans, false);
+  for (let x = F.x0 + 40; x < F.x1; x += 60) lampsAlong(lamps, pools, x, 0, F.z0 + 4, 0, 3.5, 14);
+  buildLamps(lamps, pools, 7.5, 0xffd9a0);
+  // trees: cherry blossom round the pagoda and the lake, cedar forest all round (never on the road)
+  const sak = [], cedar = [], nearRoad = (x, z, m) => { const nr = R.near(x, z, m + 20); return nr && nr.d < m; };
+  for (let k = 0; k < 60; k++) { const a = rnd() * 6.283, r = rn(16, 46), x = F.pagoda[0] + Math.cos(a) * r, z = F.pagoda[1] + Math.sin(a) * r; if (P.inside(x, z, -3) && !onStreet(x, z, 3) && !b.slice(3).some(o => Math.abs(o.x - x) < o.w / 2 + 3 && Math.abs(o.z - z) < o.d / 2 + 3)) { sak.push([x, 0, z, rnd() * 6, rn(.9, 1.3)]); P.addCol(x - .4, z - .4, x + .4, z + .4); } }
+  for (let k = 0; k < 70; k++) { const a = rnd() * 6.283, x = lx + Math.cos(a) * (lrx + rn(14, 40)), z = lz + Math.sin(a) * (lrz + rn(14, 40)); if (z < F.z0 - 6 || x < F.x0 - 6 || x > F.x1 + 6) sak.push([x, 0, z, rnd() * 6, rn(.9, 1.3)]); }
+  for (let k = 0; k < 5000 && cedar.length < 1100; k++) {
+    const x = rn(-4900, -1000), z = rn(-5700, -700);
+    if (Math.hypot(x - F.peak[0], z - F.peak[1]) < 3300 || P.inside(x, z, 25) || ((x - lx) / (lrx + 40)) ** 2 + ((z - lz) / (lrz + 40)) ** 2 < 1) continue;
+    if (Math.hypot(x - SNOW.cx, z - SNOW.cz) < SNOW.R + 120 || x > -HALF - 120 || nearRoad(x, z, 16)) continue;
+    if (Math.hypot(x - MTN.cx, z - MTN.cz) < MTN.R + 150 || Math.hypot(x + 1640, z + 2210) < 600 || SNOW_ROUTE.near(x, z, 40)) continue;
+    const s = rn(.8, 1.5); cedar.push([x, 0, z, rnd() * 6, s, s * rn(.9, 1.3), s]);
+  }
+  g.add(instanced(new THREE.ConeGeometry(2.6, 13, 7).translate(0, 7.5, 0), new THREE.MeshStandardMaterial({ color: 0x24432c, roughness: .9, flatShading: true }), cedar));
+  g.add(instanced(new THREE.CylinderGeometry(.3, .4, 2, 5).translate(0, 1, 0), new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), cedar, false));
+  F.sakura = instanced(new THREE.IcosahedronGeometry(2.4, 1).translate(0, 4.4, 0), new THREE.MeshStandardMaterial({ color: 0xffb7cf, roughness: .85, flatShading: true }), sak); g.add(F.sakura);
+  g.add(instanced(new THREE.CylinderGeometry(.16, .26, 3.2, 6).translate(0, 1.6, 0), new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), sak, false));
+  // the welcome arch at the village entrance, and the sign at the Tokyo gate
+  { const t = new THREE.Group(); t.position.set(-3480, 0, F.z1 - 20); g.add(t);
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.5, .6, 10, 10), red); p.position.set(s * 9, 5, 0); t.add(p); P.addCol(-3480 + s * 9 - .7, F.z1 - 20.7, -3480 + s * 9 + .7, F.z1 - 19.3); }
+    const kas = new THREE.Mesh(new THREE.BoxGeometry(23, 1, 1.4), dark); kas.position.y = 10.2; t.add(kas);
+    const tx = signTex(1024, 192, '#1d1d1f', [['富士五湖 · FUJI FIVE LAKES', .55, .42, JP, '#fff']], '#ff7aa8'), m = new THREE.MeshBasicMaterial({ map: tx }); dynMats.neon.push(m);
+    for (const s of [1, -1]) { const sp = new THREE.Mesh(new THREE.PlaneGeometry(17, 2.2), m); sp.position.set(0, 8.4, s * .3); if (s < 0) sp.rotation.y = Math.PI; t.add(sp); } }
+  { const t = new THREE.Group(); t.position.set(-HALF - 14, 0, F.gateZ); t.rotation.y = Math.PI / 2; scene.add(t);
+    const tx = signTex(1024, 256, '#14663f', [['富士山  FUJI FIVE LAKES', .38, .3, JP, '#fff'], [`MT. FUJI · LAKE · PAGODA · ${(R.L / 1000).toFixed(1)} KM`, .78, .17, OR, '#ffd0de']], '#fff');
+    const m = new THREE.MeshBasicMaterial({ map: tx }); dynMats.neon.push(m);
+    for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), m); p.position.set(0, 10.6, s * .06); if (s < 0) p.rotation.y = Math.PI; t.add(p); }
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.8, 12.5, .8), new THREE.MeshStandardMaterial({ color: 0x2a2d35 })); p.position.set(s * 8, 6.25, 0); t.add(p); } }
+  landmarks.push({ x: F.cx, z: F.cz, c: '#ff7aa8', n: 'Fuji Five Lakes' });
+}
+function updateFujiArea(dt, p) {
+  const F = FUJI; if (!F.group || !F.mtn) return;
+  F.group.visible = Math.hypot(camera.position.x - F.cx, camera.position.z - F.cz) < 9000;
+  const near = Math.hypot(camera.position.x - F.peak[0], camera.position.z - F.peak[1]) < 7500, m = F.mtn.material;
+  if (m.transparent === near) { m.transparent = !near; m.opacity = near ? 1 : .75; m.depthWrite = near; m.needsUpdate = true; }
+  if (F.steam && p && Math.hypot(p.x - F.steam[0], p.z - F.steam[2]) < 300 && Math.random() < dt * 5) { const [x, y, z] = F.steam; smoke.emit(x + rr(-3, 3), z + rr(-2, 2), 0, 0, .8, y); }
 }
 
 /* =====================================================================
@@ -5603,7 +5728,7 @@ function buildAlps(C, g) {
   C.P.addCol(fx - 9, fz - 6, fx + 9, fz + 6);
   // the mountains round the valley: snowy pyramids, the Matterhorn the tallest
   const rock = new THREE.Color(0x5a6270), snow = new THREE.Color(0xf6f8fb), mk = (x, z, r, h, twist) => {
-    const geo = new THREE.ConeGeometry(r, h, twist ? 4 : 9, 12), pos = geo.attributes.position, cols = []; const cc = new THREE.Color();
+    const geo = new THREE.CylinderGeometry(.01, r, h, twist ? 4 : 9, 12), pos = geo.attributes.position, cols = []; const cc = new THREE.Color();
     for (let i = 0; i < pos.count; i++) { const t = (pos.getY(i) + h / 2) / h; if (twist) { const a = t * .5, X = pos.getX(i), Z = pos.getZ(i); pos.setX(i, X * Math.cos(a) - Z * Math.sin(a)); pos.setZ(i, X * Math.sin(a) + Z * Math.cos(a)); } cc.copy(rock).lerp(snow, clamp((t - .38) * 3, 0, 1)); cols.push(cc.r, cc.g, cc.b); }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); geo.computeVertexNormals();
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, flatShading: true })); m.position.set(x, h / 2 - 20, z); g.add(m);
@@ -6740,7 +6865,7 @@ function startFlight(spec) {
   const back = player && !player.spec.jet ? player : null;
   if (back) { back.car.group.visible = false; }
   const p = PAINTS[paintIdx], car = buildJet(spec, p.c); scene.add(car.group);
-  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500), D = flyDests().find(d => d.n === (near?.name || 'Tokyo'));
+  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500), D = flyDests().find(d => d.n === (near?.name || (player && Math.hypot(player.x - FUJI.cx, player.z - FUJI.cz) < 1500 ? 'Mt. Fuji' : 'Tokyo')));
   // line up at the west end of that airport's runway, engines idling: hold W to roll, lift off at about 260 km/h
   flight = { car, x: D.x - D.len / 2 + 14, z: D.z, y: JET_GEAR, yaw: Math.PI / 2, pitch: 0, roll: 0, v: 0, thr: 0, target: null, landing: 0, from: D.n, ground: true };
   camPos.set(flight.x - Math.sin(flight.yaw) * 40, flight.y + 10, flight.z - Math.cos(flight.yaw) * 40);
@@ -6752,7 +6877,7 @@ function startFlight(spec) {
 }
 // airports: Tokyo Airport north of the city (a long runway), and a short strip in every country; runways run east
 const TOKYO_AIR = { x: 1000, z: -3200, len: 1400 }, JET_GEAR = 2.95;
-const flyDests = () => [{ n: 'Tokyo', x: TOKYO_AIR.x, z: TOKYO_AIR.z, len: TOKYO_AIR.len, air: [-5.7, 150] }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], len: 260, air: C.airport, C }))];
+const flyDests = () => [{ n: 'Tokyo', x: TOKYO_AIR.x, z: TOKYO_AIR.z, len: TOKYO_AIR.len, air: [-5.7, 150] }, { n: 'Mt. Fuji', x: FUJI.air[0], z: FUJI.air[1], len: 260, air: [FUJI.air[0] - 100, FUJI.air[1]], head: Math.PI / 2, hello: 'WELCOME TO MT. FUJI · 富士山' }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], len: 260, air: C.airport, C }))];
 function buildTokyoAirport() {
   const { x, z, len } = TOKYO_AIR, g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
   const apron = new THREE.Mesh(new THREE.PlaneGeometry(len + 300, 320), new THREE.MeshStandardMaterial({ color: 0x4a4f45, roughness: 1 })); apron.rotation.x = -Math.PI / 2; apron.position.y = .02; g.add(apron);
@@ -6850,7 +6975,8 @@ function flightPose(F, dt, dests) {
   $('flySpd').textContent = Math.round(kmh).toLocaleString('en-US'); $('flyMach').textContent = `MACH ${(F.v / 343).toFixed(1)}`; $('flyAlt').textContent = `${Math.round(F.y)} m`;
   $('flyThr').style.width = (F.thr * 100) + '%';
   dests.forEach((d, i) => { const dist = Math.hypot(d.x - F.x, d.z - F.z), el = $('fd' + i); if (el) el.textContent = `${(dist / 1000).toFixed(1)} km · ${F.v > 20 ? Math.ceil(dist / F.v) + ' s' : '—'}`; });
-  const near = dests.find(d => Math.hypot(d.x - F.x, d.z - F.z) < 3000);
+  const dd = d => Math.hypot(d.x - F.x, d.z - F.z), tgt = dests.find(d => d.n === F.target);   // the airport you are flying to, else the nearest one
+  const near = tgt && dd(tgt) < 3000 ? tgt : dests.filter(d => dd(d) < 3000).sort((a, b) => dd(a) - dd(b))[0];
   $('flyLand').classList.toggle('ready', !!near); $('flyLand').textContent = near ? `🛬 LAND AT ${near.n.toUpperCase()} [L]` : '🛬 LAND [L] · fly within 3 km of an airport';
   F.near = near;
   drawFlyMap(F, dests);
@@ -6873,7 +6999,7 @@ function drawFlyMap(F, dests) {
 }
 function landJet() {
   if (!flight || flight.landing > 0) return;
-  if (!flight.near) { toast('NO AIRPORT NEARBY', 'FLY WITHIN 3 KM OF TOKYO, CYPRUS, ITALY OR DUBAI'); return; }
+  if (!flight.near) { toast('NO AIRPORT NEARBY', 'FLY WITHIN 3 KM OF AN AIRPORT'); return; }
   if (flight.land || flight.ground) return;
   flight.land = { D: flight.near, phase: 'approach' }; flight.target = null; audio.beep(660, .15);
   toast(`LANDING AT ${flight.near.n.toUpperCase()}`, 'AUTOPILOT LINES UP WITH THE RUNWAY');
@@ -6884,11 +7010,11 @@ function finishLanding() {
   let ci = lastCarIdx(); carIdx = ci; paintIdx = savedPaint(CARS[ci]);
   const hadPlayer = player; if (player) { player.dispose(); player = null; }
   startDrive();
-  const [ax, az] = D.air; Object.assign(player, { x: ax, z: az, heading: D.C ? Math.PI / 2 : Math.PI, vx: 0, vz: 0, y: 0 });
+  const [ax, az] = D.air; Object.assign(player, { x: ax, z: az, heading: D.head ?? (D.C ? Math.PI / 2 : Math.PI), vx: 0, vz: 0, y: 0 });
   camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
   if (D.C && !ST.visited?.includes(D.C.id)) { ST.visited = [...(ST.visited || []), D.C.id]; saveStats(); checkMissions(); }
   bump('flights');
-  toast(D.C ? D.C.hello : 'WELCOME BACK TO TOKYO · おかえり', `LANDED BY JET · ${CARS[ci].name.toUpperCase()}`);
+  toast(D.C ? D.C.hello : D.hello || 'WELCOME BACK TO TOKYO · おかえり', `LANDED BY JET · ${CARS[ci].name.toUpperCase()}`);
 }
 function endFlight() {
   if (!flight) return; scene.remove(flight.car.group); flight = null;
@@ -6919,7 +7045,7 @@ function buildPlaces() {
     const T = TRACKS.find(t => t.name === l.n);
     if (T) { P.push({ n: T.name, jp: T.jp, type: `Race track · ${(T.L / 1000).toFixed(2)} km · ${T.laps} laps`, kind: 'track', track: T, x: T.marker.x, z: T.marker.z, mapX: T.x[0], mapZ: T.z[0], col: T.col }); continue; }
     if (l.n === 'Mt. Amboola Viewpoint') { P.push({ n: 'Mt. Amboola Viewpoint', jp: 'アンブーラ山 展望台', type: `Mountain summit · ${Math.round(MTN.plazaY)} m`, kind: 'mountain', zone: 'mountain', end: [MTN.cx, MTN.cz], idx: MTN.n - 1, x: MTN.cx, z: MTN.cz, col: '#7ee04c' }); continue; }
-    if (['Amboola Bay Bridge', 'Amboola Beach Pier', 'Shirayuki Ski Village', 'Cyprus', 'Italy', 'Dubai'].includes(l.n)) continue;
+    if (['Amboola Bay Bridge', 'Amboola Beach Pier', 'Shirayuki Ski Village', 'Fuji Five Lakes', ...COUNTRY_DEFS.map(c => c.name)].includes(l.n)) continue;
     const names = { 'GT Center': ['Amboola GT Center', 'GTセンター', 'Car showroom'], Tower: ['Tokyo Tower', '東京タワー', 'Landmark'], Temple: ['Sensō-ji Temple', '浅草寺', 'Temple & pagoda'] }[l.n] || [l.n, '', 'Landmark'];
     P.push({ n: names[0], jp: names[1], type: names[2], kind: 'city', x: l.x, z: l.z, col: l.c });
   }
@@ -6939,6 +7065,10 @@ function buildPlaces() {
   const bb = landmarks.find(l => l.n === 'Amboola Bay Bridge'); if (bb) { const i = zIndex(WANGAN, bb.x, bb.z); P.push({ n: 'Amboola Bay Bridge', jp: 'ベイブリッジ', type: 'Suspension bridge', kind: 'area', zone: 'wangan', idx: i, x: bb.x, z: bb.z, col: '#e9ecef' }); }
   P.push({ n: 'Shirayuki Ski Village', jp: '白雪山スキー村', type: `Snowy mountain · ${Math.round(SNOW.vy)} m · ski lift`, kind: 'area', zone: 'snow', idx: SNOW_ROUTE.n - 1, end: [SNOW.vx + Math.cos(SNOW.face) * 38, SNOW.vz + Math.sin(SNOW.face) * 38], x: SNOW.vx, z: SNOW.vz, col: '#9fd8ff' });
   P.push({ n: 'Snow Pass', jp: '白雪山スノーパス', type: `Mountain road · ${(SNOW_ROUTE.L / 1000).toFixed(1)} km · hairpins`, kind: 'area', zone: 'snow', idx: 160, x: SNOW_ROUTE.x[160], z: SNOW_ROUTE.z[160], col: '#9fd8ff' });
+  P.push({ n: 'Fuji Five Lakes', jp: '富士五湖', type: 'Lake village under Mt. Fuji · onsen · airstrip', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [-3480, -4380], x: FUJI.cx, z: FUJI.cz, col: '#ff7aa8' });
+  P.push({ n: 'Chureito Pagoda', jp: '忠霊塔', type: 'Five-storey pagoda · cherry blossom · Fuji view', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [FUJI.pagoda[0], FUJI.pagoda[1] + 40], face: Math.PI, x: FUJI.pagoda[0], z: FUJI.pagoda[1], col: '#ff7aa8' });
+  P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
+  P.push({ n: 'Fuji Gate', jp: '富士方面', type: 'West gate · road to Mt. Fuji', kind: 'city', x: -HALF, z: FUJI.gateZ, col: '#ff7aa8' });
   P.push({ n: 'Wangan Gate', jp: '湾岸線入口', type: 'Toll gate · road to the beach', kind: 'city', x: HALF, z: WANGAN_Z, col: '#2fe0ff' });
   P.push({ n: 'Snow Pass Gate', jp: 'スノーパス入口', type: 'Road to the snowy mountain', kind: 'city', x: SNOW.gateX, z: -HALF, col: '#9fd8ff' });
   traps.forEach((t, k) => P.push({ n: `Speed Trap ${k + 1}`, jp: '速度計測', type: 'Speed trap', kind: 'city', x: t.x, z: t.z, col: '#c77dff' }));
@@ -6954,6 +7084,7 @@ function snapToRoad(x, z) {
 const zoneAt = (x, z) => inMountain({ x, z }) ? 'mountain' : areaAt(x, z)?.id || 'city';
 const ZONES = { mountain: { R: MTN, gate: [-HALF, MTN.gateZ] }, wangan: { R: WANGAN, gate: [HALF, WANGAN_Z] }, snow: { R: SNOW_ROUTE, gate: [SNOW.gateX, -HALF] } };
 for (const C of COUNTRIES) ZONES[C.id] = { R: C.R, gate: [C.gx, HALF] };
+ZONES.fuji = { R: FUJI_ROUTE, gate: [-HALF, FUJI.gateZ] };
 function navGroundY(x, z) {
   const zn = zoneAt(x, z);
   if (zn === 'mountain') {
@@ -7525,7 +7656,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
