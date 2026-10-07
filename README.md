@@ -251,6 +251,23 @@ They have their own engine sounds: the Supra's straight-six, the GR86's boxer ru
 
 Each car's physics is built from its real published figures: power, weight, redline, top speed, drivetrain and gear count. From those the game works out a torque curve, gear ratios and drag. For example, the GT3 RS reaches 100 km/h in about 3.2 s. The cars also have their own gearboxes (PDK, manual or single-speed EV), rev limiters, traction limits, downforce, brake distances, drifting and body roll. There are 30 paint colours.
 
+### BMW, Audi and the Devel Sixteen
+All made in Blender (`models/blender/bmw_audi.py`) and listed at the bottom of the garage.
+
+| Car | Power | Top speed | 0–100 | Price |
+| --- | --- | --- | --- | --- |
+| BMW M2 | 480 PS | 285 km/h | 4.0 s | $65,000 |
+| BMW M4 CSL | 550 PS | 307 km/h | 3.6 s | $140,000 |
+| BMW M5 (V8 hybrid saloon) | 727 PS | 305 km/h | 3.5 s | $121,000 |
+| BMW XM Label (super-SUV) | 748 PS | 290 km/h | 3.8 s | $185,000 |
+| Audi R8 V10 GT | 620 PS | 320 km/h | 3.4 s | $250,000 |
+| Audi RS 6 Avant GT (estate) | 630 PS | 305 km/h | 3.3 s | $165,000 |
+| Audi RS e-tron GT performance (electric) | 925 PS | 250 km/h | 2.5 s | $170,000 |
+| Audi RS Q8 performance | 640 PS | 305 km/h | 3.6 s | $140,000 |
+| **Devel Sixteen** (quad-turbo V16, from Dubai) | **5,005 PS** | **560 km/h** | **1.8 s** | $2,000,000 |
+
+BMWs have the twin kidney grille, Audis have the big Singleframe grille with the four rings (and the R8 has its carbon sideblades and a big wing), and the Devel Sixteen has a long fighter-jet canopy, two tail fins and one huge V16 exhaust.
+
 ## 🏎 More driving fun
 
 ![Stunts, dents, speed cameras, night meets and the Dubai desert](media/driving-fun.jpg)

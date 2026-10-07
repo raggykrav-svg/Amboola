@@ -226,6 +226,8 @@ All 14 Porsches are Blender models:
 
 The Lamborghinis and Ferraris (car indices 21–33) live in `models/blender/supercars.py`. It uses the same kit with sharp creases (`SHARP`) or soft ones (`SOFT`), and `remap()` reuses a station table on a car of another size. The McLarens and Bugattis (indices 34–46) live in `models/blender/hypercars.py`, which remaps `supercars.TFER` to each body. The Teslas (indices 14–20) live in `models/blender/teslas.py`. The Cybertruck uses `loft(crease_all=1.0, levels=1)` to get flat panels. All four scripts use the shared command line, `carkit.main()`, and every car has a model. Koenigsegg (indices 47–52) and Toyota (53–58) are in `koenigsegg.py` and `toyota.py`, appended after the Bugattis so saved garage indices stay valid.
 
+BMW, Audi and the Devel Sixteen (car indices 81–89, after the jet) are in `models/blender/bmw_audi.py`. It reuses `toyota.gt_coupe` and `toyota.hatch`, the Taycan sedan table and the mid-engine table, and its faces are `kidneys()` (BMW) and `singleframe()` (Audi). Inside one `Object.assign(BODIES, {...})` block, a body can only spread a body from an *earlier* block (`BODIES.koenigsegg` is undefined inside its own block, which stopped the game loading). `driver.mjs` prints page-error stacks with `AMBOOLA_STACK=1`.
+
 There is no Blender in the container by default:
 
 ```bash

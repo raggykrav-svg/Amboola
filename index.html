@@ -677,6 +677,16 @@ const CARS = [
   { id: 'torazero', name: 'AMBOOLA Tora Zero', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_torazero', wing: 'none', kw: 2206, redline: 22000, mass: 1200, vmax: 540, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.5, grip: 2.2, aero: 2.5, paint: 14, rim: '#c8141b', caliper: '#c8141b', usd: 8000000, desc: 'Fan car · 3,000 PS · 540 km/h', jp: '虎ゼロ' },
   // the AMBOOLA Jet: not a car - press DRIVE (FLY) with it to take off. 20,000 km/h, lands in every country
   { id: 'amboolajet', name: 'AMBOOLA Jet', brand: 'Amboola', cat: 'AMBOOLA', jet: true, body: 'amb_jet', wing: 'none', kw: 60000, redline: 20000, mass: 9000, vmax: 20000, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.2, grip: 1, aero: 0, paint: 35, rim: '#c8141b', caliper: '#c8141b', usd: 100000, desc: 'Flies at 20,000 km/h · to Cyprus, Italy & Dubai' },
+  // BMW M, Audi Sport and the Devel Sixteen (models/blender/bmw_audi.py) - appended so saved garage indices stay valid
+  { id: 'm2', name: 'BMW M2', brand: 'BMW', cat: 'BMW', body: 'bmw_m2', wing: 'duck', kw: 353, redline: 7200, mass: 1725, vmax: 285, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 4.0, grip: 1.12, aero: .2, paint: 1, rim: '#2a2b2e', caliper: '#1d5fc4', box: '8-speed M Steptronic', usd: 65000, desc: '3.0 twin-turbo straight-six · 480 PS' },
+  { id: 'm4csl', name: 'BMW M4 CSL', brand: 'BMW', cat: 'BMW', body: 'bmw_m4', wing: 'duck', kw: 405, redline: 7200, mass: 1625, vmax: 307, drive: 'RWD', engine: 'i6tt', gears: 8, zero: 3.6, grip: 1.32, aero: .45, paint: 14, rim: '#c8a24a', caliper: '#c8141b', box: '8-speed M Steptronic', usd: 140000, desc: 'Lightweight track special · 550 PS' },
+  { id: 'm5', name: 'BMW M5', brand: 'BMW', cat: 'BMW', body: 'bmw_m5', wing: 'none', hybrid: true, kw: 535, redline: 7200, mass: 2435, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.5, grip: 1.15, aero: .2, paint: 12, rim: '#1b1b1d', caliper: '#1d5fc4', box: '8-speed M Steptronic', usd: 121000, desc: 'V8 plug-in hybrid saloon · 727 PS' },
+  { id: 'xm', name: 'BMW XM Label', brand: 'BMW', cat: 'BMW', body: 'bmw_xm', wing: 'none', hybrid: true, kw: 550, redline: 6800, mass: 2710, vmax: 290, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.8, grip: 1.05, aero: .1, paint: 7, rim: '#1b1b1d', caliper: '#d8b04a', box: '8-speed M Steptronic', usd: 185000, desc: 'V8 hybrid super-SUV · 748 PS' },
+  { id: 'r8', name: 'Audi R8 V10 GT', brand: 'Audi', cat: 'AUDI', body: 'audi_r8', wing: 'turbo', kw: 456, redline: 8700, mass: 1570, vmax: 320, drive: 'RWD', engine: 'v10na', gears: 7, zero: 3.4, grip: 1.36, aero: .5, paint: 5, rim: '#1b1b1d', caliper: '#c8141b', usd: 250000, desc: '5.2 V10 · the last R8 · 620 PS' },
+  { id: 'rs6', name: 'Audi RS 6 Avant GT', brand: 'Audi', cat: 'AUDI', body: 'audi_rs6', wing: 'none', kw: 463, redline: 6800, mass: 2075, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.15, aero: .2, paint: 16, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed tiptronic', usd: 165000, desc: 'Super-fast estate car · 630 PS' },
+  { id: 'rsetrongt', name: 'Audi RS e-tron GT performance', brand: 'Audi', cat: 'AUDI', body: 'audi_etron', wing: 'none', kw: 680, redline: 16000, mass: 2320, vmax: 250, drive: 'AWD', engine: 'ev', gears: 2, zero: 2.5, grip: 1.2, aero: .25, paint: 27, rim: '#1b1b1d', caliper: '#c8141b', usd: 170000, desc: 'Electric GT · 925 PS boost' },
+  { id: 'rsq8', name: 'Audi RS Q8 performance', brand: 'Audi', cat: 'AUDI', body: 'audi_rsq8', wing: 'none', kw: 471, redline: 6800, mass: 2320, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.6, grip: 1.08, aero: .15, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed tiptronic', usd: 140000, desc: 'Twin-turbo V8 coupe-SUV · 640 PS' },
+  { id: 'devel16', name: 'Devel Sixteen', brand: 'Devel', cat: 'DEVEL', body: 'devel16', wing: 'none', kw: 3680, redline: 7500, mass: 1800, vmax: 560, drive: 'AWD', engine: 'v16na', gears: 7, zero: 1.8, grip: 2.1, aero: 1.6, paint: 31, rim: '#1b1b1d', caliper: '#c8141b', usd: 2000000, desc: 'Quad-turbo V16 · 5,000 hp · from Dubai', jp: 'デベル' },
   // the AMBOOLA City Bus: 50 seats, carries people between Tokyo and the countries (stop at a 🚌 bus stop)
   { id: 'amboolabus', name: 'AMBOOLA City Bus', brand: 'Amboola', cat: 'AMBOOLA', body: 'amboolabus', wing: 'none', kw: 420, redline: 3200, mass: 7800, vmax: 150, drive: 'RWD', engine: 'v8tt', gears: 6, zero: 11.5, grip: 0.9, aero: .1, paint: 4, rim: '#d8d8d8', caliper: '#c8141b', box: '6-speed auto', usd: 250000, desc: '50-seat bus · $2,000 per passenger', jp: 'バス' },
 ];
@@ -1750,9 +1760,19 @@ Object.assign(BODIES, {
   amb_minitora: { ...BODIES.ferrari, L: 3.95, W: 1.98, wr: 0.35, fX: 1.175, rX: -1.175 },
   amb_jet: { ...BODIES.mclaren, L: 22, W: 17, wr: .35, fX: 6, rX: -6 },
   amb_torazero: { ...BODIES.lambo, L: 5.0, W: 2.08, wr: 0.35, fX: 1.425, rX: -1.425 },
+  bmw_m2: { ...BODIES.fgt, L: 4.58, W: 1.89, wr: .345, fX: 1.37, rX: -1.37 },
+  bmw_m4: { ...BODIES.fgt, L: 4.80, W: 1.88, wr: .35, fX: 1.43, rX: -1.43 },
+  bmw_m5: { ...BODIES.taycan, L: 5.06, W: 1.97, wr: .365, fX: 1.52, rX: -1.50 },
+  bmw_xm: { ...BODIES.urus, L: 5.10, W: 2.01, wr: .40, fX: 1.60, rX: -1.50 },
+  audi_r8: { ...BODIES.ferrari, L: 4.43, W: 1.98, wr: .35, fX: 1.33, rX: -1.32 },
+  audi_rs6: { ...BODIES.taycan, L: 5.0, W: 1.99, wr: .36, fX: 1.48, rX: -1.45 },
+  audi_etron: { ...BODIES.taycan, L: 4.99, W: 1.97, wr: .36, fX: 1.50, rX: -1.40 },
+  audi_rsq8: { ...BODIES.cayenne, L: 5.0, W: 2.0, wr: .39, fX: 1.50, rX: -1.50 },
+  devel16: { ...BODIES.mclaren, L: 5.4, W: 2.12, wr: .38, fX: 1.55, rX: -1.58 },
   amboolabus: { ...BODIES.urus, L: 10.5, W: 2.5, cabW: 2.4, wr: .5, fX: 3.30, rX: -2.60, yb: .34, roofY: 3.15 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
+BODIES.amboolabus.roofY = 3.15;   // the bus borrows the Urus outline; its real roof is much higher
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .55 });
 const carbonMat = new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: .35, metalness: .3, clearcoat: 1, clearcoatRoughness: .1 });
@@ -1821,7 +1841,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'camel'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'camel'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -3261,7 +3281,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -3289,12 +3309,12 @@ function garageGo() {
 const AD_BRAND = {
   LAMBO: ['LAMBORGHINI', 'UNLEASH THE BULL', '#ffd02d'], FERRARI: ['FERRARI', 'PURE ITALIAN FIRE', '#ff2a2a'], MCLAREN: ['McLAREN', 'ENGINEERED FOR THE LIMIT', '#ff8000'],
   BUGATTI: ['BUGATTI', 'BEYOND EXTREME', '#3a7bff'], KOENIGSEGG: ['KOENIGSEGG', 'HYPERCAR. REDEFINED.', '#ff6a13'], TESLA: ['TESLA', 'THE FUTURE IS ELECTRIC', '#e82127'],
-  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], AMBOOLA: ['AMBOOLA', 'BORN IN TOKYO · BUILT TO WIN', '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
+  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], BMW: ['BMW M', 'THE MOST POWERFUL LETTER IN THE WORLD', '#1c69d4'], AUDI: ['AUDI SPORT', 'VORSPRUNG DURCH TECHNIK', '#bb0a30'], DEVEL: ['DEVEL', 'FIVE THOUSAND HORSEPOWER', '#d8b04a'], AMBOOLA: ['AMBOOLA', 'BORN IN TOKYO · BUILT TO WIN', '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
   HYPER: ['PORSCHE', 'THE HYBRID HYPERCAR', '#d5b46a'], ELECTRIC: ['PORSCHE', 'ELECTRIFIED PERFORMANCE', '#d5b46a'], SUV: ['PORSCHE', 'SPORTS CAR. FOR EVERY DAY.', '#d5b46a'],
 };
 const AD_T = [0, 3.2, 6.4, 9.2, 13];   // shot boundaries (s)
 const adBrand = c => c.id === 'amboolataxi' ? ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'] : c.id === 'amboolabus' ? ['AMBOOLA', '50 SEATS · TOKYO TO THE WORLD', '#ffc21f'] : AD_BRAND[c.cat] || [c.brand || 'AMBOOLA', 'DRIVE THE DREAM', '#ff5a1f'];
-const adShort = c => c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|AMBOOLA) /, '');
+const adShort = c => c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|BMW|Audi|Devel|AMBOOLA) /, '');
 let ad = null;
 function playAd(c, mode, done) {
   if (ad) return;
@@ -5385,7 +5405,7 @@ function duneH(x, z) {
   return h * smooth01(clamp((x - D.x0 - 30) / 130, 0, 1)) * smooth01(clamp((Math.hypot(x - o[0], z - o[1]) - o[2]) / 70, 0, 1)) * smooth01(clamp(edge / 90, 0, 1));
 }
 function duneGrad(x, z) { const e = .35; return [(duneH(x + e, z) - duneH(x - e, z)) / (2 * e), (duneH(x, z + e) - duneH(x, z - e)) / (2 * e)]; }
-const offroadOf = s => s.id === 'yuki' ? 1 : s.dakar ? .85 : /cayenne|macan|urus|purosangue|landcruiser|cybertruck|amboolataxi/.test(s.body) ? .62 : s.drive === 'AWD' ? .45 : .28;
+const offroadOf = s => s.id === 'yuki' ? 1 : s.dakar ? .85 : /cayenne|macan|urus|purosangue|landcruiser|cybertruck|amboolataxi|bmw_xm|audi_rsq8/.test(s.body) ? .62 : s.drive === 'AWD' ? .45 : .28;
 const RALLY_PTS = [[14790, 14410], [15120, 14290], [15460, 14060], [15840, 13960], [16190, 14110], [16330, 14480], [16170, 14880], [15800, 15080], [15400, 14980], [15100, 14700], [15010, 14430]];
 const RALLY_KEY = 'amboola.rally';
 let rally = null, rallyBest = (() => { try { return JSON.parse(localStorage.getItem(RALLY_KEY)) || null; } catch (e) { return null; } })();

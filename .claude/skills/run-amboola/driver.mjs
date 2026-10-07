@@ -33,7 +33,7 @@ async function open(viewport = { width: 1280, height: 720 }) {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
   const page = await (await browser.newContext({ viewport, deviceScaleFactor: +(process.env.AMBOOLA_DPR || 1) })).newPage();
   const errors = [];
-  page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
+  page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message + (process.env.AMBOOLA_STACK ? '\n' + e.stack : '')));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console.error: ' + m.text()); });
   await page.route(`https://cdn.jsdelivr.net/npm/three@${THREE_VER}/**`, r => {
     const p = new URL(r.request().url()).pathname.replace(`/npm/three@${THREE_VER}/`, '');
