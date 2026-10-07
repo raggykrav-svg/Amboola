@@ -380,92 +380,11 @@
   .rbtns { display:flex; gap:12px; margin-top:10px; }
 </style>
 <!-- Blender-built Porsche models (models/blender/porsches.py -> models/*.glb, also wrapped as .glb.js so file:// works) -->
-<script src="models/gt3rs.glb.js"></script>
-<script src="models/gt3.glb.js"></script>
-<script src="models/gt3t.glb.js"></script>
-<script src="models/st.glb.js"></script>
-<script src="models/gt2rs.glb.js"></script>
-<script src="models/turbos.glb.js"></script>
-<script src="models/gt4rs.glb.js"></script>
-<script src="models/spyrs.glb.js"></script>
-<script src="models/dakar.glb.js"></script>
-<script src="models/918.glb.js"></script>
-<script src="models/taycangt.glb.js"></script>
-<script src="models/macanev.glb.js"></script>
-<script src="models/cayennegt.glb.js"></script>
-<script src="models/cayenneeh.glb.js"></script>
 <!-- Lamborghini + Ferrari models (models/blender/supercars.py) -->
-<script src="models/revuelto.glb.js"></script>
-<script src="models/svj.glb.js"></script>
-<script src="models/temerario.glb.js"></script>
-<script src="models/sto.glb.js"></script>
-<script src="models/sterrato.glb.js"></script>
-<script src="models/urusp.glb.js"></script>
-<script src="models/sf90.glb.js"></script>
-<script src="models/laferrari.glb.js"></script>
-<script src="models/812c.glb.js"></script>
-<script src="models/12cil.glb.js"></script>
-<script src="models/296gtb.glb.js"></script>
-<script src="models/f8.glb.js"></script>
-<script src="models/purosangue.glb.js"></script>
 <!-- McLaren + Bugatti models (models/blender/hypercars.py) -->
-<script src="models/w1.glb.js"></script>
-<script src="models/senna.glb.js"></script>
-<script src="models/p1.glb.js"></script>
-<script src="models/765lt.glb.js"></script>
-<script src="models/750s.glb.js"></script>
-<script src="models/artura.glb.js"></script>
-<script src="models/gts.glb.js"></script>
-<script src="models/tourbillon.glb.js"></script>
-<script src="models/chironss.glb.js"></script>
-<script src="models/chironps.glb.js"></script>
-<script src="models/divo.glb.js"></script>
-<script src="models/veyronss.glb.js"></script>
-<script src="models/bolide.glb.js"></script>
 <!-- Tesla models (models/blender/teslas.py) -->
-<script src="models/roadster2.glb.js"></script>
-<script src="models/roadster08.glb.js"></script>
-<script src="models/modelsplaid.glb.js"></script>
-<script src="models/model3p.glb.js"></script>
-<script src="models/modelxplaid.glb.js"></script>
-<script src="models/modelyp.glb.js"></script>
-<script src="models/cyberbeast.glb.js"></script>
 <!-- Koenigsegg models (models/blender/koenigsegg.py) -->
-<script src="models/jesko.glb.js"></script>
-<script src="models/jeskoattack.glb.js"></script>
-<script src="models/regera.glb.js"></script>
-<script src="models/gemera.glb.js"></script>
-<script src="models/cc850.glb.js"></script>
-<script src="models/agerars.glb.js"></script>
 <!-- Toyota models (models/blender/toyota.py) -->
-<script src="models/grsupra.glb.js"></script>
-<script src="models/gr86.glb.js"></script>
-<script src="models/gryaris.glb.js"></script>
-<script src="models/grcorolla.glb.js"></script>
-<script src="models/lc300.glb.js"></script>
-<script src="models/grgt.glb.js"></script>
-<script src="models/amboolataxi.glb.js"></script>
-<script src="models/tora.glb.js"></script>
-<script src="models/raiden.glb.js"></script>
-<script src="models/kaze.glb.js"></script>
-<script src="models/oni.glb.js"></script>
-<script src="models/sakura.glb.js"></script>
-<script src="models/ryu.glb.js"></script>
-<script src="models/kitsune.glb.js"></script>
-<script src="models/shogun.glb.js"></script>
-<script src="models/samurai.glb.js"></script>
-<script src="models/yuki.glb.js"></script>
-<script src="models/neon.glb.js"></script>
-<script src="models/hayabusa.glb.js"></script>
-<script src="models/kaminari.glb.js"></script>
-<script src="models/tsunami.glb.js"></script>
-<script src="models/taiyo.glb.js"></script>
-<script src="models/kuro.glb.js"></script>
-<script src="models/hoshi.glb.js"></script>
-<script src="models/kasai.glb.js"></script>
-<script src="models/minitora.glb.js"></script>
-<script src="models/torazero.glb.js"></script>
-<script src="models/camel.glb.js"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -1872,18 +1791,34 @@ function buildWheel(B, spec, front, side, lift) {
 /* Blender models: decoded once at boot, then every buildCar() of that car id clones the meshes (geometry is shared)
    and swaps the Blender materials (matched by name) for the game's own, so paint, lights and calipers stay live. */
 const MODELS = {};
-async function loadCarModels() {
-  const src = window.AMBOOLA_MODELS || {}; if (!Object.keys(src).length) return;
-  const draco = new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/');
-  const loader = new GLTFLoader().setDRACOLoader(draco);
-  await Promise.all(Object.entries(src).map(async ([id, b64]) => {
-    try {
-      const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
-      const gltf = await Promise.race([loader.parseAsync(bin, ''), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 15000))]);
-      MODELS[id] = gltf.scene;
-    } catch (e) { console.warn(`model ${id} not loaded, using the procedural body`, e); }
-  }));
-  draco.dispose();
+// The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
+// and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
+// is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'camel'];
+const modelJobs = {}; let gltfLoader = null, modelsDone = false;
+function loadModel(id) {
+  if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
+  return modelJobs[id] ??= new Promise(res => {
+    const parse = async () => {
+      try {
+        const b64 = window.AMBOOLA_MODELS?.[id]; if (!b64) throw new Error('no data');
+        gltfLoader ??= new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/'));
+        const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const gltf = await Promise.race([gltfLoader.parseAsync(bin, ''), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 20000))]);
+        MODELS[id] = gltf.scene; delete window.AMBOOLA_MODELS[id];
+        if (state === 'garage' && CARS[carIdx]?.id === id) showGarageCar();
+      } catch (e) { console.warn(`model ${id} not loaded, using the procedural body`, e); }
+      res(MODELS[id] || null);
+    };
+    if (window.AMBOOLA_MODELS?.[id]) return parse();
+    const tag = document.createElement('script'); tag.src = `models/${id}.glb.js`; tag.onload = parse; tag.onerror = () => { console.warn(`model ${id}: file not found`); res(null); };
+    document.head.appendChild(tag);
+  });
+}
+// after start-up: your own cars first, then everything else, gently (phones get more breathing room)
+function loadAllModels() {
+  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...own, ...MODEL_FILES])];
+  (async () => { for (const id of order) { await loadModel(id); await new Promise(r => setTimeout(r, isTouch ? 150 : 15)); } modelsDone = true; })();
 }
 const glossBlackMat = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: .16, clearcoat: 1, clearcoatRoughness: .05 });
 const modelMats = {
@@ -3279,6 +3214,7 @@ function buildGarage() {
   canvas.addEventListener('wheel', e => { if (state === 'garage') gDist = clamp(gDist + e.deltaY * .005, 6, 13); }, { passive: true });
 }
 function showGarageCar() {
+  if (!MODELS[CARS[carIdx].id]) loadModel(CARS[carIdx].id);
   if (gCar) gScene.remove(gCar.group);
   const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08; if (CARS[carIdx].jet) { gCar.group.scale.setScalar(.3); gCar.group.position.y = .7; }
   dentCar(gCar, dentsOf(CARS[carIdx].id));
@@ -3306,7 +3242,7 @@ const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-tur
 function garageGo() {
   const c = CARS[carIdx];
   if (owns(c)) return startDrive();
-  if (buyCar(c)) { audio.init(); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); updateMenu(); if (!adSeen() && !c.jet) setTimeout(() => playAd(c, 'buy'), 350); }
+  if (buyCar(c)) { audio.init(); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); updateMenu(); if (!adSeen() && !c.jet) loadModel(c.id).then(() => setTimeout(() => playAd(c, 'buy'), 350)); }
 }
 /* =====================================================================
    CAR COMMERCIAL ("reklama") — a 13-second TV-style ad that plays when the game opens (a different Lamborghini each
@@ -3405,11 +3341,14 @@ function endAd() {
 $('adSkip').onclick = e => { e.stopPropagation(); endAd(); };
 $('adSound').onclick = e => { e.stopPropagation(); audio.init(); if (ad) { ad.soundOn = true; audio.setCar(ad.c); } $('adSound').classList.add('hidden'); };
 const adSeen = () => localStorage.getItem('amboola.noad') === '1';
+function nextAdCar(step) {   // the Lamborghini for the start-up ad (a different one each time)
+  const lambos = CARS.filter(c => c.cat === 'LAMBO'), i = (+localStorage.getItem('amboola.adi') || 0) % lambos.length;
+  if (step) localStorage.setItem('amboola.adi', i + 1);
+  return lambos[i];
+}
 function bootAd(done) {
   if (adSeen()) return done();
-  const lambos = CARS.filter(c => c.cat === 'LAMBO'), i = (+localStorage.getItem('amboola.adi') || 0) % lambos.length;
-  localStorage.setItem('amboola.adi', i + 1);
-  playAd(lambos[i], 'boot', done);
+  playAd(nextAdCar(true), 'boot', done);
 }
 // garage mode buttons only work with a car you own
 const ownedOnly = fn => () => { if (!owns(CARS[carIdx]) || CARS[carIdx].jet) { const d = $('drive'); d.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; } fn(); };
@@ -6963,6 +6902,9 @@ function startDrive() {
   audio.init();
   const spec = CARS[carIdx];
   if (spec.jet) return startFlight(spec);
+  if (!MODELS[spec.id] && MODEL_FILES.includes(spec.id) && !startDrive.waited?.[spec.id]) {   // its Blender model is still on the way
+    (startDrive.waited ??= {})[spec.id] = 1; $('drive').textContent = 'LOADING…'; loadModel(spec.id).then(() => { if (state === 'garage') startDrive(); }); return;
+  }
   localStorage.setItem('amboola.lastcar', carIdx);
   let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
   player = new Player(tunedSpec(spec), paintIdx);
@@ -7082,7 +7024,7 @@ async function boot() {
   setLoad(.05, 'Loading fonts…');
   try { await Promise.race([Promise.all([document.fonts.load(`900 40px Orbitron`), document.fonts.load(`900 40px "Noto Sans JP"`, '東京ラーメンカラオケ寿司居酒屋焼肉ホテル薬局ゲーム喫茶店酒場電気街バーサーキットのために生まれた純粋なパワー魂電動化中のスポーツカーミッドシップ頂点新しい時代へ馬力衝撃伝説は続く道終わりから始まる走れ首都高速ボード計測'), document.fonts.load('700 20px Rajdhani')]), new Promise(r => setTimeout(r, 3500))]); } catch (e) { }
   setupComposer();
-  setLoad(.1, 'Loading Blender models…'); await loadCarModels();
+  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel'].map(loadModel));
   setLoad(.15, 'Paving roads…'); await nextFrame();
   await buildWorld();
   setLoad(.8, 'Spawning traffic…'); await nextFrame();
@@ -7098,9 +7040,10 @@ async function boot() {
   $('loading').classList.add('hidden');
   enterGarage(); frame();
   bootAd(() => { checkDaily(); checkMissions(); });
+  setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

@@ -33,6 +33,7 @@ await page.route('http://amboola.test/**', r => { const p = path.join(ROOT, deco
 await page.addInitScript(() => localStorage.setItem('amboola.noad', '1'));   // no start-up commercial in the recording
 await page.goto('http://amboola.test/index.html');
 await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden'), null, { timeout: 180000 });
+await page.waitForFunction(() => window.amboola?.modelsDone, null, { timeout: 300000 });   // the Blender models stream in after start-up
 await page.evaluate(([fps, sc]) => { window.__FPS = fps; window.__manualFrames = true; window.__startScene = sc; }, [FPS, SCENE]);
 await page.addScriptTag({ path: path.join(HERE, 'trailer-director.js') });
 await page.waitForFunction(() => window.__trailerReady(), null, { timeout: 60000 });   // gallery images loaded

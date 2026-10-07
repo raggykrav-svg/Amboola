@@ -51,6 +51,8 @@ async function open(viewport = { width: 1280, height: 720 }) {
     .catch(e => { throw new Error('game never finished loading (a script error stops the module from running at all):\n' + errors.join('\n')); });
   const msg = await page.textContent('#loadmsg');
   if (msg !== 'Ready') throw new Error('load failed: ' + msg + '\n' + errors.join('\n'));
+  // the Blender models stream in after start-up; tests want them all (AMBOOLA_FAST=1 skips the wait)
+  if (!process.env.AMBOOLA_FAST) await page.waitForFunction(() => window.amboola?.modelsDone, null, { timeout: 300000 });
   return { browser, page, errors };
 }
 
