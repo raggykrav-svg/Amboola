@@ -22,6 +22,25 @@ then open the URL it gives you.
 
 **Option 3 — local server:** `npx http-server .` and open `http://localhost:8080`.
 
+## 🤖 Rolka, the AI helper
+
+`rolka.html` is a separate page: an AI helper called **Rolka**. Open [raggykrav-svg.github.io/Amboola/rolka.html](https://raggykrav-svg.github.io/Amboola/rolka.html), or double-click the file.
+
+- **💬 Chat:** ask anything, like "how do I clean a burnt pan?", and Rolka explains it step by step. Tap **📷 Add photo** to show it something, like a stain.
+- **🎨 Image:** describe a picture and Rolka draws it.
+- **🎬 Video:** describe a short video and Rolka makes it. This usually takes 1 to 3 minutes.
+
+Pick a Rolka model with the button at the top right:
+
+| Mode | Models | Runs on | Needs |
+|---|---|---|---|
+| 💬 Chat | ⚡ Mini · 🚀 Pro · 🧠 Max · 👑 Genius | Claude (Haiku 4.5, Sonnet 5.5, Opus 5.5, Fable 5.1) | Claude key |
+| 🎨 Image | 🖍️ Art Free | Pollinations.ai | nothing, it's free |
+| 🎨 Image | ✏️ Art Lite · 🎨 Art · 🖼️ Art Pro | Google Gemini image models | Google key |
+| 🎬 Video | 🎞️ Movie Lite · 🎬 Movie Fast · 🎥 Movie Pro | Google Veo 3.1 | Google key |
+
+**Keys:** tap 🔑 and paste a key. Get a Claude key at [platform.claude.com](https://platform.claude.com/settings/keys) and a Google key at [aistudio.google.com](https://aistudio.google.com/apikey). Each use costs a little money; videos cost the most. Keys are kept only in your own browser and sent only to Anthropic and Google. Never put a key in the code: anyone who can see the code can copy the key and spend your money.
+
 ## Money
 
 You start with **$20,000** and a free **Toyota GR86**. Every other car costs its real US price, from $30,000 for the GR86 to $5.8 million for the Bugatti Divo. In the garage, cars you don't own show their price, and the big button says **BUY** when you can afford one, or how much more you need. You can only drive, race or do jobs in cars you own.
