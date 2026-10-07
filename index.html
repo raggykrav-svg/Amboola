@@ -335,6 +335,10 @@
   .meetRow button { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.12em; padding:10px 18px; color:#111; background:linear-gradient(90deg,#ff2bd6,#2fe0ff); border:none; cursor:pointer; }
   .meetRow button:disabled { background:#444; color:#aaa; cursor:default; }
   #meetClose { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.14em; padding:10px 26px; color:#fff; background:transparent; border:2px solid #ff2bd6; cursor:pointer; }
+  #chasehud { position:absolute; left:50%; top:62px; transform:translateX(-50%); padding:6px 16px; background:rgba(10,4,6,.8); border:2px solid #ff2a2a; text-align:center; animation:chaseBlink .5s steps(2) infinite; }
+  #chasehud b { display:block; font-family:'Orbitron',sans-serif; font-size:16px; letter-spacing:.14em; color:#fff; } #chasehud span { font-size:13px; letter-spacing:.12em; color:#ffb0b0; } #chasehud i { font-style:normal; color:#fff; font-weight:700; }
+  #chasehud .bar { height:6px; margin-top:4px; background:rgba(255,255,255,.12); } #chasehud .bar u { display:block; height:100%; width:0; background:linear-gradient(90deg,#2a5bff,#ff2a2a); }
+  #chasehud.busting { border-color:#fff; } @keyframes chaseBlink { 0% { box-shadow:0 0 18px #ff2a2a; } 100% { box-shadow:0 0 18px #2a5bff; } }
   #rallyhud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:22px; background:var(--panel); padding:6px 18px; border-bottom:2px solid #ffc21f; backdrop-filter:blur(6px); text-align:center; }
   #rallyhud small { display:block; font-size:11px; letter-spacing:.25em; color:#e9c98c; } #rallyhud b { font-family:'Orbitron',sans-serif; font-size:20px; }
   #rlArrow { display:inline-block; color:#ffc21f; transition:transform .1s linear; }
@@ -451,6 +455,7 @@
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
   <div id="meethud" class="hidden"><div><small>NIGHT RACE VS</small><b id="mRival">-</b></div><div><small>PLACE</small><b id="mPos">-</b></div><div><small>TO GO</small><b id="mLeft">-</b></div><div><small>TIME</small><b id="mTime">-</b></div></div>
+  <div id="chasehud" class="hidden"><b>🚨 POLICE CHASE</b><span>GAP <i id="chGap">0 m</i> · GET 400 m AWAY!</span><div class="bar"><u id="chMeter"></u></div></div>
   <div id="rallyhud" class="hidden"><div><small>DESERT RALLY</small><b id="rlGate">1/10</b></div><div><small>TIME</small><b id="rlTime">0:00</b></div><div><small>BEST</small><b id="rlBest">—</b></div><div><small>NEXT GATE</small><b><span id="rlArrow">▲</span> <span id="rlDist">0 m</span></b></div></div>
   <div id="count"></div>
   <div id="draghud" class="hidden"><div id="dTree"></div><div><small id="dEvent">DRAG</small><b id="dTime">—</b></div><div><small>TO GO</small><b id="dLeft">—</b></div><div><small>VS <span id="dRival"></span></small><b id="dGap">—</b></div></div>
@@ -1476,7 +1481,7 @@ async function buildWorld() {
   buildWangan(); buildSnowArea();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries();
-  buildSpeedCams();
+  buildSpeedCams(); buildPatrols();
   buildMinimapImage();
 }
 
@@ -4739,7 +4744,7 @@ class HwyTraffic {
       if (d >= rad || d < 1e-4) continue;
       const nx = dx / d, nz = dz / d, pen = rad - d; p.x += nx * pen; p.z += nz * pen;
       const cvx = hx * c.v * c.dir, cvz = hz * c.v * c.dir, vn = (p.vx - cvx) * nx + (p.vz - cvz) * nz;
-      if (vn < 0) { p.vx -= 1.4 * vn * nx; p.vz -= 1.4 * vn * nz; p.vx *= .9; p.vz *= .9; if (-vn > 2) { audio.crash(-vn); skillCrash(); taxiCrash(); } c.v *= .4; }
+      if (vn < 0) { p.vx -= 1.4 * vn * nx; p.vz -= 1.4 * vn * nz; p.vx *= .9; p.vz *= .9; if (-vn > 2) { audio.crash(-vn); skillCrash(); taxiCrash(); carHit(p, nx, nz, -vn); } c.v *= .4; }
     }
   }
 }
@@ -6276,6 +6281,123 @@ function drawStuntsMap(g) {
 }
 
 /* =====================================================================
+   BRIDGE TRAFFIC — cars and trucks on the long sea bridges. One pool of cars follows you: when you drive onto a
+   bridge they are spread in its three lanes each way, ahead of you and behind, and recycled out of sight.
+   ===================================================================== */
+class BridgeTraffic {
+  constructor(n) {
+    this.cars = [];
+    for (let k = 0; k < n; k++) { const T = TRAFFIC_TYPES[k % TRAFFIC_TYPES.length], mesh = buildTrafficCar(T); mesh.visible = false; scene.add(mesh); this.cars.push({ T, mesh, dir: k % 2 ? 1 : -1, lane: k % 3, s: 0, v: 25 }); }
+    this.R = null;
+  }
+  laneOff(c) { return -c.dir * [2.95, 6.25, 9.55][c.lane]; }
+  place(c, ps, R, near) {
+    const lo = 160, hi = (R.iMouth ?? R.n - 1) * R.step - 160;
+    for (let k = 0; k < 10; k++) { c.s = clamp(ps + (near ? rr(-500, 900) : (Math.random() < .5 ? -1 : 1) * rr(450, 900)), lo, hi); if (near || !this.seen(c, R)) break; }
+    if (Math.abs(c.s - ps) < 70) c.s = clamp(ps + 220, lo, hi);   // never on top of you
+    c.lane = Math.floor(Math.random() * 3); c.dir = Math.random() < .55 ? 1 : -1; c.v = c.target = [22, 27, 33][c.lane] + rr(-2, 2);
+  }
+  pose(c, R) {
+    const f = clamp(c.s / R.step, 0, R.n - 1.001), i = Math.floor(f), u = f - i, j = i + 1, off = this.laneOff(c);
+    c.x = lerp(R.x[i], R.x[j], u) - lerp(R.tz[i], R.tz[j], u) * off; c.z = lerp(R.z[i], R.z[j], u) + lerp(R.tx[i], R.tx[j], u) * off; c.y = lerp(R.y[i], R.y[j], u);
+    c.mesh.position.set(c.x, c.y, c.z); c.mesh.rotation.order = 'YXZ'; c.mesh.rotation.y = Math.atan2(R.tx[i] * c.dir, R.tz[i] * c.dir); c.mesh.rotation.x = -Math.atan((R.y[j] - R.y[i]) / R.step) * c.dir;
+  }
+  seen(c, R) { this.pose(c, R); return _frus.containsPoint(_fv.set(c.x, c.y + 1, c.z)) && Math.hypot(c.x - camera.position.x, c.z - camera.position.z) < 700; }
+  update(dt, p) {
+    const A = areaNow, R = A?.country && p && p.surf === 'route' ? A.R : null;
+    if (R !== this.R) { this.R = R; for (const c of this.cars) { c.mesh.visible = !!R; if (R) { this.place(c, R.hint * R.step, R, true); this.pose(c, R); } } }
+    if (!R) return;
+    _frus.setFromProjectionMatrix(_fm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    const pi = Math.max(R.hint, 0), ps = pi * R.step, pLat = (p.x - R.x[pi]) * -R.tz[pi] + (p.z - R.z[pi]) * R.tx[pi], pv = p.vx * R.tx[pi] + p.vz * R.tz[pi];
+    for (const c of this.cars) {
+      let v = c.target;
+      for (const o of this.cars) if (o !== c && o.dir === c.dir && o.lane === c.lane) { const gap = (o.s - c.s) * c.dir; if (gap > 0 && gap < 40) v = Math.min(v, o.v * (gap < 15 ? .7 : 1)); }
+      if (Math.sign(pLat) === -c.dir && Math.abs(pLat - this.laneOff(c)) < 2.6) { const gap = (ps - c.s) * c.dir; if (gap > 0 && gap < 45) v = Math.min(v, Math.max(0, pv * c.dir - (gap < 14 ? 3 : 0))); }
+      c.v = damp(c.v, v, v < c.v ? 2.5 : .6, dt); c.s += c.v * c.dir * dt;
+      this.pose(c, R);
+      if (Math.abs(c.s - ps) > 950 && !this.seen(c, R)) { this.place(c, ps, R, false); this.pose(c, R); }
+      if (Math.abs(c.x - p.x) < 8 && Math.abs(c.z - p.z) < 8 && Math.abs(c.y - (p.y || 0)) < 3) HwyTraffic.prototype.hit.call(this, c, p);
+    }
+  }
+}
+let bridgeTraffic = null;
+
+/* =====================================================================
+   POLICE PATROLS — police cars wait with a radar on the sea bridges, on the Wangan and in every country town. Speed
+   past one (over 200 km/h on a bridge, 130 in a town) and it chases you, siren wailing: it follows your trail, so
+   it goes everywhere you go, a little slower than your car's top speed. Get 400 m away to escape (and get paid for it); stop near it and you are BUSTED and pay
+   a fine. Not during races, jobs or outlaw/police mode.
+   ===================================================================== */
+const PATROLS = [];
+let chase = null;
+function buildPatrols() {
+  const add = (x, y, z, h, limit, where) => {
+    const g = buildPoliceCar(); g.position.set(x, y, z); g.rotation.y = h; scene.add(g);
+    PATROLS.push({ g, home: [x, y, z, h], limit, where, cool: 0 });
+  };
+  for (const C of COUNTRIES) {
+    const R = C.R, i = Math.round(R.iMouth * .5), off = -11;   // on the outbound shoulder, half way over
+    add(R.x[i] - R.tz[i] * off, R.y[i], R.z[i] + R.tx[i] * off, Math.atan2(R.tx[i], R.tz[i]), 200, `${C.name} Bridge`);
+    const xs = []; for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x);
+    const zs = []; for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z);
+    add(xs[1] + 10, 0, zs[2] - 9.5, Math.PI / 2, 130, C.name);   // parked by a crossroads in town, facing along the street
+  }
+  { const R = WANGAN, i = Math.round(R.n * .42); add(R.x[i] - R.tz[i] * -11, R.y[i], R.z[i] + R.tx[i] * -11, Math.atan2(R.tx[i], R.tz[i]), 200, 'Wangan Highway'); }
+}
+function updatePatrols(dt, p) {
+  const t = performance.now() / 1000;
+  for (const P of PATROLS) {
+    if (P.cool > 0) P.cool -= dt;
+    const d = Math.hypot(P.g.position.x - p.x, P.g.position.z - p.z);
+    P.g.visible = d < 1500 || chase?.P === P;
+    if (chase?.P === P) continue;
+    // parked: a solid car you can bump into
+    if (d < 6 && Math.abs(P.g.position.y - (p.y || 0)) < 3) { const dx = p.x - P.g.position.x, dz = p.z - P.g.position.z, l = Math.hypot(dx, dz) || 1; if (l < 2.6) { p.x += dx / l * (2.6 - l); p.z += dz / l * (2.6 - l); const vn = (p.vx * dx + p.vz * dz) / l; if (vn < 0) { p.vx -= 1.4 * vn * dx / l; p.vz -= 1.4 * vn * dz / l; } } }
+    if (!chase && P.cool <= 0 && d < 70 && Math.abs(P.g.position.y - (p.y || 0)) < 6 && p.speed * 3.6 > P.limit && !race && !drag && !taxi && !crime && !meet && !(typeof bus !== 'undefined' && bus) && !(typeof worldRace !== 'undefined' && worldRace) && !(typeof cRace !== 'undefined' && cRace)) startChase(P, p);
+  }
+  if (chase) updateChase(dt, p, t);
+}
+function startChase(P, p) {
+  chase = { P, trail: [[P.g.position.x, P.g.position.y, P.g.position.z], [p.x, p.y || 0, p.z]], k: 0, u: 0, v: 8, far: 0, near: 0, t: 0, kmh: Math.round(p.speed * 3.6) };
+  toast('🚨 POLICE!', `${chase.kmh} km/h ON THE ${P.where.toUpperCase()} · GET 400 m AWAY TO ESCAPE`);
+  $('chasehud').classList.remove('hidden');
+}
+function updateChase(dt, p, t) {
+  const C = chase, T = C.trail, last = T[T.length - 1], g = C.P.g;
+  C.t += dt;
+  if (Math.hypot(p.x - last[0], p.z - last[2]) > 4) T.push([p.x, p.y || 0, p.z]);
+  // how far the police car is behind you, along your trail
+  let gap = 0; { let x = g.position.x, z = g.position.z; for (let i = C.k + 1; i < T.length; i++) { gap += Math.hypot(T[i][0] - x, T[i][2] - z); x = T[i][0]; z = T[i][2]; } gap += Math.hypot(p.x - x, p.z - z); }
+  const vmax = clamp(p.spec.vmax / 3.6 * .82, 38, 92), target = gap > 30 ? vmax : clamp(p.speed + (gap - 10) * .8, 0, vmax);   // a touch slower than your top speed: flat out, you get away
+  C.v = damp(C.v, target, target > C.v ? .9 : 3, dt);
+  // move along the trail
+  let step = C.v * dt;
+  while (step > 0 && C.k < T.length - 1) {
+    const a = T[C.k], b = T[C.k + 1], seg = Math.hypot(b[0] - a[0], b[2] - a[2]) || .001, left = seg * (1 - C.u);
+    if (step < left) { C.u += step / seg; step = 0; } else { step -= left; C.k++; C.u = 0; }
+  }
+  const a = T[C.k], b = T[Math.min(C.k + 1, T.length - 1)];
+  g.position.set(lerp(a[0], b[0], C.u), lerp(a[1], b[1], C.u), lerp(a[2], b[2], C.u));
+  if (b !== a) { const h = Math.atan2(b[0] - a[0], b[2] - a[2]); let dh = h - g.rotation.y; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); g.rotation.y += dh * Math.min(1, dt * 8); }
+  if (C.k > 200) { T.splice(0, C.k); C.k = 0; }
+  const on = Math.sin(t * 14) > 0; g.userData.flash[0].emissiveIntensity = on ? 6 : .3; g.userData.flash[1].emissiveIntensity = on ? .3 : 6;
+  audio.siren(clamp(1 - gap / 700, .15, 1));
+  // escape, or busted
+  C.far = gap > 400 ? C.far + dt : 0; C.near = gap < 12 && p.speed < 6 ? C.near + dt : 0;
+  $('chGap').textContent = `${Math.round(gap)} m`; $('chMeter').style.width = (C.far > 0 ? clamp(C.far / 3, 0, 1) * 100 : clamp(1 - (gap - 12) / 388, 0, 1) * 100) + '%';
+  $('chasehud').classList.toggle('busting', C.near > 0);
+  if (C.far > 3) endChase(true, p); else if (C.near > 2.2) endChase(false, p);
+  else if (race || drag || taxi || crime || meet) endChase(null, p);
+}
+function endChase(escaped, p) {
+  const C = chase; if (!C) return; chase = null;
+  const P = C.P, [x, y, z, h] = P.home; P.g.position.set(x, y, z); P.g.rotation.y = h; P.cool = 25; P.g.userData.flash.forEach(m => m.emissiveIntensity = 3);
+  audio.siren(0); $('chasehud').classList.add('hidden');
+  if (escaped === true) { const pay = Math.round((2000 + C.kmh * 12 + C.t * 40) / 100) * 100; earn(pay); bump('escapes'); banner('🚨 YOU ESCAPED!', `+${fmtUSD(pay)}`, 'The police lost you'); }
+  else if (escaped === false) { const fine = clamp(Math.round((p.spec.usd || 40000) * .02 / 100) * 100, 500, 15000); wallet.usd = Math.max(0, wallet.usd - fine); saveWallet(); audio.beep(300, .5); banner('🚔 BUSTED!', `FINE −${fmtUSD(fine)}`, `${C.kmh} km/h is too fast!`); }
+}
+
+/* =====================================================================
    THE AMBOOLA JET — buy it in the garage ($100,000), press DRIVE and you are flying above Tokyo.
    W/S throttle (up to 20,000 km/h), A/D turn, ↑/↓ climb/dive, click a destination to let the autopilot steer,
    L to land when an airport is close. You land in your last car, ready to drive.
@@ -6929,7 +7051,7 @@ $('bWeather').onclick = () => { cycleWeather(); $('bWeather').textContent = 'WEA
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
 $('bLeave').onclick = () => { endRace(true); setPause(false); };
-$('bGarage').onclick = () => { endMeetRace(false, true); endDrag(true); endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
+$('bGarage').onclick = () => { endChase(null, player); endMeetRace(false, true); endDrag(true); endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
@@ -6999,7 +7121,7 @@ function tick(dt) {
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); // above the haze: the city view clears up
     sky.position.copy(camera.position);
-    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player);
+    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player);
     audio.weather(WX.wet, player.speed, camMode >= 2);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2, air: player.air });
     // big screens cycle
@@ -7031,6 +7153,7 @@ async function boot() {
   traffic = new Traffic(isTouch ? 26 : 40);
   skids = new Skids(); smoke = new Smoke(); spray = new Smoke(220); spray.mat.uniforms.tint.value.setRGB(.82, .86, .92);
   dust = new Smoke(240); dust.mat.uniforms.tint.value.setRGB(.95, .78, .52);
+  bridgeTraffic = new BridgeTraffic(isTouch ? 12 : 20);
   buildRain(); buildWetFilm();
   setLoad(.9, 'Opening the garage…'); await nextFrame();
   buildGarage(); buildMenu(); applyTime(timeName);
@@ -7043,7 +7166,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
