@@ -1488,7 +1488,7 @@ async function buildWorld() {
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
   buildWangan(); buildSnowArea();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
-  buildCountries();
+  buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs();
   buildMinimapImage();
 }
@@ -6640,24 +6640,50 @@ function buildJet(spec, paintHex) {
   const flames = []; for (const s of [-1, 1]) { const f = new THREE.Mesh(new THREE.ConeGeometry(.5, 4, 12).rotateX(-Math.PI / 2).translate(0, 0, -2), flameM); f.position.set(s * .62, -.05, -10.8); body.add(f); flames.push(f); }
   const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0 }), tailMat = new THREE.MeshStandardMaterial({ color: 0x3a0000, emissive: 0xff1010, emissiveIntensity: 1.5 });
   for (const [x, m] of [[8.5, new THREE.MeshBasicMaterial({ color: 0x20ff40 })], [-8.5, new THREE.MeshBasicMaterial({ color: 0xff2020 })]]) { const l = new THREE.Mesh(new THREE.SphereGeometry(.18, 8, 6), m); l.position.set(x, 0, -6.4); body.add(l); }
-  return { group, body, wheels: [], headMat, tailMat, paint, flames, B: BODIES[spec.body], jet: true };
+  // landing gear: nose leg and two main legs (shown near the ground)
+  const gear = new THREE.Group(); body.add(gear);
+  for (const [x, z] of [[0, 6.2], [-1.9, -2.4], [1.9, -2.4]]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(.09, .09, 1.6, 8), dark); leg.position.set(x, -1.75, z); gear.add(leg);
+    const wh = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .32, 14).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x151517, roughness: .9 })); wh.position.set(x, -2.53, z); gear.add(wh);
+  }
+  return { group, body, wheels: [], headMat, tailMat, paint, flames, gear, B: BODIES[spec.body], jet: true };
 }
 let flight = null;
 function startFlight(spec) {
   const back = player && !player.spec.jet ? player : null;
   if (back) { back.car.group.visible = false; }
   const p = PAINTS[paintIdx], car = buildJet(spec, p.c); scene.add(car.group);
-  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500);
-  flight = { car, x: player ? player.x : 0, z: player ? player.z : 150, y: 320, yaw: player ? player.heading : Math.PI, pitch: 0, roll: 0, v: 160, thr: .15, target: null, landing: 0, from: near?.name || 'Tokyo' };
-  if (flight.y < 320) flight.y = 320;
+  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500), D = flyDests().find(d => d.n === (near?.name || 'Tokyo'));
+  // line up at the west end of that airport's runway, engines idling: hold W to roll, lift off at about 260 km/h
+  flight = { car, x: D.x - D.len / 2 + 14, z: D.z, y: JET_GEAR, yaw: Math.PI / 2, pitch: 0, roll: 0, v: 0, thr: 0, target: null, landing: 0, from: D.n, ground: true };
   camPos.set(flight.x - Math.sin(flight.yaw) * 40, flight.y + 10, flight.z - Math.cos(flight.yaw) * 40);
   $('menu').classList.add('hidden'); $('hud').classList.add('hidden'); $('flyhud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
   renderPass.scene = scene; renderPass.camera = camera; applyTime(timeName);
   audio.init(); state = 'fly';
   renderFlyTargets();
-  toast('AMBOOLA JET · 20,000 KM/H', 'W/S THROTTLE · A/D TURN · ↑↓ CLIMB · L TO LAND');
+  toast('READY FOR TAKE-OFF', 'HOLD W TO RACE DOWN THE RUNWAY · ↑ TO PULL UP');
 }
-const flyDests = () => [{ n: 'Tokyo', x: 0, z: 150, air: [-5.7, 150] }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], air: C.airport, C }))];
+// airports: Tokyo Airport north of the city (a long runway), and a short strip in every country; runways run east
+const TOKYO_AIR = { x: 1000, z: -3200, len: 1400 }, JET_GEAR = 2.95;
+const flyDests = () => [{ n: 'Tokyo', x: TOKYO_AIR.x, z: TOKYO_AIR.z, len: TOKYO_AIR.len, air: [-5.7, 150] }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], len: 260, air: C.airport, C }))];
+function buildTokyoAirport() {
+  const { x, z, len } = TOKYO_AIR, g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(len + 300, 320), new THREE.MeshStandardMaterial({ color: 0x4a4f45, roughness: 1 })); apron.rotation.x = -Math.PI / 2; apron.position.y = .02; g.add(apron);
+  const rt = canvasTex(512, 128, (c, w, h) => { c.fillStyle = '#2b2d31'; c.fillRect(0, 0, w, h); noise(c, w, h, 12); c.fillStyle = '#f2f2f2'; for (let k = 0; k < w; k += 64) c.fillRect(k, h / 2 - 3, 36, 6); c.fillRect(0, 6, w, 4); c.fillRect(0, h - 10, w, 4); }, { repeat: true });
+  rt.repeat.set(len / 120, 1);
+  const rw = new THREE.Mesh(new THREE.PlaneGeometry(len, 50), new THREE.MeshStandardMaterial({ map: rt, roughness: .85 })); rw.rotation.x = -Math.PI / 2; rw.position.y = .06; rw.receiveShadow = true; g.add(rw);
+  const lm = new THREE.MeshBasicMaterial({ color: 0xffe08a }), gm = new THREE.MeshBasicMaterial({ color: 0x30ff60 }), rm = new THREE.MeshBasicMaterial({ color: 0xff3030 }); dynMats.lamps.push(lm);
+  const lights = []; for (let k = 0; k <= 28; k++) for (const s of [-1, 1]) lights.push([-len / 2 + k * len / 28, .3, s * 27]);
+  g.add(instanced(new THREE.SphereGeometry(.35, 8, 6), lm, lights, false));
+  for (const [m, ex] of [[gm, -len / 2 - 4], [rm, len / 2 + 4]]) g.add(instanced(new THREE.SphereGeometry(.45, 8, 6), m, Array.from({ length: 9 }, (_, k) => [ex, .35, -24 + k * 6]), false));
+  const term = new THREE.Mesh(new THREE.BoxGeometry(260, 16, 46), new THREE.MeshStandardMaterial({ color: 0xc9d4de, roughness: .3, metalness: .5 })); term.position.set(0, 8, -130); term.castShadow = true; g.add(term);
+  const roofM = new THREE.Mesh(new THREE.BoxGeometry(270, 1.2, 56), new THREE.MeshStandardMaterial({ color: 0xe8eef2, roughness: .4 })); roofM.position.set(0, 16.6, -130); g.add(roofM);
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(4, 5.5, 46, 16), new THREE.MeshStandardMaterial({ color: 0xe6e9ee, roughness: .5 })); tower.position.set(180, 23, -120); g.add(tower);
+  const cab = new THREE.Mesh(new THREE.CylinderGeometry(9, 7, 7, 16), glassMat); cab.position.set(180, 49, -120); g.add(cab);
+  const t = signTex(1024, 256, '#0d1b2a', [['TOKYO AMBOOLA AIRPORT', .42, .3, OR, '#fff'], ['東京アンブーラ空港 · ✈', .78, .2, JP, '#2fe0ff']], '#2fe0ff'), sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(60, 15), sm); sg.position.set(0, 26, -106.9); g.add(sg);
+  landmarks.push({ x, z, c: '#2fe0ff', n: 'Tokyo Airport' });
+}
 function renderFlyTargets() {
   $('flyDest').innerHTML = flyDests().map((d, i) => `<button data-i="${i}" class="${flight?.target === d.n ? 'on' : ''}">✈ ${d.n.toUpperCase()}<small id="fd${i}">—</small></button>`).join('');
   $('flyDest').querySelectorAll('button').forEach(b => b.onclick = () => { flight.target = flyDests()[+b.dataset.i].n; renderFlyTargets(); toast(`AUTOPILOT · ${flight.target.toUpperCase()}`, 'STEERING FOR YOU · W FOR MORE SPEED'); });
@@ -6667,6 +6693,15 @@ function updateFlight(dt) {
   if (!F) return;
   if (F.landing > 0) { F.landing -= dt; $('flyFade').style.opacity = clamp(1 - F.landing / .7, 0, 1); if (F.landing <= 0) { finishLanding(); return; } }
   const thrUp = k.KeyW || touchState.g, thrDn = k.KeyS || touchState.b, left = k.KeyA || touchState.l, right = k.KeyD || touchState.r, climb = k.ArrowUp || touchState.h, dive = k.ArrowDown || touchState.n;
+  F.car.gear.visible = F.ground || !!F.land || F.y < 60;
+  if (F.ground) {   // rolling down the runway
+    F.thr = damp(F.thr, thrUp ? 1 : 0, 3, dt);
+    F.v = Math.max(0, F.v + ((thrUp ? 24 : 0) - (thrDn ? 20 : 0) - (thrUp ? 0 : 2)) * dt);
+    F.x += Math.sin(F.yaw) * F.v * dt; F.z += Math.cos(F.yaw) * F.v * dt; F.y = JET_GEAR; F.pitch = damp(F.pitch, 0, 4, dt);
+    if (F.v > 72 || (climb && F.v > 55)) { F.ground = false; F.pitch = .12; F.thr = Math.max(F.thr, .35); audio.beep(880, .15); toast('LIFT OFF! ✈', 'W/S THROTTLE · A/D TURN · ↑↓ CLIMB · CLICK A PLACE FOR AUTOPILOT'); }
+    return flightPose(F, dt, dests);
+  }
+  if (F.land) return autoLand(F, dt, dests);
   F.thr = clamp(F.thr + ((thrUp ? 1 : 0) - (thrDn ? 1 : 0)) * dt * .45, 0, 1);
   let vT = 90 + F.thr * F.thr * (JET_MAX - 90);
   // turning: D turns right (yaw goes down, like the cars), A left; the autopilot steers when you don't
@@ -6687,8 +6722,32 @@ function updateFlight(dt) {
   if (F.y < ground + 40 && pT < .1) pT = .25;   // never fly into the ground or the sea
   F.pitch = damp(F.pitch, pT, 2.5, dt);
   F.x += Math.sin(F.yaw) * Math.cos(F.pitch) * F.v * dt; F.z += Math.cos(F.yaw) * Math.cos(F.pitch) * F.v * dt;
-  F.y = clamp(F.y + Math.sin(F.pitch) * Math.min(F.v, 600) * dt, ground, 6000);
+  F.y = clamp(F.y + Math.sin(F.pitch) * Math.min(F.v, 600) * dt, ground - 60 + JET_GEAR, 6000);
   F.x = clamp(F.x, -30000, 30000); F.z = clamp(F.z, -20000, 30000);
+  flightPose(F, dt, dests);
+}
+// automatic landing: fly to a point 900 m short of the runway, line up, glide down to the threshold, touch down, brake
+function autoLand(F, dt, dests) {
+  const L = F.land, D = L.D, t0 = D.x - D.len / 2 + 10;
+  let vT, tx, tz, yT;
+  if (L.phase === 'approach') { tx = t0 - 900; tz = D.z; vT = 110; yT = 75; if (Math.hypot(tx - F.x, tz - F.z) < 160) L.phase = 'final'; }
+  if (L.phase === 'final') { tx = F.x + 220; tz = D.z; vT = 72; yT = JET_GEAR + clamp((t0 - F.x) / 900, 0, 1) * 72; if (F.x >= t0 - 15 && F.y <= JET_GEAR + 1.5) { L.phase = 'roll'; audio.burst({ type: 'lowpass', freq: 300, q: .7, gain: .5, dur: .3, thump: 60 }); toast('TOUCHDOWN!', `WELCOME TO ${D.n.toUpperCase()}`); } }
+  if (L.phase === 'roll') {
+    F.yaw = damp(F.yaw, Math.PI / 2, 6, dt); F.z = damp(F.z, D.z, 4, dt); F.y = JET_GEAR; F.pitch = damp(F.pitch, 0, 6, dt); F.roll = damp(F.roll, 0, 6, dt); F.thr = damp(F.thr, 0, 4, dt);
+    F.v = Math.max(0, F.v - (D.len > 600 ? 9 : 15) * dt); F.x += Math.sin(F.yaw) * F.v * dt;
+    if (F.v < 2 && !(F.landing > 0)) { F.landing = .6; F.landAt = D; }
+    return flightPose(F, dt, dests);
+  }
+  let d = Math.atan2(tx - F.x, tz - F.z) - F.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
+  F.v += clamp(vT - F.v, -900 * dt, 300 * dt);
+  const turn = clamp(d * 2.5, -1, 1), turnRate = 1.25 / (1 + F.v / 2500); F.yaw += turn * turnRate * dt; F.roll = damp(F.roll, turn * .75, 4, dt);
+  F.thr = damp(F.thr, .25, 2, dt);
+  F.pitch = damp(F.pitch, clamp((yT - F.y) / 120, -.3, .25), 3, dt);
+  F.x += Math.sin(F.yaw) * Math.cos(F.pitch) * F.v * dt; F.z += Math.cos(F.yaw) * Math.cos(F.pitch) * F.v * dt;
+  F.y = Math.max(JET_GEAR, F.y + Math.sin(F.pitch) * F.v * dt);
+  flightPose(F, dt, dests);
+}
+function flightPose(F, dt, dests) {
   const g = F.car.group; g.position.set(F.x, F.y, F.z); g.rotation.order = 'YXZ'; g.rotation.set(-F.pitch, F.yaw, F.roll);
   for (const f of F.car.flames) { f.scale.set(.6 + F.thr * .6, .6 + F.thr * .6, .3 + F.thr * 2.4); f.material.opacity = .3 + F.thr * .6; }
   // chase camera, pulled back as speed grows
@@ -6728,7 +6787,9 @@ function drawFlyMap(F, dests) {
 function landJet() {
   if (!flight || flight.landing > 0) return;
   if (!flight.near) { toast('NO AIRPORT NEARBY', 'FLY WITHIN 3 KM OF TOKYO, CYPRUS, ITALY OR DUBAI'); return; }
-  flight.landing = .7; flight.landAt = flight.near; audio.beep(660, .15);
+  if (flight.land || flight.ground) return;
+  flight.land = { D: flight.near, phase: 'approach' }; flight.target = null; audio.beep(660, .15);
+  toast(`LANDING AT ${flight.near.n.toUpperCase()}`, 'AUTOPILOT LINES UP WITH THE RUNWAY');
 }
 function finishLanding() {
   const F = flight, D = F.landAt; endFlight();
