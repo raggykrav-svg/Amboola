@@ -2918,6 +2918,7 @@ const MISSIONS = [
   { id: 'world', n: 'WORLD TRAVELLER', d: 'Visit Cyprus, Italy and Dubai', goal: 3, v: () => ['cyprus', 'italy', 'dubai'].filter(c => ST.visited?.includes(c)).length, r: 100000 },
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
+  { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
   { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
   { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 6 countries', goal: 6, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
   { id: 'flip', n: 'STUNT STAR', d: 'Land a flip or a barrel roll off a ramp', goal: 1, v: () => ST.flips || 0, r: 5000 },
@@ -3148,6 +3149,7 @@ function updateCamera(dt, p) {
 const keys = {}; const touchState = { l: 0, r: 0, g: 0, b: 0, h: 0, n: 0 };
 addEventListener('keydown', e => {
   if (state === 'ad' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endAd(); return; }
+  if (state === 'ferry' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endFerry(true); return; }
   if (state === 'fly' && !keys[e.code]) { if (e.code === 'KeyL') landJet(); if (e.code === 'Escape') { endFlight(); enterGarage(); } }
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
@@ -5158,7 +5160,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p);
+  updateFujiArea(dt, p); if (p) updateFerryBoat(p);
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
@@ -6813,6 +6815,132 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
+  buildFerry();
+}
+
+/* =====================================================================
+   THE AMBOOLA FERRY — a car ferry from the Tokyo harbour (between the Italy and New York bridges) to a dock on the
+   south shore of every country, and back. Stop in the ⛴ ring, pick where to go and buy a ticket: your car rolls onto
+   the open car deck, the ferry sails out past the bridges, and a little later it docks at the other side.
+   ===================================================================== */
+const FERRY_TICKET = 1500, FERRY_X = rc(12) - 10;
+let ferry = null, ferryBoat = null;
+// where the ferry docks: the quay edge, which way is out to sea (+z everywhere: all the docks face south), and where your car drives off
+function ferryDock(id) {
+  if (id === 'tokyo') return { id, n: 'Tokyo', col: '#2fa6ff', x: FERRY_X, z: HALF + 40, out: { x: FERRY_X + 30, z: HALF - 3.5, h: Math.PI / 2 }, ring: [FERRY_X, HALF - 3] };
+  const C = COUNTRIES.find(c => c.id === id), { xs } = cStreets(C), x = xs.reduce((a, b) => Math.abs(b - C.cx) < Math.abs(a - C.cx) ? b : a, xs[0]);
+  return { id, n: C.name, col: C.col, C, x, z: C.z1, out: { x: x - 3.5, z: C.z1 - 30, h: Math.PI }, ring: [x, C.z1 - 45] };
+}
+function buildFerryBoat() {
+  const g = new THREE.Group(), L = 70, B = 16;
+  // the hull: pointed bow at +z, flat stern with a ramp at -z; red below the waterline, navy above
+  const hullShape = y0 => { const s = new THREE.Shape(); s.moveTo(-B / 2, L / 2); s.lineTo(B / 2, L / 2); s.lineTo(B / 2, -L / 2 + 14); s.quadraticCurveTo(B / 2, -L / 2 + 3, 0, -L / 2); s.quadraticCurveTo(-B / 2, -L / 2 + 3, -B / 2, -L / 2 + 14); s.closePath(); return s; };
+  const hull = (y0, h, col) => { const geo = new THREE.ExtrudeGeometry(hullShape(), { depth: h, bevelEnabled: false }); geo.rotateX(-Math.PI / 2); geo.translate(0, y0, 0); const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: .6 })); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  hull(-3.2, 2.2, 0xa8231c); hull(-1, 3.6, 0x14306b);
+  const deckY = 2.62, deck = new THREE.Mesh(new THREE.PlaneGeometry(B - 1.2, 40), new THREE.MeshStandardMaterial({ color: 0x5a5f66, roughness: .9 })); deck.rotation.x = -Math.PI / 2; deck.position.set(0, deckY, -12); deck.receiveShadow = true; g.add(deck);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(B + .1, .5, 50), new THREE.MeshStandardMaterial({ color: 0xffd21f, roughness: .5 })); stripe.position.set(0, 1.4, -8); g.add(stripe);
+  // the superstructure over the bow half: cabins with windows, the bridge, a red funnel
+  const white = new THREE.MeshStandardMaterial({ color: 0xf2f4f6, roughness: .5 }), winT = canvasTex(256, 64, (c, w, h) => { c.fillStyle = '#f2f4f6'; c.fillRect(0, 0, w, h); c.fillStyle = '#1d2a3a'; for (let x = 8; x < w; x += 32) c.fillRect(x, 20, 22, 26); }, { repeat: true });
+  const winM = new THREE.MeshStandardMaterial({ map: winT, roughness: .4 }); winT.repeat.set(6, 1);
+  const box = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  box(B - 1, 3.6, 24, 0, deckY + 1.8, 18, winM); box(B - 3, 3.2, 18, 0, deckY + 5.2, 19, winM); box(B - 1.5, 2.6, 6, 0, deckY + 8.1, 24, winM); box(B - .6, .3, 7, 0, deckY + 9.5, 24, white);
+  const funnel = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 6, 16), new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .5 })); funnel.position.set(0, deckY + 9.6, 13); g.add(funnel);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(1.56, 1.62, 1, 16), white); band.position.set(0, deckY + 10.6, 13); g.add(band);
+  const mast = box(.3, 5, .3, 0, deckY + 12, 25, white);
+  // railings round the open car deck
+  const rail = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: .5, metalness: .3 });
+  for (const s of [-1, 1]) { box(.12, .12, 40, s * (B / 2 - .3), deckY + 1.1, -12, rail); for (let z = -32; z <= 8; z += 4) box(.1, 1.1, .1, s * (B / 2 - .3), deckY + .55, z, rail); }
+  box(B - .6, .12, .12, 0, deckY + 1.1, -L / 2 + .4, rail);
+  // AMBOOLA FERRY on both sides
+  const nameT = signTex(1024, 128, '#14306b', [['AMBOOLA FERRY · アンブーラ フェリー', .55, .62, OR, '#ffffff']]), nameM = new THREE.MeshBasicMaterial({ map: nameT });
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(30, 3.75), nameM); p.position.set(s * (B / 2 + .06), .4, 4); p.rotation.y = s * Math.PI / 2; g.add(p); }
+  // three cars already aboard
+  const cars = [[-4.6, -4], [4.6, -4], [4.6, -20]].map(([x, z], k) => { const m = buildTrafficCar(TRAFFIC_TYPES[(k * 3 + 1) % TRAFFIC_TYPES.length]); m.position.set(x, deckY, z); g.add(m); return m; });
+  g.userData = { deckY, slot: [-3, -24], L };
+  return g;
+}
+function buildFerry() {
+  ferryBoat = buildFerryBoat(); scene.add(ferryBoat); ferryPark('tokyo');
+  const conc = new THREE.MeshStandardMaterial({ color: 0xb9b7b0, roughness: .9 }), quay = (x, z) => { const q = new THREE.Mesh(new THREE.BoxGeometry(44, 4, 16), conc); q.position.set(x, -1.7, z + 8); q.receiveShadow = true; scene.add(q);
+    for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.CylinderGeometry(.35, .45, .9, 10), new THREE.MeshStandardMaterial({ color: 0x2a2d35 })); b.position.set(x + s * 15, .75, z + 14); scene.add(b); } };
+  for (const id of ['tokyo', ...COUNTRIES.map(C => C.id)]) {
+    const D = ferryDock(id); quay(D.x, D.z);
+    const g = new THREE.Group(); g.position.set(D.x, 0, D.z + (id === 'tokyo' ? -26 : -6)); scene.add(g);
+    const t = signTex(1024, 256, '#14306b', [['⛴ AMBOOLA FERRY', .38, .32, OR, '#fff'], [id === 'tokyo' ? 'フェリー · BOATS TO 6 COUNTRIES' : `フェリー · ${D.n.toUpperCase()} ⇄ TOKYO`, .78, .17, OR, '#ffd21f']], '#ffd21f');
+    const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
+    for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), sm); p.position.set(0, 9.5, s * .06); if (s < 0) p.rotation.y = Math.PI; g.add(p); }
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.8, 11, .8), new THREE.MeshStandardMaterial({ color: 0x14306b })); p.position.set(s * 8, 5.5, 0); g.add(p); if (D.C) D.C.P.addCol(D.x + s * 8 - .5, D.z - 6.5, D.x + s * 8 + .5, D.z - 5.5); }
+    addAct({ x: D.ring[0], z: D.ring[1], r: 9, col: '#2fa6ff', title: '⛴ Ferry', sub: id === 'tokyo' ? `BOATS TO 6 COUNTRIES · ${fmtUSD(FERRY_TICKET)}` : `BOAT TO TOKYO · ${fmtUSD(FERRY_TICKET)}`, sign: id === 'tokyo' ? 'FERRY TERMINAL' : 'FERRY TO TOKYO', parent: D.C?.group, go: () => openFerry(id), face: D.C ? Math.PI : 0 });
+  }
+}
+// the ferry waits stern-to at a dock, bow out to sea
+function ferryPark(id) { const D = ferryDock(id); ferryBoat.position.set(D.x, 0, D.z + 16 + ferryBoat.userData.L / 2); ferryBoat.rotation.y = 0; ferryBoat.userData.at = id; }
+function openFerry(from) {
+  state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const list = ['tokyo', ...COUNTRIES.map(C => C.id)].filter(id => id !== from).map(ferryDock), can = wallet.usd >= FERRY_TICKET;
+  $('meetTitle').innerHTML = `⛴ AMBOOLA FERRY<small>フェリー · TICKET ${fmtUSD(FERRY_TICKET)} · YOUR CAR COMES TOO</small>`;
+  $('meetList').innerHTML = list.map((D, k) => {
+    const [x0, z0] = D.id === 'tokyo' ? [0, 0] : [D.C.cx, D.C.cz], dist = Math.hypot(x0 - (from === 'tokyo' ? 0 : COUNTRIES.find(c => c.id === from).cx), z0 - (from === 'tokyo' ? 0 : COUNTRIES.find(c => c.id === from).cz));
+    return `<div class="meetRow" style="--glow:${D.col}"><div class="mGlow"></div><div class="mInfo"><b>${D.n.toUpperCase()}</b><span>${D.id === 'tokyo' ? 'Home · the harbour' : D.C.local + ' · ' + D.C.sights.map(s => s[2]).slice(0, 2).join(', ')}</span><small>${(dist / 1000).toFixed(0)} KM ACROSS THE SEA</small></div>
+      <button data-k="${k}" ${can ? '' : 'disabled'}>${can ? 'SAIL!' : 'NEED ' + fmtUSD(FERRY_TICKET)}</button></div>`;
+  }).join('');
+  $('meetList').querySelectorAll('button[data-k]').forEach(bt => bt.onclick = () => { closeMeet(); startFerry(from, list[+bt.dataset.k].id); });
+  $('meetPanel').classList.remove('hidden');
+}
+function startFerry(from, to) {
+  if (wallet.usd < FERRY_TICKET) return;
+  wallet.usd -= FERRY_TICKET; saveWallet();
+  endActs(); endChase(null, player); endMeetRace(false, true); endCrime(true); if (taxi) endTaxi(); clearNav(true);
+  ferryPark(from);
+  ferry = { from: ferryDock(from), to: ferryDock(to), phase: 'board', t: 0, cam: Math.random() * 6 };
+  state = 'ferry'; $('hud').classList.add('hidden'); $('actprompt').classList.add('hidden'); audio.beep(660, .2);
+  toast('⛴ ALL ABOARD!', `TOKYO ⇄ ${(to === 'tokyo' ? ferry.from : ferry.to).n.toUpperCase()} · ENTER TO SKIP`);
+}
+function updateFerry(dt) {
+  const F = ferry, b = ferryBoat, u = b.userData, p = player; if (!F) return;
+  F.t += dt;
+  const fade = v => $('flyFade').style.opacity = clamp(v, 0, 1);
+  if (F.phase === 'board' && F.t > 3) { F.phase = 'go'; F.t = 0; audio.beep(330, .6); }
+  if (F.phase === 'go') {   // out to sea, faster and faster
+    b.position.z = ferryDock(F.from.id).z + 16 + u.L / 2 + 6 * F.t * F.t; fade((F.t - 5.2) / .8);
+    if (F.t > 6) { F.phase = 'arrive'; F.t = 0; ferryPark(F.to.id); b.rotation.y = Math.PI; }
+  }
+  if (F.phase === 'arrive') {   // in from the sea, bow first, slowing to a stop at the quay
+    const T = 7, k = clamp(F.t / T, 0, 1), s = 380 * (1 - k) * (1 - k); fade(1 - F.t / .8);
+    b.position.set(F.to.x, 0, F.to.z + 16 + u.L / 2 + s); b.rotation.y = Math.PI;
+    if (F.t > T) { F.phase = 'off'; F.t = 0; }
+  }
+  if (F.phase === 'off') { fade(F.t / .5); if (F.t > .5) return endFerry(); }
+  b.position.y = Math.sin(performance.now() / 900) * .15; b.rotation.z = Math.sin(performance.now() / 1300) * .012;
+  // your car rides on the open deck
+  b.updateMatrixWorld(true);
+  const v = new THREE.Vector3(u.slot[0], u.deckY, u.slot[1]).applyMatrix4(b.matrixWorld);
+  Object.assign(p, { x: v.x, z: v.z, y: v.y, heading: b.rotation.y, vx: 0, vz: 0, yawRate: 0, slope: 0, gx: 0, gz: 0, air: false });
+  p.sync(dt);
+  // the camera: a slow circle at the dock, then alongside as she sails, then from the quay as she comes in
+  let cx, cy, cz, lx = b.position.x, ly = 4, lz = b.position.z;
+  if (F.phase === 'arrive' || F.phase === 'off') { cx = F.to.x + 46; cy = 14; cz = F.to.z + 4; }
+  else { const a = F.cam + (F.phase === 'board' ? F.t * .22 : .66 + F.t * .05), r = F.phase === 'board' ? 58 : 70; cx = lx + Math.sin(a) * r; cz = lz + Math.cos(a) * r; cy = 18 + (F.phase === 'go' ? F.t * 2 : 0); }
+  camera.position.set(cx, cy, cz); camera.lookAt(lx, ly, lz); camPos.copy(camera.position);
+  sun.position.set(lx + sunDir.x * 400, sunDir.y * 400, lz + sunDir.z * 400); sun.target.position.set(lx, 0, lz);
+  sky.position.copy(camera.position);
+  updateWeather(dt, { x: lx, z: lz, vx: 0, vz: 0 }); updateCountryCulling(dt);
+}
+function endFerry(skip) {
+  const F = ferry; if (!F) return; ferry = null;
+  const D = F.to, b = ferryBoat; ferryPark(D.id); b.rotation.y = Math.PI;   // she stays at the dock, bow in, until you drive away
+  Object.assign(player, { x: D.out.x, z: D.out.z, y: 0, heading: D.out.h, vx: 0, vz: 0, yawRate: 0, gear: 1, reverse: false, air: false, loop: null, vy: 0 });
+  camPos.set(player.x - Math.sin(D.out.h) * 8, 3, player.z - Math.cos(D.out.h) * 8);
+  areaNow = null; for (const A of AREAS) A.R.hint = -1;
+  state = 'drive'; $('hud').classList.remove('hidden'); $('flyFade').style.opacity = 0; if (audio.ctx) audio.ctx.resume();
+  if (D.C && !ST.visited?.includes(D.C.id)) { ST.visited = [...(ST.visited || []), D.C.id]; saveStats(); }
+  bump('ferries'); checkMissions();
+  toast(D.C ? D.C.hello : 'WELCOME BACK TO TOKYO · おかえり', 'ARRIVED BY FERRY ⛴');
+}
+// once you have driven away from the ferry at a country dock, she goes home to Tokyo
+function updateFerryBoat(p) {
+  if (!ferryBoat || ferry || ferryBoat.userData.at === 'tokyo') return;
+  if (Math.hypot(p.x - ferryBoat.position.x, p.z - ferryBoat.position.z) > 1500) ferryPark('tokyo');
 }
 
 function actCards() {
@@ -7068,6 +7196,7 @@ function buildPlaces() {
   P.push({ n: 'Fuji Five Lakes', jp: '富士五湖', type: 'Lake village under Mt. Fuji · onsen · airstrip', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [-3480, -4380], x: FUJI.cx, z: FUJI.cz, col: '#ff7aa8' });
   P.push({ n: 'Chureito Pagoda', jp: '忠霊塔', type: 'Five-storey pagoda · cherry blossom · Fuji view', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [FUJI.pagoda[0], FUJI.pagoda[1] + 40], face: Math.PI, x: FUJI.pagoda[0], z: FUJI.pagoda[1], col: '#ff7aa8' });
   P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
+  P.push({ n: 'Ferry Terminal', jp: 'フェリー乗り場', type: 'Car ferry to 6 countries', kind: 'city', x: FERRY_X, z: HALF - 3, col: '#2fa6ff' });
   P.push({ n: 'Fuji Gate', jp: '富士方面', type: 'West gate · road to Mt. Fuji', kind: 'city', x: -HALF, z: FUJI.gateZ, col: '#ff7aa8' });
   P.push({ n: 'Wangan Gate', jp: '湾岸線入口', type: 'Toll gate · road to the beach', kind: 'city', x: HALF, z: WANGAN_Z, col: '#2fe0ff' });
   P.push({ n: 'Snow Pass Gate', jp: 'スノーパス入口', type: 'Road to the snowy mountain', kind: 'city', x: SNOW.gateX, z: -HALF, col: '#9fd8ff' });
@@ -7583,6 +7712,7 @@ function frame() {
 }
 function tick(dt) {
   if (state === 'ad') { updateAd(dt); return; }
+  if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
   if (state === 'fly') { updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
@@ -7656,7 +7786,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
