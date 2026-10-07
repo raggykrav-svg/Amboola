@@ -2917,6 +2917,7 @@ const MISSIONS = [
   { id: 'world', n: 'WORLD TRAVELLER', d: 'Visit Cyprus, Italy and Dubai', goal: 3, v: () => ['cyprus', 'italy', 'dubai'].filter(c => ST.visited?.includes(c)).length, r: 100000 },
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
+  { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 6 countries', goal: 6, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
   { id: 'flip', n: 'STUNT STAR', d: 'Land a flip or a barrel roll off a ramp', goal: 1, v: () => ST.flips || 0, r: 5000 },
   { id: 'flip10', n: 'FLIP MASTER', d: 'Land 10 flips', goal: 10, v: () => ST.flips || 0, r: 25000 },
   { id: 'loop', n: 'LOOP THE LOOP', d: 'Ride all the way round a loop', goal: 1, v: () => ST.loops || 0, r: 8000 },
@@ -4949,7 +4950,7 @@ SNOW.vy = SNOW_ROUTE.y[SNOW_ROUTE.n - 1];
 const SNOW_PAD = new Pad({ name: 'Shirayuki Ski Village', y: SNOW.vy,
   rects: [[SNOW.vx - 70, SNOW.vz - 70, SNOW.vx + 70, SNOW.vz + 70]] });
 const snowDist = (x, z) => Math.hypot(x - SNOW.cx, z - SNOW.cz);
-inSnow = p => snowDist(p.x, p.z) < SNOW.R + 240;
+inSnow = p => snowDist(p.x, p.z) < SNOW.R + 240 || COUNTRIES.some(C => C.snowy && p.x > C.x0 - 400 && p.x < C.x1 + 400 && p.z > C.z0 - 600 && p.z < C.z1 + 400);
 const SNOW_SIZE = 2 * (SNOW.R + 60), SNOW_RES = Math.round(SNOW_SIZE / SNOW.grid);
 let snowHeights = null;
 function snowHeight(x, z) {
@@ -5311,6 +5312,15 @@ const COUNTRY_DEFS = [
   { id: 'dubai', name: 'Dubai', local: 'دبي', hello: 'WELCOME TO DUBAI · أهلاً وسهلاً', gx: rc(17), col: '#d5b46a', stunts: { jump: 3, mega: 4 },
     rect: [13300, 14000, 14700, 14950],
     pts: [[rc(17), HALF - 8, 0], [rc(17), HALF + 60, 0], [rc(17) + 40, 1100, 6], [800, 2900, 14], [3000, 6000, 15], [8000, 10500, 15], [12500, 13200, 9], [13650, 13800, 1.5], [13700, 14000, 0], [13700, 14160, 0]] },
+  { id: 'paris', name: 'Paris', local: 'PARIS', hello: 'WELCOME TO PARIS · BIENVENUE', gx: rc(6), col: '#4a7bd8', raceName: 'Paris Grand Prix',
+    rect: [-6500, 22500, -5300, 23400],
+    pts: [[rc(6), HALF - 8, 0], [rc(6), HALF + 60, 0], [rc(6) - 20, 1100, 6], [-600, 2500, 14], [-1600, 6000, 15], [-3200, 11000, 15], [-4700, 17000, 15], [-5600, 21500, 9], [-5880, 22250, 1.5], [-5900, 22500, 0], [-5900, 22660, 0]] },
+  { id: 'newyork', name: 'New York', local: 'NEW YORK', hello: 'WELCOME TO NEW YORK · THE BIG APPLE', gx: rc(13), col: '#ff8a1f', raceName: 'Manhattan Grand Prix',
+    rect: [5600, 22300, 7000, 23200],
+    pts: [[rc(13), HALF - 8, 0], [rc(13), HALF + 60, 0], [rc(13) + 20, 1100, 6], [420, 2500, 14], [1500, 6000, 15], [3500, 11000, 15], [5200, 17000, 15], [6000, 21300, 9], [6180, 22050, 1.5], [6200, 22300, 0], [6200, 22460, 0]] },
+  { id: 'alps', name: 'Swiss Alps', local: 'SCHWEIZ · SUISSE', hello: 'WELCOME TO THE SWISS ALPS · GRÜEZI', gx: rc(1), col: '#e8f2ff', raceName: 'Alpine Grand Prix', snowy: true,
+    rect: [-17200, 5600, -16000, 6500],
+    pts: [[rc(1), HALF - 8, 0], [rc(1), HALF + 60, 0], [rc(1) - 60, 1050, 6], [-2600, 1900, 14], [-7000, 3600, 15], [-12000, 4600, 15], [-15000, 4800, 12], [-16300, 5000, 6], [-16580, 5350, 1.5], [-16600, 5600, 0], [-16600, 5760, 0]] },
 ];
 const COUNTRIES = COUNTRY_DEFS.map(d => {
   const R = new Route({ id: d.id, name: `${d.name} Bridge`, w: 24, rail: .45, median: true, pts: d.pts });
@@ -5525,8 +5535,85 @@ function buildDubai(C, g) {
   C.P.addCol(dx - 20, dz - 20, dx + 20, dz + 20);
   return [[bx, bz, 'Burj Khalifa'], [sx, sz, 'Burj Al Arab'], [dx, dz, 'Grand Mosque']];
 }
+/* ---- Paris: cream stone apartment blocks with grey roofs, plane trees, the Eiffel Tower and the Arc de Triomphe */
+function buildParis(C, g) {
+  const ox = C.cx, oz = C.cz, eiffel = [ox - 85, oz + 35], arc = [ox + 255, oz - 115], cafe = [ox - 425, oz + 185];
+  countryTown(C, { count: 150, w: [18, 28], h: r => 17 + Math.floor(r() * 3) * 3, walls: ['#e8dcc4', '#efe6d2', '#dccfb3', '#e3d6bd'], roof: 'gable', roofs: ['#5a6470', '#4e5763', '#646d78'], keep: [[...eiffel, 70], [...arc, 30], [...cafe, 30]],
+    wallMat: townMat('#ffffff', '#2f3f52'), trees: list => roundTrees(list, 0x5a8a3a) }, g);
+  const iron = new THREE.MeshStandardMaterial({ color: 0x6b5a48, roughness: .6, metalness: .5 }), [ex, ez] = eiffel;
+  // the Eiffel Tower: four curved legs meeting in a tall spire, two platforms and arches between the legs
+  const leg = [], lev = [[0, 25], [30, 17], [58, 9], [95, 4.5], [150, 2.2], [200, .8]];
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) for (let k = 0; k < lev.length - 1; k++) {
+    const [y0, r0] = lev[k], [y1, r1] = lev[k + 1], a = new THREE.Vector3(ex + sx * r0, y0, ez + sz * r0), b = new THREE.Vector3(ex + sx * r1, y1, ez + sz * r1);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(k ? 1.2 - k * .18 : 2.4, k ? 1.4 - k * .18 : 3, a.distanceTo(b), 6), iron); m.position.copy(a).add(b).multiplyScalar(.5); m.lookAt(b); m.rotateX(Math.PI / 2); m.castShadow = true; g.add(m);
+  }
+  for (const [y, r, h] of [[58, 13, 3], [95, 7, 2.4]]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(r * 2 + 4, h, r * 2 + 4), iron); pl.position.set(ex, y, ez); g.add(pl); }
+  for (const rot of [0, Math.PI / 2]) { const ar = new THREE.Mesh(new THREE.TorusGeometry(17, 1.2, 8, 24, Math.PI), iron); ar.position.set(ex, 12, ez); ar.rotation.y = rot; g.add(ar); }
+  const top = new THREE.Mesh(new THREE.ConeGeometry(1.2, 22, 8), iron); top.position.set(ex, 211, ez); g.add(top);
+  const beacon = new THREE.MeshBasicMaterial({ color: 0xffd98a }); dynMats.lamps.push(beacon); const bl = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 8), beacon); bl.position.set(ex, 223, ez); g.add(bl);
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) C.P.addCol(ex + sx * 25 - 3, ez + sz * 25 - 3, ex + sx * 25 + 3, ez + sz * 25 + 3);
+  // Arc de Triomphe
+  const [ax, az] = arc, stone = new THREE.MeshStandardMaterial({ color: 0xe6dcc6, roughness: .85 });
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(14, 32, 22), stone); p.position.set(ax + s * 15, 16, az); p.castShadow = true; g.add(p); C.P.addCol(ax + s * 15 - 7, az - 11, ax + s * 15 + 7, az + 11); }
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(44, 18, 22), stone); lintel.position.set(ax, 41, az); g.add(lintel);
+  // a café square with red parasols
+  const [cx, cz] = cafe, red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .7 }), pole = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  for (let k = 0; k < 9; k++) { const x = cx - 18 + (k % 3) * 18, z = cz - 14 + Math.floor(k / 3) * 14, um = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.4, 10), red), pm = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, 2.6, 6), pole); um.position.set(x, 3, z); pm.position.set(x, 1.3, z); g.add(um, pm); C.P.addCol(x - .3, z - .3, x + .3, z + .3); }
+  return [[ex, ez, 'Eiffel Tower'], [ax, az, 'Arc de Triomphe'], [cx, cz, 'Café Square']];
+}
+/* ---- New York: glass skyscrapers, the Empire State Building, Central Park, and the Statue of Liberty offshore */
+function buildNewYork(C, g) {
+  const ox = C.cx, oz = C.cz, empire = [ox - 85, oz - 115], park = [ox + 255, oz + 185], lib = [ox - 420, C.z1 + 170];
+  const glass = new THREE.MeshStandardMaterial({ map: WIN_TEX('#6f7f8f', '#b9d6ee'), emissiveMap: WIN_EMIS(), emissive: 0xffffff, emissiveIntensity: 0, vertexColors: true, roughness: .25, metalness: .55 }); dynMats.windows.push(glass);
+  countryTown(C, { count: 110, w: [24, 40], h: r => 40 + r() * r() * 230, walls: ['#d8dde2', '#b9c3cc', '#e2d6c2', '#9fa9b3', '#c8b49a'], roof: 'flat', keep: [[...empire, 35], [...park, 70]], wallMat: glass, trees: list => roundTrees(list, 0x4f7a34) }, g);
+  // the Empire State Building: stepped setbacks, a mast
+  const [ex, ez] = empire, stone = new THREE.MeshStandardMaterial({ color: 0xc9c2b2, roughness: .6, metalness: .1 }); let h = 0;
+  for (const [w, th] of [[44, 26], [36, 140], [28, 60], [20, 30], [12, 22]]) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, th, w * .8), stone); b.position.set(ex, h + th / 2, ez); b.castShadow = true; g.add(b); h += th; }
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(1, 2.4, 60, 8), stone); mast.position.set(ex, h + 30, ez); g.add(mast);
+  const tipM = new THREE.MeshBasicMaterial({ color: 0xff2020 }); dynMats.lamps.push(tipM); const tip = new THREE.Mesh(new THREE.SphereGeometry(1.4, 8, 6), tipM); tip.position.set(ex, h + 61, ez); g.add(tip);
+  C.P.addCol(ex - 22, ez - 18, ex + 22, ez + 18);
+  // Central Park: grass, a pond, trees (the town left this block empty)
+  const [px, pz] = park, grass = new THREE.Mesh(new THREE.PlaneGeometry(150, 120), new THREE.MeshStandardMaterial({ color: 0x5f8f3f, roughness: 1 })); grass.rotation.x = -Math.PI / 2; grass.position.set(px, .07, pz); g.add(grass);
+  const pond = new THREE.Mesh(new THREE.CircleGeometry(20, 32), new THREE.MeshStandardMaterial({ color: 0x3a7fa8, roughness: .1, metalness: .3 })); pond.rotation.x = -Math.PI / 2; pond.position.set(px + 30, .09, pz); g.add(pond);
+  const pt = []; for (let k = 0; k < 40; k++) { const x = px + rr(-70, 70), z = pz + rr(-55, 55); if (Math.hypot(x - px - 30, z - pz) < 24) continue; pt.push([x, 0, z, rr(0, 6), rr(.9, 1.3)]); C.P.addCol(x - .5, z - .5, x + .5, z + .5); }
+  roundTrees(pt, 0x3f7a2c);
+  // the Statue of Liberty on her island
+  const [lx, lz] = lib, green = new THREE.MeshStandardMaterial({ color: 0x6fae9a, roughness: .6, metalness: .3 }), lg = new THREE.Group(); lg.position.set(lx, 0, lz); g.add(lg);
+  const isl = new THREE.Mesh(new THREE.CylinderGeometry(40, 46, 4, 32), new THREE.MeshStandardMaterial({ color: 0x8f9a7a, roughness: 1 })); isl.position.y = -1; lg.add(isl);
+  const ped = new THREE.Mesh(new THREE.BoxGeometry(16, 28, 16), new THREE.MeshStandardMaterial({ color: 0xc9b99a, roughness: .9 })); ped.position.y = 14; lg.add(ped);
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 6, 30, 12), green); robe.position.y = 43; lg.add(robe);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(3, 12, 10), green); head.position.y = 61; lg.add(head);
+  for (let k = 0; k < 7; k++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(.5, 3.2, 5), green); const a = -Math.PI / 2 + (k - 3) * .38; sp.position.set(Math.cos(a) * 3, 63, Math.sin(a) * 3 + 0); sp.rotation.set(Math.sin(a) * .6, 0, -Math.cos(a) * .6); lg.add(sp); }
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.2, 14, 8), green); arm.position.set(4.5, 62, 0); arm.rotation.z = -.2; lg.add(arm);
+  const torchM = new THREE.MeshBasicMaterial({ color: 0xffc23a }); dynMats.lamps.push(torchM); const torch = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3.4, 10), torchM); torch.position.set(6, 71, 0); lg.add(torch);
+  return [[ex, ez, 'Empire State Building'], [px, pz, 'Central Park'], [lx, lz, 'Statue of Liberty']];
+}
+/* ---- Swiss Alps: wooden chalets with snowy roofs, fir trees, a church tower, and the Matterhorn and friends behind */
+function buildAlps(C, g) {
+  const ox = C.cx, oz = C.cz, church = [ox - 85, oz + 35], fondue = [ox + 255, oz - 115];
+  countryTown(C, { count: 140, w: [12, 20], h: r => 6 + Math.floor(r() * 2) * 3, walls: ['#8a5a34', '#9b6a40', '#7a4e2c', '#a8784c'], roof: 'gable', roofs: ['#f6f9fc', '#eef3f8'], keep: [[...church, 25], [...fondue, 30]],
+    wallMat: townMat('#ffffff', '#4a3020'), trees: list => instanced(new THREE.ConeGeometry(2.2, 9, 8).translate(0, 4.5, 0), new THREE.MeshStandardMaterial({ color: 0x23472f, roughness: .9, flatShading: true }), list) }, g);
+  const white = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: .8 });
+  const [cx, cz] = church, tower = new THREE.Mesh(new THREE.BoxGeometry(8, 30, 8), white); tower.position.set(cx, 15, cz); g.add(tower);
+  const spire = new THREE.Mesh(new THREE.ConeGeometry(6, 16, 4), new THREE.MeshStandardMaterial({ color: 0x3a4a5a, roughness: .6 })); spire.position.set(cx, 38, cz); spire.rotation.y = Math.PI / 4; g.add(spire);
+  const nave = new THREE.Mesh(new THREE.BoxGeometry(14, 12, 26), white); nave.position.set(cx, 6, cz + 17); g.add(nave);
+  C.P.addCol(cx - 7, cz - 4, cx + 7, cz + 30);
+  const [fx, fz] = fondue, hut = new THREE.Mesh(new THREE.BoxGeometry(18, 7, 12), new THREE.MeshStandardMaterial({ color: 0x7a4e2c, roughness: .9 })); hut.position.set(fx, 3.5, fz); g.add(hut);
+  const roofH = new THREE.Mesh(new THREE.ConeGeometry(13, 6, 4), white); roofH.position.set(fx, 10, fz); roofH.rotation.y = Math.PI / 4; roofH.scale.set(1, 1, .7); g.add(roofH);
+  C.P.addCol(fx - 9, fz - 6, fx + 9, fz + 6);
+  // the mountains round the valley: snowy pyramids, the Matterhorn the tallest
+  const rock = new THREE.Color(0x5a6270), snow = new THREE.Color(0xf6f8fb), mk = (x, z, r, h, twist) => {
+    const geo = new THREE.ConeGeometry(r, h, twist ? 4 : 9, 12), pos = geo.attributes.position, cols = []; const cc = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) { const t = (pos.getY(i) + h / 2) / h; if (twist) { const a = t * .5, X = pos.getX(i), Z = pos.getZ(i); pos.setX(i, X * Math.cos(a) - Z * Math.sin(a)); pos.setZ(i, X * Math.sin(a) + Z * Math.cos(a)); } cc.copy(rock).lerp(snow, clamp((t - .38) * 3, 0, 1)); cols.push(cc.r, cc.g, cc.b); }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, flatShading: true })); m.position.set(x, h / 2 - 20, z); g.add(m);
+  };
+  mk(C.x0 - 500, oz, 600, 1400, false); mk(ox - 200, C.z1 + 700, 520, 1900, true); mk(C.x1 + 550, oz - 200, 650, 1300, false); mk(ox + 400, C.z1 + 600, 480, 1150, false); mk(C.x0 - 300, C.z1 + 500, 420, 1000, false);
+  return [[cx, cz, 'Village Church'], [fx, fz, 'Fondue Hut'], [ox - 200, C.z1 + 700, 'Matterhorn']];
+}
 function buildCountries() {
-  const builders = { cyprus: [buildCyprus, '#e9d6a8', '#cdbb8e'], italy: [buildItaly, '#e9d6a8', '#9fa86a'], dubai: [buildDubai, '#f0dcae', '#e5cf9c'] };
+  const builders = { cyprus: [buildCyprus, '#e9d6a8', '#cdbb8e'], italy: [buildItaly, '#e9d6a8', '#9fa86a'], dubai: [buildDubai, '#f0dcae', '#e5cf9c'],
+    paris: [buildParis, '#d8d0bc', '#8fa36a'], newyork: [buildNewYork, '#c9c3b4', '#7d9a5c'], alps: [buildAlps, '#f4f8fc', '#e9eff6'] };
   for (const C of COUNTRIES) {
     buildBridgeRoad(C.R, C.P, C);
     const g = new THREE.Group(); scene.add(g); C.group = g;
