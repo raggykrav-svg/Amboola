@@ -278,6 +278,8 @@
   @media (max-width: 760px) { #stunt { top:150px; } #stunt b { font-size:22px; } #stunt b + b { font-size:16px; } #stunt i { font-size:18px; } #stunt small { font-size:12px; } }
   @keyframes stuntPop { 0% { opacity:0; transform:translateX(-50%) scale(.5); } 8% { opacity:1; transform:translateX(-50%) scale(1.18); } 16% { transform:translateX(-50%) scale(1); } 80% { opacity:1; transform:translateX(-50%) scale(1); } 100% { opacity:0; transform:translateX(-50%) translateY(-14px); } }
   #toast small { display:block; font-family:'Rajdhani'; font-size:18px; letter-spacing:.3em; color:var(--accent2); }
+  #storyhud { position:absolute; left:22px; top:88px; max-width:min(520px, 60vw); font-size:13px; letter-spacing:.06em; color:#ffc1dc; text-shadow:0 1px 4px #000; cursor:pointer; pointer-events:auto; }
+  #storyhud b { color:#ff5fa2; letter-spacing:.12em; } #storyhud i { font-style:normal; color:#ffd21f; margin-left:4px; }
   #helpbtn { position:absolute; left:22px; top:66px; font-size:13px; letter-spacing:.2em; color:var(--dim); text-shadow:0 1px 4px #000; }
   #help { position:absolute; left:22px; top:92px; background:var(--panel); padding:12px 16px; font-size:15px; line-height:1.55; letter-spacing:.05em;
     border-left:3px solid var(--accent); backdrop-filter:blur(6px); }
@@ -440,10 +442,11 @@
 <div id="hud" class="hidden">
   <div id="carname"></div>
   <div id="helpbtn">[H] CONTROLS</div>
+  <div id="storyhud"></div>
   <div id="help" class="hidden">
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
     <div><kbd>SPACE</kbd>Handbrake (drift)</div><div><kbd>SHIFT / X</kbd>Nitro (upgrade it first)</div><div><kbd>C</kbd>Camera view</div><div><kbd>M</kbd>Auto / Manual gearbox</div>
-    <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>Y</kbd>Weather: rain / clear</div><div><kbd>R</kbd>Reset car to road</div>
+    <div><kbd>Q / E</kbd>Shift down / up</div><div><kbd>T</kbd>Time of day</div><div><kbd>Y</kbd>Weather: rain / clear</div><div><kbd>U</kbd>Season</div><div><kbd>R</kbd>Reset car to road</div>
     <div><kbd>IN THE AIR</kbd>S backflip · W front flip · A/D spin · SPACE+A/D roll</div>
     <div><kbd>G</kbd>Outlaw: route to a hideout</div><div><kbd>N</kbd>Map · search · GPS route (or click the minimap)</div><div><kbd>P / ESC</kbd>Pause · garage</div><div><kbd>🎮</kbd>Gamepad supported (RT/LT/stick/A)</div>
   </div>
@@ -516,6 +519,7 @@
   <button id="bResume">RESUME</button>
   <button id="bTime">TIME OF DAY</button>
   <button id="bWeather">WEATHER</button>
+  <button id="bSeason">SEASON</button>
   <button id="bRaces">RACES</button>
   <button id="bLeave" class="hidden">LEAVE RACE</button>
   <button id="bMap">MAP · SEARCH</button>
@@ -1102,7 +1106,7 @@ function buildRain() {
   const m2 = 4000, sp = new Float32Array(m2 * 3); for (let i = 0; i < m2 * 3; i++) sp[i] = rnd();
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
   const smat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uBox: { value: new THREE.Vector3(60, 30, 60) }, uAlpha: { value: 0 }, uScale: { value: innerHeight } },
+    uniforms: { uTime: { value: 0 }, uBox: { value: new THREE.Vector3(60, 30, 60) }, uAlpha: { value: 0 }, uScale: { value: innerHeight }, uCol: { value: new THREE.Color(.95, .95, .95) } },
     transparent: true, depthWrite: false, fog: false,
     vertexShader: `uniform float uTime, uScale; uniform vec3 uBox; varying float vA;
       void main(){
@@ -1113,7 +1117,7 @@ function buildRain() {
         gl_PointSize = (.07 + .06 * fract(position.y * 77.)) * uScale / -mv.z;
         gl_Position = projectionMatrix * mv;
       }`,
-    fragmentShader: `uniform float uAlpha; varying float vA; void main(){ float r = length(gl_PointCoord - .5); gl_FragColor = vec4(vec3(.95), smoothstep(.5, .2, r) * vA * uAlpha); }`,
+    fragmentShader: `uniform float uAlpha; uniform vec3 uCol; varying float vA; void main(){ float r = length(gl_PointCoord - .5); gl_FragColor = vec4(uCol, smoothstep(.5, .2, r) * vA * uAlpha); }`,
   });
   const snow = new THREE.Points(sg, smat); snow.frustumCulled = false; snow.layers.set(1); scene.add(snow); WX.snow = snow;
 }
@@ -1188,14 +1192,17 @@ function updateWeather(dt, p) {
   if (!WX.rain) return;
   if (WX.filmQ !== quality) buildWetFilm();
   const raining = weather === 'rain', t = performance.now() / 1000;
-  WX.snowy = p && inSnow(p) ? 1 : 0;
+  const cityP = p && Math.abs(p.x) < HALF + 300 && Math.abs(p.z) < HALF + 300;   // the season's snow, petals or leaves fall in Tokyo
+  WX.snowy = p && (inSnow(p) || (season === 'winter' && cityP)) ? 1 : 0;
+  const fall = !WX.snowy && cityP && (season === 'spring' || season === 'autumn');
   WX.wet = clamp(WX.wet + (raining && !WX.snowy ? dt / 6 : -dt / 25), 0, 1);   // roads get wet in ~6 s and dry slowly
   surfGrip = (1 - .18 * WX.wet) * (WX.snowy ? .8 : 1);
   for (const m of WX.roads) { m.userData.r0 ??= m.roughness; m.roughness = lerp(m.userData.r0, .22, WX.wet); m.color.setScalar(1 - .35 * WX.wet); }
   const rU = WX.rain.material.uniforms; rU.uTime.value = t; rU.uAlpha.value = raining && !WX.snowy ? (timeName === 'night' ? .5 : .38) : 0;
   if (p) rU.uVel.value.set(p.vx || 0, 0, p.vz || 0);
   WX.rain.visible = rU.uAlpha.value > 0;
-  const sU = WX.snow.material.uniforms; sU.uTime.value = t; sU.uAlpha.value = WX.snowy ? (raining ? 1 : .55) : 0; sU.uScale.value = innerHeight * renderer.getPixelRatio(); WX.snow.visible = WX.snowy > 0;
+  const sU = WX.snow.material.uniforms; sU.uTime.value = t; sU.uAlpha.value = WX.snowy ? (raining ? 1 : .55) : fall ? .45 : 0; sU.uScale.value = innerHeight * renderer.getPixelRatio(); WX.snow.visible = WX.snowy > 0 || fall;
+  sU.uCol.value.set(WX.snowy ? 0xf2f2f2 : season === 'spring' ? 0xffb0c8 : 0xe0762a);
   const F = WX.film, U = F.material.uniforms; F.visible = WX.wet > .01;
   F.position.x = Math.round(camera.position.x / 4) * 4; F.position.z = Math.round(camera.position.z / 4) * 4;
   U.uTime.value = t; U.uWet.value = WX.wet; U.uFogC.value.copy(scene.fog.color); U.uFogD.value = scene.fog.density; U.uSheen.value.copy(skyUniforms.horizon.value).lerp(skyUniforms.top.value, .4);
@@ -1221,9 +1228,9 @@ async function buildWorld() {
   // ---- ground
   swTex.repeat.set((HALF * 2 + 80) / 4, (HALF * 2 + 80) / 4);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(HALF * 2 + 80, HALF * 2 + 80), new THREE.MeshStandardMaterial({ map: swTex, roughness: .92 }));
-  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground); seasonLook.ground = ground.material;
   const land = new THREE.Mesh(new THREE.PlaneGeometry(26000, 26000), new THREE.MeshStandardMaterial({ color: 0x3b4336, roughness: 1 }));
-  land.rotation.x = -Math.PI / 2; land.position.set(0, -.2, -13000 + HALF + 40); scene.add(land);
+  land.rotation.x = -Math.PI / 2; land.position.set(0, -.2, -13000 + HALF + 40); scene.add(land); seasonLook.land = land.material;
   ocean = new THREE.Mesh(new THREE.PlaneGeometry(80000, 40000), new THREE.MeshStandardMaterial({ color: 0x1d4f73, roughness: .08, metalness: .6 }));
   ocean.rotation.x = -Math.PI / 2; ocean.position.set(0, -1.2, HALF + 40 + 20000); scene.add(ocean);
   // seawall
@@ -1469,7 +1476,7 @@ async function buildWorld() {
     trunk.setMatrixAt(k, mat(x, 0, z, rand() * 6, s, s, s)); crown.setMatrixAt(k, mat(x, 0, z, rand() * 6, s * rr(.9, 1.2), s * rr(.8, 1.1), s * rr(.9, 1.2)));
     crown.setColorAt(k, sak ? cc.setHSL(rr(.92, .97), rr(.55, .8), rr(.75, .86)) : cc.setHSL(rr(.22, .32), rr(.4, .6), rr(.2, .32)));
   });
-  trunk.castShadow = crown.castShadow = true; crown.receiveShadow = true; scene.add(trunk, crown);
+  trunk.castShadow = crown.castShadow = true; crown.receiveShadow = true; scene.add(trunk, crown); seasonLook.trees = { crown, all };
   const vmGeo = new THREE.BoxGeometry(1, 1.85, .75); vmGeo.translate(0, .925, 0);
   const vmFront = new THREE.PlaneGeometry(.8, 1.1); vmFront.translate(0, 1.15, .38);
   const vm = new THREE.InstancedMesh(vmGeo, new THREE.MeshStandardMaterial({ roughness: .4 }), vending.length);
@@ -1489,7 +1496,7 @@ async function buildWorld() {
   buildTracks(); buildDragway();
   buildMountain();
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
-  buildWangan(); buildSnowArea(); buildFujiArea();
+  buildWangan(); buildSnowArea(); buildFujiArea(); applySeason();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs();
@@ -1499,7 +1506,7 @@ async function buildWorld() {
 function addPark(x0, z0, x1, z1, grassTex, trees, sakura, sakuraRatio) {
   const g = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 - 4, z1 - z0 - 4), new THREE.MeshStandardMaterial({ map: grassTex.clone(), roughness: 1 }));
   g.material.map.needsUpdate = true; g.material.map.repeat.set((x1 - x0) / 6, (z1 - z0) / 6);
-  g.rotation.x = -Math.PI / 2; g.position.set((x0 + x1) / 2, .06, (z0 + z1) / 2); g.receiveShadow = true; scene.add(g);
+  g.rotation.x = -Math.PI / 2; g.position.set((x0 + x1) / 2, .06, (z0 + z1) / 2); g.receiveShadow = true; scene.add(g); seasonLook.grass.push(g.material);
   for (let k = 0; k < 26; k++) {
     const x = rr(x0 + 4, x1 - 4), z = rr(z0 + 4, z1 - 4);
     if (Math.abs(x - (x0 + x1) / 2) < 12 && Math.abs(z - (z0 + z1) / 2) < 12) continue;
@@ -2923,6 +2930,7 @@ const MISSIONS = [
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
   { id: 'busdriver', n: 'BUS DRIVER', d: 'Carry 200 people on the AMBOOLA Bus', goal: 200, v: () => ST.busPeople || 0, r: 50000 },
+  { id: 'treasure', n: 'TREASURE HUNTER', d: 'Find all 7 secret cars', goal: 7, v: () => typeof secretsFound === 'function' ? secretsFound() : 0, r: 500000 },
   { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
   { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
   { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 6 countries', goal: 6, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
@@ -3163,6 +3171,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyC') { camMode = (camMode + 1) % 4; toast(CAM_NAMES[camMode], 'CAMERA'); }
     if (e.code === 'KeyT') cycleTime();
     if (e.code === 'KeyY') cycleWeather();
+    if (e.code === 'KeyU') cycleSeason();
     if (e.code === 'KeyM') { player.manual = !player.manual; toast(player.manual ? 'MANUAL' : 'AUTOMATIC', 'GEARBOX'); }
     if (e.code === 'KeyE' && player.manual) player.doShift(1);
     if (e.code === 'KeyQ' && player.manual) player.doShift(-1);
@@ -4006,7 +4015,7 @@ $('sellBtn').onclick = () => {
 };
 $('misBtn').onclick = () => { renderMissions(); $('misPanel').classList.remove('hidden'); };
 $('actprompt').onclick = () => { if (actNear && !busyAct()) actNear.go(); };
-$('meetClose').onclick = closeMeet; $('meetprompt').onclick = () => { if (meetNear && !meet) openMeet(meetNear); };
+$('meetClose').onclick = closeMeet; $('storyhud').onclick = () => openStory(); $('meetprompt').onclick = () => { if (meetNear && !meet) openMeet(meetNear); };
 $('bMeet').onclick = () => { if (timeName !== 'night') applyTime('night'); setPause(false); const p = player, M = MEETS.reduce((a, b) => Math.hypot(p.x - a.zone[0], p.z - a.zone[1]) < Math.hypot(p.x - b.zone[0], p.z - b.zone[1]) ? a : b);
   setNav({ n: M.n, jp: M.jp, x: M.zone[0], z: M.zone[1], kind: 'city', type: 'Night meet' }); toast('NIGHT MEET', 'FOLLOW THE ARROWS · ナイト'); };
 $('camBtn').onclick = openCamPanel; $('bCams').onclick = openCamPanel; $('camClose').onclick = () => $('camPanel').classList.add('hidden');
@@ -5165,7 +5174,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p) { updateFerryBoat(p); updateHQ(dt, p); }
+  updateFujiArea(dt, p); if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
@@ -6820,7 +6829,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops();
+  buildFerry(); buildBusStops(); buildSecrets();
 }
 
 /* =====================================================================
@@ -7075,12 +7084,133 @@ function openTrophies() {
   $('meetTitle').innerHTML = `🏆 TROPHY ROOM<small>AMBOOLA HQ · ${ST.done.length} OF ${MISSIONS.length} TROPHIES</small>`;
   $('meetList').innerHTML = [
     rec('🚗', 'CARS IN YOUR GARAGE', `${own} / ${cars.length}`), rec('🗺', 'PLACES VISITED', `${seen} / ${places.length}`), rec('🔑', 'SECRET CARS FOUND', secrets),
+    ...SECRETS.filter(S => !secretFound(S)).map(S => `<div style="font:600 14px Rajdhani,sans-serif;color:#ffd21f;padding:2px 14px">🔑 HINT · ${S.hint}</div>`),
     story ? rec('📖', 'STORY', story.n.toUpperCase(), '#ff5fa2') : '',
     rec('💰', 'MONEY', fmtUSD(wallet.usd), '#2fe0ff'), rec('🔥', 'BEST DRIFT', Math.floor(ST.driftBest || 0).toLocaleString(), '#ff6a1a'),
     rec('🏁', 'RACES WON', (ST.raceWins || 0) + (ST.dragWins || 0), '#2fe0ff'), rec('🚨', 'POLICE ESCAPES', ST.escapes || 0, '#ff3030'),
     rec('🚌', 'BUS PASSENGERS', ST.busPeople || 0, '#ffc21f'), rec('⛴', 'FERRY TRIPS', ST.ferries || 0, '#2fa6ff'),
     `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${MISSIONS.map(m => { const d = ST.done.includes(m.id); return `<span title="${m.d}" style="padding:6px 10px;font:700 13px Rajdhani,sans-serif;letter-spacing:.06em;border:1px solid ${d ? '#ffc21f' : '#333'};color:${d ? '#ffd21f' : '#666'};background:${d ? 'rgba(255,194,31,.12)' : 'transparent'}">${d ? '🏆' : '🔒'} ${m.n}</span>`; }).join('')}</div>`,
   ].join('');
+  $('meetList').style.maxHeight = '70vh'; $('meetList').style.overflowY = 'auto';
+  $('meetPanel').classList.remove('hidden');
+}
+
+/* =====================================================================
+   SEASONS — spring (cherry blossom and falling petals), summer (deep green), autumn (red and gold leaves blowing
+   about) and winter (snow falling on Tokyo, white parks, slippery roads). It starts on the season of the real month;
+   U (or SEASON in the pause menu) changes it.
+   ===================================================================== */
+const SEASONS = ['spring', 'summer', 'autumn', 'winter'], SEASON_NAME = { spring: ['SPRING · 春', 'CHERRY BLOSSOM'], summer: ['SUMMER · 夏', 'GREEN TREES · WARM NIGHTS'], autumn: ['AUTUMN · 秋', 'RED AND GOLD LEAVES'], winter: ['WINTER · 冬', 'SNOW IN TOKYO · SLIPPERY ROADS'] };
+let season = (() => { const s = localStorage.getItem('amboola.season'); if (SEASONS.includes(s)) return s; const m = new Date().getMonth(); return m < 2 || m === 11 ? 'winter' : m < 5 ? 'spring' : m < 8 ? 'summer' : 'autumn'; })();
+const seasonLook = { trees: null, grass: [], ground: null, land: null };
+function applySeason() {
+  const T = seasonLook.trees, c = new THREE.Color();
+  if (T) {
+    T.all.forEach(([x, z, s, sak], k) => {
+      const r = Math.abs(Math.sin(k * 12.9898) * 43758.5453) % 1;
+      if (season === 'spring') sak ? c.setHSL(.93 + r * .04, .75, .8 + r * .06) : c.setHSL(.25 + r * .06, .55, .34 + r * .06);
+      else if (season === 'summer') sak ? c.setHSL(.27, .45, .26 + r * .06) : c.setHSL(.24 + r * .08, .5, .2 + r * .08);
+      else if (season === 'autumn') c.setHSL([.0, .03, .07, .11][Math.floor(r * 4)], .78, .4 + r * .12);
+      else c.setHSL(.6, .12, .84 + r * .1);
+      T.crown.setColorAt(k, c);
+    });
+    T.crown.instanceColor.needsUpdate = true;
+  }
+  for (const m of seasonLook.grass) {   // winter: the grass is under snow
+    m.userData.map ??= m.map; const snowy = season === 'winter';
+    if (!!m.map === snowy) { m.map = snowy ? null : m.userData.map; m.needsUpdate = true; }
+    m.color.set(snowy ? 0xe9eff6 : season === 'autumn' ? 0xd9c58e : 0xffffff);
+  }
+  seasonLook.ground?.color.set(season === 'winter' ? 0xe6edf5 : 0xffffff);
+  seasonLook.land?.color.set(season === 'winter' ? 0xdde4ec : season === 'autumn' ? 0x55482e : 0x3b4336);
+  FUJI.sakura?.material.color.set({ spring: 0xffb7cf, summer: 0x3f7a3a, autumn: 0xd8541e, winter: 0xeef2f8 }[season]);
+}
+function cycleSeason() {
+  season = SEASONS[(SEASONS.indexOf(season) + 1) % 4]; localStorage.setItem('amboola.season', season); applySeason();
+  toast(...SEASON_NAME[season]); if ($('bSeason')) $('bSeason').textContent = 'SEASON: ' + season.toUpperCase();
+}
+
+/* =====================================================================
+   SECRET CARS — a rare car is hidden in every country and at Mt. Fuji, under a dusty cover with a faint gold shimmer.
+   Drive up to it slowly and it is yours (or, if you already have one, a big reward). Hints are in the Trophy Room.
+   ===================================================================== */
+const SECRETS = [
+  { id: 'cyprus', car: 'senna', hint: 'Cyprus: at the north end of the street furthest east' },
+  { id: 'italy', car: 'laferrari', hint: 'Italy: at the north end of the street furthest east' },
+  { id: 'dubai', car: 'bolide', hint: 'Dubai: by the palm trees of the desert oasis' },
+  { id: 'paris', car: 'divo', hint: 'Paris: at the north end of the street furthest east' },
+  { id: 'newyork', car: 'roadster2', hint: 'New York: at the north end of the street furthest east' },
+  { id: 'alps', car: 'jeskoattack', hint: 'Swiss Alps: at the north end of the street furthest east' },
+  { id: 'fuji', car: 'grgt', hint: 'Mt. Fuji: at the west end of the lakeside promenade' },
+];
+let secretsGot = (() => { try { return JSON.parse(localStorage.getItem('amboola.secrets')) || []; } catch (e) { return []; } })();
+const secretFound = s => secretsGot.includes(s.id), secretsFound = () => SECRETS.filter(secretFound).length;
+function buildSecrets() {
+  const cover = new THREE.CapsuleGeometry(1, 2.6, 4, 12).rotateZ(Math.PI / 2).scale(1, .55, .92).translate(0, .62, 0), coverM = new THREE.MeshStandardMaterial({ color: 0x77706a, roughness: 1 });
+  for (const S of SECRETS) {
+    let x, z, y = 0, parent = scene;
+    if (S.id === 'fuji') { x = FUJI.x0 + 26; z = FUJI.z0 + 30; }
+    else if (S.id === 'dubai') { const [ox, oz, orad] = DESERT.oasis; x = ox + orad + 46; z = oz - 20; y = duneH(x, z); }
+    else { const C = COUNTRIES.find(c => c.id === S.id), { xs } = cStreets(C); x = xs[xs.length - 1]; z = C.z0 + 34; parent = C.group; }
+    const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = 1.2; parent.add(g);
+    g.add(new THREE.Mesh(cover, coverM));
+    const shimmer = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.6, 26, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd21f, transparent: true, opacity: .1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    shimmer.position.y = 13; g.add(shimmer);
+    Object.assign(S, { x, z, g, shimmer }); g.visible = !secretFound(S);
+  }
+}
+function updateSecrets(dt, p) {
+  const t = performance.now() / 1000;
+  for (const S of SECRETS) {
+    if (!S.g || secretFound(S)) continue;
+    const d = Math.hypot(p.x - S.x, p.z - S.z); if (d > 400) continue;
+    S.shimmer.material.opacity = .06 + .06 * Math.sin(t * 3 + S.x);
+    if (d < 7 && p.speed < 8) {
+      secretsGot.push(S.id); localStorage.setItem('amboola.secrets', JSON.stringify(secretsGot)); S.g.visible = false;
+      const c = CARS.find(k => k.id === S.car), had = owns(c);
+      if (!had) { wallet.owned.add(c.id); saveWallet(); } else earn(Math.round(c.usd * .25 / 1000) * 1000);
+      audio.beep(880, .2); setTimeout(() => audio.beep(1320, .5), 200);
+      banner('🔑 SECRET CAR FOUND!', c.name.toUpperCase(), had ? `YOU HAVE ONE · +${fmtUSD(Math.round(c.usd * .25 / 1000) * 1000)}` : `IT IS YOURS! WORTH ${fmtUSD(c.usd)} · ${secretsFound()}/${SECRETS.length} FOUND`);
+      checkMissions();
+    }
+  }
+}
+
+/* =====================================================================
+   STORY MODE — from a poor taxi driver with one old car to the boss of AMBOOLA, in nine chapters. The current goal
+   is shown under the car name (tap it to read the story); each chapter pays a reward.
+   ===================================================================== */
+const STORY = [
+  { n: 'The Night Shift', t: 'You are a poor taxi driver in Tokyo with one old car and a big dream. Drive taxi passengers to earn your first money.', goal: 'Give 5 taxi rides (TAXI JOB in the pause menu)', v: () => ST.fares || 0, g: 5, r: 10000 },
+  { n: 'A Name on the Street', t: 'People are talking about the fast taxi driver. Show them what you can do in a real race.', goal: 'Win 2 races of any kind', v: () => (ST.raceWins || 0) + (ST.dragWins || 0) + (ST.meetWins || 0) + (ST.cRaceWins || 0) + (ST.worldWins || 0), g: 2, r: 25000 },
+  { n: 'Over the Sea', t: 'Tokyo is too small for you now. Cross the long sea bridges, or take the ferry, and see the world.', goal: 'Visit 3 countries', v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, g: 3, r: 50000 },
+  { n: 'Big Wheels', t: 'Time to start a real business. Buy a big AMBOOLA vehicle that carries lots of people.', goal: 'Own the AMBOOLA Mega Taxi or City Bus', v: () => ['amboolataxi', 'amboolabus'].some(id => wallet.owned.has(id)) ? 1 : 0, g: 1, r: 75000 },
+  { n: 'The People’s Bus', t: 'Your AMBOOLA line is growing! Carry people around Tokyo and between the countries.', goal: 'Carry 100 bus or taxi passengers', v: () => (ST.busPeople || 0) + (ST.fares || 0), g: 100, r: 150000 },
+  { n: 'Most Wanted', t: 'The police have heard about the fastest driver in Tokyo. Speed past a police car… and get away!', goal: 'Escape from a police chase', v: () => ST.escapes || 0, g: 1, r: 100000 },
+  { n: 'Treasure Hunter', t: 'Old drivers whisper about rare cars hidden around the world. The Trophy Room at AMBOOLA HQ has the hints.', goal: 'Find a secret car', v: () => secretsFound(), g: 1, r: 150000 },
+  { n: 'World Champion', t: 'The biggest race of all: Tokyo to Italy to Dubai. Win it and the whole world will know AMBOOLA.', goal: 'Win the World Race', v: () => ST.worldWins || 0, g: 1, r: 250000 },
+  { n: 'The AMBOOLA Boss', t: 'From a poor taxi driver to the very top. Buy the AMBOOLA Tora Zero, the fastest car in the world, and become the boss of AMBOOLA!', goal: 'Own the AMBOOLA Tora Zero', v: () => wallet.owned.has('torazero') ? 1 : 0, g: 1, r: 1000000 },
+];
+const storyChapter = () => STORY[ST.story || 0] || { n: 'AMBOOLA Boss 👑', done: true };
+let storyT = 0;
+function updateStory(dt) {
+  storyT -= dt; if (storyT > 0) return; storyT = 1;
+  const k = ST.story || 0, C = STORY[k], h = $('storyhud');
+  if (!C) { h.innerHTML = '👑 <b>THE AMBOOLA BOSS</b> · STORY COMPLETE'; return; }
+  const v = Math.min(C.v(), C.g);
+  if (v >= C.g) {
+    ST.story = k + 1; saveStats(); earn(C.r); audio.beep(660, .2); setTimeout(() => audio.beep(990, .4), 180);
+    banner(`📖 CHAPTER ${k + 1} COMPLETE`, C.n.toUpperCase(), `+${fmtUSD(C.r)}${STORY[k + 1] ? ' · NEXT: ' + STORY[k + 1].n.toUpperCase() : ' · YOU ARE THE AMBOOLA BOSS!'}`);
+    storyT = 0; return;
+  }
+  h.innerHTML = `📖 <b>${k + 1}. ${C.n.toUpperCase()}</b> · ${C.goal} <i>${v}/${C.g}</i>`;
+}
+function openStory() {
+  if (state !== 'drive') return; state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const k = ST.story || 0;
+  $('meetTitle').innerHTML = `📖 THE AMBOOLA STORY<small>FROM TAXI DRIVER TO AMBOOLA BOSS · CHAPTER ${Math.min(k + 1, STORY.length)} OF ${STORY.length}</small>`;
+  $('meetList').innerHTML = STORY.map((C, i) => i > k ? `<div class="meetRow" style="--glow:#333;opacity:.5"><div class="mGlow"></div><div class="mInfo"><b>${i + 1}. ???</b><span>A chapter still to come</span></div></div>`
+    : `<div class="meetRow" style="--glow:${i < k ? '#ffc21f' : '#ff5fa2'}"><div class="mGlow"></div><div class="mInfo"><b>${i + 1}. ${C.n.toUpperCase()} ${i < k ? '✅' : ''}</b><span>${C.t}</span><small>${i < k ? 'DONE' : 'GOAL: ' + C.goal + ' (' + Math.min(C.v(), C.g) + '/' + C.g + ')'} · REWARD ${fmtUSD(C.r)}</small></div></div>`).join('');
   $('meetList').style.maxHeight = '70vh'; $('meetList').style.overflowY = 'auto';
   $('meetPanel').classList.remove('hidden');
 }
@@ -7803,11 +7933,12 @@ function startDrive() {
   if (!localStorage.getItem('amboola.helped')) { $('help').classList.remove('hidden'); localStorage.setItem('amboola.helped', '1'); setTimeout(() => $('help').classList.add('hidden'), 9000); }
 }
 function setPause(on) {
-  if (on && state === 'drive') { state = 'pause'; $('pause').classList.remove('hidden'); $('bLeave').classList.toggle('hidden', !race); $('bOutlaw').textContent = crime?.role === 'outlaw' ? 'END OUTLAW' : 'OUTLAW'; $('bPolice').textContent = crime?.role === 'police' ? 'END POLICE DUTY' : 'POLICE'; $('bTaxi').textContent = taxi ? 'END TAXI SHIFT' : 'TAXI JOB'; $('bWeather').textContent = 'WEATHER: ' + (weather === 'rain' ? 'RAIN' : 'CLEAR'); if (audio.ctx) audio.ctx.suspend(); }
+  if (on && state === 'drive') { state = 'pause'; $('pause').classList.remove('hidden'); $('bLeave').classList.toggle('hidden', !race); $('bOutlaw').textContent = crime?.role === 'outlaw' ? 'END OUTLAW' : 'OUTLAW'; $('bPolice').textContent = crime?.role === 'police' ? 'END POLICE DUTY' : 'POLICE'; $('bTaxi').textContent = taxi ? 'END TAXI SHIFT' : 'TAXI JOB'; $('bWeather').textContent = 'WEATHER: ' + (weather === 'rain' ? 'RAIN' : 'CLEAR'); $('bSeason').textContent = 'SEASON: ' + season.toUpperCase(); if (audio.ctx) audio.ctx.suspend(); }
   else if (!on && state === 'pause') { state = 'drive'; $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); }
 }
 function cycleTime() { const n = TIME_ORDER[(TIME_ORDER.indexOf(timeName) + 1) % 3]; applyTime(n); toast(n.toUpperCase(), 'TIME OF DAY'); }
 $('bResume').onclick = () => setPause(false);
+$('bSeason').onclick = () => cycleSeason();
 $('bWeather').onclick = () => { cycleWeather(); $('bWeather').textContent = 'WEATHER: ' + (weather === 'rain' ? 'RAIN' : 'CLEAR'); };
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
@@ -7928,7 +8059,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
