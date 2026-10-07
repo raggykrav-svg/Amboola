@@ -268,6 +268,21 @@ All made in Blender (`models/blender/bmw_audi.py`) and listed at the bottom of t
 
 BMWs have the twin kidney grille, Audis have the big Singleframe grille with the four rings (and the R8 has its carbon sideblades and a big wing), and the Devel Sixteen has a long fighter-jet canopy, two tail fins and one huge V16 exhaust.
 
+### Mercedes-AMG and Rolls-Royce
+Made in Blender too (`models/blender/merc_rolls.py`).
+
+| Car | Power | Top speed | 0–100 | Price |
+| --- | --- | --- | --- | --- |
+| Mercedes-AMG GT Black Series | 730 PS | 325 km/h | 3.2 s | $325,000 |
+| Mercedes-AMG ONE (a Formula 1 engine!) | 1,063 PS | 352 km/h | 2.9 s | $2,700,000 |
+| Mercedes-AMG G 63 (the "brick") | 585 PS | 240 km/h | 4.5 s | $180,000 |
+| Mercedes-AMG C 63 S E PERFORMANCE | 680 PS | 280 km/h | 3.4 s | $85,000 |
+| Rolls-Royce Phantom | 571 PS | 250 km/h | 5.3 s | $460,000 |
+| Rolls-Royce Cullinan (SUV) | 600 PS | 250 km/h | 5.2 s | $400,000 |
+| Rolls-Royce Spectre (electric) | 584 PS | 250 km/h | 4.5 s | $420,000 |
+
+The Mercedes cars have the vertical-slat grille with the three-pointed star. The G 63 has round lamps, side pipes and a spare wheel on the back. The Rolls-Royces have the tall chrome grille and the little silver Spirit of Ecstasy on the bonnet.
+
 ## 🏎 More driving fun
 
 ![Stunts, dents, speed cameras, night meets and the Dubai desert](media/driving-fun.jpg)

@@ -687,6 +687,14 @@ const CARS = [
   { id: 'rsetrongt', name: 'Audi RS e-tron GT performance', brand: 'Audi', cat: 'AUDI', body: 'audi_etron', wing: 'none', kw: 680, redline: 16000, mass: 2320, vmax: 250, drive: 'AWD', engine: 'ev', gears: 2, zero: 2.5, grip: 1.2, aero: .25, paint: 27, rim: '#1b1b1d', caliper: '#c8141b', usd: 170000, desc: 'Electric GT · 925 PS boost' },
   { id: 'rsq8', name: 'Audi RS Q8 performance', brand: 'Audi', cat: 'AUDI', body: 'audi_rsq8', wing: 'none', kw: 471, redline: 6800, mass: 2320, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.6, grip: 1.08, aero: .15, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed tiptronic', usd: 140000, desc: 'Twin-turbo V8 coupe-SUV · 640 PS' },
   { id: 'devel16', name: 'Devel Sixteen', brand: 'Devel', cat: 'DEVEL', body: 'devel16', wing: 'none', kw: 3680, redline: 7500, mass: 1800, vmax: 560, drive: 'AWD', engine: 'v16na', gears: 7, zero: 1.8, grip: 2.1, aero: 1.6, paint: 31, rim: '#1b1b1d', caliper: '#c8141b', usd: 2000000, desc: 'Quad-turbo V16 · 5,000 hp · from Dubai', jp: 'デベル' },
+  // Mercedes-AMG and Rolls-Royce (models/blender/merc_rolls.py)
+  { id: 'amggt', name: 'Mercedes-AMG GT Black Series', brand: 'Mercedes-AMG', cat: 'MERCEDES', body: 'mb_gt', wing: 'none', kw: 537, redline: 7200, mass: 1540, vmax: 325, drive: 'RWD', engine: 'v8ftt', gears: 7, zero: 3.2, grip: 1.45, aero: .8, paint: 16, rim: '#1b1b1d', caliper: '#ffc21f', usd: 325000, desc: 'Flat-plane V8 · 730 PS · huge wing' },
+  { id: 'amgone', name: 'Mercedes-AMG ONE', brand: 'Mercedes-AMG', cat: 'MERCEDES', body: 'mb_one', wing: 'none', hybrid: true, kw: 782, redline: 11000, mass: 1695, vmax: 352, drive: 'AWD', engine: 'v6tt', gears: 7, zero: 2.9, grip: 1.25, aero: 1.6, paint: 19, rim: '#1b1b1d', caliper: '#c8141b', usd: 2700000, desc: 'Formula 1 engine for the road · 1,063 PS' },
+  { id: 'g63', name: 'Mercedes-AMG G 63', brand: 'Mercedes-AMG', cat: 'MERCEDES', body: 'mb_g63', dakar: true, wing: 'none', kw: 430, redline: 6500, mass: 2560, vmax: 240, drive: 'AWD', engine: 'v8tt', gears: 9, zero: 4.5, grip: 0.95, aero: .05, paint: 7, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed auto', usd: 180000, desc: 'The G-Class brick · twin-turbo V8 · 585 PS' },
+  { id: 'c63', name: 'Mercedes-AMG C 63 S E PERFORMANCE', brand: 'Mercedes-AMG', cat: 'MERCEDES', body: 'mb_c63', wing: 'none', hybrid: true, kw: 500, redline: 7200, mass: 2111, vmax: 280, drive: 'AWD', engine: 'i4t', gears: 9, zero: 3.4, grip: 1.15, aero: .2, paint: 8, rim: '#1b1b1d', caliper: '#c8141b', box: '9-speed MCT', usd: 85000, desc: 'Four-cylinder hybrid saloon · 680 PS' },
+  { id: 'phantom', name: 'Rolls-Royce Phantom', brand: 'Rolls-Royce', cat: 'ROLLS', body: 'rr_phantom', wing: 'none', kw: 420, redline: 6000, mass: 2610, vmax: 250, drive: 'RWD', engine: 'v12na', gears: 8, zero: 5.3, grip: 0.95, aero: .05, paint: 9, rim: '#d8d8d8', caliper: '#d8d8d8', box: '8-speed auto', usd: 460000, desc: 'V12 limousine · the Spirit of Ecstasy' },
+  { id: 'cullinan', name: 'Rolls-Royce Cullinan', brand: 'Rolls-Royce', cat: 'ROLLS', body: 'rr_cullinan', wing: 'none', kw: 441, redline: 6000, mass: 2753, vmax: 250, drive: 'AWD', engine: 'v12na', gears: 8, zero: 5.2, grip: 0.78, aero: .05, paint: 14, rim: '#d8d8d8', caliper: '#d8d8d8', box: '8-speed auto', usd: 400000, desc: 'V12 luxury SUV · 600 PS' },
+  { id: 'spectre', name: 'Rolls-Royce Spectre', brand: 'Rolls-Royce', cat: 'ROLLS', body: 'rr_spectre', wing: 'none', kw: 430, redline: 16000, mass: 2975, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 4.5, grip: 0.84, aero: .1, paint: 10, rim: '#d8d8d8', caliper: '#d8d8d8', usd: 420000, desc: 'The electric Rolls-Royce coupe · 584 PS' },
   // the AMBOOLA City Bus: 50 seats, carries people between Tokyo and the countries (stop at a 🚌 bus stop)
   { id: 'amboolabus', name: 'AMBOOLA City Bus', brand: 'Amboola', cat: 'AMBOOLA', body: 'amboolabus', wing: 'none', kw: 420, redline: 3200, mass: 7800, vmax: 150, drive: 'RWD', engine: 'v8tt', gears: 6, zero: 11.5, grip: 0.9, aero: .1, paint: 4, rim: '#d8d8d8', caliper: '#c8141b', box: '6-speed auto', usd: 250000, desc: '50-seat bus · $2,000 per passenger', jp: 'バス' },
 ];
@@ -1769,10 +1777,17 @@ Object.assign(BODIES, {
   audi_etron: { ...BODIES.taycan, L: 4.99, W: 1.97, wr: .36, fX: 1.50, rX: -1.40 },
   audi_rsq8: { ...BODIES.cayenne, L: 5.0, W: 2.0, wr: .39, fX: 1.50, rX: -1.50 },
   devel16: { ...BODIES.mclaren, L: 5.4, W: 2.12, wr: .38, fX: 1.55, rX: -1.58 },
+  mb_gt: { ...BODIES.fgt, L: 4.74, W: 2.0, wr: .35, fX: 1.32, rX: -1.31 },
+  mb_one: { ...BODIES.mclaren, L: 4.76, W: 2.0, wr: .355, fX: 1.36, rX: -1.36 },
+  mb_g63: { ...BODIES.urus, L: 4.87, W: 1.98, wr: .43, fX: 1.45, rX: -1.40 },
+  mb_c63: { ...BODIES.taycan, L: 4.80, W: 1.90, wr: .355, fX: 1.45, rX: -1.43 },
+  rr_phantom: { ...BODIES.taycan, L: 5.76, W: 2.06, wr: .40, fX: 1.85, rX: -1.75 },
+  rr_cullinan: { ...BODIES.urus, L: 5.34, W: 2.04, wr: .42, fX: 1.75, rX: -1.55 },
+  rr_spectre: { ...BODIES.fgt, L: 5.46, W: 2.06, wr: .39, fX: 1.68, rX: -1.55 },
   amboolabus: { ...BODIES.urus, L: 10.5, W: 2.5, cabW: 2.4, wr: .5, fX: 3.30, rX: -2.60, yb: .34, roofY: 3.15 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
-BODIES.amboolabus.roofY = 3.15;   // the bus borrows the Urus outline; its real roof is much higher
+BODIES.amboolabus.roofY = 3.15; BODIES.mb_g63.roofY = 1.95; BODIES.rr_cullinan.roofY = 1.85; BODIES.rr_phantom.roofY = 1.65;   // the bus borrows the Urus outline; its real roof is much higher
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .55 });
 const carbonMat = new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: .35, metalness: .3, clearcoat: 1, clearcoatRoughness: .1 });
@@ -1841,7 +1856,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'camel'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'camel'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -2212,6 +2227,7 @@ const ENGINE_TYPES = {
   i6tt: { cyl: 6, res: [[150, .006, 1], [390, .0032, .8], [980, .0016, .4], [2300, .0008, .15]], noise: .24, drive: 2.2, lpMin: 800, lpMax: 5600, vol: .55, crackle: .6, intake: .04, turbo: true },
   f4na: { cyl: 4, pattern: [1, .74, .96, .7], res: [[165, .0052, 1], [430, .0029, .85], [1120, .0014, .5], [2650, .0007, .25]], noise: .3, drive: 2.5, lpMin: 1000, lpMax: 7500, vol: .5, crackle: .5, intake: .08 },
   i3t: { cyl: 3, res: [[185, .0048, 1], [470, .0027, .8], [1240, .0013, .45], [2900, .0006, .2]], noise: .3, drive: 2.6, lpMin: 900, lpMax: 6000, vol: .5, crackle: .8, intake: .05, turbo: true },
+  i4t: { cyl: 4, res: [[185, .0048, 1], [470, .0027, .8], [1240, .0013, .45], [2900, .0006, .2]], noise: .3, drive: 2.6, lpMin: 900, lpMax: 6000, vol: .5, crackle: .8, intake: .05, turbo: true },
   v16na: { cyl: 16, res: [[245, .0038, 1], [650, .002, .95], [1720, .001, .72], [3850, .0005, .46]], noise: .25, drive: 2.9, lpMin: 1300, lpMax: 12000, vol: .5, crackle: .7, intake: .12 },
 };
 class AudioSys {
@@ -3281,7 +3297,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -3292,7 +3308,7 @@ function buildMenu() {
   $('drive').onclick = garageGo;
   updateMenu();
 }
-const ENGINE_LABEL = { f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
+const ENGINE_LABEL = { i4t: 'Turbo four-cylinder', f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
 // garage DRIVE button: drive an owned car, buy one you can afford, otherwise explain what's missing
 function garageGo() {
   const c = CARS[carIdx];
@@ -3309,12 +3325,12 @@ function garageGo() {
 const AD_BRAND = {
   LAMBO: ['LAMBORGHINI', 'UNLEASH THE BULL', '#ffd02d'], FERRARI: ['FERRARI', 'PURE ITALIAN FIRE', '#ff2a2a'], MCLAREN: ['McLAREN', 'ENGINEERED FOR THE LIMIT', '#ff8000'],
   BUGATTI: ['BUGATTI', 'BEYOND EXTREME', '#3a7bff'], KOENIGSEGG: ['KOENIGSEGG', 'HYPERCAR. REDEFINED.', '#ff6a13'], TESLA: ['TESLA', 'THE FUTURE IS ELECTRIC', '#e82127'],
-  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], BMW: ['BMW M', 'THE MOST POWERFUL LETTER IN THE WORLD', '#1c69d4'], AUDI: ['AUDI SPORT', 'VORSPRUNG DURCH TECHNIK', '#bb0a30'], DEVEL: ['DEVEL', 'FIVE THOUSAND HORSEPOWER', '#d8b04a'], AMBOOLA: ['AMBOOLA', 'BORN IN TOKYO · BUILT TO WIN', '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
+  TOYOTA: ['TOYOTA GAZOO RACING', 'BORN ON THE TRACK', '#eb0a1e'], BMW: ['BMW M', 'THE MOST POWERFUL LETTER IN THE WORLD', '#1c69d4'], AUDI: ['AUDI SPORT', 'VORSPRUNG DURCH TECHNIK', '#bb0a30'], DEVEL: ['DEVEL', 'FIVE THOUSAND HORSEPOWER', '#d8b04a'], MERCEDES: ['MERCEDES-AMG', 'DRIVING PERFORMANCE', '#00adef'], ROLLS: ['ROLLS-ROYCE', 'EFFORTLESS LUXURY', '#c9b37e'], AMBOOLA: ['AMBOOLA', 'BORN IN TOKYO · BUILT TO WIN', '#2fd0ff'], GT: ['PORSCHE', 'PRECISION. PERFORMANCE. PASSION.', '#d5b46a'],
   HYPER: ['PORSCHE', 'THE HYBRID HYPERCAR', '#d5b46a'], ELECTRIC: ['PORSCHE', 'ELECTRIFIED PERFORMANCE', '#d5b46a'], SUV: ['PORSCHE', 'SPORTS CAR. FOR EVERY DAY.', '#d5b46a'],
 };
 const AD_T = [0, 3.2, 6.4, 9.2, 13];   // shot boundaries (s)
 const adBrand = c => c.id === 'amboolataxi' ? ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'] : c.id === 'amboolabus' ? ['AMBOOLA', '50 SEATS · TOKYO TO THE WORLD', '#ffc21f'] : AD_BRAND[c.cat] || [c.brand || 'AMBOOLA', 'DRIVE THE DREAM', '#ff5a1f'];
-const adShort = c => c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|BMW|Audi|Devel|AMBOOLA) /, '');
+const adShort = c => c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|BMW|Audi|Devel|Mercedes-AMG|Rolls-Royce|AMBOOLA) /, '');
 let ad = null;
 function playAd(c, mode, done) {
   if (ad) return;
@@ -5405,7 +5421,7 @@ function duneH(x, z) {
   return h * smooth01(clamp((x - D.x0 - 30) / 130, 0, 1)) * smooth01(clamp((Math.hypot(x - o[0], z - o[1]) - o[2]) / 70, 0, 1)) * smooth01(clamp(edge / 90, 0, 1));
 }
 function duneGrad(x, z) { const e = .35; return [(duneH(x + e, z) - duneH(x - e, z)) / (2 * e), (duneH(x, z + e) - duneH(x, z - e)) / (2 * e)]; }
-const offroadOf = s => s.id === 'yuki' ? 1 : s.dakar ? .85 : /cayenne|macan|urus|purosangue|landcruiser|cybertruck|amboolataxi|bmw_xm|audi_rsq8/.test(s.body) ? .62 : s.drive === 'AWD' ? .45 : .28;
+const offroadOf = s => s.id === 'yuki' ? 1 : s.dakar ? .85 : /cayenne|macan|urus|purosangue|landcruiser|cybertruck|amboolataxi|bmw_xm|audi_rsq8|rr_cullinan/.test(s.body) ? .62 : s.drive === 'AWD' ? .45 : .28;
 const RALLY_PTS = [[14790, 14410], [15120, 14290], [15460, 14060], [15840, 13960], [16190, 14110], [16330, 14480], [16170, 14880], [15800, 15080], [15400, 14980], [15100, 14700], [15010, 14430]];
 const RALLY_KEY = 'amboola.rally';
 let rally = null, rallyBest = (() => { try { return JSON.parse(localStorage.getItem(RALLY_KEY)) || null; } catch (e) { return null; } })();
