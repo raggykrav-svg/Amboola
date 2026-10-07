@@ -671,6 +671,8 @@ const CARS = [
   { id: 'torazero', name: 'AMBOOLA Tora Zero', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_torazero', wing: 'none', kw: 2206, redline: 22000, mass: 1200, vmax: 540, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.5, grip: 2.2, aero: 2.5, paint: 14, rim: '#c8141b', caliper: '#c8141b', usd: 8000000, desc: 'Fan car · 3,000 PS · 540 km/h', jp: '虎ゼロ' },
   // the AMBOOLA Jet: not a car - press DRIVE (FLY) with it to take off. 20,000 km/h, lands in every country
   { id: 'amboolajet', name: 'AMBOOLA Jet', brand: 'Amboola', cat: 'AMBOOLA', jet: true, body: 'amb_jet', wing: 'none', kw: 60000, redline: 20000, mass: 9000, vmax: 20000, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.2, grip: 1, aero: 0, paint: 35, rim: '#c8141b', caliper: '#c8141b', usd: 100000, desc: 'Flies at 20,000 km/h · to Cyprus, Italy & Dubai' },
+  // the AMBOOLA City Bus: 50 seats, carries people between Tokyo and the countries (stop at a 🚌 bus stop)
+  { id: 'amboolabus', name: 'AMBOOLA City Bus', brand: 'Amboola', cat: 'AMBOOLA', body: 'amboolabus', wing: 'none', kw: 420, redline: 3200, mass: 7800, vmax: 150, drive: 'RWD', engine: 'v8tt', gears: 6, zero: 11.5, grip: 0.9, aero: .1, paint: 4, rim: '#d8d8d8', caliper: '#c8141b', box: '6-speed auto', usd: 250000, desc: '50-seat bus · $2,000 per passenger', jp: 'バス' },
 ];
 
 /* =====================================================================
@@ -1286,6 +1288,7 @@ async function buildWorld() {
   special.set(gkey(13, 6), 'temple');
   special.set(gkey(3, 12), 'park'); special.set(gkey(15, 15), 'park'); special.set(gkey(8, 3), 'park'); special.set(gkey(16, 9), 'park');
   special.set(gkey(9, 11), 'stunt'); special.set(gkey(8, 11), 'stunt');   // the AMBOOLA Stunt Park (buildStuntPark)
+  special.set(gkey(11, 11), 'stunt');                                        // AMBOOLA HQ (buildHQ)
   special.set(gkey(12, 19), 'stunt');                                        // the harbour car park of the night meet (buildMeetLot)
   // A stunt block is first generated like any other block, so the random numbers (and the rest of the city) stay
   // exactly as they were, and then everything it made is thrown away.
@@ -1389,7 +1392,7 @@ async function buildWorld() {
     if (district === 1) for (let k = 0; k < 6; k++) { const s = rand() < .5; trees.push([s ? rr(bx0 + 4, bx1 - 4) : (rand() < .5 ? bx0 + 1.5 : bx1 - 1.5), s ? (rand() < .5 ? bz0 + 1.5 : bz1 - 1.5) : rr(bz0 + 4, bz1 - 4), rr(.8, 1.2)]); }
     } finally { if (snap) genDrop(snap); }
   }
-  buildStuntPark(); buildMeetLot();
+  buildStuntPark(); buildMeetLot(); buildHQ();
   // distant skyline ring (not reachable) for depth
   for (let k = 0; k < 520; k++) {
     const a = rand() * Math.PI * 2; const r = rr(HALF + 150, HALF + 1400);
@@ -1738,6 +1741,7 @@ Object.assign(BODIES, {
   amb_minitora: { ...BODIES.ferrari, L: 3.95, W: 1.98, wr: 0.35, fX: 1.175, rX: -1.175 },
   amb_jet: { ...BODIES.mclaren, L: 22, W: 17, wr: .35, fX: 6, rX: -6 },
   amb_torazero: { ...BODIES.lambo, L: 5.0, W: 2.08, wr: 0.35, fX: 1.425, rX: -1.425 },
+  amboolabus: { ...BODIES.urus, L: 10.5, W: 2.5, cabW: 2.4, wr: .5, fX: 3.30, rX: -2.60, yb: .34, roofY: 3.15 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
@@ -1808,7 +1812,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'camel'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'camel'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -2918,6 +2922,7 @@ const MISSIONS = [
   { id: 'world', n: 'WORLD TRAVELLER', d: 'Visit Cyprus, Italy and Dubai', goal: 3, v: () => ['cyprus', 'italy', 'dubai'].filter(c => ST.visited?.includes(c)).length, r: 100000 },
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
+  { id: 'busdriver', n: 'BUS DRIVER', d: 'Carry 200 people on the AMBOOLA Bus', goal: 200, v: () => ST.busPeople || 0, r: 50000 },
   { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
   { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
   { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 6 countries', goal: 6, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
@@ -5160,7 +5165,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p) updateFerryBoat(p);
+  updateFujiArea(dt, p); if (p) { updateFerryBoat(p); updateHQ(dt, p); }
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
@@ -6661,7 +6666,7 @@ function updateActs(dt, p) {
   const pr = $('actprompt');
   if (actNear && state === 'drive') { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
   else pr.classList.add('hidden');
-  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p);
+  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p);
 }
 function actHud(cells, col) {
   const h = $('acthud'); if (!cells) { h.classList.add('hidden'); return; }
@@ -6806,7 +6811,7 @@ function endWorldRace(pos, quit) {
   audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
   banner(pos === 1 ? '🌍 WORLD CHAMPION!' : `🌍 WORLD RACE · P${pos}`, `+${fmtUSD(pay)}`, `Tokyo → Italy → Dubai in ${fmtTime(R.t)}`);
 }
-function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); }
+function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); endBus(true); }
 function buildActs() {
   for (const C of COUNTRIES) {
     const K = countryCircuit(C), J = JOBS[C.id], mx = C.R.x[C.R.n - 1];
@@ -6815,7 +6820,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry();
+  buildFerry(); buildBusStops();
 }
 
 /* =====================================================================
@@ -6941,6 +6946,143 @@ function endFerry(skip) {
 function updateFerryBoat(p) {
   if (!ferryBoat || ferry || ferryBoat.userData.at === 'tokyo') return;
   if (Math.hypot(p.x - ferryBoat.position.x, p.z - ferryBoat.position.z) > 1500) ferryPark('tokyo');
+}
+
+/* ---------- the AMBOOLA City Bus: 50 passengers from one bus stop to another (Tokyo, the countries, Mt. Fuji) ---------- */
+const BUS_FARE = 2000;
+let bus = null;
+function busStops() {
+  const S = [{ id: 'tokyo', n: 'Tokyo', col: '#ffc21f', x: rc(14) + 4, z: HALF - 40, zone: 'city' },
+    { id: 'fuji', n: 'Mt. Fuji', col: '#ff7aa8', x: -3476, z: -4330, zone: 'fuji', idx: FUJI_ROUTE.n - 1 }];
+  for (const C of COUNTRIES) { const mx = C.R.x[C.R.n - 1]; S.push({ id: C.id, n: C.name, col: C.col, C, x: mx - 9, z: C.z0 + 75, zone: C.id, idx: C.R.n - 1 }); }
+  return S;
+}
+function buildBusStops() {
+  for (const S of busStops()) {
+    addAct({ x: S.x, z: S.z, r: 9, col: '#ffc21f', title: '🚌 Bus Stop', sub: `50 PASSENGERS · ${fmtUSD(BUS_FARE)} EACH · NEEDS THE AMBOOLA BUS`, sign: `BUS STOP · ${S.n.toUpperCase()}`, parent: S.C?.group, go: () => openBus(S.id), face: S.C ? Math.PI / 2 : 0 });
+  }
+}
+function openBus(from) {
+  if (player.spec.id !== 'amboolabus') { toast('🚌 YOU NEED THE AMBOOLA BUS', owns(CARS.find(c => c.id === 'amboolabus')) ? 'PICK IT IN THE GARAGE' : 'BUY IT IN THE GARAGE · AMBOOLA · ' + fmtUSD(250000)); return; }
+  state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const here = busStops().find(s => s.id === from), list = busStops().filter(s => s.id !== from);
+  $('meetTitle').innerHTML = `🚌 AMBOOLA BUS · ${here.n.toUpperCase()}<small>50 PASSENGERS WAITING · ${fmtUSD(BUS_FARE)} EACH · DRIVE GENTLY!</small>`;
+  $('meetList').innerHTML = list.map((S, k) => {
+    const km = Math.hypot(S.x - here.x, S.z - here.z) / 1000, pay = busPay(km);
+    return `<div class="meetRow" style="--glow:${S.col}"><div class="mGlow"></div><div class="mInfo"><b>${S.n.toUpperCase()}</b><span>About ${Math.max(1, Math.round(km * 1.15))} km</span><small>UP TO ${fmtUSD(pay)} · CRASHES SCARE PASSENGERS OFF</small></div><button data-k="${k}">GO!</button></div>`;
+  }).join('');
+  $('meetList').querySelectorAll('button[data-k]').forEach(bt => bt.onclick = () => { closeMeet(); startBus(here, list[+bt.dataset.k]); });
+  $('meetPanel').classList.remove('hidden');
+}
+const busPay = km => Math.round(50 * BUS_FARE * clamp(.4 + km / 25, .4, 1.6) / 1000) * 1000;   // longer trips pay more
+function startBus(from, to) {
+  endActs(); endChase(null, player); clearNav(true);
+  const km = Math.hypot(to.x - from.x, to.z - from.z) / 1000;
+  bus = { from, to, aboard: 0, boarding: 3, t: 0, pay: busPay(km), scared: 0 };
+  setNav({ n: `Bus stop · ${to.n}`, zone: to.zone === 'city' ? undefined : to.zone, idx: to.idx, end: to.zone === 'city' ? undefined : [to.x, to.z], x: to.x, z: to.z });
+  toast('🚌 ALL ABOARD!', `50 PASSENGERS TO ${to.n.toUpperCase()}`); audio.beep(660, .2);
+}
+function updateBus(dt, p) {
+  const B = bus; if (!B) return;
+  if (p.spec.id !== 'amboolabus') return endBus(true);
+  B.t += dt;
+  if (B.boarding > 0) {   // people climbing aboard
+    B.boarding -= dt; B.aboard = Math.min(50, Math.round((1 - B.boarding / 3) * 50)); Object.assign(p, { vx: 0, vz: 0 });
+    if (B.boarding <= 0) { B.aboard = 50; toast('DOORS CLOSING', `NEXT STOP: ${B.to.n.toUpperCase()} · FOLLOW THE ARROWS`); }
+  }
+  const d = Math.hypot(p.x - B.to.x, p.z - B.to.z);
+  if (!nav && d > 40) setNav({ n: `Bus stop · ${B.to.n}`, zone: B.to.zone === 'city' ? undefined : B.to.zone, idx: B.to.idx, end: B.to.zone === 'city' ? undefined : [B.to.x, B.to.z], x: B.to.x, z: B.to.z });
+  actHud([['PASSENGERS', `${B.aboard}/50`], ['NEXT STOP', B.to.n.toUpperCase()], ['DISTANCE', d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m'], ['FARES', fmtUSD(Math.round(B.pay * B.aboard / 50))]], '#ffc21f');
+  if (d < 14 && p.speed < 3 && B.aboard > 0 && B.boarding <= 0) endBus(false);
+}
+function busCrash(hit) {   // a hard crash scares a few passengers off at the next chance
+  if (!bus || bus.boarding > 0 || hit < 6) return;
+  const n = Math.min(bus.aboard, hit > 14 ? 4 : 2); bus.aboard -= n; bus.scared += n;
+  toast('😱 PASSENGERS SCARED!', `${n} GOT OFF · ${bus.aboard} LEFT`);
+}
+function endBus(quit) {
+  const B = bus; if (!B) return; bus = null; actHud(null); clearNav(true);
+  if (quit) return;
+  const pay = Math.round(B.pay * B.aboard / 50 / 100) * 100; earn(pay); bump('busTrips'); bump('busPeople', B.aboard);
+  banner(B.aboard === 50 ? '🚌 PERFECT TRIP!' : '🚌 BUS TRIP DONE', `+${fmtUSD(pay)}`, `${B.aboard} happy passengers in ${B.to.n}`);
+}
+
+/* =====================================================================
+   AMBOOLA HQ — the game's own car company has a glass headquarters next to the GT Center (block 11,11). Your best
+   cars stand on turntables on its two floors, and a gold cup joins the trophy shelf for every mission you finish.
+   Stop in the 🏆 ring outside to open the TROPHY ROOM: your collection, your records and every trophy.
+   ===================================================================== */
+const HQ = { x: rc(11) + CELL / 2, z: rc(11) + CELL / 2, w: 48, h: 15, key: '', cars: [], slots: [] };
+function buildHQ() {
+  const { x, z, w, h } = HQ, g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g); HQ.group = g;
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0xa8c4d6, roughness: .05, metalness: .1, transparent: true, opacity: .25, side: THREE.DoubleSide, depthWrite: false });
+  const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f4, roughness: .4 }), dark = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: .5 }), gold = new THREE.MeshStandardMaterial({ color: 0xffc21f, roughness: .3, metalness: .8 });
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(new THREE.BoxGeometry(w, h, w), glass, 0, h / 2, 0).castShadow = false;
+  add(new THREE.BoxGeometry(w, .3, w), new THREE.MeshStandardMaterial({ color: 0xd8d8dc, roughness: .25, metalness: .2 }), 0, .15, 0);
+  add(new THREE.BoxGeometry(w - .4, .5, w - .4), white, 0, 7.5, 0);                      // the upper floor
+  add(new THREE.BoxGeometry(w + 2, 1, w + 2), white, 0, h + .5, 0);                       // roof slab
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(new THREE.BoxGeometry(.9, h, .9), white, sx * (w / 2 - .45), h / 2, sz * (w / 2 - .45));
+  for (const s of [-1, 1]) { add(new THREE.BoxGeometry(w, .5, .6), gold, 0, 7.5, s * (w / 2 - .3)); add(new THREE.BoxGeometry(.6, .5, w), gold, s * (w / 2 - .3), 7.5, 0); }
+  // the AMBOOLA sign on the roof: tiger stripes and the name, both ways
+  const t = canvasTex(1024, 256, (c, W, H) => { c.fillStyle = '#111216'; c.fillRect(0, 0, W, H); c.fillStyle = '#ffc21f';
+    for (let k = -2; k < 14; k++) { c.beginPath(); c.moveTo(k * 80, 0); c.lineTo(k * 80 + 30, 0); c.lineTo(k * 80 + 70, H); c.lineTo(k * 80 + 40, H); c.fill(); }
+    c.fillStyle = 'rgba(17,18,22,.85)'; c.fillRect(70, 40, W - 140, H - 80); c.font = `900 120px ${OR}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffc21f'; c.shadowColor = '#ff8a1f'; c.shadowBlur = 20; c.fillText('AMBOOLA', W / 2, H / 2 + 6); });
+  const sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
+  for (const ry of [0, Math.PI / 2]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(36, 9), sm); s.position.y = h + 6; s.rotation.y = ry; g.add(s); }
+  add(new THREE.BoxGeometry(1, 2, 1), dark, 0, h + 1.5, 0);
+  // turntables: four downstairs, three upstairs
+  HQ.slots = [[-11, .3, -11], [11, .3, -11], [-11, .3, 11], [11, .3, 9], [-13, 7.75, 0], [0, 7.75, -4], [13, 7.75, 0]];
+  const ringM = new THREE.MeshBasicMaterial({ color: 0xffc21f }); dynMats.neon.push(ringM);
+  for (const [sx, sy, sz] of HQ.slots) {
+    add(new THREE.CylinderGeometry(3.6, 3.6, .3, 40), dark, sx, sy + .0, sz);
+    const r = new THREE.Mesh(new THREE.TorusGeometry(3.6, .06, 6, 48), ringM); r.rotation.x = Math.PI / 2; r.position.set(sx, sy + .16, sz); g.add(r);
+    const tt = new THREE.Group(); tt.position.set(sx, sy + .15, sz); g.add(tt); HQ.cars.push(tt);
+  }
+  // the trophy shelf on the back wall: one gold cup per finished mission
+  add(new THREE.BoxGeometry(30, .3, 1.4), white, 0, 2.2, w / 2 - 1.2); add(new THREE.BoxGeometry(30, .3, 1.4), white, 0, 4, w / 2 - 1.2);
+  const cup = mergeGeometries([new THREE.CylinderGeometry(.22, .1, .4, 12).translate(0, .45, 0), new THREE.CylinderGeometry(.05, .05, .2, 8).translate(0, .15, 0), new THREE.CylinderGeometry(.16, .16, .06, 12).translate(0, .03, 0)]);
+  HQ.cups = new THREE.InstancedMesh(cup, gold, 60); HQ.cups.count = 0; g.add(HQ.cups);
+  const M = new THREE.Matrix4(); for (let k = 0; k < 60; k++) HQ.cups.setMatrixAt(k, M.makeTranslation(-14 + (k % 30) * .95, k < 30 ? 2.35 : 4.15, w / 2 - 1.2));
+  addCol(x - w / 2, z - w / 2, x + w / 2, z + w / 2);
+  landmarks.push({ x, z, c: '#ffc21f', n: 'AMBOOLA HQ' });
+  addAct({ x: rc(11) + 4, z, r: 9, col: '#ffc21f', title: '🏆 AMBOOLA HQ', sub: 'YOUR CARS & THE TROPHY ROOM', sign: 'AMBOOLA HQ · TROPHY ROOM', go: openTrophies, face: Math.PI / 2 });
+}
+// the seven best cars you own stand on the turntables (a covered car keeps an empty one waiting)
+let hqCover = null;
+function hqCars() { return CARS.filter(c => owns(c) && !c.jet).sort((a, b) => b.usd - a.usd).slice(0, HQ.slots.length); }
+function updateHQ(dt, p) {
+  if (!HQ.group || Math.hypot(p.x - HQ.x, p.z - HQ.z) > 450) return;
+  const list = hqCars(), key = list.map(c => c.id + (MODELS[c.id] ? '' : '?')).join() + '|' + ST.done.length;
+  if (key !== HQ.key) {
+    HQ.key = key; HQ.cups.count = Math.min(60, ST.done.length); HQ.cups.instanceMatrix.needsUpdate = true;
+    hqCover ??= new THREE.Mesh(new THREE.CapsuleGeometry(1, 2.6, 4, 12).rotateZ(Math.PI / 2).scale(1, .55, .9).translate(0, .62, 0), new THREE.MeshStandardMaterial({ color: 0x8a8d94, roughness: .9 }));
+    HQ.cars.forEach((tt, k) => {
+      tt.clear(); const spec = list[k];
+      if (!spec) { tt.add(hqCover.clone()); return; }
+      if (!MODELS[spec.id] && MODEL_FILES.includes(spec.id)) { loadModel(spec.id); tt.add(hqCover.clone()); return; }   // shows once its model is in
+      const pi = savedPaint(spec), car = buildCar(spec, PAINTS[pi].c, PAINTS[pi].m); car.group.rotation.y = 0; car.group.position.set(0, 0, 0); tt.add(car.group);
+    });
+  }
+  for (const tt of HQ.cars) tt.rotation.y += dt * .35;
+}
+function openTrophies() {
+  state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const cars = CARS.filter(c => !c.jet), own = cars.filter(owns).length, places = [...COUNTRY_DEFS.map(c => c.id), 'fuji', 'wangan', 'snow'], seen = places.filter(id => ST.visited?.includes(id)).length;
+  const secrets = typeof SECRETS !== 'undefined' ? SECRETS.filter(s => secretFound(s)).length + ' / ' + SECRETS.length : '—';
+  const rec = (icon, n, v, col = '#ffc21f') => `<div class="meetRow" style="--glow:${col}"><div class="mGlow"></div><div class="mInfo"><b>${icon} ${n}</b></div><b style="font-size:20px">${v}</b></div>`;
+  const story = typeof storyChapter === 'function' ? storyChapter() : null;
+  $('meetTitle').innerHTML = `🏆 TROPHY ROOM<small>AMBOOLA HQ · ${ST.done.length} OF ${MISSIONS.length} TROPHIES</small>`;
+  $('meetList').innerHTML = [
+    rec('🚗', 'CARS IN YOUR GARAGE', `${own} / ${cars.length}`), rec('🗺', 'PLACES VISITED', `${seen} / ${places.length}`), rec('🔑', 'SECRET CARS FOUND', secrets),
+    story ? rec('📖', 'STORY', story.n.toUpperCase(), '#ff5fa2') : '',
+    rec('💰', 'MONEY', fmtUSD(wallet.usd), '#2fe0ff'), rec('🔥', 'BEST DRIFT', Math.floor(ST.driftBest || 0).toLocaleString(), '#ff6a1a'),
+    rec('🏁', 'RACES WON', (ST.raceWins || 0) + (ST.dragWins || 0), '#2fe0ff'), rec('🚨', 'POLICE ESCAPES', ST.escapes || 0, '#ff3030'),
+    rec('🚌', 'BUS PASSENGERS', ST.busPeople || 0, '#ffc21f'), rec('⛴', 'FERRY TRIPS', ST.ferries || 0, '#2fa6ff'),
+    `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${MISSIONS.map(m => { const d = ST.done.includes(m.id); return `<span title="${m.d}" style="padding:6px 10px;font:700 13px Rajdhani,sans-serif;letter-spacing:.06em;border:1px solid ${d ? '#ffc21f' : '#333'};color:${d ? '#ffd21f' : '#666'};background:${d ? 'rgba(255,194,31,.12)' : 'transparent'}">${d ? '🏆' : '🔒'} ${m.n}</span>`; }).join('')}</div>`,
+  ].join('');
+  $('meetList').style.maxHeight = '70vh'; $('meetList').style.overflowY = 'auto';
+  $('meetPanel').classList.remove('hidden');
 }
 
 function actCards() {
@@ -7692,7 +7834,7 @@ function simStep(dt, inp) {
     player.update(h, inp);
     const bvx = player.vx, bvz = player.vz;
     const hit = Math.max(collideWorld(player), stuntStep(player, h, px, pz, py, inp));
-    if (hit > 3) { audio.crash(hit); skillCrash(); taxiCrash(); shakeT += 1; carHit(player, player.vx - bvx, player.vz - bvz, hit); }
+    if (hit > 3) { audio.crash(hit); skillCrash(); taxiCrash(); busCrash(hit); shakeT += 1; carHit(player, player.vx - bvx, player.vz - bvz, hit); }
   }
   if (!isFinite(player.x) || !isFinite(player.z) || !isFinite(player.y || 0) || !isFinite(player.vx) || !isFinite(player.vz)) { Object.assign(player, { x: -LANES[1], z: 150, heading: Math.PI, vx: 0, vz: 0, y: 0, vy: 0 }); player.resetToRoad(); }
   if (race && race.state === 'countdown') raceHold();
@@ -7786,7 +7928,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
