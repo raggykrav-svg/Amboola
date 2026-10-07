@@ -109,9 +109,10 @@ The decals are painted inside the car's own paint, so they follow every curve an
 | `Q` / `E` | Shift down / up (manual) |
 | `T` | Time of day: day / sunset / night |
 | `Y` | Weather: rain / clear |
+| `U` | Season: spring / summer / autumn / winter |
 | `R` | Put the car back on the road |
 | In the air | `S` backflip · `W` front flip · `A` `D` spin · `Space` + `A` `D` barrel roll · `Shift` nitro rocket |
-| `Enter` | Start a race at a race marker, or challenge a racer at a night meet |
+| `Enter` | Start a race at a race marker, challenge a racer at a night meet, or use a ring (ferry, bus stop, jobs, HQ) |
 | `P` / `Esc` | Pause, change car, sound on/off |
 | `H` | Show controls |
 
@@ -283,13 +284,56 @@ Each car's physics is built from its real published figures: power, weight, redl
 - **The desert rally:** drive through the start arch and race through **10 flag gates**. The next gate has a gold light beam, and the HUD arrow points to it. Your best time is saved, and the prize is **doubled in the Yuki**.
 - An oasis you can splash through, palm trees, rocks, and camels with red saddle blankets. The camel was made in Blender (`models/blender/camel.py`).
 
+## 🌍 Everything new: the big update
+
+### Six countries and Mt. Fuji
+- **Paris 🇫🇷:** the Eiffel Tower, the Arc de Triomphe and a café square.
+- **New York 🇺🇸:** glass skyscrapers, the Empire State Building, Central Park and the Statue of Liberty on her island.
+- **Swiss Alps 🇨🇭:** wooden chalets with snowy roofs, fir trees, a village church, a fondue hut and huge snowy peaks with the twisted Matterhorn. It snows there and the roads are slippery.
+- **Mt. Fuji up close 🗻:** drive out of the **west edge** of Tokyo through the green **FUJI FIVE LAKES** gate. A 5.4 km road through cedar forest takes you to a lake village right under the mountain: Lake Kawaguchi with a red torii in the water, the five-storey **Chureito pagoda** among cherry trees, an onsen with steam, old houses and paper lanterns. The jet can land there too. Getting there completes **FUJI-SAN** (+$50,000), and visiting all six countries completes **GLOBETROTTER** (+$200,000).
+
+### Getting around
+- **Bridge traffic:** cars and trucks drive on all the sea bridges.
+- **The AMBOOLA Ferry ⛴:** stop in the blue ring at the **Ferry Terminal** on the harbour road (between the Italy and New York bridges), pick a country and buy a **$1,500 ticket**. Your car rides on the open deck while the ferry sails out, and it docks on the south shore of the country. Every country has a ferry back. Press **Enter** to skip the trip. **SAILOR** mission: 3 trips.
+- **The jet takes off and lands on runways:** it starts at the west end of **Tokyo Airport** (north of the city) or the country's airstrip. Hold **W** to race down the runway; it lifts off at about 260 km/h. Press **L** near an airport and the autopilot flies the approach, lands, and brakes to a stop.
+
+### Things to do in every country
+- **Grand Prix:** a 2-lap street race against 3 rivals. $25,000 to win.
+- **Delivery jobs:** pizza in Italy, souvenirs in Cyprus, gold in Dubai and more, with 3 drops against the clock.
+- **🌍 World Race ($1,000,000):** from the harbour in Tokyo over the sea to Italy, round the town, all the way back, along the harbour and over to Dubai. About 60 km against 3 rivals.
+- **Police everywhere 🚨:** police cars wait with radar on the bridges (200 km/h limit), in every town (130) and on the Wangan. Speed past one and it chases you. Get **400 m** away for 3 seconds to escape (and get paid), or stop near it and you're **BUSTED** and pay a fine.
+
+### The AMBOOLA City Bus 🚌 ($250,000)
+- A 50-seat yellow bus, made in Blender (`models/blender/bus.py`), at the bottom of the AMBOOLA list in the garage.
+- Stop at a **🚌 bus stop** (Tokyo harbour, every country's town gate, Mt. Fuji) and pick where to go. 50 passengers climb aboard, and the GPS shows the way.
+- You earn **$2,000 per passenger**, and more for long trips. Crashes scare passengers off! **BUS DRIVER** mission: carry 200 people.
+
+### AMBOOLA HQ and the Trophy Room 🏆
+- AMBOOLA has a glass headquarters next to the GT Center. Your **seven best cars** stand on turning platforms on its two floors, and a **gold cup** appears on the trophy shelf for every mission you finish.
+- Stop in the gold ring outside to open the **Trophy Room**: your cars, places visited, secret cars found, records, every trophy, and hints for the secret cars.
+
+### Secret cars 🔑
+- A rare car is hidden in **every country and at Mt. Fuji**, under a dusty cover with a faint gold shimmer. Drive up to it slowly and it's yours! If you already have that car, you get a big cash reward instead.
+- The hints are in the Trophy Room. Find all 7 for **TREASURE HUNTER** (+$500,000).
+
+### Story mode 📖
+- Nine chapters, from **a poor taxi driver** with one old car to **the boss of AMBOOLA**: taxi rides, your first race wins, crossing the sea, buying a bus, outrunning the police, finding a secret car, the World Race, and finally the Tora Zero.
+- Your current goal is shown under the car name. Tap it to read the story so far. Each chapter pays a reward.
+
+### Seasons 🌸☀️🍁❄️
+- **Spring:** cherry blossom and pink petals falling. **Summer:** deep green trees. **Autumn:** red and gold trees and leaves blowing about. **Winter:** snow falling on Tokyo, white parks, and slippery roads.
+- The game starts on the season of the real month. Press **U** (or **SEASON** in the pause menu) to change it.
+
+### Faster loading on phones
+- Only your own car's model loads at the start; the others load quietly in the background while you drive.
+
 ## The world
 
 - A 1.6 × 1.6 km city grid with left-hand traffic, as in Japan. Taxis, kei cars, vans and trucks drive around, stop for you and turn at junctions.
 - A scramble crossing with giant video screens that cycle through the ads, plus rooftop and wall billboards.
 - Vertical neon signs, vending machines, street lamps and cherry-blossom parks.
 - A Tokyo-Tower-style landmark, a temple with a pagoda and torii gates, and an elevated expressway (Shuto) with its own traffic.
-- A harbour district by the sea, and Mt. Fuji on the horizon.
+- A harbour district by the sea, and Mt. Fuji on the horizon (you can drive there now).
 - The Amboola GT Center showroom, where you start.
 - **30 Amboola boards** to smash, **6 speed traps**, and **skill chains** for drifting, near misses and high speed.
 
@@ -383,9 +427,9 @@ Each ad is about 13 seconds long and has four shots, with letterbox bars and fla
 
 You hear the car's own engine. When the game first opens, tap **🔊 TAP FOR SOUND** to switch the sound on. Skip at any time with **SKIP**, Esc, Enter or Space. The ads are made up for this fan game and are not real ads from any car maker.
 
-## Countries: Cyprus 🇨🇾, Italy 🇮🇹 and Dubai 🇦🇪
+## Countries: Cyprus 🇨🇾, Italy 🇮🇹, Dubai 🇦🇪, Paris 🇫🇷, New York 🇺🇸 and the Swiss Alps 🇨🇭
 
-Three countries lie about 20 km out to sea, south of Tokyo. Each is joined to the city by its own 6-lane sea bridge. The bridges leave from three gates on the harbour edge (the south side of the city), each marked with a big sign.
+Six countries lie out to sea, south of Tokyo (Paris, New York and the Alps are described above). Each is joined to the city by its own 6-lane sea bridge. The bridges leave from gates on the harbour edge (the south side of the city), each marked with a big sign. You can also take the ferry.
 
 - **By car:** drive over the bridge. It takes about 5 minutes in a GR86, and less in a fast car. There are distance signs every 5 km, and a "TOKYO" sign for the way back.
 - **Cyprus · ΚΥΠΡΟΣ:** white and sandstone houses with terracotta roofs, palm and olive trees, Kolossi Castle, the Kourion columns and stage, a domed church, and Aphrodite's Rock in the sea.
@@ -397,7 +441,7 @@ Three countries lie about 20 km out to sea, south of Tokyo. Each is joined to th
 
 Buy the **AMBOOLA Jet** in the garage (bottom of the AMBOOLA list) and press **✈ FLY**.
 - **Controls:** **W/S** throttle up to **20,000 km/h** (Mach 16), **A/D** to turn, **↑/↓** to climb and dive. On phones, use the gas and brake buttons for throttle and the steer buttons to turn.
-- **Autopilot:** click **TOKYO, CYPRUS, ITALY or DUBAI** on the right and the jet steers there for you. It slows down for turns so it never misses the airport. The list shows how far each place is and how many seconds it takes.
+- **Autopilot:** click **Tokyo, Mt. Fuji or any country** on the right and the jet steers there for you. It slows down for turns so it never misses the airport. The list shows how far each place is and how many seconds it takes.
 - **Landing:** when you are within 3 km of an airport, press **L** (or the yellow LAND button). You land at the runway and get out in your last car, ready to drive.
 - **Missions:** your first landing completes **FIRST FLIGHT** (+$20,000).
 

@@ -132,7 +132,7 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 
 ## Countries and the jet
 
-- **Countries:** `COUNTRIES` (Cyprus, Italy, Dubai) are generic areas: a 20 km `Route` (built in 1 km chunks that `updateCountryCulling` hides past 7.5 km) plus a `Pad` town. Their gates are on the south edge at `rc(3)`, `rc(10)` and `rc(17)`. The city edge walls (`edgeWall`) have gaps at every gate. The north wall used to block the Snow Pass gate, and that is now fixed.
+- **Countries:** `COUNTRIES` (six of them, see below) are generic areas: a 20 km `Route` (built in 1 km chunks that `updateCountryCulling` hides past 7.5 km) plus a `Pad` town. Their gates are on the south edge at `rc(3)`, `rc(10)` and `rc(17)`. The city edge walls (`edgeWall`) have gaps at every gate. The north wall used to block the Snow Pass gate, and that is now fixed.
 - **Overlapping areas:** `areaAt` picks the nearest area when area boxes overlap (the Dubai bridge runs inside the Wangan box).
 - **The jet:** `amboolajet` (CARS index 80, `jet: true`):
   - `startDrive()` hands it to `startFlight()` and `state = 'fly'`; `updateFlight` runs the jet, the HUD (`#flyhud`) and the minimap;
@@ -199,6 +199,19 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
   - `updateRally` and `finishRally` use `RALLY_PTS` (index 0 is the start/finish arch); the best time is in `amboola.rally`.
   - Test with `travelTo(PLACES.find(q => q.n === 'Dubai Desert'))` and an autopilot to `RALLY_PTS[rally.i]`. The Yuki finishes in about 1:20 (shift manual cars like the GR86 yourself, or they stay in 1st).
 - **Skill chains** are capped at ×5 and $20,000 a chain, and sliding on sand scores at a quarter of the rate. A long desert drift once banked $540k.
+
+## The big update: countries, Fuji, ferry, bus, HQ, secrets, story, seasons
+
+- **Six countries:** `COUNTRY_DEFS` holds Cyprus, Italy, Dubai, Paris (`rc(6)`), New York (`rc(13)`) and the Swiss Alps (`rc(1)`, `snowy: true`, so `inSnow` is true there). The builders are `buildParis`, `buildNewYork` and `buildAlps`.
+- **Activities:** `ACTS` / `addAct({x, z, r, col, title, sub, sign, go})` are the rings you stop in and press Enter. `busyAct()` blocks them during a job, and `endActs()` ends every job. Countries have `startCRace`, `startDeliv` and `startWorldRace`, the `PATROLS` police (`chase`, `endChase`) and `BridgeTraffic`.
+- **Mt. Fuji:** `FUJI`, `FUJI_ROUTE` (from the west gate `[-HALF, rc(3)]`) and `FUJI_PAD` form an area in `AREAS` (zone `'fuji'` in `ZONES`). `buildFujiArea` builds it and `updateFujiArea` makes the mountain opaque within 7.5 km. The jet destination is `'Mt. Fuji'` in `flyDests()`.
+  - **ConeGeometry bug:** in this three.js, a `ConeGeometry` with more than one height segment drops half its triangles, which shows as a checker pattern. Use `CylinderGeometry(.01, r, h, …)` instead.
+- **Ferry:** `ferryDock(id)` gives the quay, the drive-off spot and the ring. `openFerry(from)` → `startFerry(from, to)` sets `state = 'ferry'`, and `updateFerry` runs a cinematic in phases `board` → `go` → `arrive` → `off`. `endFerry()` puts you at `D.out`. Test it with manual `tick()`s, or call `startFerry` and then `endFerry()`.
+- **Bus:** car `amboolabus` (appended at the end of `CARS`, so saved indices stay valid; the model is `models/blender/bus.py`). `busStops()` lists the stops, and `openBus`, `startBus`, `updateBus` (called from `updateActs`, not from `simStep`) and `endBus` run the job. `busCrash` drops passengers on hard hits.
+- **HQ:** `HQ` is block (11,11), a `'stunt'` special block, so the random city is unchanged. `buildHQ` and `updateHQ` (best owned cars on `HQ.slots`, cups = `ST.done.length`). `openTrophies()` reuses `#meetPanel`.
+- **Secret cars:** `SECRETS` (one per country and one at Fuji). Progress is in `amboola.secrets`, and `updateSecrets` claims a car within 7 m below 8 m/s.
+- **Story:** `STORY` chapters, with progress in `ST.story`. `updateStory` (once a second) writes `#storyhud` and pays rewards, and `openStory()` shows the chapters.
+- **Seasons:** `season` (`amboola.season`, default from the month), `applySeason()` (city tree crowns via `seasonLook.trees`, grass, ground, land, Fuji sakura) and `cycleSeason()` (key U). Winter makes `WX.snowy` true in the city (snow, grip 0.8). Spring and autumn reuse the snow particles with `uCol` for petals and leaves.
 
 ## Rebuild the Blender car models
 

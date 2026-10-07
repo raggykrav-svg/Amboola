@@ -279,6 +279,7 @@
   @keyframes stuntPop { 0% { opacity:0; transform:translateX(-50%) scale(.5); } 8% { opacity:1; transform:translateX(-50%) scale(1.18); } 16% { transform:translateX(-50%) scale(1); } 80% { opacity:1; transform:translateX(-50%) scale(1); } 100% { opacity:0; transform:translateX(-50%) translateY(-14px); } }
   #toast small { display:block; font-family:'Rajdhani'; font-size:18px; letter-spacing:.3em; color:var(--accent2); }
   #storyhud { position:absolute; left:22px; top:88px; max-width:min(520px, 60vw); font-size:13px; letter-spacing:.06em; color:#ffc1dc; text-shadow:0 1px 4px #000; cursor:pointer; pointer-events:auto; }
+  @media (max-width: 600px) { #storyhud { max-width:52vw; font-size:11px; top:84px; } }
   #storyhud b { color:#ff5fa2; letter-spacing:.12em; } #storyhud i { font-style:normal; color:#ffd21f; margin-left:4px; }
   #helpbtn { position:absolute; left:22px; top:66px; font-size:13px; letter-spacing:.2em; color:var(--dim); text-shadow:0 1px 4px #000; }
   #help { position:absolute; left:22px; top:92px; background:var(--panel); padding:12px 16px; font-size:15px; line-height:1.55; letter-spacing:.05em;
