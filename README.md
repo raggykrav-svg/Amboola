@@ -416,8 +416,10 @@ The 0–100 times are what the game's physics really gives (rear-wheel-drive car
 ## Car commercials · 広告 📺
 
 The game plays a short TV-style ad for a car:
-- **When you open the game:** a different Lamborghini each time (Revuelto, Aventador SVJ, Temerario, Huracán STO…).
+- **When you open the game:** a different car each time. It goes through **every car in the game**, so the brands take turns.
 - **When you buy a car:** your new car, in your paint and with your custom parts, ending with **NOW IN YOUR GARAGE**.
+- **Any car, any time:** pick a car in the garage and press **📺 ITS AD**.
+- **📺 ALL CARS AD:** one big commercial with **every car in the game**. They race past one after another down the rainy neon street, brand by brand, each with its name, power, top speed and price, and it ends with *"WHICH ONE IS YOURS?"*. It's about 2 minutes long, and you can skip it at any time.
 
 Each ad is about 13 seconds long and has four shots, with letterbox bars and flash cuts:
 1. A dark studio, with one light sweeping over the car and the brand's tagline.

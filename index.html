@@ -195,6 +195,7 @@
   #upgBtn:hover { filter:brightness(1.15); } #upgBtn.hidden { display:none; }
   #custBtn { display:block; width:100%; margin:0 0 6px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.12em;
     color:#111; background:linear-gradient(90deg,#ff3fa4,#ffd02d); border:none; cursor:pointer; } #custBtn:hover { filter:brightness(1.15); } #custBtn.hidden { display:none; }
+  #adRow { display:flex; gap:6px; margin:0 0 6px; } #adRow button { flex:1; padding:6px 4px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:11px; letter-spacing:.08em; color:#fff; background:transparent; border:1px solid #2fd0ff; cursor:pointer; } #adRow button:hover { background:rgba(47,208,255,.2); }
   #repairBtn { display:block; width:100%; margin:0 0 6px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.1em;
     color:#fff; background:linear-gradient(90deg,#c8141b,#ff8a1a); border:none; cursor:pointer; } #repairBtn:hover { filter:brightness(1.15); } #repairBtn.hidden { display:none; }
   #repairBtn small { display:block; font-family:'Rajdhani',sans-serif; font-size:12px; letter-spacing:.06em; font-weight:700; opacity:.9; margin-top:2px; }
@@ -415,7 +416,7 @@
   <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
   <div id="carlist"></div>
   <div id="stats">
-    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="custBtn">🎨 CUSTOMIZE · カスタム</button><button id="repairBtn" class="hidden">🔧 REPAIR</button><button id="sellBtn">SELL</button>
+    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="custBtn">🎨 CUSTOMIZE · カスタム</button><div id="adRow"><button id="adBtn">📺 ITS AD</button><button id="allAdBtn">📺 ALL CARS AD</button></div><button id="repairBtn" class="hidden">🔧 REPAIR</button><button id="sellBtn">SELL</button>
     <div class="stat"><div class="lbl">Power <b id="vPow"></b></div><div class="track"><i id="bPow"></i></div></div>
     <div class="stat"><div class="lbl">Top speed <b id="vTop"></b></div><div class="track"><i id="bTop"></i></div></div>
     <div class="stat"><div class="lbl">0–100 km/h <b id="vAcc"></b></div><div class="track"><i id="bAcc"></i></div></div>
@@ -3292,12 +3293,14 @@ const AD_BRAND = {
   HYPER: ['PORSCHE', 'THE HYBRID HYPERCAR', '#d5b46a'], ELECTRIC: ['PORSCHE', 'ELECTRIFIED PERFORMANCE', '#d5b46a'], SUV: ['PORSCHE', 'SPORTS CAR. FOR EVERY DAY.', '#d5b46a'],
 };
 const AD_T = [0, 3.2, 6.4, 9.2, 13];   // shot boundaries (s)
+const adBrand = c => c.id === 'amboolataxi' ? ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'] : c.id === 'amboolabus' ? ['AMBOOLA', '50 SEATS · TOKYO TO THE WORLD', '#ffc21f'] : AD_BRAND[c.cat] || [c.brand || 'AMBOOLA', 'DRIVE THE DREAM', '#ff5a1f'];
+const adShort = c => c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|AMBOOLA) /, '');
 let ad = null;
 function playAd(c, mode, done) {
   if (ad) return;
-  const brand = c.id === 'amboolataxi' ? ['AMBOOLA', "TOKYO'S OWN TAXI · 20 SEATS", '#2fd0ff'] : AD_BRAND[c.cat] || [c.brand || 'AMBOOLA', 'DRIVE THE DREAM', '#ff5a1f'];
-  const paint = mode === 'buy' ? PAINTS[savedPaint(c)] : PAINTS[c.paint ?? 0];
-  const mk = () => applyCustom(buildCar(c, paint.c, paint.m, paint.r), mode === 'buy' ? c.id : '__ad');
+  const brand = adBrand(c), mine = mode === 'buy' || (mode === 'show' && owns(c));
+  const paint = mine ? PAINTS[savedPaint(c)] : PAINTS[c.paint ?? 0];
+  const mk = () => applyCustom(buildCar(c, paint.c, paint.m, paint.r), mine ? c.id : '__ad');
   const studio = mk(), street = mk();
   studio.group.position.y = .08; studio.headMat.emissiveIntensity = 2.5; studio.group.traverse(o => { if (o.isMesh) o.castShadow = true; }); gScene.add(studio.group);
   street.headMat.emissiveIntensity = 7; street.tailMat.emissiveIntensity = 3; scene.add(street.group);
@@ -3320,14 +3323,15 @@ function adText(k) {
   el.className = 'adS' + k;
   el.innerHTML = [
     `<small>${bn}</small><b>${tag}</b>`,
-    `<b>${c.name.replace(/^(Lamborghini|Ferrari|McLaren|Bugatti|Koenigsegg|Tesla|Toyota|Porsche|AMBOOLA) /, '')}</b><small>${c.desc}</small>`,
+    `<b>${adShort(c)}</b><small>${c.desc}</small>`,
     `<div><b class="adN">0</b><small>PS</small></div><div><b class="adN">0.0</b><small>0–100 km/h · s</small></div><div><b class="adN">0</b><small>km/h top speed</small></div>`,
-    `<small>${bn}</small><b>${c.name}</b><i>${A.mode === 'buy' ? 'NOW IN YOUR GARAGE · 所有' : `AVAILABLE NOW · AMBOOLA GT CENTER · ${price}`}</i>`,
+    `<small>${bn}</small><b>${c.name}</b><i>${A.mode === 'buy' || (A.mode === 'show' && owns(c)) ? (A.mode === 'buy' ? 'NOW IN YOUR GARAGE · 所有' : 'IN YOUR GARAGE · 所有') : `AVAILABLE NOW · AMBOOLA GT CENTER · ${price}`}</i>`,
   ][k];
   const f = $('adFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   if (A.soundOn) { audio.burst({ type: 'lowpass', freq: 500, q: .6, gain: .8, dur: .9, thump: 50 }); audio.burst({ type: 'highpass', freq: 3000, q: .5, gain: .15, dur: .5 }); }
 }
 function updateAd(dt) {
+  if (ad.mode === 'all') return updateAllAd(dt);
   const A = ad; A.t += dt; const t = A.t;
   const k = AD_T.findIndex((b, i) => t >= b && t < AD_T[i + 1]);
   if (k < 0) return endAd();
@@ -3372,13 +3376,69 @@ function endAd() {
   state = 'garage'; enterGarage();
   if (A.done) A.done();
 }
+$('adBtn').onclick = () => { const c = CARS[carIdx]; if (c.jet || ad) return; audio.init(); (MODEL_FILES.includes(c.id) ? loadModel(c.id) : Promise.resolve()).then(() => playAd(c, 'show')); };
+$('allAdBtn').onclick = () => { audio.init(); playAllAd(); };
 $('adSkip').onclick = e => { e.stopPropagation(); endAd(); };
 $('adSound').onclick = e => { e.stopPropagation(); audio.init(); if (ad) { ad.soundOn = true; audio.setCar(ad.c); } $('adSound').classList.add('hidden'); };
 const adSeen = () => localStorage.getItem('amboola.noad') === '1';
-function nextAdCar(step) {   // the Lamborghini for the start-up ad (a different one each time)
-  const lambos = CARS.filter(c => c.cat === 'LAMBO'), i = (+localStorage.getItem('amboola.adi') || 0) % lambos.length;
+function nextAdCar(step) {   // the car for the start-up ad: every car in turn, a different one each time
+  const all = CARS.filter(c => !c.jet), i = (+localStorage.getItem('amboola.adi') || 0) % all.length;
   if (step) localStorage.setItem('amboola.adi', i + 1);
-  return lambos[i];
+  return all[(i * 37) % all.length];   // hop through the list so brands take turns
+}
+/* ---- the ALL CARS ad: every car in the game races past, one after another, brand by brand ---- */
+const ALL_AD_D = 1.6, ALL_AD_IN = 2.8, ALL_AD_OUT = 3.6;
+function playAllAd() {
+  if (ad) return;
+  const list = CARS.filter(c => !c.jet);
+  list.forEach(c => MODEL_FILES.includes(c.id) && loadModel(c.id));
+  const hidden = []; const hide = o => { if (o && o.visible) { o.visible = false; hidden.push(o); } };
+  traffic?.cars.forEach(t => hide(t.mesh)); hide(player?.car.group); if (gCar) gCar.group.visible = false;
+  const keep = { time: timeName, weather, wet: WX.wet, exp: renderer.toneMappingExposure, state };
+  weather = 'rain'; applyTime('night'); WX.wet = 1;
+  ad = { mode: 'all', list, i: -1, t: 0, ct: 0, shot: -1, studio: { group: new THREE.Group() }, street: { group: new THREE.Group(), wheels: [] }, hidden, keep, spots: [], spotI: [], soundOn: !!(audio.ctx && audio.ctx.state === 'running'), brand: null };
+  $('ad').style.setProperty('--ac', '#2fd0ff'); $('ad').classList.remove('hidden'); $('menu').classList.add('hidden'); $('adSound').classList.toggle('hidden', ad.soundOn);
+  $('adFine').textContent = 'Fan-made Amboola game ad · not affiliated with any car maker'; state = 'ad';
+  allAdText(`<small>AMBOOLA GT CENTER · TOKYO</small><b>EVERY CAR</b><i>${list.length} CARS · ONE GAME</i>`, 'adS3');
+}
+function allAdText(html, cls) { const el = $('adTxt'); el.className = cls; el.innerHTML = html; const f = $('adFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+function updateAllAd(dt) {
+  const A = ad; A.t += dt; A.ct += dt;
+  renderPass.scene = scene; renderPass.camera = camera;
+  const n = A.list.length;
+  if (A.t > ALL_AD_IN && A.i < n && (A.i < 0 || A.ct >= ALL_AD_D)) {   // the next car (it waits a moment if its model is still loading)
+    const c = A.list[A.i + 1];
+    if (c && MODEL_FILES.includes(c.id) && !MODELS[c.id] && A.ct < ALL_AD_D + 2.5) { /* hold the current shot */ }
+    else {
+      A.i++; A.ct = 0; scene.remove(A.street.group);
+      if (c) {
+        const p = PAINTS[owns(c) ? savedPaint(c) : c.paint ?? 0], car = applyCustom(buildCar(c, p.c, p.m, p.r), owns(c) ? c.id : '__ad');
+        car.headMat.emissiveIntensity = 7; car.tailMat.emissiveIntensity = 3; scene.add(car.group); A.street = car;
+        const [bn, tag, col] = adBrand(c);
+        if (bn !== A.brand) { A.brand = bn; $('ad').style.setProperty('--ac', col); }
+        allAdText(`<small>${bn} · ${A.i + 1}/${n}</small><b>${adShort(c)}</b><small>${Math.round(tunedSpec(c).kw * 1.36).toLocaleString()} PS · ${c.vmax} KM/H · ${fmtUSD(c.usd)}</small>`, 'adS1');
+        if (A.soundOn) { audio.setCar(c); audio.burst({ type: 'lowpass', freq: 500, q: .6, gain: .5, dur: .6, thump: 50 }); }
+      } else { A.outT = A.t; $('ad').style.setProperty('--ac', '#2fd0ff'); allAdText(`<small>AMBOOLA</small><b>WHICH ONE IS YOURS?</b><i>AMBOOLA GT CENTER · TOKYO · 東京</i>`, 'adS3'); }
+    }
+  }
+  const x = -LANES[1], car = A.street.group, v = 24, k = A.i % 3;
+  let z = 150 - v * A.ct;
+  if (A.i < 0) { camera.position.set(x + 9 - A.t, 9 - A.t * 1.6, 70 + A.t * 6); camera.lookAt(x, 2, 150); }
+  else if (A.i >= n) { const u = A.t - A.outT; camera.position.set(x + 6, 3 + u * 9, 100 + u * 4); camera.lookAt(x, 2 + u * 4, 60); z = 1e5; }
+  else if (k === 0) { camera.position.set(x + 1.2, .5, 112); camera.lookAt(x, .75, z - 1); }
+  else if (k === 1) { camera.position.set(x + 4.6, .9, z + 1.4 - A.ct * 2); camera.lookAt(x, .75, z - 1.5); }
+  else { camera.position.set(x - 5.5, 2.6, 118 - A.ct * 3); camera.lookAt(x, .7, z); }
+  car.position.set(x, 0, z); car.rotation.y = Math.PI;
+  for (const w of A.street.wheels || []) w.spin.rotation.z -= v / w.R * dt;
+  camera.fov = A.i >= 0 && A.i < n && k === 0 ? 38 : 45; camera.updateProjectionMatrix();
+  renderer.toneMappingExposure = 1.05; bloomPass.strength = .75; bloomPass.threshold = .7; scene.environmentIntensity = 2.2;
+  sky.position.copy(camera.position); scene.fog.density = fogDensity();
+  sun.position.set(x + sunDir.x * 400, sunDir.y * 400, z + sunDir.z * 400); sun.target.position.set(x, 0, Math.min(z, 200));
+  updateWeather(dt, { x, z: 120, vx: 0, vz: -v });
+  if (A.soundOn && A.i >= 0 && A.i < n) { const c = A.list[A.i]; audio.update(dt, { speed: v, rpm: c.engine === 'ev' ? v * 60 : c.redline * (.6 + .35 * (A.ct / ALL_AD_D)), throttle: 1, slip: 0, limiter: false, shifting: 0, interior: false }); }
+  $('adFade').style.opacity = A.t < .4 ? 1 - A.t / .4 : A.outT && A.t - A.outT > ALL_AD_OUT - .5 ? (A.t - A.outT - ALL_AD_OUT + .5) / .5 : 0;
+  if (A.outT && A.t - A.outT > ALL_AD_OUT) return endAd();
+  composer.render(dt);
 }
 function bootAd(done) {
   if (adSeen()) return done();
@@ -8060,7 +8120,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

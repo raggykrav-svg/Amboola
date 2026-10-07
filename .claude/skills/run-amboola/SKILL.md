@@ -143,6 +143,8 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 
 ## Car commercials
 
+- `playAd(c, 'boot'|'buy'|'show')` is a single-car ad; `nextAdCar()` now goes through every car (not only Lambos). `playAllAd()` is the ALL CARS montage (`ad.mode === 'all'`, `updateAllAd`, 1.6 s a car, waits up to 2.5 s for a model still loading). In tests, step it with `tick(1/3)`: at small steps SwiftShader takes many minutes.
+
 - **What plays:** `playAd(car, 'boot'|'buy', done)` runs a 13 s ad in `state = 'ad'`; `tick` calls `updateAd(dt)`. The shot times are `AD_T`:
   - studio shots in `gScene`/`gCamera`, sweeping the existing spotlights;
   - street shots in `scene`/`camera`, with night and rain forced on, traffic and the player's car hidden, and `updateWeather` driven by the ad car.
