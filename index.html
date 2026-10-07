@@ -335,6 +335,12 @@
   .meetRow button { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.12em; padding:10px 18px; color:#111; background:linear-gradient(90deg,#ff2bd6,#2fe0ff); border:none; cursor:pointer; }
   .meetRow button:disabled { background:#444; color:#aaa; cursor:default; }
   #meetClose { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.14em; padding:10px 26px; color:#fff; background:transparent; border:2px solid #ff2bd6; cursor:pointer; }
+  #acthud { position:absolute; left:50%; top:10px; transform:translateX(-50%); display:flex; gap:20px; background:var(--panel); padding:6px 18px; border-bottom:2px solid #ffd21f; backdrop-filter:blur(6px); text-align:center; white-space:nowrap; }
+  #acthud small { display:block; font-size:11px; letter-spacing:.2em; color:var(--dim); } #acthud b { font-family:'Orbitron',sans-serif; font-size:18px; }
+  #actprompt { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:21; padding:10px 22px; background:rgba(10,12,18,.9); border:2px solid #ffd21f; box-shadow:0 0 22px rgba(255,210,31,.35);
+    font-family:'Orbitron',sans-serif; font-weight:900; font-size:18px; letter-spacing:.1em; color:#fff; text-align:center; cursor:pointer; max-width:92vw; }
+  #actprompt small { display:block; font-family:'Rajdhani',sans-serif; font-size:13px; letter-spacing:.1em; color:#ffd21f; margin-top:2px; }
+  @media (max-width: 760px) { #acthud { top:4px; gap:10px; padding:3px 10px; } #acthud b { font-size:13px; } #acthud small { font-size:8px; letter-spacing:.08em; } #actprompt { font-size:13px; bottom:200px; } }
   #chasehud { position:absolute; left:50%; top:62px; transform:translateX(-50%); padding:6px 16px; background:rgba(10,4,6,.8); border:2px solid #ff2a2a; text-align:center; animation:chaseBlink .5s steps(2) infinite; }
   #chasehud b { display:block; font-family:'Orbitron',sans-serif; font-size:16px; letter-spacing:.14em; color:#fff; } #chasehud span { font-size:13px; letter-spacing:.12em; color:#ffb0b0; } #chasehud i { font-style:normal; color:#fff; font-weight:700; }
   #chasehud .bar { height:6px; margin-top:4px; background:rgba(255,255,255,.12); } #chasehud .bar u { display:block; height:100%; width:0; background:linear-gradient(90deg,#2a5bff,#ff2a2a); }
@@ -455,6 +461,7 @@
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
   <div id="meethud" class="hidden"><div><small>NIGHT RACE VS</small><b id="mRival">-</b></div><div><small>PLACE</small><b id="mPos">-</b></div><div><small>TO GO</small><b id="mLeft">-</b></div><div><small>TIME</small><b id="mTime">-</b></div></div>
+  <div id="acthud" class="hidden"></div>
   <div id="chasehud" class="hidden"><b>🚨 POLICE CHASE</b><span>GAP <i id="chGap">0 m</i> · GET 400 m AWAY!</span><div class="bar"><u id="chMeter"></u></div></div>
   <div id="rallyhud" class="hidden"><div><small>DESERT RALLY</small><b id="rlGate">1/10</b></div><div><small>TIME</small><b id="rlTime">0:00</b></div><div><small>BEST</small><b id="rlBest">—</b></div><div><small>NEXT GATE</small><b><span id="rlArrow">▲</span> <span id="rlDist">0 m</span></b></div></div>
   <div id="count"></div>
@@ -465,6 +472,7 @@
 </div>
 <div id="raceprompt" class="hidden"></div>
 <div id="meetprompt" class="hidden"></div>
+<div id="actprompt" class="hidden"></div>
 <div id="meetPanel" class="hidden"><h2 id="meetTitle"></h2><div id="meetList"></div><button id="meetClose">NOT NOW</button></div>
 <div id="races" class="hidden"><h2>RACES</h2><div id="raceList"></div><button id="racesClose">BACK</button></div>
 <div id="misPanel" class="hidden"><h2>MISSIONS · ミッション</h2><div id="misHead"></div><div id="misList"></div><button id="misClose">BACK</button></div>
@@ -1481,7 +1489,7 @@ async function buildWorld() {
   buildWangan(); buildSnowArea();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries();
-  buildSpeedCams(); buildPatrols();
+  buildSpeedCams(); buildPatrols(); buildActs();
   buildMinimapImage();
 }
 
@@ -3151,6 +3159,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyR') race ? raceReset() : player.resetToRoad();
     if (e.code === 'Enter' && nearMarker && !race) startRace(nearMarker);
     if (e.code === 'Enter' && meetNear && !meet && !nearMarker) openMeet(meetNear);
+    if (e.code === 'Enter' && actNear && !busyAct() && !nearMarker) actNear.go();
     if (e.code === 'KeyH') $('help').classList.toggle('hidden');
     if (e.code === 'KeyN') openMap();
     if (e.code === 'KeyG' && crime?.role === 'outlaw') { crime.showRoute = !crime.showRoute; crime.routeT = 0; toast(crime.showRoute ? 'HIDEOUT ROUTE ON' : 'HIDEOUT ROUTE OFF', crime.showRoute ? 'FOLLOW THE PURPLE ARROWS' : ''); }
@@ -3613,7 +3622,7 @@ function pickRivals(spec, n) {
   return CARS.filter(c => c.id !== spec.id).map(c => ({ c, d: Math.abs(Math.log((c.kw / c.mass) / pw)) + Math.random() * .3 })).sort((a, b) => a.d - b.d).slice(0, n).map(o => o.c);
 }
 function startRace(T) {
-  endMeetRace(false, true); endCrime(true);
+  endMeetRace(false, true); endActs(); endCrime(true);
   clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -3823,7 +3832,7 @@ function pickDragRival(me) {
   return pick(opts).c;
 }
 function startDrag(ev, rivalSpec) {
-  endMeetRace(false, true); endCrime(true); clearNav(true); $('navhud').classList.add('hidden');
+  endMeetRace(false, true); endActs(); endCrime(true); clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false); if (taxi) endTaxi(); if (drag) endDrag(false);
   $('pause').classList.add('hidden'); $('races').classList.add('hidden'); $('results').classList.add('hidden'); $('raceprompt').classList.add('hidden');
   if (audio.ctx) audio.ctx.resume();
@@ -3931,6 +3940,11 @@ function openRaces(from = 'pause', dragOnly = false) {
     if (E.boss) { const sp = bossSpec(E), open = bossUnlocked(E), beat = ST.bosses.includes(E.id);
       return `<div class="rcard${open ? '' : ' locked'}" data-d="${k}" style="border-left-color:#ff3b6b"><b>${beat ? '👑' : open ? '💀' : '🔒'} DRAG · ${E.name}</b><span>${E.jp} · ¼ MILE · VS FULLY UPGRADED ${sp.name.toUpperCase()} (${simSprint(sp).qm.t.toFixed(2)} s)</span><span>${open ? `PRIZE ${fmtUSD(E.boss.prize)}${beat ? ' · BEATEN · REMATCH PAYS 10%' : ''}` : 'BEAT THE BOSS BEFORE TO UNLOCK'}</span><span>BEST ${b ? b.et.toFixed(3) + ' s · ' + b.car : '—'}</span></div>`; }
     return `<div class="rcard" data-d="${k}" style="border-left-color:#ffd02d"><b>🚦 DRAG · ${E.name}</b><span>${E.jp} · ${Math.round(E.dist)} m · 1 VS 1 · AMBOOLA DRAGWAY</span><span>Launch on the green light · beat the rival to the line</span><span>BEST ${b ? b.et.toFixed(3) + ' s · ' + Math.round(b.trap) + ' km/h · ' + b.car : '—'}</span></div>`; }).join('') + (dragOnly ? '' : $('raceList').innerHTML);   // drag events first
+  if (!dragOnly) $('raceList').innerHTML = actCards() + $('raceList').innerHTML;
+  document.querySelectorAll('.rcard[data-x]').forEach(el => el.onclick = () => {
+    if (racesFrom === 'garage') { $('races').classList.add('hidden'); startDrive(); }
+    state = 'drive'; const x = el.dataset.x; x === 'world' ? startWorldRace() : startCRace(COUNTRIES.find(C => 'c:' + C.id === x));
+  });
   document.querySelectorAll('.rcard[data-d]').forEach(el => el.onclick = () => {
     if (el.classList.contains('locked')) { el.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; }
     if (racesFrom === 'garage') { $('races').classList.add('hidden'); startDrive(); }
@@ -3981,6 +3995,7 @@ $('sellBtn').onclick = () => {
   if (sellCar(c)) { try { audio.init(); audio.beep(660, .12); setTimeout(() => audio.beep(990, .2), 110); } catch (e) { } updateMenu(); }
 };
 $('misBtn').onclick = () => { renderMissions(); $('misPanel').classList.remove('hidden'); };
+$('actprompt').onclick = () => { if (actNear && !busyAct()) actNear.go(); };
 $('meetClose').onclick = closeMeet; $('meetprompt').onclick = () => { if (meetNear && !meet) openMeet(meetNear); };
 $('bMeet').onclick = () => { if (timeName !== 'night') applyTime('night'); setPause(false); const p = player, M = MEETS.reduce((a, b) => Math.hypot(p.x - a.zone[0], p.z - a.zone[1]) < Math.hypot(p.x - b.zone[0], p.z - b.zone[1]) ? a : b);
   setNav({ n: M.n, jp: M.jp, x: M.zone[0], z: M.zone[1], kind: 'city', type: 'Night meet' }); toast('NIGHT MEET', 'FOLLOW THE ARROWS · ナイト'); };
@@ -4112,7 +4127,7 @@ function taxiRoute(px, pz, tx, tz) {
 const routeLen = (px, pz, pts) => { let L = 0, x = px, z = pz; for (const [a, b] of pts) { L += Math.hypot(a - x, b - z); x = a; z = b; } return L; };
 const fmtUSD = v => '$' + Math.round(v).toLocaleString('en-US');
 function startTaxi() {
-  endMeetRace(false, true); endCrime(true);
+  endMeetRace(false, true); endActs(); endCrime(true);
   clearNav(true);
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -4180,7 +4195,7 @@ function newTaxiJob(first) {
   taxi.timer = null; taxi.crashes = 0; taxi.routeT = 0;
   toast(`PASSENGER WAITING`, `${taxi.who} · ${s.name}`);
 }
-function taxiCrash() { if (taxi && taxi.phase === 'dropoff') taxi.crashes++; }
+function taxiCrash() { if (taxi && taxi.phase === 'dropoff') taxi.crashes++; if (deliv) deliv.crashes++; }
 function updateTaxi(dt) {
   const p = player, s = taxi.spot;
   taxi.routeT -= dt; if (taxi.routeT <= 0) { taxi.route = taxiRoute(p.x, p.z, s.x, s.z); taxi.routeT = .4; }
@@ -5870,36 +5885,42 @@ function openMeet(M) {
 }
 function closeMeet() { $('meetPanel').classList.add('hidden'); if (state === 'overlay') { state = 'drive'; if (audio.ctx) audio.ctx.resume(); } }
 // the race line for the rival: the road corners to the finish, rounded off, on the left-hand lane
-function streetPath(pts) {
-  const r0 = 11, P = [pts[0]];
+function streetPath(pts, lat = 3.9, r0 = 11) {   // pts: [x, z] or [x, z, y]; lat: metres to the left of travel
+  const P = [pts[0]], Y = q => q[2] || 0;
   for (let i = 1; i < pts.length - 1; i++) {
     const [ax, az] = pts[i - 1], [bx, bz] = pts[i], [cx, cz] = pts[i + 1], l1 = Math.hypot(bx - ax, bz - az), l2 = Math.hypot(cx - bx, cz - bz);
     if (l1 < 1 || l2 < 1) continue;
     const ux = (bx - ax) / l1, uz = (bz - az) / l1, vx = (cx - bx) / l2, vz = (cz - bz) / l2, cr = ux * vz - uz * vx;
-    if (Math.abs(cr) < .05) { P.push([bx, bz]); continue; }
-    const t = Math.min(r0, l1 / 2, l2 / 2);
-    for (let k = 0; k <= 6; k++) { const s = k / 6, ax2 = bx - ux * t, az2 = bz - uz * t, cx2 = bx + vx * t, cz2 = bz + vz * t; P.push([(1 - s) ** 2 * ax2 + 2 * (1 - s) * s * bx + s * s * cx2, (1 - s) ** 2 * az2 + 2 * (1 - s) * s * bz + s * s * cz2]); }
+    if (Math.abs(cr) < .05) { P.push(pts[i]); continue; }
+    const t = Math.min(r0, l1 / 2, l2 / 2), by = Y(pts[i]);
+    for (let k = 0; k <= 6; k++) { const s = k / 6, ax2 = bx - ux * t, az2 = bz - uz * t, cx2 = bx + vx * t, cz2 = bz + vz * t; P.push([(1 - s) ** 2 * ax2 + 2 * (1 - s) * s * bx + s * s * cx2, (1 - s) ** 2 * az2 + 2 * (1 - s) * s * bz + s * s * cz2, by]); }
   }
   P.push(pts[pts.length - 1]);
-  // resample every 2 m, then shift 3.9 m to the left of travel
-  const X = [], Z = []; let acc = 0;
-  for (let i = 0; i < P.length - 1; i++) { const [ax, az] = P[i], [bx, bz] = P[i + 1], l = Math.hypot(bx - ax, bz - az); if (l < 1e-6) continue; for (; acc <= l; acc += 2) { X.push(ax + (bx - ax) * acc / l); Z.push(az + (bz - az) * acc / l); } acc -= l; }
-  X.push(P[P.length - 1][0]); Z.push(P[P.length - 1][1]);
-  const n = X.length, T = { n, step: 2, x: new Float32Array(n), z: new Float32Array(n), tx: new Float32Array(n), tz: new Float32Array(n), k: new Float32Array(n) };
-  for (let i = 0; i < n; i++) { const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1), dx = X[b] - X[a], dz = Z[b] - Z[a], l = Math.hypot(dx, dz) || 1; T.tx[i] = dx / l; T.tz[i] = dz / l; T.x[i] = X[i] + T.tz[i] * 3.9; T.z[i] = Z[i] - T.tx[i] * 3.9; }
+  // resample every 2 m, then shift to the left of travel
+  const X = [], Z = [], H = []; let acc = 0;
+  for (let i = 0; i < P.length - 1; i++) { const [ax, az] = P[i], [bx, bz] = P[i + 1], l = Math.hypot(bx - ax, bz - az); if (l < 1e-6) continue; for (; acc <= l; acc += 2) { X.push(ax + (bx - ax) * acc / l); Z.push(az + (bz - az) * acc / l); H.push(Y(P[i]) + (Y(P[i + 1]) - Y(P[i])) * acc / l); } acc -= l; }
+  X.push(P[P.length - 1][0]); Z.push(P[P.length - 1][1]); H.push(Y(P[P.length - 1]));
+  const n = X.length, T = { n, step: 2, x: new Float32Array(n), z: new Float32Array(n), y: new Float32Array(H), tx: new Float32Array(n), tz: new Float32Array(n), k: new Float32Array(n) };
+  for (let i = 0; i < n; i++) { const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1), dx = X[b] - X[a], dz = Z[b] - Z[a], l = Math.hypot(dx, dz) || 1; T.tx[i] = dx / l; T.tz[i] = dz / l; T.x[i] = X[i] + T.tz[i] * lat; T.z[i] = Z[i] - T.tx[i] * lat; }
   for (let i = 0; i < n; i++) { const a = Math.max(0, i - 2), b = Math.min(n - 1, i + 2); T.k[i] = (Math.atan2(T.tx[b], T.tz[b]) - Math.atan2(T.tx[a], T.tz[a])); T.k[i] = Math.atan2(Math.sin(T.k[i]), Math.cos(T.k[i])) / ((b - a) * 2 || 1); }
   T.L = (n - 1) * 2; return T;
 }
+// how far along a race line you are: the nearest sample near your last one (never jumps to a far-away part of the line)
+function pathIndex(T, x, z, hint, back = 20, ahead = 120) {
+  let bi = hint, bd = 1e18; for (let i = Math.max(0, hint - back); i < Math.min(T.n, hint + ahead); i++) { const d = (T.x[i] - x) ** 2 + (T.z[i] - z) ** 2; if (d < bd) { bd = d; bi = i; } }
+  return bi;
+}
 class StreetRacer {
-  constructor(r, T) {
-    this.r = r; this.spec = CARS.find(c => c.id === r.car); this.T = T; this.s = 0; this.v = 0; this.done = false;
+  constructor(r, T, s0 = 0, lat = 0) {
+    this.r = r; this.spec = CARS.find(c => c.id === r.car); this.T = T; this.s = s0; this.lat = lat; this.v = 0; this.done = false;
     this.car = buildCar(this.spec, r.paint, .55, .3); addUnderglow(this.car, GLOWS[r.glow].c); this.car.headMat.emissiveIntensity = 6; this.car.tailMat.emissiveIntensity = 2.5;
     scene.add(this.car.group); this.pose(0);
   }
   pose(dt) {
     const T = this.T, f = Math.min(this.s / 2, T.n - 1.001), i = Math.floor(f), u = f - i, j = Math.min(i + 1, T.n - 1);
-    this.x = lerp(T.x[i], T.x[j], u); this.z = lerp(T.z[i], T.z[j], u); this.h = Math.atan2(lerp(T.tx[i], T.tx[j], u), lerp(T.tz[i], T.tz[j], u));
-    const g = this.car.group; g.position.set(this.x, 0, this.z); g.rotation.y = this.h;
+    const tx = lerp(T.tx[i], T.tx[j], u), tz = lerp(T.tz[i], T.tz[j], u);
+    this.x = lerp(T.x[i], T.x[j], u) + tz * this.lat; this.z = lerp(T.z[i], T.z[j], u) - tx * this.lat; this.h = Math.atan2(tx, tz); this.y = T.y ? lerp(T.y[i], T.y[j], u) : 0;
+    const g = this.car.group; g.position.set(this.x, this.y, this.z); g.rotation.y = this.h;
     for (const w of this.car.wheels) { w.spin.rotation.z -= this.v / w.R * dt; if (w.front) w.pivot.rotation.y = -clamp(T.k[i] * 3, -.45, .45); }
     this.car.tailMat.emissiveIntensity = this.braking ? 9 : 2.5;
   }
@@ -6398,6 +6419,196 @@ function endChase(escaped, p) {
 }
 
 /* =====================================================================
+   THINGS TO DO IN THE COUNTRIES, AND THE WORLD RACE
+   - A street Grand Prix in every country town: 2 laps round the blocks against 3 rivals.
+   - A delivery job in every country: halloumi in Cyprus, pizza in Italy, gold in Dubai. 3 deliveries a shift,
+     against the clock; crashing spoils the goods and cuts the pay.
+   - The WORLD RACE: from Tokyo over the sea to Italy, round the block there, all the way back, across the harbour
+     and over to Dubai. About 60 km against 3 rivals for $1,000,000.
+   Each starts at a glowing ring (stop on it and press Enter), or from the RACES menu.
+   ===================================================================== */
+const ACTS = [];
+let actNear = null, cRace = null, deliv = null, worldRace = null;
+const busyAct = () => race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus);
+const cStreets = C => { const xs = [], zs = []; for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x); for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z); return { xs, zs }; };
+function addAct(o) {
+  const g = new THREE.Group(), col = new THREE.Color(o.col); g.position.set(o.x, o.y || 0, o.z); (o.parent || scene).add(g);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(o.r - 1.2, o.r, 40), new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(2.2), side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = .13; g.add(ring);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 140, 14, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.y = 70; g.add(beam);
+  const t = signTex(1024, 256, '#0d1018', [[o.title.toUpperCase(), .42, .3, OR, '#fff'], [o.sign || o.sub, .78, .17, OR, o.col]], o.col), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), sm); s.position.y = 6.5; s.rotation.y = o.face || 0; g.add(s);
+  o.g = g; ACTS.push(o); return o;
+}
+function updateActs(dt, p) {
+  actNear = null;
+  if (!busyAct()) for (const a of ACTS) if (Math.abs(p.x - a.x) < a.r && Math.abs(p.z - a.z) < a.r && Math.hypot(p.x - a.x, p.z - a.z) < a.r && (p.speed || 0) < 5) { actNear = a; break; }
+  const pr = $('actprompt');
+  if (actNear && state === 'drive') { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
+  else pr.classList.add('hidden');
+  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p);
+}
+function actHud(cells, col) {
+  const h = $('acthud'); if (!cells) { h.classList.add('hidden'); return; }
+  h.style.borderColor = col || '#ffd21f'; h.classList.remove('hidden');
+  h.innerHTML = cells.map(([a, b]) => `<div><small>${a}</small><b>${b}</b></div>`).join('');
+}
+function actRivals(n) {
+  const names = ['Kaito', 'Sora', 'Hana', 'Ren', 'Mika', 'Yuto', 'Aiko', 'Taro', 'Nina', 'Daichi'], cols = ['#c8141b', '#1e5bff', '#f2f2f2', '#111216', '#ffd21f', '#2fa85a', '#ff6a1a'];
+  return pickRivals(player.spec, n).map((c, k) => ({ n: names[(k * 3 + Math.floor(Math.random() * 10)) % names.length], car: c.id, paint: cols[(k * 2 + 1) % cols.length], glow: 0, skill: .9 + k * .025 }));
+}
+function lineUp(T, slot, lat) { const i = Math.min(T.n - 1, Math.round(slot / 2)), h = Math.atan2(T.tx[i], T.tz[i]); return { x: T.x[i] + T.tz[i] * lat, z: T.z[i] - T.tx[i] * lat, y: T.y[i], h }; }
+function racersStep(R, dt, p, pS) {
+  for (const ai of R.ais) { const band = clamp(1 + (pS - ai.s) / 900, .9, 1.06); ai.update(dt, R.state !== 'race', band); }
+  for (const ai of R.ais) {   // bump the rivals
+    const dx = p.x - ai.x, dz = p.z - ai.z, d = Math.hypot(dx, dz);
+    if (d < 2.3 && d > 1e-3 && Math.abs((p.y || 0) - ai.y) < 2.5) { const nx = dx / d, nz = dz / d; p.x += nx * (2.3 - d); p.z += nz * (2.3 - d); const vn = (p.vx - Math.sin(ai.h) * ai.v) * nx + (p.vz - Math.cos(ai.h) * ai.v) * nz; if (vn < 0) { p.vx -= 1.2 * vn * nx; p.vz -= 1.2 * vn * nz; ai.v *= .94; if (-vn > 3) { audio.crash(-vn * .7); carHit(p, nx, nz, -vn); } } }
+  }
+}
+function countDown(R, dt, hold) {
+  const lit = Math.floor(R.t + 3.4);
+  if (lit !== R.lit) { R.lit = lit; audio.beep(lit >= 3 ? 1040 : 520, lit >= 3 ? .4 : .16); $('count').textContent = ['3', '2', '1', 'GO!'][clamp(lit, 0, 3)]; $('count').style.opacity = 1; }
+  if (R.t < 0) { Object.assign(player, { x: hold.x, z: hold.z, y: hold.y, heading: hold.h, vx: 0, vz: 0, yawRate: 0 }); return; }
+  R.state = 'race'; setTimeout(() => { $('count').style.opacity = 0; }, 800);
+}
+function startActCommon(start) {
+  endActs(); endChase(null, player); endMeetRace(false, true); endCrime(true); if (taxi) endTaxi(); if (race) endRace(false); clearNav(true);
+  $('pause').classList.add('hidden'); $('races').classList.add('hidden'); state = 'drive'; if (audio.ctx) audio.ctx.resume();
+  Object.assign(player, { x: start.x, z: start.z, y: start.y || 0, heading: start.h, vx: 0, vz: 0, yawRate: 0, gear: 1, reverse: false, air: false, loop: null, vy: 0 });
+  camPos.set(player.x - Math.sin(start.h) * 8, (start.y || 0) + 3, player.z - Math.cos(start.h) * 8);
+}
+/* ---------- the country Grand Prix ---------- */
+function countryCircuit(C) {
+  const { xs, zs } = cStreets(C), c = C.circuit || { x: [3, 6], z: [0, 4] }, x0 = xs[c.x[0]], x1 = xs[c.x[1]], z0 = zs[c.z[0]], z1 = zs[c.z[1]], mx = (x0 + x1) / 2;
+  const lap = [[x1, z0], [x1, z1], [x0, z1], [x0, z0]];
+  return { pts: [[mx, z0], ...lap, ...lap, [mx, z0]], start: [mx - 40, z0], L: 2 * 2 * ((x1 - x0) + (z1 - z0)) };
+}
+function startCRace(C) {
+  const K = countryCircuit(C), T = streetPath(K.pts, 2.4, 13), rivals = actRivals(3);
+  const hold = lineUp(T, 2, -2.8);
+  startActCommon(hold);
+  cRace = { C, T, ais: rivals.map((r, k) => new StreetRacer(r, T, 26 - k * 8, k % 2 ? -2.8 : 1.2)), t: -3.4, lit: -1, state: 'count', hint: 1, hold };
+  toast(C.raceName.toUpperCase(), `2 LAPS · ${(T.L / 1000).toFixed(1)} km · 4 CARS`);
+}
+function updateCRace(dt, p) {
+  const R = cRace; R.t += dt;
+  if (R.state === 'count') countDown(R, dt, R.hold);
+  R.hint = pathIndex(R.T, p.x, p.z, R.hint, 20, 160); const pS = R.hint * 2;
+  racersStep(R, dt, p, pS);
+  const order = [...R.ais.map(a => ({ s: a.done ? 1e9 - (a.fin ?? 0) : a.s, me: false })), { s: R.done ? 2e9 : pS, me: true }].sort((a, b) => b.s - a.s), pos = order.findIndex(o => o.me) + 1;
+  for (const a of R.ais) if (a.done && a.fin == null) a.fin = R.t;
+  actHud([[R.C.raceName.toUpperCase(), `${pos}/4`], ['LAP', `${pS > R.T.L / 2 ? 2 : 1}/2`], ['TO GO', `${((R.T.L - pS) / 1000).toFixed(2)} km`], ['TIME', fmtTime(Math.max(0, R.t))]], R.C.col);
+  if (R.state === 'race' && R.hint >= R.T.n - 4) endCRace(pos);
+}
+function endCRace(pos, quit) {
+  const R = cRace; if (!R) return; cRace = null; R.ais.forEach(a => a.dispose()); actHud(null); $('count').style.opacity = 0;
+  if (quit) return;
+  const pay = [25000, 8000, 4000, 1000][pos - 1]; earn(pay); if (pos === 1) bump('cRaceWins');
+  const key = 'amboola.gp.' + R.C.id, b = +localStorage.getItem(key) || 0; if (pos === 1 && (!b || R.t < b)) localStorage.setItem(key, R.t.toFixed(2));
+  audio.beep(880, .25); setTimeout(() => audio.beep(1320, .5), 250);
+  banner(pos === 1 ? '🏆 YOU WON!' : `🏁 P${pos}`, R.C.raceName, `${fmtTime(R.t)} · +${fmtUSD(pay)}`);
+}
+/* ---------- delivery jobs ---------- */
+const JOBS = { cyprus: ['🧀', 'Halloumi delivery', 'Cheese for the tavernas', 2500], italy: ['🍕', 'Pizza delivery', 'Hot pizza, fast!', 3000], dubai: ['💰', 'Gold delivery', 'Gold bars to the towers', 6000],
+  paris: ['🥐', 'Croissant delivery', 'Fresh from the bakery', 2800], newyork: ['🌭', 'Hot-dog delivery', 'Lunch for Manhattan', 3200], alps: ['🍫', 'Chocolate delivery', 'Swiss chocolate to the chalets', 3500] };
+let delivMark = null;
+function delivTarget(C, fx, fz) {
+  const { xs, zs } = cStreets(C);
+  for (let k = 0; k < 40; k++) {
+    const x = xs[Math.floor(Math.random() * xs.length)] + 9.2 * (Math.random() < .5 ? 1 : -1), z = zs[0] + Math.random() * (zs[zs.length - 1] - zs[0]);
+    if (zs.some(v => Math.abs(z - v) < 14) || Math.hypot(x - fx, z - fz) < 350) continue;
+    return { x, z };
+  }
+  return { x: xs[1], z: (zs[0] + zs[1]) / 2 };
+}
+function startDeliv(C) {
+  const J = JOBS[C.id] || JOBS.italy, a = ACTS.find(q => q.job === C.id); startActCommon({ x: a.x, z: a.z, y: 0, h: player.heading });
+  deliv = { C, J, n: 0, earned: 0, crashes: 0 }; nextDeliv(); toast(`${J[0]} ${J[1].toUpperCase()}`, `${J[2].toUpperCase()} · 3 DROPS · FOLLOW THE GOLD LIGHT`);
+}
+function nextDeliv() {
+  const D = deliv, p = player, t = delivTarget(D.C, p.x, p.z); D.t = t; D.crashes = 0; D.time = Math.round(Math.hypot(t.x - p.x, t.z - p.z) / 13 + 25);
+  if (!delivMark) {
+    delivMark = new THREE.Group(); scene.add(delivMark);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(5.5, 7, 40), new THREE.MeshBasicMaterial({ color: 0xffd21f, side: THREE.DoubleSide, transparent: true, opacity: .9, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .14; delivMark.add(ring);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 200, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xffc21f, transparent: true, opacity: .3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.y = 100; delivMark.add(beam);
+  }
+  delivMark.position.set(t.x, 0, t.z); delivMark.visible = true;
+}
+function updateDeliv(dt, p) {
+  const D = deliv; D.time -= dt;
+  const d = Math.hypot(p.x - D.t.x, p.z - D.t.z), ang = Math.atan2(D.t.x - p.x, D.t.z - p.z) - p.heading;
+  actHud([[`${D.J[0]} ${D.J[1].toUpperCase()}`, `${D.n + 1}/3`], ['GO', `<span style="display:inline-block;transform:rotate(${-ang}rad)">▲</span> ${Math.round(d)} m`], ['TIME', `${Math.max(0, Math.ceil(D.time))} s`], ['EARNED', fmtUSD(D.earned)]], '#ffc21f');
+  if (d < 9 && p.speed < 6) {
+    const pay = Math.round(D.J[3] * Math.max(.3, 1 - D.crashes * .2) + Math.max(0, D.time) * 60);
+    D.earned += pay; earn(pay); bump('deliveries'); audio.beep(988, .12); setTimeout(() => audio.beep(1319, .2), 120);
+    toast(`${D.J[0]} DELIVERED! +${fmtUSD(pay)}`, D.crashes ? `${D.crashes} CRASH${D.crashes > 1 ? 'ES' : ''} · LESS PAY` : 'PERFECT DELIVERY');
+    if (++D.n >= 3) return endDeliv(); nextDeliv();
+  } else if (D.time <= 0) { toast('TOO LATE!', 'THE CUSTOMER GAVE UP · NEXT ONE'); if (++D.n >= 3) return endDeliv(); nextDeliv(); }
+}
+function endDeliv(quit) {
+  const D = deliv; if (!D) return; deliv = null; actHud(null); if (delivMark) delivMark.visible = false;
+  if (!quit) banner(`${D.J[0]} SHIFT DONE`, `+${fmtUSD(D.earned)}`, `${D.J[1]} in ${D.C.name}`);
+}
+/* ---------- the world race ---------- */
+function worldPath() {
+  const I = COUNTRIES.find(c => c.id === 'italy'), U = COUNTRIES.find(c => c.id === 'dubai'), out = [[rc(10), HALF - 70, 0]];
+  const leg = (R, a, b) => { const s = a <= b ? 10 : -10; for (let i = a; s > 0 ? i < b : i > b; i += s) out.push([R.x[i], R.z[i], R.y[i]]); out.push([R.x[b], R.z[b], R.y[b]]); };
+  const { xs, zs } = cStreets(I), mx = I.R.x[I.R.n - 1], mxU = U.R.x[U.R.n - 1];
+  let iR = I.R.n - 1; while (iR > 0 && I.R.z[iR] > zs[0] - 4) iR--;   // where the way back joins the bridge road
+  let iA = U.R.n - 1; for (let i = 0; i < U.R.n; i++) if (U.R.z[i] >= U.z0 + 34) { iA = i; break; }   // just past Dubai's arch
+  leg(I.R, 0, I.R.n - 1);
+  out.push([mx, zs[1], 0], [xs[4], zs[1], 0], [xs[4], zs[0], 0], [mx, zs[0], 0]);   // round the block in Italy
+  leg(I.R, iR, 8);
+  out.push([rc(10), HALF, 0], [U.gx, HALF, 0]);   // along the harbour road to the Dubai gate
+  leg(U.R, 8, iA);
+  const T = streetPath(out, 3.9, 14), near = (x, z, from) => { let bi = from, bd = 1e18; for (let i = from; i < T.n; i++) { const d = (T.x[i] - x) ** 2 + (T.z[i] - z) ** 2; if (d < bd) { bd = d; bi = i; } } return bi; };
+  const cpI = near(xs[4], zs[1], 0); T.ret = near(mx, zs[0], cpI); T.cp = [xs[4], zs[1]]; T.fin = [mxU, U.z0 + 30];
+  return T;
+}
+let worldT = null;
+function startWorldRace() {
+  const T = worldT ??= worldPath(), rivals = actRivals(3), hold = lineUp(T, 2, -2.6);
+  startActCommon(hold);
+  worldRace = { T, ais: rivals.map((r, k) => new StreetRacer(r, T, 30 - k * 9, k % 2 ? -2.6 : 1.4)), t: -3.4, lit: -1, state: 'count', hint: 1, cp: false, hold };
+  toast('🌍 WORLD RACE', `TOKYO → ITALY → DUBAI · ${(T.L / 1000).toFixed(0)} km · $1,000,000 TO THE WINNER`);
+}
+function updateWorldRace(dt, p) {
+  const R = worldRace, T = R.T; R.t += dt;
+  if (R.state === 'count') countDown(R, dt, R.hold);
+  if (!R.cp && Math.hypot(p.x - T.cp[0], p.z - T.cp[1]) < 45) { R.cp = true; R.hint = Math.max(R.hint, T.ret); audio.beep(1320, .2); toast('ITALY ✓', 'NOW BACK TO TOKYO AND ON TO DUBAI!'); }
+  R.hint = pathIndex(T, p.x, p.z, R.hint, 20, 260); if (!R.cp) R.hint = Math.min(R.hint, T.ret - 1);
+  const pS = R.hint * 2;
+  racersStep(R, dt, p, pS);
+  for (const a of R.ais) if (a.done && a.fin == null) a.fin = R.t;
+  const order = [...R.ais.map(a => ({ s: a.done ? 1e9 - a.fin : a.s })), { s: pS, me: true }].sort((a, b) => b.s - a.s), pos = order.findIndex(o => o.me) + 1;
+  actHud([['🌍 WORLD RACE', `${pos}/4`], ['NEXT', R.cp ? 'DUBAI' : 'ITALY'], ['TO GO', `${((T.L - pS) / 1000).toFixed(1)} km`], ['TIME', fmtTime(Math.max(0, R.t))]], '#2fe0ff');
+  if (R.state === 'race' && R.cp && Math.hypot(p.x - T.fin[0], p.z - T.fin[1]) < 30) endWorldRace(pos);
+}
+function endWorldRace(pos, quit) {
+  const R = worldRace; if (!R) return; worldRace = null; R.ais.forEach(a => a.dispose()); actHud(null); $('count').style.opacity = 0;
+  if (quit) return;
+  const pay = [1000000, 250000, 100000, 25000][pos - 1]; earn(pay); if (pos === 1) bump('worldWins');
+  audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
+  banner(pos === 1 ? '🌍 WORLD CHAMPION!' : `🌍 WORLD RACE · P${pos}`, `+${fmtUSD(pay)}`, `Tokyo → Italy → Dubai in ${fmtTime(R.t)}`);
+}
+function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); }
+function buildActs() {
+  for (const C of COUNTRIES) {
+    const K = countryCircuit(C), J = JOBS[C.id], mx = C.R.x[C.R.n - 1];
+    C.raceName ??= `${C.name} Grand Prix`;
+    addAct({ x: K.start[0] - 30, z: K.start[1], r: 9, col: C.col, title: C.raceName, sub: '2 LAPS · 3 RIVALS · $25,000 TO WIN', sign: 'STREET RACE · 2 LAPS', parent: C.group, go: () => startCRace(C) });
+    if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
+  }
+  addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
+}
+
+function actCards() {
+  return [`<div class="rcard" data-x="world" style="border-left-color:#2fe0ff"><b>🌍 WORLD RACE · $1,000,000</b><span>Tokyo → Italy → Dubai · about 60 km · 3 rivals</span><span>Over the sea bridges, round the block in Italy, back to Tokyo and over to Dubai</span></div>`,
+    ...COUNTRIES.map(C => `<div class="rcard" data-x="c:${C.id}" style="border-left-color:${C.col}"><b>🏁 ${C.raceName.toUpperCase()}</b><span>${C.local} · street race · 2 laps · 3 rivals · $25,000 to win</span><span>BEST ${fmtTime(+localStorage.getItem('amboola.gp.' + C.id) || null)}</span></div>`)].join('');
+}
+
+/* =====================================================================
    THE AMBOOLA JET — buy it in the garage ($100,000), press DRIVE and you are flying above Tokyo.
    W/S throttle (up to 20,000 km/h), A/D turn, ↑/↓ climb/dive, click a destination to let the autopilot steer,
    L to land when an airport is close. You land in your last car, ready to drive.
@@ -6875,7 +7086,7 @@ function crimeBump(r) {
 }
 let crime = null;
 function startCrime(role) {
-  endMeetRace(false, true);
+  endMeetRace(false, true); endActs();
   if (race) endRace(false);
   if (taxi) endTaxi();
   endCrime(true); clearNav(true); buildHideouts();
@@ -7051,7 +7262,7 @@ $('bWeather').onclick = () => { cycleWeather(); $('bWeather').textContent = 'WEA
 $('bTime').onclick = () => { cycleTime(); $('bTime').textContent = 'TIME: ' + timeName.toUpperCase(); };
 $('bRaces').onclick = () => openRaces();
 $('bLeave').onclick = () => { endRace(true); setPause(false); };
-$('bGarage').onclick = () => { endChase(null, player); endMeetRace(false, true); endDrag(true); endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
+$('bGarage').onclick = () => { endActs(); endChase(null, player); endMeetRace(false, true); endDrag(true); endRace(true); endTaxi(); endCrime(true); $('raceprompt').classList.add('hidden'); $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); if (audio.eng) audio.eng.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1); enterGarage(); };
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
@@ -7121,7 +7332,7 @@ function tick(dt) {
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); // above the haze: the city view clears up
     sky.position.copy(camera.position);
-    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player);
+    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player);
     audio.weather(WX.wet, player.speed, camMode >= 2);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2, air: player.air });
     // big screens cycle
@@ -7166,7 +7377,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
