@@ -356,6 +356,17 @@ The Mercedes cars have the vertical-slat grille with the three-pointed star. The
 - **Spring:** cherry blossom and pink petals falling. **Summer:** deep green trees. **Autumn:** red and gold trees and leaves blowing about. **Winter:** snow falling on Tokyo, white parks, and slippery roads.
 - The game starts on the season of the real month. Press **U** (or **SEASON** in the pause menu) to change it.
 
+### Even more fun 🎉
+- **⭐ Daily challenge:** a new mini-mission every day (jump 40 m, reach 300 km/h, take the ferry…) for $30,000. It is shown under your story goal.
+- **📷 Photo mode:** press **F** (or PHOTO MODE in the pause menu). Swing the camera round your car, pick a filter and **save the picture**.
+- **📻 Radio:** press **B** to switch between AMBOOLA FM, TOKYO LO-FI and HIGHWAY ROCK. The music is made live by the game.
+- **⛽ Fuel:** a tank lasts about 90 km. Fill up at a gas station (4 in Tokyo, one in every country town and at Fuji). If it runs out, press **R** for roadside help ($500).
+- **🫧 Car wash:** sand, snow and rain make your car dirty; the AMBOOLA Car Wash next to the Stunt Park makes it shine.
+- **🔧 Tuning shop (in CUSTOMIZE):** rear wings (up to a MEGA wing), aero and rally body kits, neon wheels, and loud exhausts that pop flames.
+- **🐕 Pet dog:** turn on the Shiba in CUSTOMIZE → Pet. It rides with its head out of the window and barks at the police. Made in Blender (`models/blender/dog.py`).
+- **🗜 Junkyard:** by the harbour (east). The car crusher squashes the car you drive into a cube and pays you for the parts.
+- **🏠 Your own mansion:** Amboola Hills (north-west of the city), $1,000,000. Pool, palm trees, a helipad and your best cars on the drive; at home your butler fills the tank and washes the car.
+
 ### Faster loading on phones
 - Only your own car's model loads at the start; the others load quietly in the background while you drive.
 

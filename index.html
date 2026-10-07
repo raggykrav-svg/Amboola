@@ -1332,6 +1332,7 @@ async function buildWorld() {
   special.set(gkey(13, 6), 'temple');
   special.set(gkey(3, 12), 'park'); special.set(gkey(15, 15), 'park'); special.set(gkey(8, 3), 'park'); special.set(gkey(16, 9), 'park');
   special.set(gkey(9, 11), 'stunt'); special.set(gkey(8, 11), 'stunt');   // the AMBOOLA Stunt Park (buildStuntPark)
+  special.set(gkey(17, 18), 'stunt'); special.set(gkey(2, 2), 'stunt');   // the junkyard (buildJunkyard) and your mansion (buildMansion)
   special.set(gkey(11, 11), 'stunt');                                        // AMBOOLA HQ (buildHQ)
   special.set(gkey(12, 19), 'stunt');                                        // the harbour car park of the night meet (buildMeetLot)
   // A stunt block is first generated like any other block, so the random numbers (and the rest of the city) stay
@@ -1436,7 +1437,7 @@ async function buildWorld() {
     if (district === 1) for (let k = 0; k < 6; k++) { const s = rand() < .5; trees.push([s ? rr(bx0 + 4, bx1 - 4) : (rand() < .5 ? bx0 + 1.5 : bx1 - 1.5), s ? (rand() < .5 ? bz0 + 1.5 : bz1 - 1.5) : rr(bz0 + 4, bz1 - 4), rr(.8, 1.2)]); }
     } finally { if (snap) genDrop(snap); }
   }
-  buildStuntPark(); buildMeetLot(); buildHQ();
+  buildStuntPark(); buildMeetLot(); buildHQ(); buildJunkyard(); buildMansion();
   // distant skyline ring (not reachable) for depth
   for (let k = 0; k < 520; k++) {
     const a = rand() * Math.PI * 2; const r = rr(HALF + 150, HALF + 1400);
@@ -1873,7 +1874,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'camel'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'camel', 'dog'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -2043,13 +2044,13 @@ const TINTS = [{ n: 'Stock' }, { n: 'Light', sw: '#3c4a58' }, { n: 'Limo black',
 const DECALS = [{ n: 'None' }, { n: 'Racing stripes' }, { n: 'Side stripe' }, { n: 'Race number' }, { n: 'Flames' }, { n: 'Tokyo livery' }, { n: 'Checker' }, { n: 'Sponsor stickers' }, { n: 'Amboola tiger' }];
 const DCOLS = [{ n: 'White', c: '#f4f4f2' }, { n: 'Black', c: '#111113' }, { n: 'Red', c: '#d1121c' }, { n: 'Gold', c: '#e2b33c' }, { n: 'Cyan', c: '#2fe0ff' },
   { n: 'Lime', c: '#8fe02a' }, { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }];
-const CUST0 = { rim: 0, cal: 0, tint: 0, decal: 0, dcol: 0, glow: 0 };
+const CUST0 = { rim: 0, cal: 0, tint: 0, decal: 0, dcol: 0, glow: 0, wing: 0, kit: 0, wneon: 0, exhaust: 0 };
 const CUST_DEFAULT = { amboolataxi: { decal: 8, dcol: 2 } };   // the Mega Taxi comes in its red tiger stripes
 const custBase = id => ({ ...CUST0, ...(CUST_DEFAULT[id] || {}) });
 function custOf(id) {
   let v = null; try { v = JSON.parse(localStorage.getItem('amboola.custom.' + id)); } catch (e) { }
   const c = custBase(id);
-  if (v && typeof v === 'object') for (const [k, L] of [['rim', RIMS], ['cal', CALIPERS], ['tint', TINTS], ['decal', DECALS], ['dcol', DCOLS], ['glow', GLOWS]]) if (Number.isInteger(v[k]) && L[v[k]]) c[k] = v[k];
+  if (v && typeof v === 'object') for (const [k, L] of [['rim', RIMS], ['cal', CALIPERS], ['tint', TINTS], ['decal', DECALS], ['dcol', DCOLS], ['glow', GLOWS], ['wing', WINGS], ['kit', KITS], ['wneon', GLOWS], ['exhaust', EXHAUSTS]]) if (Number.isInteger(v[k]) && L[v[k]]) c[k] = v[k];
   return c;
 }
 function saveCust(id, c) { const b = custBase(id); if (Object.keys(CUST0).every(k => c[k] === b[k])) localStorage.removeItem('amboola.custom.' + id); else localStorage.setItem('amboola.custom.' + id, JSON.stringify(c)); }
@@ -2198,6 +2199,7 @@ function applyCustom(car, id) {
   });
   if (c.decal) { const G = carGeom(car); if (G) decalPaint(car, G, decalTex(id, G, c.decal, DCOLS[c.dcol].c)); }
   if (c.glow) addUnderglow(car, GLOWS[c.glow].c);
+  tuneParts(car, c);
   car.cust = c; return car;
 }
 
@@ -2985,6 +2987,7 @@ const MISSIONS = [
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
   { id: 'busdriver', n: 'BUS DRIVER', d: 'Carry 200 people on the AMBOOLA Bus', goal: 200, v: () => ST.busPeople || 0, r: 50000 },
+  { id: 'mansion', n: 'BIG HOUSE', d: 'Buy the Amboola Hills mansion', goal: 1, v: () => localStorage.getItem('amboola.home') === '1' ? 1 : 0, r: 100000 },
   { id: 'treasure', n: 'TREASURE HUNTER', d: 'Find all 7 secret cars', goal: 7, v: () => typeof secretsFound === 'function' ? secretsFound() : 0, r: 500000 },
   { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
   { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
@@ -4144,12 +4147,16 @@ function renderCust() {
   $('custCar').textContent = c.name;
   const sw = (key, list, fill, label) => `<div class="crow"><small>${label} <b>${list[cu[key]].n}</b></small><div class="csw">${list.map((o, i) =>
     `<i data-k="${key}" data-i="${i}" class="${i === cu[key] ? 'sel' : ''}" title="${o.n}" style="background:${fill(o, i)}">${i ? '' : '✕'}</i>`).join('')}</div></div>`;
+  const txt = (key, list, label) => `<div class="crow"><small>${label} <b>${list[cu[key]].n}</b></small><div class="cdec">${list.map((o, i) => `<div data-k="${key}" data-i="${i}" class="${i === cu[key] ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>`;
   const metal = o => o.c ? `radial-gradient(circle at 35% 30%, #fff${o.m > .8 ? 'c' : '6'}, ${o.c} 50%, #000 125%)` : '#2a2d35';
   $('custRows').innerHTML =
     sw('rim', RIMS, metal, 'Rims') + sw('cal', CALIPERS, metal, 'Brake calipers') + sw('tint', TINTS, o => o.sw ?? '#2a2d35', 'Window tint') +
     `<div class="crow"><small>Decals &amp; stickers <b>${DECALS[cu.decal].n}</b></small><div class="cdec">${DECALS.map((o, i) => `<div data-k="decal" data-i="${i}" class="${i === cu.decal ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>` +
-    sw('dcol', DCOLS, o => o.c, 'Decal colour').replace('>✕<', '><') + sw('glow', GLOWS, o => o.c ? `radial-gradient(circle, #fff 0%, ${o.c} 45%, #000 110%)` : '#2a2d35', 'Neon underglow');
+    sw('dcol', DCOLS, o => o.c, 'Decal colour').replace('>✕<', '><') + sw('glow', GLOWS, o => o.c ? `radial-gradient(circle, #fff 0%, ${o.c} 45%, #000 110%)` : '#2a2d35', 'Neon underglow') +
+    `<div class="crow"><small>🔧 TUNING SHOP</small></div>` + txt('wing', WINGS, 'Rear wing') + txt('kit', KITS, 'Body kit') + sw('wneon', GLOWS, o => o.c ? `radial-gradient(circle, #111 30%, ${o.c} 50%, #000 110%)` : '#2a2d35', 'Neon wheels') + txt('exhaust', EXHAUSTS, 'Exhaust') +
+    `<div class="crow"><small>Pet that rides along <b>${PETS[pet].n}</b></small><div class="cdec">${PETS.map((o, i) => `<div data-k="pet" data-i="${i}" class="${i === pet ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>`;
   $('custRows').querySelectorAll('[data-k]').forEach(el => el.onclick = () => {
+    if (el.dataset.k === 'pet') { pet = +el.dataset.i; localStorage.setItem('amboola.pet', pet); renderCust(); audio.init?.(); if (pet) { loadModel('dog'); setTimeout(() => bark(), 50); } return; }
     const cu2 = custOf(c.id); cu2[el.dataset.k] = +el.dataset.i;
     if (el.dataset.k === 'dcol' && !cu2.decal) cu2.decal = 1;   // picking a colour with no decal shows the stripes
     if (el.dataset.k === 'decal' && cu2.decal) gAngle = el.dataset.i === '1' ? .9 : Math.PI / 2;   // turn the car to show it
@@ -5291,7 +5298,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); } if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); } if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
   if (lift.update && p && inSnow(p)) lift.update(t);
@@ -7543,6 +7550,231 @@ function updateFuel(dt, p) {
 }
 function roadsideHelp() { if (fuel > 0 || wallet.usd < 500) return false; wallet.usd -= 500; saveWallet(); fuel = .25; fuelWarned = false; toast('🚚 ROADSIDE HELP', 'A QUARTER TANK · −$500'); return true; }
 
+/* =====================================================================
+   TUNING SHOP PARTS (in CUSTOMIZE): rear wings, body kits, neon wheels and loud exhausts with backfire flames.
+   The parts are built to fit each car from its own size (carGeom) and the height of its boot (a ray down onto it).
+   ===================================================================== */
+const WINGS = [{ n: 'None' }, { n: 'Ducktail lip' }, { n: 'GT wing' }, { n: 'Mega wing' }];
+const KITS = [{ n: 'Stock' }, { n: 'Aero kit' }, { n: 'Rally kit' }];
+const EXHAUSTS = [{ n: 'Stock' }, { n: 'Sport (loud)' }, { n: 'Flames 🔥' }];
+const PETS = [{ n: 'No pet' }, { n: 'Shiba dog 🐕' }];
+let pet = +(localStorage.getItem('amboola.pet') || 0) || 0;
+const tuneCarbon = new THREE.MeshStandardMaterial({ color: 0x16181b, roughness: .35, metalness: .3 });
+function carDeckY(car, z, x = 0) {
+  const ray = new THREE.Raycaster(); car.group.updateMatrixWorld(true);
+  const o = new THREE.Vector3(x, 10, z).applyMatrix4(car.group.matrixWorld), d = new THREE.Vector3(0, -1, 0).transformDirection(car.group.matrixWorld);
+  ray.set(o, d); const hits = ray.intersectObject(car.group, true).filter(h => h.object.isMesh && !h.object.userData.tune);
+  if (!hits.length) return null;
+  return car.group.worldToLocal(hits[0].point.clone()).y;
+}
+function tuneParts(car, c) {
+  if (!(c.wing || c.kit || c.wneon || c.exhaust >= 2)) return;
+  const G = carGeom(car); if (!G) return;
+  const H = G.y1 - G.y0, xh = G.xh, add = (geo, m, x, y, z, rx = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.x = rx; o.castShadow = true; o.userData.tune = true; car.group.add(o); return o; };
+  if (c.wing) {
+    const zw = G.z0 + (c.wing === 1 ? .12 : .32), deck = carDeckY(car, zw) ?? (G.y0 + H * .7);
+    if (c.wing === 1) add(new THREE.BoxGeometry(xh * 1.6, .03, .16), car.paint, 0, deck + .03, zw, -.25);
+    else {
+      const big = c.wing === 3, span = xh * (big ? 2.15 : 1.75), up = big ? .62 : .32, chord = big ? .46 : .32;
+      add(new THREE.BoxGeometry(span, .04, chord), tuneCarbon, 0, deck + up, zw, .12);
+      for (const s of [-1, 1]) { add(new THREE.BoxGeometry(.045, up, .1), tuneCarbon, s * xh * .42, deck + up / 2, zw); add(new THREE.BoxGeometry(.02, big ? .3 : .18, chord + .08), tuneCarbon, s * span / 2, deck + up + .02, zw); }
+      if (big) add(new THREE.BoxGeometry(span * .96, .03, .16), tuneCarbon, 0, deck + up + .1, zw - .28, .5);
+    }
+  }
+  if (c.kit === 1) {   // splitter, side skirts, diffuser with fins
+    add(new THREE.BoxGeometry(xh * 1.9, .035, .32), tuneCarbon, 0, G.y0 + .08, G.z1 - .14);
+    for (const s of [-1, 1]) add(new THREE.BoxGeometry(.07, .09, (G.fz - G.rz) * .78), tuneCarbon, s * (xh + .015), G.y0 + .13, G.mid);
+    add(new THREE.BoxGeometry(xh * 1.5, .1, .3), tuneCarbon, 0, G.y0 + .12, G.z0 + .12);
+    for (let i = -2; i <= 2; i++) add(new THREE.BoxGeometry(.02, .16, .32), tuneCarbon, i * xh * .3, G.y0 + .16, G.z0 + .1);
+  } else if (c.kit === 2) {   // roof light bar, mud flaps, skid plate
+    const roof = carDeckY(car, G.mid - .2) ?? G.y1, lamp = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2c0, emissiveIntensity: 1.5 });
+    add(new THREE.BoxGeometry(xh * 1.3, .05, .08), tuneCarbon, 0, roof + .1, G.mid - .1);
+    for (let i = -1.5; i <= 1.5; i++) add(new THREE.CylinderGeometry(.07, .07, .06, 12).rotateX(Math.PI / 2), lamp, i * xh * .3, roof + .17, G.mid - .06);
+    for (const s of [-1, 1]) for (const z of [G.fz - G.wr - .1, G.rz - G.wr - .08]) add(new THREE.BoxGeometry(.24, .3, .02), tuneCarbon, s * (xh - .2), G.y0 + .15, z);
+    add(new THREE.BoxGeometry(xh * 1.3, .04, .5), new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: .8, roughness: .3 }), 0, G.y0 + .05, G.z1 - .35);
+  }
+  if (c.wneon) for (const w of car.wheels) w.spin.traverse(o => { if (o.isMesh && o.material.userData.kind === 'rim') { o.material = o.material.clone(); o.material.emissive = new THREE.Color(GLOWS[c.wneon].c); o.material.emissiveIntensity = 1.6; } });
+  if (c.exhaust >= 2) {
+    const m = new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false });
+    car.flames = [-1, 1].map(s => { const f = add(new THREE.ConeGeometry(.09, .55, 10).rotateX(-Math.PI / 2), m, s * xh * .35, G.y0 + .25, G.z0 - .25); f.visible = false; f.castShadow = false; return f; });
+  }
+}
+let exThr = 0, exT = 0;
+function updateExhaust(dt, p) {
+  const c = p.car.cust; if (!c?.exhaust) return;
+  if (exT > 0 && (exT -= dt) <= 0 && p.car.flames) p.car.flames.forEach(f => f.visible = false);
+  if (exThr > .8 && (p.throttle || 0) < .2 && p.rpm > p.spec.redline * .5 && Math.random() < .8) {   // lift off at high revs: bang!
+    audio.pop?.(1); if (c.exhaust >= 2 && p.car.flames) { p.car.flames.forEach(f => { f.visible = true; f.scale.setScalar(.7 + Math.random() * .6); }); exT = .14; }
+  }
+  exThr = p.throttle || 0;
+}
+function loudExhaust(spec) { if (custOf(spec.id).exhaust && audio.eng?.T) audio.eng.T = { ...audio.eng.T, vol: audio.eng.T.vol * 1.45, crackle: 1 }; }
+
+/* =====================================================================
+   THE PET DOG — a Shiba (Blender, models/blender/dog.py) rides along with its head out of the left window, ears
+   flapping in the wind. It barks at police cars. Turn it on in CUSTOMIZE → Pet.
+   ===================================================================== */
+function attachDog(car) {
+  if (!pet || !car || car.dog) return;
+  if (!MODELS.dog) { loadModel('dog').then(() => { if (player?.car === car) attachDog(car); }); return; }
+  const G = carGeom(car); if (!G) return;
+  const d = MODELS.dog.clone(), H = G.y1 - G.y0, win = G.y0 + H * .74;
+  d.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  d.scale.setScalar(1.25); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .55, win - .74, G.mid + .15);   // only the head and front paws stick out d.userData.tune = true;
+  car.group.add(d); car.dog = d;
+}
+let barkT = 4;
+function bark() {
+  const ctx = audio.ctx; if (!ctx) return;
+  for (const k of [0, .17]) {
+    const t = ctx.currentTime + k, o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type = 'square'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(230, t + .09); f.type = 'lowpass'; f.frequency.value = 1400;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.35, t + .01); g.gain.exponentialRampToValueAtTime(.001, t + .12);
+    o.connect(f).connect(g).connect(audio.master); o.start(t); o.stop(t + .15);
+  }
+}
+function updateDog(dt, p) {
+  const d = p.car?.dog; if (!d) return;
+  const t = performance.now() / 1000, sp = Math.min(1, (p.speed || 0) / 30);
+  d.rotation.z = Math.sin(t * (6 + sp * 20)) * .04 * sp; d.rotation.x = Math.sin(t * 2.3) * .05;
+  barkT -= dt;
+  const cops = chase || PATROLS.some(P => P.g.visible && Math.hypot(P.g.position.x - p.x, P.g.position.z - p.z) < 45);
+  if (barkT < 0 && (cops || (p.air && Math.random() < .02))) { barkT = cops ? 2.5 : 6; bark(); }
+}
+
+/* =====================================================================
+   THE JUNKYARD — block (17,18) by the harbour: piles of old cars, a crane, and the CAR CRUSHER. Drive into the ring,
+   and the crusher squashes the car you are driving into a cube and pays you for the parts (its selling price plus
+   $2,000 for scrap). You can't crush your only car.
+   ===================================================================== */
+const JUNK = { x: rc(17) + CELL / 2, z: rc(18) + CELL / 2 };
+let crush = null;
+function buildJunkyard() {
+  const { x, z } = JUNK, g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g); JUNK.g = g;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(62, 62), new THREE.MeshStandardMaterial({ color: 0x6b5f4e, roughness: 1 })); ground.rotation.x = -Math.PI / 2; ground.position.y = .03; ground.receiveShadow = true; g.add(ground);
+  const fence = new THREE.MeshStandardMaterial({ color: 0x8a8f96, metalness: .6, roughness: .5 });
+  for (const [fx, fz, w, d] of [[0, -30.5, 62, .3], [0, 30.5, 62, .3], [30.5, 0, .3, 62], [-30.5, -18, .3, 25], [-30.5, 18, .3, 25]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(w, 3, d), fence); f.position.set(fx, 1.5, fz); g.add(f); addCol(x + fx - w / 2, z + fz - d / 2, x + fx + w / 2, z + fz + d / 2); }
+  // piles of squashed cars
+  const piles = [], rnd = mulberry32(1717), cols = ['#8a2a22', '#2a4a8a', '#c9b37e', '#3a3d41', '#5a7a3a', '#b0b4b8', '#c86a1a'];
+  for (const [px, pz] of [[-18, -20], [-6, -22], [8, -21], [20, -18], [20, 8], [21, 20], [6, 21], [-10, 20]]) {
+    for (let k = 0; k < 7; k++) piles.push([px + rnd() * 6 - 3, .45 + Math.floor(k / 3) * .9, pz + rnd() * 4 - 2, rnd() * 3, 3.6, .9, 1.7]);
+    addCol(x + px - 5, z + pz - 3.5, x + px + 5, z + pz + 3.5);
+  }
+  const im = instanced(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: .8, metalness: .3 }), piles); g.add(im);
+  piles.forEach((_, k) => im.setColorAt(k, new THREE.Color(cols[k % cols.length]))); im.instanceColor.needsUpdate = true;
+  im.position.set(0, 0, 0);
+  // the crane
+  const yel = new THREE.MeshStandardMaterial({ color: 0xffc21f, roughness: .5 });
+  const mast = new THREE.Mesh(new THREE.BoxGeometry(1.2, 18, 1.2), yel); mast.position.set(-16, 9, 4); g.add(mast); addCol(x - 17, z + 3, x - 15, z + 5);
+  const boom = new THREE.Mesh(new THREE.BoxGeometry(22, .8, .8), yel); boom.position.set(-8, 17.6, 4); g.add(boom);
+  const magnet = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, .5, 20), blackMat); magnet.position.set(2, 12, 4); g.add(magnet);
+  const cable = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 5.4, 6), blackMat); cable.position.set(2, 14.8, 4); g.add(cable);
+  // the crusher: a heavy base, two side walls and the press plate
+  const steel = new THREE.MeshStandardMaterial({ color: 0x3a3d41, metalness: .7, roughness: .45 }), red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .5 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(7.5, .5, 4.2), steel); base.position.set(6, .25, 0); g.add(base);
+  for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.BoxGeometry(7.5, 6, .5), red); w.position.set(6, 3, s * 2.35); g.add(w); addCol(x + 2.2, z + s * 2.35 - .3, x + 9.8, z + s * 2.35 + .3); }
+  JUNK.plate = new THREE.Mesh(new THREE.BoxGeometry(7.2, .7, 4.1), steel); JUNK.plate.position.set(6, 5.2, 0); g.add(JUNK.plate);
+  const t = signTex(1024, 192, '#3a3d41', [['🗜 AMBOOLA JUNKYARD · CAR CRUSHER', .55, .38, OR, '#ffc21f']], '#ffc21f'), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(14, 2.6), sm); sg.position.set(-30.6, 5.5, 0); sg.rotation.y = Math.PI / 2; g.add(sg);
+  landmarks.push({ x, z, c: '#ffc21f', n: 'Junkyard' });
+  addAct({ x: rc(17) + 4, z, r: 8, col: '#ffc21f', title: '🗜 Car Crusher', sub: 'CRUSH THIS CAR FOR PARTS', sign: 'JUNKYARD · CAR CRUSHER', go: openCrusher, face: Math.PI / 2 });
+}
+function openCrusher() {
+  const c = player.spec;
+  if (c.id === 'amboolabus' || !owns(c)) { toast('🗜 NOT THIS ONE', 'THE CRUSHER IS TOO SMALL'); return; }
+  if (wallet.owned.size <= 1) { toast('🗜 YOU ONLY HAVE ONE CAR', 'BUY ANOTHER BEFORE YOU CRUSH THIS ONE'); return; }
+  state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const pay = sellValue(c) + 2000;
+  $('meetTitle').innerHTML = `🗜 CAR CRUSHER<small>AMBOOLA JUNKYARD · SCRAP AND PARTS</small>`;
+  $('meetList').innerHTML = `<div class="meetRow" style="--glow:#ffc21f"><div class="mGlow"></div><div class="mInfo"><b>${c.name.toUpperCase()}</b><span>Squash it into a cube and sell it for parts</span><small>YOU GET ${fmtUSD(pay)} · THE CAR IS GONE FOR EVER</small></div><button data-k="1">CRUSH IT!</button></div>`;
+  $('meetList').querySelector('button').onclick = () => { closeMeet(); startCrush(c, pay); };
+  $('meetPanel').classList.remove('hidden');
+}
+function startCrush(c, pay) {
+  endActs(); clearNav(true);
+  crush = { c, pay, t: 0 }; Object.assign(player, { x: JUNK.x + 6, z: JUNK.z, heading: Math.PI / 2, vx: 0, vz: 0, y: 0 });
+  toast('🗜 CRUSHING…', c.name.toUpperCase());
+}
+function updateCrush(dt, p) {
+  const C = crush; if (!C) return;
+  C.t += dt; Object.assign(p, { x: JUNK.x + 6, z: JUNK.z, vx: 0, vz: 0 });
+  const k = clamp((C.t - .8) / 2.4, 0, 1), plateY = lerp(5.2, 1.35, k);
+  JUNK.plate.position.y = plateY;
+  const top = (p.car.G ??= carGeom(p.car))?.y1 ?? 1.3; p.car.group.scale.set(1 + k * .12, Math.min(1, (plateY - .35) / top), 1 + k * .05);
+  if (k > 0 && k < 1 && Math.random() < dt * 30) smoke.emit(p.x + rr(-2, 2), p.z + rr(-1, 1), 0, 0, .6, .5);
+  if (k > 0 && !C.bang) { C.bang = 1; audio.crash?.(14); }
+  if (C.t > 4 && !C.sold) {
+    C.sold = true; sellCar(C.c); earn(2000); bump('crushed'); C.next = lastCarIdx(); loadModel(CARS[C.next].id);
+    banner('🗜 CRUSHED!', `+${fmtUSD(C.pay)}`, `The ${C.c.name} is now a cube of scrap`);
+  }
+  if (C.sold && C.t > 4.6 && (MODELS[CARS[C.next].id] || !MODEL_FILES.includes(CARS[C.next].id))) {   // into your next car (once its model is in)
+    crush = null; JUNK.plate.position.y = 5.2;
+    carIdx = C.next; paintIdx = savedPaint(CARS[carIdx]); player.dispose(); player = null; startDrive();
+    Object.assign(player, { x: rc(17) + 4, z: JUNK.z + 14, heading: 0, vx: 0, vz: 0, speed: 0 });
+  }
+}
+
+/* =====================================================================
+   YOUR MANSION — "Amboola Hills", block (2,2): buy it for $1,000,000. A white modern villa with a glass front, a pool,
+   palm trees, a three-car garage showing your best cars and a helipad. Stop in the ring at home and your butler
+   fills the tank and washes the car. It is on the map as MY MANSION.
+   ===================================================================== */
+const HOME = { x: rc(2) + CELL / 2, z: rc(2) + CELL / 2, price: 1000000, cars: [], key: '' };
+const ownsHome = () => localStorage.getItem('amboola.home') === '1';
+function buildMansion() {
+  const { x, z } = HOME, g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g); HOME.g = g;
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(62, 62), new THREE.MeshStandardMaterial({ color: 0x5f9a45, roughness: 1 })); lawn.rotation.x = -Math.PI / 2; lawn.position.y = .04; lawn.receiveShadow = true; g.add(lawn);
+  const white = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, roughness: .5 }), wood = new THREE.MeshStandardMaterial({ color: 0x8a5a34, roughness: .7 });
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0x9fd0e8, roughness: .05, metalness: .2, transparent: true, opacity: .45 });
+  const box = (w, h, d, px, py, pz, m, col = true) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); if (col) addCol(x + px - w / 2, z + pz - d / 2, x + px + w / 2, z + pz + d / 2); return o; };
+  // the villa: two stacked white boxes with glass fronts and a wooden deck
+  box(28, 4, 14, 4, 2, -16, white); box(22, 3.6, 12, 7, 5.8, -17, white, false); box(28.4, .3, 14.4, 4, 4.05, -16, wood, false);
+  box(26, 3, .1, 4, 2, -8.95, glass, false); box(20, 2.8, .1, 7, 5.8, -10.95, glass, false);
+  box(24, .3, 13, 7, 7.75, -17, white, false);
+  // the pool and its deck
+  box(16, .2, 8, 8, .1, 2, wood, false);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), new THREE.MeshStandardMaterial({ color: 0x2fc0e8, roughness: .05, metalness: .3, emissive: 0x0a3a4a })); pool.rotation.x = -Math.PI / 2; pool.position.set(8, .22, 2); g.add(pool);
+  // the garage with three open bays
+  box(20, 4, 9, -14, 2, 14, white);
+  HOME.slots = [[-20, 0, 4.5], [-14, 0, 4.5], [-8, 0, 4.5]];
+  for (const [sx, , sz] of HOME.slots) { const tt = new THREE.Group(); tt.position.set(x + sx, .05, z + sz - .5); tt.rotation.y = 0; scene.add(tt); HOME.cars.push(tt); }
+  // helipad, palms, gate and the FOR SALE / AMBOOLA HILLS sign
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(6, 32), new THREE.MeshStandardMaterial({ color: 0x3a3d41 })); pad.rotation.x = -Math.PI / 2; pad.position.set(18, .06, 18); g.add(pad);
+  const H = new THREE.Mesh(new THREE.PlaneGeometry(3, 4), new THREE.MeshBasicMaterial({ map: signTex(256, 256, '#3a3d41', [['H', .55, .9, OR, '#fff']]) })); H.rotation.x = -Math.PI / 2; H.position.set(18, .08, 18); g.add(H);
+  const palms = []; for (const [px, pz] of [[-26, -26], [26, -26], [-26, 0], [26, 0], [-2, 6], [18, 6]]) { palms.push([x + px, 0, z + pz, px, 1]); addCol(x + px - .5, z + pz - .5, x + px + .5, z + pz + .5); }
+  palmTrees(palms);
+  HOME.sign = new THREE.MeshBasicMaterial({ map: null }); dynMats.neon.push(HOME.sign);
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.2), HOME.sign); sg.position.set(-32, 4.4, -3); sg.rotation.y = -Math.PI / 2; g.add(sg);
+  for (const s of [-1, 1]) box(.6, 3.2, .6, -31, 1.6, -3 + s * 5.4, white);
+  paintHomeSign();
+  landmarks.push({ x, z, c: '#7dff3a', n: 'My Mansion' });
+  addAct({ x: rc(2) + 4, z, r: 8, col: '#7dff3a', title: '🏠 Amboola Hills Mansion', sub: ownsHome() ? 'HOME · FREE FUEL AND CAR WASH' : `FOR SALE · ${fmtUSD(HOME.price)}`, sign: 'AMBOOLA HILLS', go: homeAct, face: Math.PI / 2 });
+}
+function paintHomeSign() {
+  HOME.sign.map = signTex(1024, 220, ownsHome() ? '#123a1f' : '#3a1212', ownsHome() ? [['🏠 YOUR MANSION', .42, .36, OR, '#fff'], ['AMBOOLA HILLS', .78, .2, OR, '#7dff3a']] : [['FOR SALE · 売り家', .42, .36, OR, '#fff'], [fmtUSD(HOME.price), .78, .22, OR, '#ffc21f']], '#fff');
+  HOME.sign.needsUpdate = true;
+}
+function homeAct() {
+  if (!ownsHome()) {
+    if (wallet.usd < HOME.price) { toast('🏠 FOR SALE', `YOU NEED ${fmtUSD(HOME.price - wallet.usd)} MORE`); return; }
+    wallet.usd -= HOME.price; saveWallet(); localStorage.setItem('amboola.home', '1'); paintHomeSign(); HOME.key = ''; bump('mansion');
+    const a = ACTS.find(a => a.go === homeAct); if (a) a.sub = 'HOME · FREE FUEL AND CAR WASH';
+    banner('🏠 IT IS YOURS!', 'AMBOOLA HILLS MANSION', 'Pool, helipad and a garage for your best cars'); return;
+  }
+  fuel = 1; dirt = 0; applyDirt(player.car); fuelWarned = false; audio.beep(880, .15);
+  toast('🏠 WELCOME HOME', 'YOUR BUTLER FILLED THE TANK AND WASHED THE CAR');
+}
+function updateMansion(dt, p) {
+  if (!HOME.g || Math.hypot(p.x - HOME.x, p.z - HOME.z) > 400) return;
+  const list = ownsHome() ? hqCars().slice(0, 3) : [], key = list.map(c => c.id + (MODELS[c.id] ? '' : '?')).join();
+  if (key === HOME.key) return; HOME.key = key;
+  HOME.cars.forEach((tt, k) => {
+    tt.clear(); const spec = list[k]; if (!spec) return;
+    if (!MODELS[spec.id] && MODEL_FILES.includes(spec.id)) { loadModel(spec.id); return; }
+    const pi = savedPaint(spec), car = applyCustom(buildCar(spec, PAINTS[pi].c, PAINTS[pi].m), spec.id); car.group.rotation.y = Math.PI; tt.add(car.group);
+  });
+}
+
 function actCards() {
   return [`<div class="rcard" data-x="world" style="border-left-color:#2fe0ff"><b>🌍 WORLD RACE · $1,000,000</b><span>Tokyo → Italy → Dubai · about 60 km · 3 rivals</span><span>Over the sea bridges, round the block in Italy, back to Tokyo and over to Dubai</span></div>`,
     ...COUNTRIES.map(C => `<div class="rcard" data-x="c:${C.id}" style="border-left-color:${C.col}"><b>🏁 ${C.raceName.toUpperCase()}</b><span>${C.local} · street race · 2 laps · 3 rivals · $25,000 to win</span><span>BEST ${fmtTime(+localStorage.getItem('amboola.gp.' + C.id) || null)}</span></div>`)].join('');
@@ -8250,9 +8482,9 @@ function startDrive() {
   }
   localStorage.setItem('amboola.lastcar', carIdx);
   let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
-  player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); updateRadioHud();
+  player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); updateRadioHud(); attachDog(player.car);
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
-  audio.setCar(spec);
+  audio.setCar(spec); loudExhaust(spec);
   camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
   const uu = upgOf(spec), ul = UPG_KINDS.reduce((a, K) => a + uu[K.k], 0); $('carname').innerHTML = `${spec.name}<small>${PAINTS[paintIdx].n.toUpperCase()}${ul ? ` · 🔧 TUNED ${ul}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}</small>`;
   $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
@@ -8398,7 +8630,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

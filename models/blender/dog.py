@@ -1,0 +1,95 @@
+# A Shiba Inu for Amboola: the pet that rides along with its head out of the window. Built like the camel: a stick
+# skeleton with a radius at each vertex, grown into a body by the Skin modifier, then smoothed. Red-orange coat with
+# a cream chest, cheeks and tail curl, black nose and eyes, pointy ears and a red collar.
+#
+#   blender -b --factory-startup --python models/blender/dog.py -- [--render out.png]
+#
+# Writes models/dog.glb and models/dog.glb.js (key 'dog'). Faces glTF +Z, stands on y = 0, about 0.55 m tall.
+import bpy, base64, math, os, sys
+from mathutils import Vector
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, '..', 'dog.glb')
+
+
+def material(name, hexcol, rough=.85):
+    h = hexcol.lstrip('#'); c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    c = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in c]
+    m = bpy.data.materials.new(name); m.use_nodes = True; b = m.node_tree.nodes['Principled BSDF']
+    b.inputs['Base Color'].default_value = (*c, 1); b.inputs['Roughness'].default_value = rough
+    return m
+
+
+def skin(name, P, E, mat, root):
+    names = list(P)
+    me = bpy.data.meshes.new(name); me.from_pydata([P[n][0] for n in names], [(names.index(a), names.index(b)) for a, b in E], [])
+    ob = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(ob)
+    ob.modifiers.new('skin', 'SKIN').use_smooth_shade = True
+    for i, n in enumerate(names): r = P[n][1]; me.skin_vertices[0].data[i].radius = (r, r)
+    me.skin_vertices[0].data[names.index(root)].use_root = True
+    ob.modifiers.new('sub', 'SUBSURF').levels = 2
+    bpy.context.view_layer.objects.active = ob; ob.select_set(True)
+    for m in list(ob.modifiers): bpy.ops.object.modifier_apply(modifier=m.name)
+    ob.data.materials.append(mat); return ob
+
+
+def sphere(loc, r, mat, scale=(1, 1, 1)):
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=loc, segments=16, ring_count=10)
+    o = bpy.context.active_object; o.scale = scale; bpy.ops.object.transform_apply(scale=True); o.data.materials.append(mat); return o
+
+
+def build():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    fur, cream, black, red = material('Fur', '#c8662a'), material('Cream', '#f3e3c8'), material('Nose', '#141414', .3), material('Collar', '#c8141b', .5)
+    # head towards -y (glTF +z after export)
+    P = {'rump': ((0, .16, .30), .10), 'mid': ((0, 0, .31), .105), 'chest': ((0, -.14, .32), .10), 'neck': ((0, -.21, .40), .07),
+         'head': ((0, -.26, .48), .085), 'muzzle': ((0, -.36, .455), .045), 'tail0': ((0, .22, .36), .04), 'tail1': ((0, .20, .45), .035), 'tail2': ((0, .12, .47), .03)}
+    E = [('rump', 'mid'), ('mid', 'chest'), ('chest', 'neck'), ('neck', 'head'), ('head', 'muzzle'), ('rump', 'tail0'), ('tail0', 'tail1'), ('tail1', 'tail2')]
+    for s, x in (('L', 1), ('R', -1)):
+        for leg, y0, top in (('f', -.13, 'chest'), ('b', .15, 'rump')):
+            P[f'{leg}{s}0'] = ((x * .06, y0, .24), .045); P[f'{leg}{s}1'] = ((x * .065, y0, .10), .03); P[f'{leg}{s}2'] = ((x * .065, y0 - .02, .02), .032)
+            E += [(top, f'{leg}{s}0'), (f'{leg}{s}0', f'{leg}{s}1'), (f'{leg}{s}1', f'{leg}{s}2')]
+    body = skin('Dog', P, E, fur, 'mid')
+    sphere((0, -.17, .30), .07, cream, (1, 1.2, 1.1))                       # cream chest
+    for s in (1, -1):
+        sphere((s * .042, -.315, .445), .027, cream)                            # cheeks
+        sphere((s * .028, -.33, .49), .012, black)                           # eyes
+        bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=.035, radius2=.002, depth=.07, location=(s * .042, -.25, .535), rotation=(math.radians(-10), math.radians(s * 14), 0))
+        bpy.context.active_object.data.materials.append(fur)                # pointy ears
+    sphere((0, -.405, .465), .016, black)                                    # nose
+    sphere((0, .13, .48), .035, cream)                                       # the tail curl
+    bpy.ops.mesh.primitive_torus_add(major_radius=.065, minor_radius=.012, location=(0, -.20, .40), rotation=(math.radians(70), 0, 0))
+    bpy.context.active_object.data.materials.append(red)                     # collar
+    for o in bpy.context.scene.objects:
+        if o.type == 'MESH':
+            for p in o.data.polygons: p.use_smooth = True
+    return body
+
+
+def export():
+    for o in bpy.context.scene.objects: o.select_set(o.type == 'MESH')
+    bpy.ops.export_scene.gltf(filepath=os.path.abspath(OUT), export_format='GLB', export_apply=True, export_yup=True, export_texcoords=False,
+                              export_normals=True, export_materials='EXPORT', use_selection=True, export_draco_mesh_compression_enable=True,
+                              export_draco_mesh_compression_level=7, export_draco_position_quantization=14, export_draco_normal_quantization=10)
+    with open(OUT, 'rb') as f: b64 = base64.b64encode(f.read()).decode()
+    with open(OUT + '.js', 'w') as f:
+        f.write("// Generated by models/blender/dog.py from dog.glb - do not edit.\n"
+                f"(window.AMBOOLA_MODELS = window.AMBOOLA_MODELS || {{}})['dog'] = '{b64}';\n")
+    print(f'exported {OUT}: {os.path.getsize(OUT) / 1e3:.0f} kB', flush=True)
+
+
+def render(path):
+    scn = bpy.context.scene; scn.render.engine = 'CYCLES'; scn.cycles.samples = 32; scn.render.resolution_x, scn.render.resolution_y = 700, 600
+    bpy.ops.object.camera_add(location=(-.9, -1.1, .65)); cam = bpy.context.active_object; scn.camera = cam
+    d = Vector((0, -.08, .33)) - cam.location; cam.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler(); cam.data.lens = 45
+    bpy.ops.object.light_add(type='SUN', rotation=(math.radians(50), 0, math.radians(-40))); bpy.context.active_object.data.energy = 4
+    w = bpy.data.worlds.new('w'); scn.world = w; w.use_nodes = True; w.node_tree.nodes['Background'].inputs[0].default_value = (.8, .85, .9, 1)
+    bpy.ops.mesh.primitive_plane_add(size=6); bpy.context.active_object.data.materials.append(material('Floor', '#9aa0a6', 1))
+    scn.render.filepath = os.path.abspath(path); bpy.ops.render.render(write_still=True)
+
+
+if __name__ == '__main__':
+    argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+    build()
+    if '--render' in argv: render(argv[argv.index('--render') + 1]); build()
+    export()
