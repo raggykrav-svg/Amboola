@@ -1540,7 +1540,7 @@ async function buildWorld() {
   buildTracks(); buildDragway();
   buildMountain();
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
-  buildWangan(); buildSnowArea(); buildFujiArea(); applySeason();
+  buildWangan(); buildSnowArea(); buildFujiArea(); buildVolcano(); buildMoon(); applySeason();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs();
@@ -2999,6 +2999,8 @@ const MISSIONS = [
   { id: 'jet', n: 'FIRST FLIGHT', d: 'Fly the AMBOOLA Jet and land it', goal: 1, v: () => ST.flights || 0, r: 20000 },
   { id: 'bosses', n: 'KING OF THE STRIP', d: 'Beat all 3 drag bosses', goal: 3, v: () => ST.bosses.length, r: 500000 },
   { id: 'busdriver', n: 'BUS DRIVER', d: 'Carry 200 people on the AMBOOLA Bus', goal: 200, v: () => ST.busPeople || 0, r: 50000 },
+  { id: 'moonwalk', n: 'ONE SMALL STEP', d: 'Drive on the Moon', goal: 1, v: () => ST.visited?.includes('moon') ? 1 : 0, r: 250000 },
+  { id: 'volcanoes', n: 'HOT WHEELS', d: 'Reach Volcano Island through the undersea tunnel', goal: 1, v: () => ST.visited?.includes('volcano') ? 1 : 0, r: 50000 },
   { id: 'mansion', n: 'BIG HOUSE', d: 'Buy the Amboola Hills mansion', goal: 1, v: () => localStorage.getItem('amboola.home') === '1' ? 1 : 0, r: 100000 },
   { id: 'treasure', n: 'TREASURE HUNTER', d: 'Find all 7 secret cars', goal: 7, v: () => typeof secretsFound === 'function' ? secretsFound() : 0, r: 500000 },
   { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
@@ -3211,7 +3213,7 @@ function updateCamera(dt, p) {
     const ox = camPos.x - p.x, oz = camPos.z - p.z, od = Math.hypot(ox, oz); if (od > dist * 1.08) { camPos.x = p.x + ox / od * dist * 1.08; camPos.z = p.z + oz / od * dist * 1.08; }
     const lx = p.air ? dx : fx, lz = p.air ? dz : fz;
     camLook.set(p.x + lx * 2.5, .95 + (B.roofY - 1.3) * .7 + py + (p.slope || 0) * 2.5, p.z + lz * 2.5);
-    if (py > 0 || camPos.x < -HALF - 9 || Math.abs(camPos.z) > HALF + 9 || camPos.x > HALF + 9) camPos.y = Math.max(camPos.y, mtnHeight(camPos.x, camPos.z) + 1.4, areaGround(camPos.x, camPos.z) + 1.4); // don't dip into the hillside
+    if (py > -1 && (py > 0 || camPos.x < -HALF - 9 || Math.abs(camPos.z) > HALF + 9 || camPos.x > HALF + 9)) camPos.y = Math.max(camPos.y, mtnHeight(camPos.x, camPos.z) + 1.4, areaGround(camPos.x, camPos.z) + 1.4); // don't dip into the hillside (not in the undersea tunnel)
     camera.position.copy(camPos);
   } else {
     const off = camMode === 2 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
@@ -5310,7 +5312,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); } if (p) { updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); } if (p) { updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
@@ -6494,12 +6496,12 @@ function stuntStep(p, dt, px, pz, yPrev, inp) {
   }
   const vyG = gx * p.vx + gz * p.vz;   // the vertical speed that follows the ground
   if (p.air) {
-    p.vy -= 9.81 * dt; const y = yPrev + p.vy * dt;
+    p.vy -= 9.81 * gravK * dt; const y = yPrev + p.vy * dt;
     if (y <= G) landCar(p, G, gx, gz, vyG);
     else { p.y = y; if (y > p.airS.maxY) p.airS.maxY = y; }
   } else {
     // leave the ground where it falls away faster than gravity can pull the car down: off a lip, a ledge or a sharp crest
-    const yBall = yPrev + p.vy * dt - 4.905 * dt * dt;
+    const yBall = yPrev + p.vy * dt - 4.905 * gravK * dt * dt;
     if (yBall > G + .06 || (p.speed > 3 && (vyG - p.vy) / dt < -12.5)) takeoff(p, Math.max(yBall, G), inp);
     else { p.y = G; p.vy = vyG; }
   }
@@ -7855,6 +7857,158 @@ function updateMansion(dt, p) {
   });
 }
 
+/* =====================================================================
+   THE UNDERSEA TUNNEL AND VOLCANO ISLAND — from the east end of Amboola Beach a glass tunnel dives 20 m under the sea
+   (fish swim past, light ripples from the surface above) and comes up on Volcano Island: black rock, a smoking volcano
+   with a glowing crater, and three rivers of lava with jump ramps in front of them. Touch the lava and you're
+   sent back with a scorched car.
+   ===================================================================== */
+const VOLC = { x0: 4780, z0: 3150, x1: 5520, z1: 3650, cone: [5300, 4400, 700, 520], rivers: [5000, 5160, 5320] };
+const TUNNEL = new Route({ id: 'volcano', name: 'Undersea Tunnel', w: 11, rail: .8,
+  pts: [[2290, 2215, 0], [2350, 2218, 0], [2450, 2228, -3], [2650, 2290, -16], [3100, 2400, -20], [3700, 2550, -20], [4200, 2850, -18], [4550, 3050, -8], [4720, 3160, -1], [4800, 3210, 0], [4880, 3260, 0]] });
+const VOLC_PAD = new Pad({ name: 'Volcano Island', y: 0, rects: [[VOLC.x0, VOLC.z0, VOLC.x1, VOLC.z1]] }); VOLC_PAD.air = true;
+AREAS.push({ id: 'volcano', name: 'Volcano Island', R: TUNNEL, pads: [VOLC_PAD], gate: [HALF, WANGAN_Z], col: '#ff5a1f',
+  box: [2300, 1850, 6300, 5200], visit: { n: 'VOLCANO ISLAND', jp: '火山島', pad: VOLC_PAD } });
+BEACH_PAD.mouths.push({ x: 2340, z: 2217, r: 9 });   // the tunnel leaves from the sand at the south-east corner of the beach
+for (const rx of VOLC.rivers) addRamp({ x: rx - 32, z: 3400, ry: Math.PI / 2, prof: 'kick', W: 14, L: 12, H: 2.6, col: '#ff5a1f', name: 'Lava Jump' });
+function buildVolcano() {
+  const R = TUNNEL, g = new THREE.Group(); scene.add(g); VOLC.group = g;
+  const iMouth = (() => { for (let i = 0; i < R.n; i++) if (VOLC_PAD.inside(R.x[i], R.z[i])) return i; return R.n - 1; })();
+  VOLC_PAD.mouths.push({ x: R.x[iMouth], z: R.z[iMouth], r: R.w / 2 + 3 }); R.iMouth = iMouth;
+  const road = new GB(), wall = new GB();
+  ribbon(R, road, -6, 6, .05, .05, 0, R.n - 1, 16);
+  for (const s of [-1, 1]) ribbon(R, wall, s * 6.2, s * 6.2, 0, 1, 3, iMouth);
+  const rm = new THREE.Mesh(road.build(), new THREE.MeshStandardMaterial({ map: ROAD_TEX(), roughness: .7, polygonOffset: true, polygonOffsetFactor: -2 })); rm.receiveShadow = true; g.add(rm);
+  g.add(new THREE.Mesh(wall.build(), new THREE.MeshStandardMaterial({ color: 0xcfd6dc, roughness: .5, side: THREE.DoubleSide })));
+  // the glass tube: rings and a transparent half-cylinder wherever the road is under the water
+  const tube = new GB(), rings = [];
+  for (let i = 0; i < R.n - 1; i++) {
+    if (R.y[i] > -1.5) continue;
+    const a0 = routePt(R, i, 0), a1 = routePt(R, i + 1, 0), seg = 16;
+    for (let k = 0; k < seg; k++) {
+      const t0 = Math.PI * k / seg, t1 = Math.PI * (k + 1) / seg, p = (A, t, j) => [A.x - R.tz[j] * Math.cos(t) * 7.5, A.y + Math.sin(t) * 7.5, A.z + R.tx[j] * Math.cos(t) * 7.5];
+      tube.quad(p(a0, t0, i), p(a0, t1, i), p(a1, t1, i + 1), p(a1, t0, i + 1), [0, 0, 1, 1]);
+    }
+    if (i % 12 === 0) rings.push([a0.x, a0.y, a0.z, Math.atan2(R.tx[i], R.tz[i])]);
+  }
+  const glass = new THREE.Mesh(tube.build(), new THREE.MeshPhysicalMaterial({ color: 0x9fe0ff, roughness: .05, metalness: .1, transparent: true, opacity: .18, side: THREE.DoubleSide, depthWrite: false })); g.add(glass);
+  const ringG = new THREE.TorusGeometry(7.5, .25, 6, 24, Math.PI); g.add(instanced(ringG, new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: .7, roughness: .3 }), rings.map(([x, y, z, ry]) => [x, y, z, ry + Math.PI / 2]), false));
+  const lamps = new THREE.MeshBasicMaterial({ color: 0xbff2ff }); dynMats.lamps.push(lamps);
+  g.add(instanced(new THREE.BoxGeometry(.3, .15, 2), lamps, rings.map(([x, y, z, ry]) => [x, y + 7.2, z, ry]), false));
+  // under the sea: the sandy floor, the underside of the water, seaweed and fish
+  const [bx0, bz0, bx1, bz1] = [2350, 1850, 4900, 3350];
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(bx1 - bx0, bz1 - bz0), new THREE.MeshStandardMaterial({ color: 0xc8b07a, roughness: 1 })); floor.rotation.x = -Math.PI / 2; floor.position.set((bx0 + bx1) / 2, -24, (bz0 + bz1) / 2); g.add(floor);
+  const surf = new THREE.Mesh(new THREE.PlaneGeometry(bx1 - bx0, bz1 - bz0), new THREE.MeshBasicMaterial({ color: 0x3fb4e0, transparent: true, opacity: .55, side: THREE.BackSide, depthWrite: false })); surf.rotation.x = -Math.PI / 2; surf.position.set((bx0 + bx1) / 2, -1.3, (bz0 + bz1) / 2); g.add(surf); VOLC.surf = surf;
+  const weed = [], rnd = mulberry32(808); for (let k = 0; k < 500; k++) { const x = rr(bx0, bx1), z = rr(bz0, bz1), nr = R.near(x, z, 30); if (nr && nr.d < 12) continue; weed.push([x, -24, z, rnd() * 6, .6 + rnd(), 1 + rnd() * 2, .6]); }
+  g.add(instanced(new THREE.ConeGeometry(.5, 4, 5).translate(0, 2, 0), new THREE.MeshStandardMaterial({ color: 0x2f8a4a, roughness: .9 }), weed, false));
+  const fishCols = [0xffa21f, 0xffe02a, 0x2fe0ff, 0xff4fa2, 0xffffff], F = [];
+  VOLC.fish = fishCols.map(c => { const m = new THREE.InstancedMesh(new THREE.ConeGeometry(.35, 1.2, 6).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: c, roughness: .4, emissive: c, emissiveIntensity: .25 }), 40); m.frustumCulled = false; g.add(m); return m; });
+  for (let k = 0; k < 200; k++) { const i = 20 + Math.floor(rnd() * (iMouth - 40)); F.push({ cx: R.x[i], cz: R.z[i], y: R.y[i] + rr(-4, 8), r: rr(10, 24), a: rnd() * 6, w: rr(.15, .4) * (rnd() < .5 ? 1 : -1) }); }
+  VOLC.fishData = F;
+  // tunnel portals
+  for (const i of [3, iMouth - 6]) { const p = routePt(R, i, 0), po = new THREE.Mesh(new THREE.BoxGeometry(18, 10, 4), new THREE.MeshStandardMaterial({ color: 0x3a3d41, roughness: .7 })); po.position.set(p.x, p.y + 9, p.z); po.rotation.y = Math.atan2(R.tx[i], R.tz[i]); g.add(po);
+    const t = signTex(1024, 192, '#0d1b2a', [['🌊 UNDERSEA TUNNEL · 海底トンネル', .55, .4, OR, '#2fe0ff']], '#2fe0ff'), m = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(m); const sg = new THREE.Mesh(new THREE.PlaneGeometry(16, 3), m); sg.position.set(p.x, p.y + 15.5, p.z); sg.rotation.y = po.rotation.y; g.add(sg); }
+  // Volcano Island: black rock, the volcano, lava rivers, smoke
+  const rock = new THREE.Mesh(new THREE.PlaneGeometry(VOLC.x1 - VOLC.x0 + 300, VOLC.z1 - VOLC.z0 + 1600), new THREE.MeshStandardMaterial({ color: 0x2a2624, roughness: 1 })); rock.rotation.x = -Math.PI / 2; rock.position.set((VOLC.x0 + VOLC.x1) / 2, .02, (VOLC.z0 + VOLC.z1) / 2 + 600); rock.receiveShadow = true; g.add(rock);
+  const [vx, vz, vr, vh] = VOLC.cone, geo = new THREE.CylinderGeometry(110, vr, vh, 48, 12, true), pos = geo.attributes.position, cols = [], c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) { const t = (pos.getY(i) + vh / 2) / vh, a = Math.atan2(pos.getZ(i), pos.getX(i)); const r = 1 + Math.sin(a * 7) * .03 * (1 - t); pos.setX(i, pos.getX(i) * r); pos.setZ(i, pos.getZ(i) * r); c.setHSL(.05, .2, .1 + t * .06); if (t > .85 || (Math.sin(a * 5) > .97 && t > .3)) c.setHSL(.06, 1, .45); cols.push(c.r, c.g, c.b); }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); geo.computeVertexNormals();
+  const cone = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true })); cone.position.set(vx, vh / 2 - 2, vz); g.add(cone);
+  const lavaTex = canvasTex(256, 256, (cx, w, h) => { cx.fillStyle = '#ff5a00'; cx.fillRect(0, 0, w, h); for (let k = 0; k < 90; k++) { cx.fillStyle = ['#ffd21f', '#ff2a00', '#ff8a1f', '#8a1a00'][k % 4]; cx.beginPath(); cx.arc(Math.random() * w, Math.random() * h, 6 + Math.random() * 24, 0, 7); cx.fill(); } }, { repeat: true });
+  const lavaM = new THREE.MeshBasicMaterial({ map: lavaTex }); VOLC.lava = lavaTex;
+  const crater = new THREE.Mesh(new THREE.CircleGeometry(108, 32), lavaM); crater.rotation.x = -Math.PI / 2; crater.position.set(vx, vh - 8, vz); g.add(crater);
+  for (const rx of VOLC.rivers) { const lv = new THREE.Mesh(new THREE.PlaneGeometry(10, VOLC.z1 - VOLC.z0 + 400), lavaM); lv.rotation.x = -Math.PI / 2; lv.position.set(rx, .06, (VOLC.z0 + VOLC.z1) / 2 + 200); g.add(lv); }
+  lavaTex.repeat.set(1, 40);
+  const glow = new THREE.PointLight(0xff5a00, 4, 900, 1.2); glow.position.set(vx, vh + 30, vz); g.add(glow);
+  VOLC.smoke = Array.from({ length: 14 }, (_, k) => { const s = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshStandardMaterial({ color: 0x5a5552, transparent: true, opacity: .5, depthWrite: false, roughness: 1 })); s.userData.t = k / 14; g.add(s); return s; });
+  const t = signTex(1024, 256, '#2a0a00', [['🌋 VOLCANO ISLAND · 火山島', .4, .3, OR, '#ffd21f'], ['JUMP THE LAVA RIVERS · DON\'T TOUCH THE LAVA!', .78, .15, OR, '#ff8a1f']], '#ff5a1f'), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(20, 5), sm); sg.position.set(4880, 9, 3300); sg.rotation.y = Math.PI / 2; g.add(sg);
+  landmarks.push({ x: (VOLC.x0 + VOLC.x1) / 2, z: (VOLC.z0 + VOLC.z1) / 2, c: '#ff5a1f', n: 'Volcano Island' });
+}
+let underwater = null;
+function updateVolcano(dt, p) {
+  const V = VOLC; if (!V.group) return;
+  const near = Math.hypot(camera.position.x - 3800, camera.position.z - 3000) < 6000; V.group.visible = near; if (!near) return;
+  const t = performance.now() / 1000;
+  V.lava.offset.y = -t * .02;
+  for (const s of V.smoke) { const k = (s.userData.t + t * .03) % 1, [vx, vz, , vh] = V.cone; s.position.set(vx + Math.sin(k * 9 + s.userData.t * 20) * 40 * k, vh + k * 420, vz + Math.cos(k * 7) * 30 * k); s.scale.setScalar(30 + k * 120); s.material.opacity = .55 * (1 - k); }
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(1, 1, 1), P = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  V.fishData.forEach((f, k) => { const a = f.a + t * f.w; P.set(f.cx + Math.cos(a) * f.r, f.y + Math.sin(t + k) * .5, f.cz + Math.sin(a) * f.r); Q.setFromAxisAngle(up, -a + (f.w > 0 ? 0 : Math.PI)); M.compose(P, Q, S); V.fish[k % V.fish.length].setMatrixAt(Math.floor(k / V.fish.length), M); });
+  for (const m of V.fish) m.instanceMatrix.needsUpdate = true;
+  // under the water: blue light and thick blue haze
+  const under = camera.position.y < -1.5 && camera.position.x > 2350 && camera.position.x < 4900;
+  const U = skyUniforms;
+  if (under && !underwater) underwater = { col: scene.fog.color.clone(), sky: [U.top.value.clone(), U.horizon.value.clone(), U.ground.value.clone(), U.stars.value] };
+  if (under) { scene.fog.color.set(0x0d5a7a); scene.fog.density = .011; U.top.value.set(0x0a3a5a); U.horizon.value.set(0x1d7aa0); U.ground.value.set(0x08283a); U.stars.value = 0; }
+  else if (underwater) { const [t0, h0, g0, st] = underwater.sky; scene.fog.color.copy(underwater.col); U.top.value.copy(t0); U.horizon.value.copy(h0); U.ground.value.copy(g0); U.stars.value = st; underwater = null; }
+  // lava!
+  if (p && !p.air && VOLC_PAD.inside(p.x, p.z) && V.rivers.some(rx => Math.abs(p.x - rx) < 5)) {
+    const rx = V.rivers.find(r => Math.abs(p.x - r) < 5);
+    carHit(p, -p.vx, -p.vz, 12); audio.crash?.(10); dirt = Math.min(1, dirt + .4); applyDirt(p.car);
+    Object.assign(p, { x: rx - 45, vx: 0, vz: 0, heading: Math.PI / 2, yawRate: 0 }); toast('🔥 LAVA! TOO HOT!', 'GO FASTER AND USE THE RAMP');
+  }
+}
+
+/* =====================================================================
+   THE MOON BASE 🌙 — fly the AMBOOLA Jet to the Moon (it is on the jet's map). Grey dust, craters with rims, a black
+   sky full of stars with the Earth hanging in it, an AMBOOLA base with domes, solar panels and a flag, and big
+   ramps. Gravity is one sixth of Earth's, so jumps go on and on. The 🚀 ring takes you home.
+   ===================================================================== */
+const MOON = { x: -30000, z: -30000, size: 2400 };
+const MOON_CRATERS = (() => { const r = mulberry32(1969), out = []; for (let k = 0; k < 40; k++) { const a = r() * 6.283, d = 180 + r() * 950; out.push([MOON.x + Math.cos(a) * d, MOON.z + Math.sin(a) * d, 25 + r() * 90, 3 + r() * 9]); } return out; })();
+function moonH(x, z) {
+  let h = Math.sin(x * .013) * Math.sin(z * .011) * 1.2;
+  for (const [cx, cz, r, d] of MOON_CRATERS) { const q = Math.hypot(x - cx, z - cz) / r; if (q < 1.6) h += q < 1 ? -d * (1 - q * q) : d * .35 * Math.exp(-(((q - 1) / .25) ** 2)); }
+  const base = Math.hypot(x - MOON.x, z - MOON.z); return h * smooth01(clamp((base - 140) / 80, 0, 1));
+}
+const moonGrad = (x, z) => { const e = .5; return [(moonH(x + e, z) - moonH(x - e, z)) / (2 * e), (moonH(x, z + e) - moonH(x, z - e)) / (2 * e)]; };
+const MOON_PAD = new Pad({ name: 'Moon Base', y: moonH, rects: [[MOON.x - MOON.size / 2, MOON.z - MOON.size / 2, MOON.x + MOON.size / 2, MOON.z + MOON.size / 2]] });
+MOON_PAD.grad = moonGrad; MOON_PAD.air = true;
+const MOON_ROUTE = new Route({ id: 'moon', name: 'Moon Base', w: 12, rail: .8, pts: [[MOON.x - 60, MOON.z, 0], [MOON.x + 60, MOON.z, 0]] });
+AREAS.push({ id: 'moon', name: 'The Moon', R: MOON_ROUTE, pads: [MOON_PAD], gate: [HALF, WANGAN_Z], col: '#cfd6dc',
+  box: [MOON.x - MOON.size, MOON.z - MOON.size, MOON.x + MOON.size, MOON.z + MOON.size], visit: { n: 'THE MOON', jp: '月', pad: MOON_PAD } });
+for (const [dx, dz, ry] of [[220, 0, Math.PI / 2], [-260, 120, -Math.PI / 2], [60, -300, Math.PI], [0, 340, 0]]) addRamp({ x: MOON.x + dx, z: MOON.z + dz, ry, prof: 'kick', W: 12, L: 16, H: 4, col: '#cfd6dc', name: 'Moon Jump' });
+let gravK = 1, moonSky = false;
+function buildMoon() {
+  const g = new THREE.Group(); scene.add(g); MOON.group = g;
+  const S = MOON.size, n = 200, geo = new THREE.PlaneGeometry(S, S, n, n); geo.rotateX(-Math.PI / 2); geo.translate(MOON.x, 0, MOON.z);
+  const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i), h = moonH(x, z); pos.setY(i, h); c.setHSL(0, 0, .42 + h * .02 + Math.sin(x * .7) * Math.sin(z * .9) * .02); cols.set([c.r, c.g, c.b], i * 3); }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3)); geo.computeVertexNormals();
+  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); ground.receiveShadow = true; g.add(ground);
+  // the Earth in the black sky
+  const earthT = canvasTex(512, 256, (cx, w, h) => { cx.fillStyle = '#1d5fc4'; cx.fillRect(0, 0, w, h); cx.fillStyle = '#3f9a4a'; for (let k = 0; k < 14; k++) { cx.beginPath(); cx.ellipse(Math.random() * w, h * .2 + Math.random() * h * .6, 20 + Math.random() * 60, 12 + Math.random() * 30, Math.random() * 3, 0, 7); cx.fill(); } cx.fillStyle = 'rgba(255,255,255,.7)'; for (let k = 0; k < 30; k++) { cx.beginPath(); cx.ellipse(Math.random() * w, Math.random() * h, 20 + Math.random() * 50, 4 + Math.random() * 8, 0, 0, 7); cx.fill(); } cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, 14); cx.fillRect(0, h - 14, w, 14); });
+  const earth = new THREE.Mesh(new THREE.SphereGeometry(1300, 48, 32), new THREE.MeshBasicMaterial({ map: earthT, fog: false })); earth.position.set(MOON.x + 3500, 2600, MOON.z - 7000); g.add(earth); MOON.earth = earth;
+  // the base: domes, a tower, solar panels, the landing strip, the flag and the rocket home
+  const white = new THREE.MeshStandardMaterial({ color: 0xf0f2f4, roughness: .4, metalness: .2 }), panelM = new THREE.MeshStandardMaterial({ color: 0x1d3a8a, roughness: .2, metalness: .6 });
+  for (const [dx, dz, r] of [[-40, -40, 14], [-10, -60, 10], [-70, -10, 9]]) { const d = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), white); d.position.set(MOON.x + dx, 0, MOON.z + dz); d.castShadow = true; g.add(d); MOON_PAD.addCol(MOON.x + dx - r * .8, MOON.z + dz - r * .8, MOON.x + dx + r * .8, MOON.z + dz + r * .8); }
+  for (let k = 0; k < 6; k++) { const p = new THREE.Mesh(new THREE.BoxGeometry(10, .2, 5), panelM); p.position.set(MOON.x + 40 + (k % 3) * 12, 2.4, MOON.z - 50 + Math.floor(k / 3) * 8); p.rotation.x = -.4; g.add(p); }
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(260, 40), new THREE.MeshStandardMaterial({ map: TRACK_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -1 })); strip.rotation.x = -Math.PI / 2; strip.position.set(MOON.x + 40, .06, MOON.z + 70); g.add(strip); MOON.air = [MOON.x + 40, MOON.z + 70];
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, 6, 6), white); pole.position.set(MOON.x + 10, 3, MOON.z - 20); g.add(pole);
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(4, 2.4), new THREE.MeshBasicMaterial({ map: signTex(256, 150, '#111216', [['AMBOOLA', .55, .4, OR, '#ffc21f']], '#ffc21f'), side: THREE.DoubleSide })); flag.position.set(MOON.x + 12, 4.8, MOON.z - 20); g.add(flag);
+  const rocket = new THREE.Group(); rocket.position.set(MOON.x - 90, 0, MOON.z + 40); g.add(rocket);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 24, 20), white); body.position.y = 14; rocket.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(2.4, 6, 20), new THREE.MeshStandardMaterial({ color: 0xc8141b })); nose.position.y = 29; rocket.add(nose);
+  for (let k = 0; k < 4; k++) { const fin = new THREE.Mesh(new THREE.BoxGeometry(.3, 6, 4), new THREE.MeshStandardMaterial({ color: 0xc8141b })); fin.position.set(Math.cos(k * Math.PI / 2) * 3, 4, Math.sin(k * Math.PI / 2) * 3); fin.rotation.y = -k * Math.PI / 2; rocket.add(fin); }
+  MOON_PAD.addCol(MOON.x - 94, MOON.z + 36, MOON.x - 86, MOON.z + 44);
+  addAct({ x: MOON.x - 70, z: MOON.z + 40, r: 9, col: '#cfd6dc', title: '🚀 Back to Earth', sub: 'THE ROCKET TAKES YOU HOME TO TOKYO', sign: 'ROCKET HOME', go: moonHome, face: -Math.PI / 2 });
+  landmarks.push({ x: MOON.x, z: MOON.z, c: '#cfd6dc', n: 'The Moon' });
+}
+function moonHome() {
+  const f = $('flyFade'); f.style.opacity = 1; audio.burst?.({ type: 'lowpass', freq: 200, q: .5, gain: .9, dur: 1.6, thump: 40 });
+  setTimeout(() => { Object.assign(player, { x: TOKYO_AIR.x - TOKYO_AIR.len / 2 + 60, z: TOKYO_AIR.z, y: 0, heading: Math.PI / 2, vx: 0, vz: 0 }); areaNow = null; camPos.set(player.x - 8, 3, player.z); f.style.opacity = 0; toast('WELCOME BACK TO EARTH · おかえり', 'TOKYO AIRPORT'); }, 900);
+}
+function updateMoon(x, z) {
+  const on = Math.abs(x - MOON.x) < MOON.size * 1.6 && Math.abs(z - MOON.z) < MOON.size * 1.6;
+  if (MOON.group) MOON.group.visible = on || Math.hypot(x - MOON.x, z - MOON.z) < 12000;
+  gravK = on ? .165 : 1;
+  if (on) {   // space: a black sky full of stars, no haze, hard sunlight
+    if (!moonSky) moonSky = true;
+    skyUniforms.top.value.set(0x000004); skyUniforms.horizon.value.set(0x05060c); skyUniforms.ground.value.set(0x000000); skyUniforms.stars.value = 1;
+    scene.fog.density = .00002; sun.intensity = 3.5; hemi.intensity = .35;
+  } else if (moonSky) { moonSky = false; applyTime(timeName); }
+}
+
 function actCards() {
   return [`<div class="rcard" data-x="world" style="border-left-color:#2fe0ff"><b>🌍 WORLD RACE · $1,000,000</b><span>Tokyo → Italy → Dubai · about 60 km · 3 rivals</span><span>Over the sea bridges, round the block in Italy, back to Tokyo and over to Dubai</span></div>`,
     ...COUNTRIES.map(C => `<div class="rcard" data-x="c:${C.id}" style="border-left-color:${C.col}"><b>🏁 ${C.raceName.toUpperCase()}</b><span>${C.local} · street race · 2 laps · 3 rivals · $25,000 to win</span><span>BEST ${fmtTime(+localStorage.getItem('amboola.gp.' + C.id) || null)}</span></div>`)].join('');
@@ -7905,7 +8059,7 @@ function startFlight(spec) {
   const back = player && !player.spec.jet ? player : null;
   if (back) { back.car.group.visible = false; }
   const p = PAINTS[paintIdx], car = buildJet(spec, p.c); scene.add(car.group);
-  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500), D = flyDests().find(d => d.n === (near?.name || (player && Math.hypot(player.x - FUJI.cx, player.z - FUJI.cz) < 1500 ? 'Mt. Fuji' : 'Tokyo')));
+  const near = COUNTRIES.find(C => player && Math.hypot(player.x - C.cx, player.z - C.cz) < 1500), D = flyDests().find(d => d.n === (near?.name || (player && Math.hypot(player.x - FUJI.cx, player.z - FUJI.cz) < 1500 ? 'Mt. Fuji' : player && Math.hypot(player.x - MOON.x, player.z - MOON.z) < 3000 ? 'Moon 🌙' : 'Tokyo')));
   // line up at the west end of that airport's runway, engines idling: hold W to roll, lift off at about 260 km/h
   flight = { car, x: D.x - D.len / 2 + 14, z: D.z, y: JET_GEAR, yaw: Math.PI / 2, pitch: 0, roll: 0, v: 0, thr: 0, target: null, landing: 0, from: D.n, ground: true };
   camPos.set(flight.x - Math.sin(flight.yaw) * 40, flight.y + 10, flight.z - Math.cos(flight.yaw) * 40);
@@ -7917,7 +8071,7 @@ function startFlight(spec) {
 }
 // airports: Tokyo Airport north of the city (a long runway), and a short strip in every country; runways run east
 const TOKYO_AIR = { x: 1000, z: -3200, len: 1400 }, JET_GEAR = 2.95;
-const flyDests = () => [{ n: 'Tokyo', x: TOKYO_AIR.x, z: TOKYO_AIR.z, len: TOKYO_AIR.len, air: [-5.7, 150] }, { n: 'Mt. Fuji', x: FUJI.air[0], z: FUJI.air[1], len: 260, air: [FUJI.air[0] - 100, FUJI.air[1]], head: Math.PI / 2, hello: 'WELCOME TO MT. FUJI · 富士山' }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], len: 260, air: C.airport, C }))];
+const flyDests = () => [{ n: 'Tokyo', x: TOKYO_AIR.x, z: TOKYO_AIR.z, len: TOKYO_AIR.len, air: [-5.7, 150] }, { n: 'Mt. Fuji', x: FUJI.air[0], z: FUJI.air[1], len: 260, air: [FUJI.air[0] - 100, FUJI.air[1]], head: Math.PI / 2, hello: 'WELCOME TO MT. FUJI · 富士山' }, { n: 'Moon 🌙', x: MOON.x + 40, z: MOON.z + 70, len: 260, air: [MOON.x - 40, MOON.z + 70], head: Math.PI / 2, hello: 'WELCOME TO THE MOON · 月 · LOW GRAVITY!' }, ...COUNTRIES.map(C => ({ n: C.name, x: C.airport[0], z: C.airport[1], len: 260, air: C.airport, C }))];
 function buildTokyoAirport() {
   const { x, z, len } = TOKYO_AIR, g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
   const apron = new THREE.Mesh(new THREE.PlaneGeometry(len + 300, 320), new THREE.MeshStandardMaterial({ color: 0x4a4f45, roughness: 1 })); apron.rotation.x = -Math.PI / 2; apron.position.y = .02; g.add(apron);
@@ -7975,7 +8129,7 @@ function updateFlight(dt) {
   F.pitch = damp(F.pitch, pT, 2.5, dt);
   F.x += Math.sin(F.yaw) * Math.cos(F.pitch) * F.v * dt; F.z += Math.cos(F.yaw) * Math.cos(F.pitch) * F.v * dt;
   F.y = clamp(F.y + Math.sin(F.pitch) * Math.min(F.v, 600) * dt, ground - 60 + JET_GEAR, 6000);
-  F.x = clamp(F.x, -30000, 30000); F.z = clamp(F.z, -20000, 30000);
+  F.x = clamp(F.x, -34000, 34000); F.z = clamp(F.z, -34000, 34000);   // the Moon base is out at (-30 km, -30 km)
   flightPose(F, dt, dests);
 }
 // automatic landing: fly to a point 900 m short of the runway, line up, glide down to the threshold, touch down, brake
@@ -8110,6 +8264,9 @@ function buildPlaces() {
   P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
   GAS.filter(g => g.area === 'tokyo').forEach((g, k) => P.push({ n: `Gas Station ${k + 1}`, jp: 'ガソリンスタンド', type: 'Fuel and charging', kind: 'city', x: g.x, z: g.z, col: '#ff5a1f' }));
   P.push({ n: 'Car Wash', jp: '洗車', type: 'Make your car shine · $50', kind: 'city', x: CARWASH.x, z: CARWASH.z, col: '#2fe0ff' });
+  P.push({ n: 'Volcano Island', jp: '火山島', type: 'Lava rivers to jump · through the undersea tunnel', kind: 'area', zone: 'volcano', idx: TUNNEL.n - 1, end: [4900, 3300], face: Math.PI / 2, x: (VOLC.x0 + VOLC.x1) / 2, z: (VOLC.z0 + VOLC.z1) / 2, col: '#ff5a1f' });
+  P.push({ n: 'Undersea Tunnel', jp: '海底トンネル', type: 'Glass tunnel under the sea · from Amboola Beach', kind: 'area', zone: 'volcano', idx: Math.round(TUNNEL.n / 2), x: TUNNEL.x[Math.round(TUNNEL.n / 2)], z: TUNNEL.z[Math.round(TUNNEL.n / 2)], col: '#2fe0ff' });
+  P.push({ n: 'The Moon', jp: '月', type: 'Moon base · low gravity · fly there in the jet', kind: 'area', zone: 'moon', idx: 1, end: [MOON.x + 20, MOON.z + 20], face: Math.PI / 2, x: MOON.x, z: MOON.z, col: '#cfd6dc' });
   P.push({ n: 'Ferry Terminal', jp: 'フェリー乗り場', type: 'Car ferry to 6 countries', kind: 'city', x: FERRY_X, z: HALF - 3, col: '#2fa6ff' });
   P.push({ n: 'Fuji Gate', jp: '富士方面', type: 'West gate · road to Mt. Fuji', kind: 'city', x: -HALF, z: FUJI.gateZ, col: '#ff7aa8' });
   P.push({ n: 'Wangan Gate', jp: '湾岸線入口', type: 'Toll gate · road to the beach', kind: 'city', x: HALF, z: WANGAN_Z, col: '#2fe0ff' });
@@ -8127,7 +8284,7 @@ function snapToRoad(x, z) {
 const zoneAt = (x, z) => inMountain({ x, z }) ? 'mountain' : areaAt(x, z)?.id || 'city';
 const ZONES = { mountain: { R: MTN, gate: [-HALF, MTN.gateZ] }, wangan: { R: WANGAN, gate: [HALF, WANGAN_Z] }, snow: { R: SNOW_ROUTE, gate: [SNOW.gateX, -HALF] } };
 for (const C of COUNTRIES) ZONES[C.id] = { R: C.R, gate: [C.gx, HALF] };
-ZONES.fuji = { R: FUJI_ROUTE, gate: [-HALF, FUJI.gateZ] };
+ZONES.fuji = { R: FUJI_ROUTE, gate: [-HALF, FUJI.gateZ] }; ZONES.volcano = { R: TUNNEL, gate: [HALF, WANGAN_Z] }; ZONES.moon = { R: MOON_ROUTE, gate: [HALF, WANGAN_Z] };
 function navGroundY(x, z) {
   const zn = zoneAt(x, z);
   if (zn === 'mountain') {
@@ -8144,6 +8301,10 @@ function zIndex(R, x, z) { const nr = R.near(x, z, 80); if (nr) return nr.i; let
 function mtnPath(a, b) { const out = [], s = a <= b ? 1 : -1; for (let i = a; s > 0 ? i < b : i > b; i += 6 * s) out.push([MTN.x[i], MTN.z[i]]); out.push([MTN.x[b], MTN.z[b]]); return out; }
 function mtnIndex(x, z) { const nr = MTN.near(x, z, 60); if (nr) return nr.i; let best = 1e18, bi = 0; for (let i = 0; i < MTN.n; i++) { const d = (MTN.x[i] - x) ** 2 + (MTN.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } return bi; }
 function navRoute(px, pz, d) {
+  { const zp = zoneAt(px, pz), zd = d.zone || 'city';   // the moon has no road from here; the volcano is through the tunnel from the beach
+    if (zd === 'moon' || zp === 'moon') return [[d.end?.[0] ?? d.x, d.end?.[1] ?? d.z]];
+    if (zd === 'volcano' && zp !== 'volcano') return [...navRoute(px, pz, { zone: 'wangan', idx: WANGAN.n - 1, end: [2300, 2215] }), ...zPath(TUNNEL, 0, d.idx), ...(d.end ? [d.end] : [])];
+    if (zp === 'volcano' && zd !== 'volcano') return [...zPath(TUNNEL, zIndex(TUNNEL, px, pz), 0), ...navRoute(2300, 2215, d)]; }
   const zp = zoneAt(px, pz), zd = d.zone || 'city', out = []; let cx = px, cz = pz;
   if (zp !== 'city' && zp !== zd) { const Z = ZONES[zp]; out.push(...zPath(Z.R, zIndex(Z.R, px, pz), 0)); [cx, cz] = Z.gate; }
   if (zd === 'city') { const t = snapToRoad(d.x, d.z); out.push(...taxiRoute(cx, cz, t.x, t.z)); return out; }
@@ -8637,7 +8798,7 @@ function tick(dt) {
   if (state === 'ad') { updateAd(dt); return; }
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
-  if (state === 'fly') { updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
+  if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
     gCamera.position.set(Math.sin(gAngle) * gDist, 1.9, Math.cos(gAngle) * gDist); gCamera.lookAt(0, .7, 0);
@@ -8710,7 +8871,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
