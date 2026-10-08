@@ -1901,7 +1901,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -4321,7 +4321,7 @@ function renderCust() {
     `<div class="crow"><small>🔧 TUNING SHOP</small></div>` + txt('wing', WINGS, 'Rear wing') + txt('kit', KITS, 'Body kit') + sw('wneon', GLOWS, o => o.c ? `radial-gradient(circle, #111 30%, ${o.c} 50%, #000 110%)` : '#2a2d35', 'Neon wheels') + txt('exhaust', EXHAUSTS, 'Exhaust') +
     `<div class="crow"><small>Pet that rides along <b>${PETS[pet].n}</b></small><div class="cdec">${PETS.map((o, i) => `<div data-k="pet" data-i="${i}" class="${i === pet ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>`;
   $('custRows').querySelectorAll('[data-k]').forEach(el => el.onclick = () => {
-    if (el.dataset.k === 'pet') { pet = +el.dataset.i; localStorage.setItem('amboola.pet', pet); renderCust(); audio.init?.(); if (pet) { loadModel('dog'); setTimeout(() => bark(), 50); } return; }
+    if (el.dataset.k === 'pet') { pet = +el.dataset.i; localStorage.setItem('amboola.pet', pet); renderCust(); audio.init?.(); if (pet) { loadModel(PETS[pet].m); setTimeout(() => petSound(), 50); } if (player) { if (player.car.dog) { player.car.group.remove(player.car.dog); player.car.dog = null; } attachDog(player.car); } return; }
     const cu2 = custOf(c.id); cu2[el.dataset.k] = +el.dataset.i;
     if (el.dataset.k === 'dcol' && !cu2.decal) cu2.decal = 1;   // picking a colour with no decal shows the stripes
     if (el.dataset.k === 'decal' && cu2.decal) gAngle = el.dataset.i === '1' ? .9 : Math.PI / 2;   // turn the car to show it
@@ -8257,8 +8257,8 @@ function roadsideHelp() { if (fuel > 0 || wallet.usd < 500) return false; wallet
 const WINGS = [{ n: 'None' }, { n: 'Ducktail lip' }, { n: 'GT wing' }, { n: 'Mega wing' }];
 const KITS = [{ n: 'Stock' }, { n: 'Aero kit' }, { n: 'Rally kit' }];
 const EXHAUSTS = [{ n: 'Stock' }, { n: 'Sport (loud)' }, { n: 'Flames 🔥' }];
-const PETS = [{ n: 'No pet' }, { n: 'Shiba dog 🐕' }];
-let pet = +(localStorage.getItem('amboola.pet') || 0) || 0;
+const PETS = [{ n: 'No pet' }, { n: 'Shiba dog 🐕', m: 'dog' }, { n: 'Cat 🐈', m: 'cat' }, { n: 'Parrot 🦜', m: 'parrot' }, { n: 'Tiny dragon 🐉', m: 'dragon' }];   // models/blender/dog.py and pets.py
+let pet = +(localStorage.getItem('amboola.pet') || 0) || 0; if (!PETS[pet]) pet = 0;
 const tuneCarbon = new THREE.MeshStandardMaterial({ color: 0x16181b, roughness: .35, metalness: .3 });
 function carDeckY(car, z, x = 0) {
   const ray = new THREE.Raycaster(); car.group.updateMatrixWorld(true);
@@ -8314,13 +8314,18 @@ function loudExhaust(spec) { if (custOf(spec.id).exhaust && audio.eng?.T) audio.
    THE PET DOG — a Shiba (Blender, models/blender/dog.py) rides along with its head out of the left window, ears
    flapping in the wind. It barks at police cars. Turn it on in CUSTOMIZE → Pet.
    ===================================================================== */
-function attachDog(car) {
-  if (!pet || !car || car.dog) return;
-  if (!MODELS.dog) { loadModel('dog').then(() => { if (player?.car === car) attachDog(car); }); return; }
+function attachDog(car) {   // the pet: dog and cat look out of the window, the parrot rides on the roof, the dragon flies above
+  if (!pet || !car || car.dog || car.heli) return;
+  const P = PETS[pet], M = MODELS[P.m];
+  if (!M) { loadModel(P.m).then(() => { if (player?.car === car) attachDog(car); }); return; }
   const G = carGeom(car); if (!G) return;
-  const d = MODELS.dog.clone(), H = G.y1 - G.y0, win = G.y0 + H * .74;
+  const d = M.clone(), H = G.y1 - G.y0, win = G.y0 + H * .74;
   d.traverse(o => { if (o.isMesh) o.castShadow = true; });
-  d.scale.setScalar(1.25); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .55, win - .74, G.mid + .15);   // only the head and front paws stick out d.userData.tune = true;
+  if (P.m === 'dog') { d.scale.setScalar(1.25); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .55, win - .74, G.mid + .15); }   // only the head and front paws stick out
+  else if (P.m === 'cat') { d.scale.setScalar(1.6); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .55, win - .78, G.mid + .1); }
+  else if (P.m === 'parrot') { d.scale.setScalar(2.4); d.position.set(0, G.y1 - .02, G.mid - .2); }
+  else { d.scale.setScalar(2.2); d.position.set(.7, G.y1 + 1.2, G.mid - .5); d.userData.fly = true; d.userData.wings = [d.getObjectByName('WingL'), d.getObjectByName('WingR')]; }
+  d.userData.tune = true; d.userData.kind = P.m;
   car.group.add(d); car.dog = d;
 }
 let barkT = 4;
@@ -8333,13 +8338,26 @@ function bark() {
     o.connect(f).connect(g).connect(audio.master); o.start(t); o.stop(t + .15);
   }
 }
+function petSound() {   // woof, meow, squawk or a tiny roar
+  const k = PETS[pet]?.m, ctx = audio.ctx; if (!ctx) return; if (k === 'dog') return bark();
+  const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2;
+  if (k === 'cat') { o.type = 'triangle'; o.frequency.setValueAtTime(500, t); o.frequency.linearRampToValueAtTime(820, t + .18); o.frequency.linearRampToValueAtTime(420, t + .5); f.frequency.value = 900; }
+  else if (k === 'parrot') { o.type = 'square'; o.frequency.setValueAtTime(1400, t); o.frequency.linearRampToValueAtTime(2200, t + .08); o.frequency.linearRampToValueAtTime(1200, t + .2); f.frequency.value = 1800; }
+  else { o.type = 'sawtooth'; o.frequency.setValueAtTime(260, t); o.frequency.linearRampToValueAtTime(380, t + .15); o.frequency.linearRampToValueAtTime(180, t + .55); f.frequency.value = 700; }
+  const L = k === 'parrot' ? .25 : .55; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.3, t + .03); g.gain.exponentialRampToValueAtTime(.001, t + L);
+  o.connect(f).connect(g).connect(audio.master); o.start(t); o.stop(t + L + .05);
+}
 function updateDog(dt, p) {
   const d = p.car?.dog; if (!d) return;
   const t = performance.now() / 1000, sp = Math.min(1, (p.speed || 0) / 30);
+  if (d.userData.fly) {   // the dragon flaps along above the roof, a little behind when you go fast
+    const [wl, wr] = d.userData.wings, f = Math.sin(t * 14) * .7; if (wl) wl.rotation.y = f; if (wr) wr.rotation.y = -f;
+    d.position.y = (d.userData.y0 ??= d.position.y) + Math.sin(t * 3) * .15; d.position.z = (d.userData.z0 ??= d.position.z) - sp * 1.2; d.rotation.x = -sp * .3;
+  } else if (d.userData.kind === 'parrot') d.rotation.y = Math.sin(t * 1.3) * .5;
   d.rotation.z = Math.sin(t * (6 + sp * 20)) * .04 * sp; d.rotation.x = Math.sin(t * 2.3) * .05;
   barkT -= dt;
   const cops = chase || PATROLS.some(P => P.g.visible && Math.hypot(P.g.position.x - p.x, P.g.position.z - p.z) < 45);
-  if (barkT < 0 && (cops || (p.air && Math.random() < .02))) { barkT = cops ? 2.5 : 6; bark(); }
+  if (barkT < 0 && (cops || (p.air && Math.random() < .02))) { barkT = cops ? 2.5 : 6; petSound(); }
 }
 
 /* =====================================================================
