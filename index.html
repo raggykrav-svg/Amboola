@@ -1544,7 +1544,7 @@ async function buildWorld() {
   buildTracks(); buildDragway();
   buildMountain();
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
-  buildWangan(); buildSnowArea(); buildFujiArea(); buildVolcano(); buildMoon(); applySeason();
+  buildWangan(); buildSnowArea(); buildFujiArea(); buildVolcano(); buildMoon(); buildPark(); applySeason();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs();
@@ -5448,7 +5448,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
@@ -7171,7 +7171,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing();
+  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing();
 }
 
 /* =====================================================================
@@ -8571,6 +8571,98 @@ const MOON_ROUTE = new Route({ id: 'moon', name: 'Moon Base', w: 12, rail: .8, p
 AREAS.push({ id: 'moon', name: 'The Moon', R: MOON_ROUTE, pads: [MOON_PAD], gate: [HALF, WANGAN_Z], col: '#cfd6dc',
   box: [MOON.x - MOON.size, MOON.z - MOON.size, MOON.x + MOON.size, MOON.z + MOON.size], visit: { n: 'THE MOON', jp: '月', pad: MOON_PAD } });
 for (const [dx, dz, ry] of [[220, 0, Math.PI / 2], [-260, 120, -Math.PI / 2], [60, -300, Math.PI], [0, 340, 0]]) addRamp({ x: MOON.x + dx, z: MOON.z + dz, ry, prof: 'kick', W: 12, L: 16, H: 4, col: '#cfd6dc', name: 'Moon Jump' });
+/* =====================================================================
+   AMBOOLA LAND — a theme park you drive into (the 🎢 ring in Tokyo takes you there). The big ride is the AMBOOLA
+   COASTER: a red track you drive yourself, up a 34 m lift hill, down the big drop, over a camel hump and back. On the
+   park square: a loop-the-loop and jumps, a castle, a Ferris wheel, a carousel and a drop tower.
+   ===================================================================== */
+const PARK = { x: -12000, z: -12000 };
+const PARK_PAD = new Pad({ name: 'AMBOOLA Land', y: 0, rects: [[PARK.x - 150, PARK.z - 100, PARK.x + 150, PARK.z + 110]] }); PARK_PAD.air = true;
+const COASTER = new Route({ id: 'park', name: 'AMBOOLA Coaster', w: 9, rail: .8,
+  pts: [[-80, -96, 0], [-80, -140, 0], [-80, -215, 14], [-80, -295, 32], [-66, -345, 34], [-20, -378, 34], [32, -366, 31], [66, -326, 20], [86, -268, 4],
+    [96, -222, 13], [100, -190, 15], [102, -158, 7], [90, -128, 0], [80, -112, 0], [80, -96, 0]].map(([x, z, y]) => [PARK.x + x, PARK.z + z, y]) });
+AREAS.push({ id: 'park', name: 'AMBOOLA Land', R: COASTER, pads: [PARK_PAD], gate: [HALF, WANGAN_Z], col: '#ff5fa2',
+  box: [PARK.x - 400, PARK.z - 500, PARK.x + 400, PARK.z + 400], visit: { n: 'AMBOOLA LAND', jp: 'アンブーラランド', pad: PARK_PAD } });
+for (const [i] of [[0], [COASTER.n - 1]]) PARK_PAD.mouths.push({ x: COASTER.x[i], z: COASTER.z[i], r: 7.5 });
+addLoop({ x: PARK.x + 40, z: PARK.z + 40, ry: -Math.PI / 2, R: 8, col: '#ff5fa2', addCol: (a, b, c, d) => PARK_PAD.addCol(a, b, c, d) });
+addRamp({ x: PARK.x - 120, z: PARK.z + 70, ry: Math.PI / 2, prof: 'kick', W: 10, L: 16, H: 3.5, col: '#ffc21f', name: 'Park Jump' });
+addRamp({ x: PARK.x - 70, z: PARK.z + 70, ry: Math.PI / 2, prof: 'land', W: 12, L: 26, H: 3, col: '#2fa0ff' });
+let parkRide = null;
+function buildParkRing() {
+  addAct({ x: rc(15) + 4, z: rc(12) + 40, r: 9, col: '#ff5fa2', title: '🎢 AMBOOLA Land', sub: 'THEME PARK · DRIVE THE ROLLERCOASTER', sign: 'AMBOOLA LAND · 遊園地', go: () => goPark(true), face: Math.PI / 2 });
+  addAct({ x: PARK.x, z: PARK.z + 95, r: 9, col: '#2fe0ff', title: '🏙 Back to Tokyo', sub: 'LEAVE THE PARK', sign: 'EXIT · 出口', go: () => goPark(false) });
+}
+function goPark(inside) {
+  endActs(); endChase(null, player); clearNav(true);
+  const [x, z, h] = inside ? [PARK.x, PARK.z + 80, Math.PI] : [rc(15) + 4, rc(12) + 52, 0];
+  Object.assign(player, { x, z, heading: h, vx: 0, vz: 0, yawRate: 0, y: 0, vy: 0, air: false });
+  camPos.set(x - Math.sin(h) * 8, 3, z - Math.cos(h) * 8);
+  toast(inside ? '🎢 WELCOME TO AMBOOLA LAND!' : '🏙 BACK IN TOKYO', inside ? 'THE COASTER STARTS AT THE RED GATE · TRY THE LOOP!' : '');
+}
+function buildPark() {
+  const g = new THREE.Group(); scene.add(g); PARK.group = g; const P = PARK_PAD, R = COASTER;
+  const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: .55 }), add = (geo, m, x, y, z, col = true) => { const o = new THREE.Mesh(geo, m); o.position.set(PARK.x + x, y, PARK.z + z); o.castShadow = o.receiveShadow = true; g.add(o); if (col) { geo.computeBoundingBox(); const b = geo.boundingBox; P.addCol(PARK.x + x + b.min.x, PARK.z + z + b.min.z, PARK.x + x + b.max.x, PARK.z + z + b.max.z); } return o; };
+  // grass all round, a colourful square, flower beds
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshStandardMaterial({ map: (() => { const t = GRASS_TEX(); t.repeat.set(200, 200); return t; })(), roughness: 1 })); grass.rotation.x = -Math.PI / 2; grass.position.set(PARK.x, -.02, PARK.z - 150); grass.receiveShadow = true; g.add(grass);
+  const sq = canvasTex(1024, 720, (c, w, h) => { c.fillStyle = '#e9d9b8'; c.fillRect(0, 0, w, h); const cols = ['#ff5fa2', '#ffc21f', '#2fa0ff', '#7dff3a'];
+    for (let k = 0; k < 40; k++) { c.fillStyle = cols[k % 4] + '55'; c.beginPath(); c.arc((k * 173) % w, (k * 97) % h, 30 + (k % 5) * 12, 0, 7); c.fill(); }
+    c.font = `900 110px ${OR}`; c.textAlign = 'center'; c.fillStyle = '#ff5fa2cc'; c.fillText('AMBOOLA LAND', w / 2, h * .62); });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 210), new THREE.MeshStandardMaterial({ map: sq, roughness: .9 })); floor.rotation.x = -Math.PI / 2; floor.position.set(PARK.x, .01, PARK.z + 5); floor.receiveShadow = true; g.add(floor);
+  // fence round the square (gaps at the coaster gates)
+  const fence = M(0xffffff);
+  for (const [x, z, w, d] of [[0, 110.5, 300, .5], [-150.5, 5, .5, 210], [150.5, 5, .5, 210], [-117, -100.5, 66, .5], [0, -100.5, 150, .5], [117, -100.5, 66, .5]]) add(new THREE.BoxGeometry(w, 1.2, d), fence, x, .6, z, false);
+  // the coaster: red track, white rails, blue supports, a gate at each end
+  const track = new GB(), rail = new GB();
+  ribbon(R, track, -4.5, 4.5, .06, .06, 0, R.n - 1, 8);
+  for (const s of [-1, 1]) { ribbon(R, rail, s * 4.6, s * 4.6, 0, 1, 0, R.n - 1); ribbon(R, rail, s * 4.6, s * 4.9, 1, 1, 0, R.n - 1); ribbon(R, track, s * 4.5, s * 4.5, .06, -.9, 0, R.n - 1); }
+  const tt = canvasTex(64, 256, (c, w, h) => { c.fillStyle = '#c8141b'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, 10); c.fillStyle = '#8a0d12'; for (let y = 0; y < h; y += 32) c.fillRect(0, y, w, 8); }, { repeat: true });
+  const tm = new THREE.Mesh(track.build(), new THREE.MeshStandardMaterial({ map: tt, roughness: .5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 })); tm.receiveShadow = tm.castShadow = true; g.add(tm);
+  g.add(new THREE.Mesh(rail.build(), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .4, metalness: .3, side: THREE.DoubleSide })));
+  const sup = [], blue = M(0x2fa0ff);
+  for (let i = 0; i < R.n; i += 6) if (R.y[i] > 2) for (const s of [-1, 1]) { const p = routePt(R, i, s * 3.6); sup.push([p.x, 0, p.z, 0, 1, R.y[i], 1]); }
+  g.add(instanced(new THREE.CylinderGeometry(.35, .45, 1, 8).translate(0, .5, 0), blue, sup));
+  for (const i of [0, R.n - 1]) { const p = routePt(R, i, 0), h = Math.atan2(R.tx[i], R.tz[i]);
+    for (const s of [-1, 1]) { const q = routePt(R, i, s * 5.6); const c = new THREE.Mesh(new THREE.BoxGeometry(.8, 8, .8), M(0xc8141b)); c.position.set(q.x, 4, q.z); g.add(c); }
+    const sgn = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.6), new THREE.MeshBasicMaterial({ map: signTex(1024, 220, '#c8141b', [[i ? '🎢 COASTER EXIT' : '🎢 AMBOOLA COASTER', .55, .4, OR, '#fff']], '#ffc21f'), side: THREE.DoubleSide }));
+    sgn.position.set(p.x, 8.5, p.z); sgn.rotation.y = h; g.add(sgn); }
+  // the castle
+  const pink = M(0xffb3d1), purple = M(0x8a5cff), gold = new THREE.MeshStandardMaterial({ color: 0xffc21f, metalness: .6, roughness: .3 });
+  add(new THREE.BoxGeometry(40, 18, 22), pink, -95, 9, -55);
+  for (const [x, z] of [[-115, -66], [-75, -66], [-115, -44], [-75, -44], [-95, -55]]) { const big = x === -95; add(new THREE.CylinderGeometry(big ? 6 : 4, big ? 6 : 4, big ? 32 : 24, 16), pink, x, big ? 16 : 12, z, false);
+    add(new THREE.CylinderGeometry(.01, big ? 7.5 : 5, big ? 14 : 10, 16), purple, x, (big ? 32 : 24) + (big ? 7 : 5), z, false); add(new THREE.SphereGeometry(.8, 8, 6), gold, x, (big ? 46 : 34.5), z, false); }
+  // Ferris wheel (spins)
+  const fw = new THREE.Group(); fw.position.set(PARK.x + 105, 34, PARK.z - 55); g.add(fw); PARK.wheel = fw;
+  fw.add(new THREE.Mesh(new THREE.TorusGeometry(30, .7, 8, 64), M(0xffffff)));
+  const cabs = [], cc = [0xff5fa2, 0xffc21f, 0x2fa0ff, 0x7dff3a];
+  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; const sp = new THREE.Mesh(new THREE.BoxGeometry(.4, 30, .4), M(0xffffff)); sp.rotation.z = a; sp.position.set(Math.sin(-a) * 15, Math.cos(-a) * 15, 0); fw.add(sp);
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), M(cc[k % 4])); cab.position.set(Math.cos(a) * 30, Math.sin(a) * 30, 0); fw.add(cab); cabs.push(cab); }
+  PARK.cabs = cabs;
+  for (const s of [-1, 1]) { const leg = add(new THREE.BoxGeometry(1.2, 38, 1.2), M(0xffffff), 105 + s * 12, 17, -55, false); leg.rotation.z = s * .33; }
+  P.addCol(PARK.x + 90, PARK.z - 58, PARK.x + 120, PARK.z - 52);
+  // carousel (spins), drop tower (goes up and down)
+  const car = new THREE.Group(); car.position.set(PARK.x + 95, 0, PARK.z + 60); g.add(car); PARK.carousel = car;
+  car.add(new THREE.Mesh(new THREE.CylinderGeometry(12, 12, 1, 32), M(0xffc21f)).translateY(.5)); car.add(new THREE.Mesh(new THREE.CylinderGeometry(.01, 14, 6, 32), M(0xff5fa2)).translateY(10));
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, h = new THREE.Mesh(new THREE.BoxGeometry(1, 1.6, 2.2), M(cc[k % 4])); h.position.set(Math.cos(a) * 9, 2.4, Math.sin(a) * 9); h.rotation.y = -a; car.add(h); const pole = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, 7, 6), gold); pole.position.set(Math.cos(a) * 9, 4, Math.sin(a) * 9); car.add(pole); }
+  P.addCol(PARK.x + 83, PARK.z + 48, PARK.x + 107, PARK.z + 72);
+  add(new THREE.CylinderGeometry(2, 2.5, 60, 12), M(0xffffff), -30, 30, -70);
+  PARK.drop = add(new THREE.CylinderGeometry(5, 5, 2.5, 16), M(0x2fa0ff), -30, 10, -70, false);
+  // balloons
+  const bl = []; for (let k = 0; k < 30; k++) bl.push([PARK.x - 140 + (k * 37) % 280, 14 + (k % 7) * 3, PARK.z - 90 + (k * 53) % 190, 0, 1, 1.2, 1]);
+  const bim = instanced(new THREE.SphereGeometry(1, 12, 10), new THREE.MeshStandardMaterial({ roughness: .3 }), bl, false); bl.forEach((_, k) => bim.setColorAt(k, new THREE.Color(cc[k % 4]))); bim.instanceColor.needsUpdate = true;
+  g.add(bim); g.visible = false;
+}
+function updatePark(dt, p) {
+  if (!PARK.group) return; const near = Math.abs(p.x - PARK.x) < 1500 && Math.abs(p.z - PARK.z) < 1500; PARK.group.visible = near; if (!near) return;
+  const t = performance.now() / 1000;
+  PARK.wheel.rotation.z = t * .08; PARK.cabs.forEach(c => c.rotation.z = -PARK.wheel.rotation.z);
+  PARK.carousel.rotation.y = t * .5; PARK.drop.position.y = 6 + 44 * (.5 + .5 * Math.sin(t * .6)) ** 3;
+  // a ride on the coaster: from the start gate all the way to the exit gate
+  if (areaNow?.id === 'park' && p.surf === 'route') {
+    const i = COASTER.hint;
+    if (!parkRide && i < 20) parkRide = { max: i };
+    if (parkRide) { parkRide.max = Math.max(parkRide.max, i); if (i > COASTER.n - 25 && parkRide.max > COASTER.n * .9) { parkRide = null; earn(5000); bump('coaster'); banner('🎢 WHAT A RIDE!', '+$5,000', 'You drove the whole AMBOOLA Coaster'); } }
+  } else if (parkRide && p.surf !== 'route') parkRide = null;
+}
 let gravK = 1, moonSky = false;
 function buildMoon() {
   const g = new THREE.Group(); scene.add(g); MOON.group = g;
@@ -9475,7 +9567,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
