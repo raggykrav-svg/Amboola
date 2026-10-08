@@ -1891,7 +1891,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -3022,6 +3022,7 @@ const MISSIONS = [
   { id: 'rally', n: 'DESERT FOX', d: 'Finish the Dubai desert rally', goal: 1, v: () => ST.rallies || 0, r: 20000 },
   { id: 'tow3', n: 'TOW HERO', d: 'Tow 3 broken-down cars to the junkyard', goal: 3, v: () => ST.towJobs || 0, r: 30000 },
   { id: 'soccer1', n: 'GOLDEN BOOT', d: 'Win a car soccer match against the robot', goal: 1, v: () => ST.soccerWins || 0, r: 15000 },
+  { id: 'kaiju', n: 'TOKYO HERO', d: 'Rescue all 6 groups before the monster gets there', goal: 1, v: () => ST.monsterHero || 0, r: 50000 },
   { id: 'fire3', n: 'FIREFIGHTER', d: 'Put out 3 fires with the AMBOOLA Fire Engine', goal: 3, v: () => ST.fireJobs || 0, r: 40000 },
 ];
 let achvQ = [], achvBusy = false;
@@ -6922,7 +6923,7 @@ function endChase(escaped, p) {
    ===================================================================== */
 const ACTS = [];
 let actNear = null, cRace = null, deliv = null, worldRace = null;
-const busyAct = () => race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer);
+const busyAct = () => race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster);
 const cStreets = C => { const xs = [], zs = []; for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x); for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z); return { xs, zs }; };
 function addAct(o) {
   const g = new THREE.Group(), col = new THREE.Color(o.col); g.position.set(o.x, o.y || 0, o.z); (o.parent || scene).add(g);
@@ -6940,7 +6941,7 @@ function updateActs(dt, p) {
   const pr = $('actprompt');
   if (actNear && state === 'drive') { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
   else pr.classList.add('hidden');
-  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p); if (job) updateJob(dt, p);
+  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p); if (job) updateJob(dt, p); if (monster) updateMonster(dt, p);
 }
 function actHud(cells, col) {
   const h = $('acthud'); if (!cells) { h.classList.add('hidden'); return; }
@@ -7086,7 +7087,7 @@ function endWorldRace(pos, quit) {
   audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
   banner(pos === 1 ? '🌍 WORLD CHAMPION!' : `🌍 WORLD RACE · P${pos}`, `+${fmtUSD(pay)}`, `Tokyo → Italy → Dubai in ${fmtTime(R.t)}`);
 }
-function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); endBus(true); endJob(true); endSoccer(true); }
+function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); endBus(true); endJob(true); endSoccer(true); endMonster(true); }
 function buildActs() {
   for (const C of COUNTRIES) {
     const K = countryCircuit(C), J = JOBS[C.id], mx = C.R.x[C.R.n - 1];
@@ -7095,7 +7096,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing();
+  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing();
 }
 
 /* =====================================================================
@@ -7654,6 +7655,99 @@ function endSoccer(quit) {
   const [a, b] = S.score, win = a > b, pay = win ? 20000 + a * 2000 : a === b ? 5000 : 1000 + a * 1000;
   earn(pay); bump('soccerGames'); if (win) bump('soccerWins');
   banner(win ? '⚽ YOU WIN!' : a === b ? '⚽ A DRAW' : '🤖 THE ROBOT WINS', `+${fmtUSD(pay)}`, `Final score: you ${a} - ${b} robot`);
+}
+
+/* =====================================================================
+   MONSTER ATTACK — Gojira-chan, a friendly 30 m dinosaur (models/blender/monster.py), wades out of the harbour and
+   stomps north through Tokyo. Six groups of people wait on its street (the first about 300 m in from the sea). Drive to each group and stop: they jump
+   in and you take them to safety. Get there before the monster does! Every group pays, all six pays a big bonus.
+   Start it from the 🦖 ring in the city.
+   ===================================================================== */
+const MON = { scale: 9, speed: 8.5 };
+let monster = null;
+function buildMonsterRing() {
+  addAct({ x: rc(14) + 4, z: rc(16) + 40, r: 9, col: '#4cc35a', title: '🦖 Monster Alert', sub: 'RESCUE THE PEOPLE BEFORE THE MONSTER COMES', sign: 'MONSTER ALERT · 怪獣', go: () => startMonster(), face: Math.PI / 2 });
+}
+function monsterPath() {   // out of the sea at the harbour, north up one street, across, and north out of the city
+  const i0 = 4 + Math.floor(Math.random() * 5), i1 = 11 + Math.floor(Math.random() * 5), j = 7 + Math.floor(Math.random() * 5), [a, b] = Math.random() < .5 ? [i0, i1] : [i1, i0];
+  const pts = [[rc(a), HALF + 140], [rc(a), rc(j)], [rc(b), rc(j)], [rc(b), -HALF - 100]], seg = [];
+  let L = 0; for (let k = 0; k < pts.length - 1; k++) { const l = Math.hypot(pts[k + 1][0] - pts[k][0], pts[k + 1][1] - pts[k][1]); seg.push([L, l]); L += l; }
+  const at = s => { s = clamp(s, 0, L); let k = 0; while (k < seg.length - 1 && s > seg[k][0] + seg[k][1]) k++; const u = (s - seg[k][0]) / seg[k][1], [x0, z0] = pts[k], [x1, z1] = pts[k + 1];
+    return { x: lerp(x0, x1, u), z: lerp(z0, z1, u), h: Math.atan2(x1 - x0, z1 - z0) }; };
+  return { pts, L, at };
+}
+function startMonster() {
+  if (!MODELS.monster) { toast('🦖 THE MONSTER IS WAKING UP…', 'ONE MOMENT'); loadModel('monster').then(m => m ? startMonster() : toast('🦖 NO MONSTER TODAY', '')); return; }
+  endActs(); endChase(null, player); clearNav(true);
+  const P = monsterPath(), g = MODELS.monster.clone(); g.scale.setScalar(MON.scale); g.traverse(o => { if (o.isMesh) { o.castShadow = true; } }); scene.add(g);
+  const parts = Object.fromEntries(['LegL', 'LegR', 'ArmL', 'ArmR', 'Tail'].map(n => [n, g.getObjectByName(n)]));
+  // six groups of people along its street, 220 m apart, on the pavement
+  const fig = new THREE.CapsuleGeometry(.3, .9, 3, 8).translate(0, .75, 0), head = new THREE.SphereGeometry(.25, 10, 8).translate(0, 1.65, 0), groups = [];
+  const cols = [0xff5a5a, 0x2fa0ff, 0xffc21f, 0x7dff3a, 0xff8fb0, 0xffffff, 0xb07dff];
+  for (let k = 0; k < 6; k++) {
+    const s = 420 + k * 220, q = P.at(s), side = k % 2 ? 1 : -1, x = q.x + Math.cos(q.h) * side * 9.6, z = q.z - Math.sin(q.h) * side * 9.6, G = new THREE.Group(); G.position.set(x, 0, z); scene.add(G);
+    for (let n = 0; n < 7; n++) { const m = new THREE.Mesh(fig, new THREE.MeshStandardMaterial({ color: cols[(n + k) % cols.length], roughness: .7 })); m.position.set((n % 4) * .9 - 1.3, 0, Math.floor(n / 4) * .9 - .4); m.add(new THREE.Mesh(head, new THREE.MeshStandardMaterial({ color: 0xf2c9a0, roughness: .8 }))); m.userData.ph = n * 1.3; G.add(m); }
+    const ring = new THREE.Mesh(new THREE.RingGeometry(6, 7, 40), new THREE.MeshBasicMaterial({ color: 0x7dff3a, transparent: true, opacity: .8, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(0, .15, 0); G.add(ring);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 80, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x7dff3a, transparent: true, opacity: .2, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.y = 40; G.add(beam);
+    groups.push({ s, x, z, G, state: 'wait', t: 0 });
+  }
+  monster = { P, g, parts, s: 0, t: 0, groups, saved: 0, lost: 0, roarT: 2, step: 0, back: null };
+  monsterPose(0); toast('🦖 MONSTER ALERT!', 'IT IS COMING OUT OF THE SEA · SAVE THE PEOPLE ON ITS STREET!'); monsterRoar(); monsterNav();
+}
+function monsterNav() {
+  const M = monster, p = player, next = M.groups.filter(G => G.state === 'wait').sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
+  M.next = next; if (next) setNav({ n: '🦖 People to rescue', x: next.x, z: next.z }); else clearNav(true);
+}
+function monsterRoar() {
+  const ctx = audio.ctx; if (!ctx) return; const t = ctx.currentTime;
+  const o = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  o.type = 'sawtooth'; o2.type = 'square'; o.frequency.setValueAtTime(140, t); o.frequency.linearRampToValueAtTime(220, t + .4); o.frequency.linearRampToValueAtTime(90, t + 1.6);
+  o2.frequency.setValueAtTime(70, t); o2.frequency.linearRampToValueAtTime(48, t + 1.6); f.type = 'lowpass'; f.frequency.value = 900;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.4, t + .15); g.gain.linearRampToValueAtTime(.3, t + 1.1); g.gain.exponentialRampToValueAtTime(.001, t + 1.7);
+  o.connect(f); o2.connect(f); f.connect(g).connect(audio.master); o.start(t); o2.start(t); o.stop(t + 1.8); o2.stop(t + 1.8);
+}
+function monsterPose(dt) {
+  const M = monster, q = M.P.at(M.s), ph = M.s / 9 * Math.PI, wade = clamp((q.z - HALF) / 120, 0, 1);   // in the water it walks lower
+  M.g.position.set(q.x, Math.abs(Math.sin(ph)) * 1.2 - wade * 14, q.z);
+  M.g.rotation.y = damp(M.g.rotation.y, q.h, 2, dt || 1); M.g.rotation.z = Math.sin(ph) * .05;
+  const { LegL, LegR, ArmL, ArmR, Tail } = M.parts;
+  if (LegL) LegL.rotation.x = Math.sin(ph) * .45; if (LegR) LegR.rotation.x = -Math.sin(ph) * .45;
+  if (ArmL) ArmL.rotation.x = -Math.sin(ph) * .5 - (M.wave || 0); if (ArmR) ArmR.rotation.x = Math.sin(ph) * .5 - (M.wave || 0);
+  if (Tail) Tail.rotation.y = Math.sin(ph * .5) * .3;
+  const st = Math.floor(M.s / 9); if (st !== M.step) { M.step = st; const d = Math.hypot(player.x - q.x, player.z - q.z);   // a footstep: dust and a thump
+    if (d < 120) { shakeT += clamp(1.4 - d / 90, .1, 1.4); audio.burst?.({ type: 'lowpass', freq: 160, q: .7, gain: clamp(1 - d / 140, .1, .9), dur: .35, thump: 40 }); }
+    for (let k = 0; k < 6; k++) smoke.emit(q.x + rr(-6, 6), q.z + rr(-6, 6), rr(-4, 4), rr(-4, 4), 1); }
+}
+function updateMonster(dt, p) {
+  const M = monster; if (!M) return;
+  M.t += dt; M.s += MON.speed * dt; monsterPose(dt);
+  if ((M.roarT -= dt) < 0) { M.roarT = 9 + Math.random() * 6; if (Math.hypot(p.x - M.g.position.x, p.z - M.g.position.z) < 600) monsterRoar(); }
+  // you can't drive through it: a big soft bounce
+  const mx = M.g.position.x, mz = M.g.position.z, dx = p.x - mx, dz = p.z - mz, d = Math.hypot(dx, dz);
+  if (d < 9 && d > .01) { const nx = dx / d, nz = dz / d; p.x = mx + nx * 9; p.z = mz + nz * 9; const vn = p.vx * nx + p.vz * nz; if (vn < 0) { p.vx -= 1.6 * vn * nx; p.vz -= 1.6 * vn * nz; toast('🦖 BOING!', 'THE MONSTER IS SOFT AND BOUNCY'); } }
+  for (const G of M.groups) {
+    const now = performance.now() / 1000;
+    if (G.state === 'wait') {
+      G.G.children.forEach(c => { if (c.userData.ph != null) c.position.y = Math.abs(Math.sin(now * 6 + c.userData.ph)) * .5 * (M.s > G.s - 300 ? 1 : .3); });   // they jump and wave
+      if (Math.hypot(p.x - G.x, p.z - G.z) < 9 && (p.speed || 0) < 4) { G.state = 'saved'; M.saved++; earn(5000); audio.beep(990, .2); toast('🙌 RESCUED!', `${M.saved} OF 6 GROUPS SAFE · +${fmtUSD(5000)}`); scene.remove(G.G); monsterNav(); }
+      else if (M.s > G.s - 6) { G.state = 'lost'; M.lost++; toast('😱 TOO LATE!', 'THEY RAN AWAY FROM THE MONSTER · HURRY TO THE NEXT ONES'); scene.remove(G.G); monsterNav(); }
+    }
+  }
+  if (M.next && M.next.state !== 'wait') monsterNav();
+  if (!nav && M.next) monsterNav();
+  const left = M.groups.filter(G => G.state === 'wait'), nx = left[0];
+  actHud([['RESCUED', `${M.saved}/6`], ['MONSTER', `${Math.round(Math.hypot(p.x - mx, p.z - mz))} m`], ['NEXT GROUP', M.next ? `${Math.round(Math.hypot(p.x - M.next.x, p.z - M.next.z))} m` : '—']], '#4cc35a');
+  if (!left.length && !M.done) { M.done = true; M.wave = 1.6; M.endT = 4; }
+  if (M.done && (M.endT -= dt) <= 0) endMonster(false);
+  if (M.s >= M.P.L) endMonster(false);
+}
+function endMonster(quit) {
+  const M = monster; if (!M) return; monster = null; actHud(null); clearNav(true);
+  scene.remove(M.g); M.groups.forEach(G => scene.remove(G.G));
+  if (quit) return;
+  bump('monsterSaves', M.saved);
+  if (M.saved === 6) { earn(20000); bump('monsterHero'); banner('🦖 TOKYO HERO!', `+${fmtUSD(50000)}`, 'You rescued everyone. The monster waves bye-bye!'); }
+  else banner('🦖 THE MONSTER WENT HOME', `${M.saved} of 6 groups rescued`, M.saved ? `+${fmtUSD(M.saved * 5000)}` : 'Try again from the 🦖 ring');
 }
 
 /* =====================================================================
@@ -9306,7 +9400,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
