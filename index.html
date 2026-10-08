@@ -1284,7 +1284,7 @@ async function buildWorld() {
   scene.add(new THREE.Mesh(sea.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9 })));
   const edgeWall = (z, gaps) => { let x = -HALF - 50; for (const g of [...gaps].sort((a, b) => a - b)) { addCol(x, z - 1, g - 9, z + 1); x = g + 9; } addCol(x, z - 1, HALF + 50, z + 1); };
   edgeWall(-HALF - 6, [rc(1)]);                              // north: the Snow Pass gate
-  edgeWall(HALF + 6, COUNTRY_DEFS.map(d => d.gx));           // south harbour: the three country bridges
+  edgeWall(HALF + 6, [...COUNTRY_DEFS.map(d => d.gx), BOAT.x]);   // …and the boat ramp           // south harbour: the three country bridges
 
   // ---- roads
   const rg = new GB(), ig = new GB(), xg = new GB();
@@ -1544,7 +1544,7 @@ async function buildWorld() {
   buildTracks(); buildDragway();
   buildMountain();
   setLoad(.74, 'Opening the highway and the snow pass…'); await nextFrame();
-  buildWangan(); buildSnowArea(); buildFujiArea(); buildVolcano(); buildMoon(); buildPark(); applySeason();
+  buildWangan(); buildSnowArea(); buildFujiArea(); buildVolcano(); buildMoon(); buildPark(); buildBoatRamp(); applySeason();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs();
@@ -2507,6 +2507,7 @@ class Player {
   dispose() { scene.remove(this.car.group); }
   resetToRoad() {
     if (soccer) return soccerReset(this);
+    if (boat) { boatExit(this); Object.assign(this, { x: BOAT.x - 4, z: HALF - 14, heading: Math.PI, vx: 0, vz: 0, y: 0, yawRate: 0 }); return; }
     if (skids) { skids.lift(0); skids.lift(1); }
     Object.assign(this, { air: false, loop: null, vy: 0, ap: 0, ar: 0, pitchG: 0, rollG: 0, wreckT: 0, airS: null });
     if (inMountain(this)) return mountainReset(this);
@@ -2696,6 +2697,7 @@ function collideWorld(p) {
   }
   p.gx = p.gz = 0; p.terrain = null;
   if (soccer) { p.y = 0; p.slope = 0; p.surf = 'track'; return Math.max(hit, soccerCollide(p)); }
+  if (boat || (p.z > HALF + 5 && Math.abs(p.x - BOAT.x) < 7.2 && p.z < BOAT.z1)) { const h = boatCollide(p); if (h !== null) return Math.max(hit, h); }
   if (race) { p.y = 0; p.slope = 0; p.surf = 'track'; return Math.max(hit, trackCollide(p)); }
   if (drag) { p.y = 0; p.slope = 0; p.surf = 'drag'; return Math.max(hit, dragCollide(p)); }
   if (inMountain(p)) { p.surf = 'mtn'; return Math.max(hit, mountainCollide(p)); }
@@ -2704,7 +2706,7 @@ function collideWorld(p) {
   const lim = HALF + 7;
   const toMountain = p.x < 0 && Math.abs(p.z - MTN.gateZ) < 6.5; // the west gate: the road out to Mt. Amboola
   if (Math.abs(p.x) > lim && !toMountain && !atGate(p)) { p.x = Math.sign(p.x) * lim; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.3; }
-  if (Math.abs(p.z) > lim && !atGate(p)) { p.z = Math.sign(p.z) * lim; hit = Math.max(hit, Math.abs(p.vz)); p.vz *= -.3; }
+  if (Math.abs(p.z) > lim && !atGate(p) && !(p.z > 0 && Math.abs(p.x - BOAT.x) < 7.2)) { p.z = Math.sign(p.z) * lim; hit = Math.max(hit, Math.abs(p.vz)); p.vz *= -.3; }
   return hit;
 }
 
@@ -8663,6 +8665,59 @@ function updatePark(dt, p) {
     if (parkRide) { parkRide.max = Math.max(parkRide.max, i); if (i > COASTER.n - 25 && parkRide.max > COASTER.n * .9) { parkRide = null; earn(5000); bump('coaster'); banner('🎢 WHAT A RIDE!', '+$5,000', 'You drove the whole AMBOOLA Coaster'); } }
   } else if (parkRide && p.surf !== 'route') parkRide = null;
 }
+/* =====================================================================
+   BOAT MODE — at the 🚤 boat ramp on the harbour (the south edge, on road rc(6)) any car can drive down into the
+   sea: it gets an orange-and-white hull, floats, leaves a wake and turns like a speedboat. Sail round the bay (the
+   beach island, under the bridges, out to Volcano Island) and drive back up the ramp to be a car again.
+   ===================================================================== */
+const BOAT = { x: rc(6), z0: HALF + 7, z1: HALF + 42, water: -1.2, cap: 30 };
+let boat = null;
+function buildBoatRamp() {
+  const g = new THREE.Group(); scene.add(g); const L = BOAT.z1 - BOAT.z0 + 4;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(14, .6, L), new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: .9 }));
+  slab.position.set(BOAT.x, -.6, (BOAT.z0 + BOAT.z1) / 2); slab.rotation.x = Math.atan2(1.4, L); slab.receiveShadow = true; g.add(slab);
+  for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.BoxGeometry(.6, 1, L), new THREE.MeshStandardMaterial({ color: 0xffc21f, roughness: .6 })); w.position.set(BOAT.x + s * 7.3, -.2, (BOAT.z0 + BOAT.z1) / 2); g.add(w); }
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(12, 2.6), new THREE.MeshBasicMaterial({ map: signTex(1024, 220, '#0d4a7a', [['🚤 BOAT RAMP · 船', .42, .34, OR, '#fff'], ['ANY CAR TURNS INTO A BOAT', .78, .16, OR, '#ffc21f']], '#fff'), side: THREE.DoubleSide }));
+  sg.position.set(BOAT.x, 6, BOAT.z0 - 2); g.add(sg); for (const s of [-1, 1]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.3, 6, .3), new THREE.MeshStandardMaterial({ color: 0xffffff })); post.position.set(BOAT.x + s * 5.8, 3, BOAT.z0 - 2); g.add(post); }
+  const buoy = new THREE.MeshStandardMaterial({ color: 0xff5a1f, roughness: .5 }); BOAT.buoys = [];
+  for (let k = 0; k < 10; k++) { const b = new THREE.Mesh(new THREE.SphereGeometry(.7, 10, 8), buoy); b.position.set(BOAT.x + (k % 2 ? 1 : -1) * 12, BOAT.water, BOAT.z1 + 10 + k * 18); g.add(b); BOAT.buoys.push(b); }
+  landmarks.push({ x: BOAT.x, z: HALF - 10, c: '#2fa0ff', n: 'Boat Ramp' });
+}
+function hullFor(car) {   // a speedboat hull sized to the car: pointed bow, flat stern, orange stripe
+  const G = car.G ??= carGeom(car), L = G ? G.z1 - G.z0 + .8 : 5, W = G ? G.xh * 2 + .5 : 2.4, zc = G ? (G.z0 + G.z1) / 2 : 0;
+  const sh = new THREE.Shape(); sh.moveTo(-W / 2, -L / 2); sh.lineTo(W / 2, -L / 2); sh.lineTo(W / 2, L * .18); sh.quadraticCurveTo(W / 2, L * .42, 0, L / 2); sh.quadraticCurveTo(-W / 2, L * .42, -W / 2, L * .18); sh.closePath();
+  const hull = new THREE.Group(), geo = new THREE.ExtrudeGeometry(sh, { depth: 1.2, bevelEnabled: true, bevelThickness: .15, bevelSize: .15, bevelSegments: 2 });
+  geo.rotateX(Math.PI / 2); geo.translate(0, .75, zc);
+  const white = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xf6f6f2, roughness: .35 })); white.castShadow = true; hull.add(white);
+  const stripe = new THREE.Mesh(geo.clone().scale(1.02, .22, 1.02).translate(0, .1, 0), new THREE.MeshStandardMaterial({ color: 0xff8a1f, roughness: .4 })); hull.add(stripe);
+  hull.position.y = -.55; return hull;
+}
+function boatEnter(p) { boat = { hull: hullFor(p.car), t: 0 }; p.car.group.add(boat.hull); toast('🚤 BOAT MODE!', 'YOUR CAR IS A SPEEDBOAT · DRIVE BACK UP THE RAMP TO LAND'); audio.beep(700, .2); bump('boatTrips'); }
+function boatExit(p) { if (!boat) return; p.car.group.remove(boat.hull); boat = null; toast('🚗 CAR MODE', 'BACK ON LAND'); }
+const onRamp = p => Math.abs(p.x - BOAT.x) < 7.2 && p.z > HALF + 5 && p.z < BOAT.z1;
+// called from collideWorld for anything south of the harbour edge near the ramp, and for the whole time you are a boat
+function boatCollide(p) {
+  let hit = 0;
+  if (onRamp(p)) {   // the ramp itself: a slope between two yellow walls
+    const u = clamp((p.z - BOAT.z0) / (BOAT.z1 - BOAT.z0), 0, 1); p.y = -1.4 * u; p.slope = 0; p.surf = 'ramp'; p.terrain = null;
+    const lx = p.x - BOAT.x; if (Math.abs(lx) > 6.1) { p.x = BOAT.x + Math.sign(lx) * 6.1; hit = Math.abs(p.vx); p.vx *= -.3; }
+    if (u > .75 && !boat) boatEnter(p);
+    if (u < .6 && boat) boatExit(p);
+    return hit;
+  }
+  if (!boat) return null;
+  if (p.z < HALF) { boatExit(p); return null; }   // teleported away (map, garage…)
+  p.y = BOAT.water + .35 + Math.sin(performance.now() / 400) * .06; p.slope = 0; p.surf = 'boat'; p.terrain = 'water'; p.gx = p.gz = 0;
+  const v = Math.hypot(p.vx, p.vz); if (v > BOAT.cap) { p.vx *= BOAT.cap / v; p.vz *= BOAT.cap / v; }
+  // the sea: the harbour wall (except the ramp), the beach island, Volcano Island and the edge of the map
+  const box = (x0, z0, x1, z1) => { if (p.x < x0 || p.x > x1 || p.z < z0 || p.z > z1) return; const o = [[p.x - x0, -1, 0], [x1 - p.x, 1, 0], [p.z - z0, 0, -1], [z1 - p.z, 0, 1]].sort((a, b) => a[0] - b[0])[0];
+    p.x += o[1] * o[0]; p.z += o[2] * o[0]; const vn = p.vx * o[1] + p.vz * o[2]; if (vn < 0) { p.vx -= 1.4 * vn * o[1]; p.vz -= 1.4 * vn * o[2]; hit = Math.max(hit, -vn); } };
+  if (p.z < BOAT.z1 && Math.abs(p.x - BOAT.x) >= 7.2) box(-1e5, -1e5, 1e5, BOAT.z1);
+  box(ISLAND.x0, ISLAND.z0, ISLAND.x1, ISLAND.z1); box(VOLC.x0, VOLC.z0, VOLC.x1, VOLC.z1);
+  p.x = clamp(p.x, -9000, 9000); p.z = clamp(p.z, BOAT.z0, 9000);
+  if (v > 4 && Math.random() < .9) { const fx = Math.sin(p.heading), fz = Math.cos(p.heading); spray.spray(p.x - fx * 2.8, p.z - fz * 2.8, -p.vx * .3, -p.vz * .3, 1, BOAT.water + .6); }
+  return hit;
+}
 let gravK = 1, moonSky = false;
 function buildMoon() {
   const g = new THREE.Group(); scene.add(g); MOON.group = g;
@@ -9417,7 +9472,7 @@ function startDrive() {
     (startDrive.waited ??= {})[spec.id] = 1; $('drive').textContent = 'LOADING…'; loadModel(spec.id).then(() => { if (state === 'garage') startDrive(); }); return;
   }
   localStorage.setItem('amboola.lastcar', carIdx);
-  let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
+  boat = null; let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
   player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); updateRadioHud(); attachDog(player.car);
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
   audio.setCar(spec); loudExhaust(spec);
@@ -9567,7 +9622,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
