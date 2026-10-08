@@ -586,3 +586,20 @@ There are no audio files; all sound is generated live with the Web Audio API.
 
 ---
 *Fan-made game. Not affiliated with or endorsed by Porsche, Tesla, Lamborghini, Ferrari, McLaren or Bugatti. Model names are used only to identify the cars.*
+
+## Super fun update 🦖🍌🎢🚤🚁
+
+- **🛻 Tow truck and 🚒 fire engine jobs.** Get them at the AMBOOLA Rescue station: tow broken-down cars to the junkyard, or spray burning buildings with the water cannon.
+- **👻 Ghost car.** In races, a see-through blue copy of you drives your best race on that track.
+- **⚽ Car soccer.** Play in the AMBOOLA Arena: your car against a robot car with a giant ball. A match lasts 2 minutes.
+- **🦖 Monster attack.** Gojira-chan, a friendly giant dinosaur, walks out of the sea and stomps through Tokyo. Rescue the 6 groups of people on its street before it gets to them. Start it from the 🦖 ring.
+- **🍌 Crazy races.** Switch on CRAZY MODE in the races list. Drive through ❓ boxes to get a 🚀 rocket, a 🍌 banana or a 🛡 shield, and press **I** to use it.
+- **🎢 AMBOOLA Land.** A theme park you reach from the 🎢 ring. Drive the red rollercoaster yourself, up to 34 m high. There is also a loop, jumps, a castle, a Ferris wheel, a carousel and a drop tower.
+- **🚤 Boat mode.** Drive down the boat ramp at the harbour and any car turns into a speedboat. Drive back up the ramp to be a car again.
+- **🚁 Helicopter.** Buy it in the garage and press FLY.
+  - Controls: **W/S** fly forward and back, **A/D** turn, **↑ or Space** go up, **↓ or Shift** go down.
+  - You can land on any roof.
+  - Rescue jobs: pick people up from a roof (green beam), then fly them to the 🏥 helipad on AMBOOLA HQ.
+  - Press **Enter** on a street to get out and drive.
+
+The new models are made in Blender: `models/blender/work_trucks.py`, `monster.py` and `heli.py`.

@@ -723,6 +723,8 @@ const CARS = [
   // AMBOOLA work trucks (models/blender/work_trucks.py): tow cars to the garage and put out fires for money
   { id: 'towtruck', name: 'AMBOOLA Tow Truck', brand: 'Amboola', cat: 'AMBOOLA', body: 'towtruck', wing: 'none', kw: 300, redline: 4500, mass: 4200, vmax: 160, drive: 'RWD', engine: 'v8tt', gears: 6, zero: 9.0, grip: 0.95, aero: .1, paint: 8, rim: '#d8d8d8', caliper: '#f2a20f', box: '6-speed auto', usd: 120000, desc: 'Crane and hook · tow jobs pay $25,000', jp: 'レッカー車' },
   { id: 'firetruck', name: 'AMBOOLA Fire Engine', brand: 'Amboola', cat: 'AMBOOLA', body: 'firetruck', wing: 'none', kw: 380, redline: 3600, mass: 9000, vmax: 140, drive: 'RWD', engine: 'v8tt', gears: 6, zero: 12.0, grip: 0.9, aero: .1, paint: 0, rim: '#d8d8d8', caliper: '#c8141b', box: '6-speed auto', usd: 180000, desc: 'Water cannon and ladder · fire jobs pay $30,000', jp: '消防車' },
+  // the AMBOOLA Helicopter (models/blender/heli.py): flies anywhere, lands on any roof (jet: true keeps it out of races and car lists)
+  { id: 'amboolaheli', name: 'AMBOOLA Helicopter', brand: 'Amboola', cat: 'AMBOOLA', jet: true, heli: true, body: 'amb_jet', wing: 'none', kw: 650, redline: 6000, mass: 2200, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 6, grip: 1, aero: 0, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 150000, desc: 'Lands on any roof · rescues pay $15,000', jp: 'ヘリ' },
 ];
 
 /* =====================================================================
@@ -1015,6 +1017,12 @@ function addCol(x0, z0, x1, z1) {
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const k = gkey(i, j); if (!colGrid.has(k)) colGrid.set(k, []); colGrid.get(k).push(b); }
 }
 const parks = [], landmarks = [];
+const roofGrid = new Map();   // building tops for the helicopter: [x0, z0, x1, z1, h] per city cell
+function addRoof(x0, z0, x1, z1, h) {
+  if (colMute) return; const r = [x0, z0, x1, z1, h];
+  for (let i = Math.floor((x0 + HALF) / CELL); i <= Math.floor((x1 + HALF) / CELL); i++) for (let j = Math.floor((z0 + HALF) / CELL); j <= Math.floor((z1 + HALF) / CELL); j++) { const k = gkey(i, j); if (!roofGrid.has(k)) roofGrid.set(k, []); roofGrid.get(k).push(r); }
+}
+const roofsAt = (x, z, m = 0) => (roofGrid.get(gkey(Math.floor((x + HALF) / CELL), Math.floor((z + HALF) / CELL))) || []).filter(r => x > r[0] - m && x < r[2] + m && z > r[1] - m && z < r[3] + m);
 
 /* =====================================================================
    ENV / SKY / LIGHTING
@@ -1383,7 +1391,7 @@ async function buildWorld() {
       if (district === 3) { // harbor warehouses + containers
         const h = rr(8, 14); const G = facadeGB[3];
         G.box(cx, 0, cz, w, h, d, 16, 32, rr(0, 1), [col[0] * .9, col[1] * .9, col[2]], roofGB);
-        addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2);
+        addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2); addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, h);
         continue;
       }
       if (district === 2) { // Japanese houses & small apartments
@@ -1392,12 +1400,12 @@ async function buildWorld() {
           const wc = pick([[.93, .9, .84], [.85, .83, .8], [.78, .72, .64], [.95, .95, .95], [.6, .58, .55]]);
           plainGB.box(cx, 0, cz, hw, h, hd, 4, 3, 0, wc, plainGB);
           tileGB.gable(cx, h, cz, hw, hd, rr(1.6, 2.6), .6, pick([[.25, .27, .3], [.35, .2, .15], [.18, .22, .28], [.3, .3, .3]]));
-          addCol(cx - hw / 2, cz - hd / 2, cx + hw / 2, cz + hd / 2);
+          addCol(cx - hw / 2, cz - hd / 2, cx + hw / 2, cz + hd / 2); addRoof(cx - hw / 2, cz - hd / 2, cx + hw / 2, cz + hd / 2, h + 1.2);
           if (rand() < .25) { const [fx, fz] = facing(cx, cz, bx0, bz0, bx1, bz1); vending.push([cx + fx * (hw / 2 + .5), cz + fz * (hd / 2 + .5), Math.atan2(fx, fz)]); }
         } else {
           const h = rr(9, 16); const fi = pick([1, 3, 4]);
           facadeGB[fi].box(cx, 0, cz, w, h, d, 16, 32, Math.floor(rr(0, 8)) / 8, col, roofGB);
-          addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2);
+          addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2); addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, h);
         }
         continue;
       }
@@ -1409,12 +1417,14 @@ async function buildWorld() {
         const ph = rr(18, 30); G.box(cx, 0, cz, w, ph, d, 16, 32, 0, col, roofGB);
         const tw = w * rr(.6, .8), td = d * rr(.6, .8);
         const G2 = facadeGB[pick([0, 2, 4])]; G2.box(cx, ph, cz, tw, h - ph, td, 16, 32, Math.floor(rr(0, 8)) / 8, col, roofGB);
+        addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, ph); addRoof(cx - tw / 2, cz - td / 2, cx + tw / 2, cz + td / 2, h);
         if (rand() < .5) { G2.box(cx, h, cz, tw * .6, rr(6, 14), td * .6, 16, 32, 0, col, roofGB); }
         antennas.push([cx, h + 6, cz]);
       } else {
         G.box(cx, 0, cz, w, h, d, 16, 32, Math.floor(rr(0, 8)) / 8, col, roofGB);
         // rooftop units
         for (let k = 0; k < 3; k++) roofGB.box(cx + rr(-w / 3, w / 3), h, cz + rr(-d / 3, d / 3), rr(2, 4), rr(1.5, 3), rr(2, 4), 8, 8, 0, [.55, .56, .58]);
+        addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, h);
       }
       addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2);
       const [fx, fz] = facing(cx, cz, bx0, bz0, bx1, bz1);
@@ -1960,6 +1970,7 @@ function buildCar(spec, paintHex, metal = .4, rough) {
   const B = BODIES[spec.body];
   const lift = spec.dakar ? .07 : 0;
   const paint = new THREE.MeshPhysicalMaterial({ color: paintHex, metalness: metal, roughness: rough ?? (metal > .6 ? .3 : .36), clearcoat: rough ? 0 : 1, clearcoatRoughness: .07 });
+  if (spec.heli) return buildHeli(spec, paintHex);
   if (spec.jet) return buildJet(spec, paintHex);
   if (MODELS[spec.id]) return buildModelCar(spec, MODELS[spec.id], paint);
   const group = new THREE.Group(); const orient = new THREE.Group(); orient.rotation.y = -Math.PI / 2; group.add(orient);
@@ -3025,6 +3036,7 @@ const MISSIONS = [
   { id: 'tow3', n: 'TOW HERO', d: 'Tow 3 broken-down cars to the junkyard', goal: 3, v: () => ST.towJobs || 0, r: 30000 },
   { id: 'soccer1', n: 'GOLDEN BOOT', d: 'Win a car soccer match against the robot', goal: 1, v: () => ST.soccerWins || 0, r: 15000 },
   { id: 'kaiju', n: 'TOKYO HERO', d: 'Rescue all 6 groups before the monster gets there', goal: 1, v: () => ST.monsterHero || 0, r: 50000 },
+  { id: 'heli3', n: 'AIR RESCUE', d: 'Fly 3 people to the hospital helipad by helicopter', goal: 3, v: () => ST.heliRescues || 0, r: 40000 },
   { id: 'fire3', n: 'FIREFIGHTER', d: 'Put out 3 fires with the AMBOOLA Fire Engine', goal: 3, v: () => ST.fireJobs || 0, r: 40000 },
 ];
 let achvQ = [], achvBusy = false;
@@ -3250,6 +3262,7 @@ addEventListener('keydown', e => {
   if (state === 'ad' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endAd(); return; }
   if (state === 'ferry' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endFerry(true); return; }
   if (state === 'photo' && (e.code === 'Escape' || e.code === 'KeyF') && !keys[e.code]) { keys[e.code] = true; endPhoto(); return; }
+  if (state === 'heli' && !keys[e.code]) { if (e.code === 'Enter') heliGetOut(); if (e.code === 'Escape') { endHeli(); enterGarage(); } }
   if (state === 'fly' && !keys[e.code]) { if (e.code === 'KeyL') landJet(); if (e.code === 'Escape') { endFlight(); enterGarage(); } }
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
@@ -3339,7 +3352,7 @@ function buildGarage() {
 function showGarageCar() {
   if (!MODELS[CARS[carIdx].id]) loadModel(CARS[carIdx].id);
   if (gCar) gScene.remove(gCar.group);
-  const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08; if (CARS[carIdx].jet) { gCar.group.scale.setScalar(.3); gCar.group.position.y = .7; }
+  const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08; if (CARS[carIdx].heli) { gCar.group.scale.setScalar(.55); } else if (CARS[carIdx].jet) { gCar.group.scale.setScalar(.3); gCar.group.position.y = .7; }
   dentCar(gCar, dentsOf(CARS[carIdx].id));
   gCar.headMat.emissiveIntensity = 2.5; gCar.tailMat.emissiveIntensity = 2;
   gCar.group.traverse(o => { if (o.isMesh) o.castShadow = true; });
@@ -3553,9 +3566,9 @@ function updateMenu() {
   dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
   dv.textContent = own ? 'DRIVE' : wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`;
   for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own && !c.jet ? 1 : .35;
-  if (c.jet && own) dv.textContent = '✈ FLY';
+  if (c.jet && own) dv.textContent = c.heli ? '🚁 FLY' : '✈ FLY';
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
-  $('sName').textContent = c.name; $('sSub').textContent = c.jet ? 'Twin-engine jet · Mach 16 · lands at every airport' : `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
+  $('sName').textContent = c.name; $('sSub').textContent = c.heli ? 'Helicopter · 250 km/h · lands on any roof · rescue jobs' : c.jet ? 'Twin-engine jet · Mach 16 · lands at every airport' : `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
   const z = t === c ? c.zero : c.zero * simSprint(t).t100 / simSprint(c).t100;
   $('vPow').textContent = `${Math.round(t.kw * 1.36)} PS`; $('bPow').style.width = clamp(t.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${t.vmax} km/h`; $('bTop').style.width = clamp((t.vmax - 180) / 1.7, 5, 100) + '%';
@@ -7173,7 +7186,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing();
+  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing(); buildHeliPad();
 }
 
 /* =====================================================================
@@ -8966,6 +8979,128 @@ function endFlight() {
   camera.fov = 62; camera.updateProjectionMatrix();
   if (player) player.car.group.visible = true;
 }
+/* =====================================================================
+   THE AMBOOLA HELICOPTER (models/blender/heli.py) — pick it in the garage and FLY. W/S fly forward/back, A/D turn,
+   ↑ or SPACE climb, ↓ or SHIFT go down. Every building has a real roof, so you can land on any of them.
+   RESCUE JOBS: someone is waiting on a rooftop (the green beam). Land next to them, wait while they climb in, then fly
+   them to the 🏥 helipad on the roof of AMBOOLA HQ: $15,000 a rescue. Land on a street and press ENTER to get out and
+   drive your car from there; ESC goes back to the garage.
+   ===================================================================== */
+const HELI = { vmax: 70, climb: 12 }, HELIPAD = { x: HQ.x + 14, z: HQ.z - 14, y: 16 };
+let heli = null;
+function buildHeli(spec, paintHex) {
+  const group = new THREE.Group(), body = new THREE.Group(); group.add(body);
+  const paint = new THREE.MeshPhysicalMaterial({ color: paintHex, metalness: .3, roughness: .3, clearcoat: 1, clearcoatRoughness: .07 });
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff }), tailMat = new THREE.MeshStandardMaterial({ color: 0xff2020 });
+  let rotor = null, tail = null;
+  if (MODELS.heli) {
+    const m = MODELS.heli.clone(); m.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material?.name === 'Paint') o.material = paint; } });
+    body.add(m); rotor = m.getObjectByName('Rotor'); tail = m.getObjectByName('TailRotor');
+  } else { loadModel('heli').then(() => { if (state === 'garage' && CARS[carIdx]?.heli) showGarageCar(); }); const b = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), paint); b.scale.set(1, .9, 1.6); b.position.y = 1.6; body.add(b); }
+  return { group, body, wheels: [], headMat, tailMat, paint, B: BODIES[spec.body], jet: true, heli: true, rotor, tail };
+}
+function buildHeliPad() {   // the hospital helipad on the roof of AMBOOLA HQ
+  addRoof(HQ.x - 25, HQ.z - 25, HQ.x + 25, HQ.z + 25, HQ.h + 1);
+  const t = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#2b2d31'; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 2, 0, 7); c.fill(); c.strokeStyle = '#ffc21f'; c.lineWidth = 10; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 14, 0, 7); c.stroke();
+    c.fillStyle = '#fff'; c.font = `900 150px ${OR}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('H', w / 2, h / 2 + 8); c.fillStyle = '#ff3a3a'; c.fillRect(w / 2 + 50, 40, 14, 44); c.fillRect(w / 2 + 35, 55, 44, 14); });
+  const m = new THREE.Mesh(new THREE.CircleGeometry(9, 40), new THREE.MeshStandardMaterial({ map: t, roughness: .8 })); m.rotation.x = -Math.PI / 2; m.position.set(HELIPAD.x, HELIPAD.y + .06, HELIPAD.z); scene.add(m);
+}
+function heliGround(x, z) {   // the highest roof under the helicopter (or the street, or the sea)
+  let y = 0; for (const r of roofsAt(x, z, 1.2)) y = Math.max(y, r[4]);
+  return y;
+}
+function startHeli(spec) {
+  const back = player; if (back) back.car.group.visible = false;
+  const car = buildHeli(spec, PAINTS[paintIdx].c); scene.add(car.group);
+  const x = back ? back.x : HELIPAD.x, z = back ? back.z : HELIPAD.z, y = back ? heliGround(x, z) : HELIPAD.y;
+  heli = { car, x, z, y, yaw: back ? back.heading : 0, vx: 0, vz: 0, vy: 0, spin: 0, landed: true, pitch: 0, roll: 0, job: null, jobs: 0, snd: null };
+  camPos.set(x - Math.sin(heli.yaw) * 16, y + 7, z - Math.cos(heli.yaw) * 16);
+  $('menu').classList.add('hidden'); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
+  renderPass.scene = scene; renderPass.camera = camera; applyTime(timeName); audio.init(); state = 'heli';
+  heliSound(true); heliJob();
+  toast('🚁 READY TO FLY!', 'HOLD ↑ OR SPACE TO TAKE OFF · W/S FORWARD · A/D TURN');
+}
+function heliSound(on) {
+  const ctx = audio.ctx; if (!ctx) return;
+  if (on && !heli.snd) { const o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), f = ctx.createBiquadFilter(), g = ctx.createGain(), am = ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 55; lfo.type = 'square'; lfo.frequency.value = 14; lg.gain.value = .5; am.gain.value = .5; lfo.connect(lg).connect(am.gain);
+    f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0; o.connect(f).connect(am).connect(g).connect(audio.master); o.start(); lfo.start(); heli.snd = { o, lfo, g }; }
+  if (!on && heli?.snd) { heli.snd.o.stop(); heli.snd.lfo.stop(); heli.snd = null; }
+}
+function heliJob() {   // a person waiting on a tall roof 300–1200 m away
+  const H = heli, all = [];
+  for (const list of roofGrid.values()) for (const r of list) { const cx = (r[0] + r[2]) / 2, cz = (r[1] + r[3]) / 2, d = Math.hypot(cx - H.x, cz - H.z); if (r[4] > 22 && r[2] - r[0] > 14 && r[3] - r[1] > 14 && d > 300 && d < 1200) all.push(r); }
+  const r = all[Math.floor(Math.random() * all.length)]; if (!r) return;
+  const x = (r[0] + r[2]) / 2, z = (r[1] + r[3]) / 2, y = r[4], g = new THREE.Group(); g.position.set(x, y, z); scene.add(g);
+  const fig = new THREE.CapsuleGeometry(.3, .9, 3, 8).translate(0, .75, 0), cols = [0xff5a5a, 0x2fa0ff, 0xffc21f];
+  for (let n = 0; n < 3; n++) { const m = new THREE.Mesh(fig, new THREE.MeshStandardMaterial({ color: cols[n] })); m.position.set(n * .9 - .9, 0, -3); m.userData.ph = n; g.add(m); }
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 160, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x7dff3a, transparent: true, opacity: .25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.y = 80; g.add(beam);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(6, 7, 40), new THREE.MeshBasicMaterial({ color: 0x7dff3a, transparent: true, opacity: .8, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .2; g.add(ring);
+  if (H.job) scene.remove(H.job.g);
+  H.job = { x, z, y, g, phase: 'pickup', t: 0 };
+  if (!H.arrow) { H.arrow = new THREE.Mesh(new THREE.ConeGeometry(.8, 2.6, 10).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x7dff3a })); scene.add(H.arrow); }
+  toast('📻 RESCUE CALL!', 'SOMEONE NEEDS HELP ON A ROOF · FOLLOW THE GREEN ARROW');
+}
+function updateHeli(dt) {
+  const H = heli, k = keys; if (!H) return;
+  const fwd = (k.KeyW || touchState.g ? 1 : 0) - (k.KeyS || touchState.b ? 1 : 0), turn = (k.KeyA || touchState.l ? 1 : 0) - (k.KeyD || touchState.r ? 1 : 0);
+  const up = (k.ArrowUp || k.Space || touchState.h ? 1 : 0) - (k.ArrowDown || k.ShiftLeft || k.ShiftRight || touchState.n ? 1 : 0);
+  const ground = heliGround(H.x, H.z);
+  H.spin = damp(H.spin, H.landed && up <= 0 ? .35 : 1, 1.5, dt);
+  if (H.landed) { H.vx *= .8; H.vz *= .8; if (up > 0 && H.spin > .8) { H.landed = false; H.vy = 3; } }
+  else {
+    H.yaw += turn * 1.6 * dt;
+    const fx = Math.sin(H.yaw), fz = Math.cos(H.yaw);
+    H.vx += fx * fwd * 16 * dt; H.vz += fz * fwd * 16 * dt; const drag = Math.exp(-.45 * dt); H.vx *= drag; H.vz *= drag;
+    const v = Math.hypot(H.vx, H.vz); if (v > HELI.vmax) { H.vx *= HELI.vmax / v; H.vz *= HELI.vmax / v; }
+    H.vy = damp(H.vy, up * HELI.climb, 2.5, dt);
+    if (!up && H.y - ground < 5 && Math.hypot(H.vx, H.vz) < 8) H.vy = Math.min(H.vy, -1.8);   // close to the ground and slow: it settles down by itself
+    H.x += H.vx * dt; H.z += H.vz * dt; H.y = Math.min(900, H.y + H.vy * dt);
+    // the side of a building: bounce off it unless you are above its roof
+    for (const r of roofsAt(H.x, H.z, 2)) if (H.y < r[4] - 1.5) {
+      const o = [[H.x - r[0] + 2, -1, 0], [r[2] + 2 - H.x, 1, 0], [H.z - r[1] + 2, 0, -1], [r[3] + 2 - H.z, 0, 1]].sort((a, b) => a[0] - b[0])[0];
+      H.x += o[1] * o[0]; H.z += o[2] * o[0]; H.vx = o[1] ? -H.vx * .3 : H.vx; H.vz = o[2] ? -H.vz * .3 : H.vz; audio.crash?.(4); }
+    const g2 = heliGround(H.x, H.z);
+    if (H.y <= g2) { H.y = g2; if (H.vy < -6) { audio.crash?.(6); toast('🚁 BUMP!', 'LAND MORE GENTLY'); } H.vy = 0; if (Math.hypot(H.vx, H.vz) < 6) { H.landed = true; } else { H.vx *= .7; H.vz *= .7; } }
+  }
+  if (H.landed) H.y = ground;
+  // tilt with the controls, spin the rotors
+  H.pitch = damp(H.pitch, H.landed ? 0 : fwd * .22, 3, dt); H.roll = damp(H.roll, H.landed ? 0 : -turn * .18, 3, dt);
+  const c = H.car; c.group.position.set(H.x, H.y, H.z); c.group.rotation.order = 'YXZ'; c.group.rotation.set(H.pitch, H.yaw, H.roll);
+  if (c.rotor) c.rotor.rotation.y += H.spin * 28 * dt; if (c.tail) c.tail.rotation.x += H.spin * 40 * dt;
+  if (H.snd) { H.snd.g.gain.setTargetAtTime(audio.muted ? 0 : .12 * H.spin, audio.ctx.currentTime, .1); H.snd.lfo.frequency.setTargetAtTime(8 + H.spin * 8, audio.ctx.currentTime, .2); }
+  if (!H.landed && H.y - ground < 12 && Math.random() < dt * 30) smoke.emit(H.x + rr(-5, 5), H.z + rr(-5, 5), rr(-6, 6), rr(-6, 6), .5, ground);   // rotor wash
+  // chase camera
+  const fx = Math.sin(H.yaw), fz = Math.cos(H.yaw), cx = H.x - fx * 17, cz = H.z - fz * 17, cy = Math.max(H.y + 6.5, heliGround(cx, cz) + 3);
+  camPos.x = damp(camPos.x, cx, 4, dt); camPos.y = damp(camPos.y, cy, 4, dt); camPos.z = damp(camPos.z, cz, 4, dt);
+  if (!(window.__camHook && window.__camHook(camera, dt))) { camera.position.copy(camPos); camera.lookAt(H.x + fx * 8, H.y + 1, H.z + fz * 8); }
+  sky.position.copy(camera.position); sun.position.set(H.x + sunDir.x * 400, H.y + sunDir.y * 400, H.z + sunDir.z * 400); sun.target.position.set(H.x, H.y, H.z);
+  // the rescue job
+  const J = H.job; let info = ['RESCUE', '—'];
+  if (J) {
+    const tx = J.phase === 'pickup' ? J.x : HELIPAD.x, tz = J.phase === 'pickup' ? J.z : HELIPAD.z, ty = J.phase === 'pickup' ? J.y : HELIPAD.y, d = Math.hypot(tx - H.x, tz - H.z);
+    H.arrow.position.set(H.x + fx * 6, H.y + 4.5, H.z + fz * 6); H.arrow.lookAt(tx, ty, tz); H.arrow.material.color.set(J.phase === 'pickup' ? 0x7dff3a : 0xff3a3a);
+    J.g.children.forEach(o => { if (o.userData.ph != null) o.position.y = Math.abs(Math.sin(performance.now() / 160 + o.userData.ph)) * .4; });
+    const onIt = H.landed && d < 14 && Math.abs(H.y - ty) < 1;
+    if (onIt) { J.t += dt; if (J.t > 1.5) {
+      if (J.phase === 'pickup') { J.phase = 'drop'; J.t = 0; J.g.children.filter(o => o.userData.ph != null).forEach(o => o.visible = false); J.g.position.set(HELIPAD.x, HELIPAD.y, HELIPAD.z); J.g.children.forEach(o => { if (o.userData.ph == null) o.material.color.set(0xff3a3a); }); toast('🙌 ALL ABOARD!', 'FLY THEM TO THE 🏥 HELIPAD ON AMBOOLA HQ · FOLLOW THE RED ARROW'); audio.beep(990, .2); }
+      else { H.jobs++; earn(15000); bump('heliRescues'); banner('🚁 RESCUED!', `+${fmtUSD(15000)}`, `${H.jobs} rescue${H.jobs > 1 ? 's' : ''} today · a new call is coming`); scene.remove(J.g); H.job = null; setTimeout(() => { if (heli === H) heliJob(); }, 4000); }
+    } } else J.t = 0;
+    info = [J.phase === 'pickup' ? '🟢 PICK UP' : '🏥 HELIPAD', d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m'];
+  } else if (H.arrow) H.arrow.position.y = -999;
+  actHud([['ALTITUDE', `${Math.round(H.y)} m`], ['SPEED', `${Math.round(Math.hypot(H.vx, H.vz) * 3.6)} km/h`], info, ['', H.landed && ground < .5 ? 'ENTER: GET OUT' : 'ESC: GARAGE']], '#ffc21f');
+  updateWeather(dt, { x: H.x, z: H.z, vx: H.vx, vz: H.vz }); $('walletHud').textContent = fmtUSD(wallet.usd);
+}
+function endHeli() {
+  const H = heli; if (!H) return; heliSound(false); scene.remove(H.car.group); if (H.job) scene.remove(H.job.g); if (H.arrow) scene.remove(H.arrow); heli = null; actHud(null);
+  if (player) player.car.group.visible = true;
+}
+function heliGetOut() {   // landed on a street: hop into your car right here
+  const H = heli; if (!H || !H.landed || heliGround(H.x, H.z) > .5) return;
+  const at = { x: H.x + Math.cos(H.yaw) * 7, z: H.z - Math.sin(H.yaw) * 7, h: H.yaw }; endHeli();
+  carIdx = lastCarIdx(); paintIdx = savedPaint(CARS[carIdx]); if (player) { player.dispose(); player = null; }
+  startDrive(); Object.assign(player, { x: at.x, z: at.z, heading: at.h, vx: 0, vz: 0, y: 0 }); camPos.set(at.x - Math.sin(at.h) * 8, 3, at.z - Math.cos(at.h) * 8);
+}
 function lastCarIdx() {
   const saved = +localStorage.getItem('amboola.lastcar');
   if (CARS[saved] && !CARS[saved].jet && owns(CARS[saved])) return saved;
@@ -9467,6 +9602,7 @@ function startDrive() {
   closeCust();
   audio.init();
   const spec = CARS[carIdx];
+  if (spec.heli) return startHeli(spec);
   if (spec.jet) return startFlight(spec);
   if (!MODELS[spec.id] && MODEL_FILES.includes(spec.id) && !startDrive.waited?.[spec.id]) {   // its Blender model is still on the way
     (startDrive.waited ??= {})[spec.id] = 1; $('drive').textContent = 'LOADING…'; loadModel(spec.id).then(() => { if (state === 'garage') startDrive(); }); return;
@@ -9548,6 +9684,7 @@ function tick(dt) {
   if (state === 'ad') { updateAd(dt); return; }
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
+  if (state === 'heli') { updateHeli(dt); if (state === 'heli') composer.render(dt); return; }
   if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
@@ -9622,7 +9759,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
