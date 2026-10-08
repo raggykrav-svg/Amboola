@@ -725,6 +725,8 @@ const CARS = [
   { id: 'firetruck', name: 'AMBOOLA Fire Engine', brand: 'Amboola', cat: 'AMBOOLA', body: 'firetruck', wing: 'none', kw: 380, redline: 3600, mass: 9000, vmax: 140, drive: 'RWD', engine: 'v8tt', gears: 6, zero: 12.0, grip: 0.9, aero: .1, paint: 0, rim: '#d8d8d8', caliper: '#c8141b', box: '6-speed auto', usd: 180000, desc: 'Water cannon and ladder · fire jobs pay $30,000', jp: '消防車' },
   // the AMBOOLA Helicopter (models/blender/heli.py): flies anywhere, lands on any roof (jet: true keeps it out of races and car lists)
   { id: 'amboolaheli', name: 'AMBOOLA Helicopter', brand: 'Amboola', cat: 'AMBOOLA', jet: true, heli: true, body: 'amb_jet', wing: 'none', kw: 650, redline: 6000, mass: 2200, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 6, grip: 1, aero: 0, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 150000, desc: 'Lands on any roof · rescues pay $15,000', jp: 'ヘリ' },
+  // the golden coin hunt prize: hidden in the garage until you have found all 100 coins
+  { id: 'goldtora', name: 'AMBOOLA Golden Tora', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_torazero', hidden: true, wing: 'none', kw: 2600, redline: 22000, mass: 1150, vmax: 560, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.4, grip: 2.3, aero: 2.6, paint: 38, rim: '#ffd23a', caliper: '#ffd23a', usd: 99000000, desc: 'SECRET · find all 100 golden coins', jp: '金の虎' },
 ];
 
 /* =====================================================================
@@ -1901,7 +1903,7 @@ const MODELS = {};
 // The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
 // and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
 // is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon'];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora'];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -3037,6 +3039,8 @@ const MISSIONS = [
   { id: 'soccer1', n: 'GOLDEN BOOT', d: 'Win a car soccer match against the robot', goal: 1, v: () => ST.soccerWins || 0, r: 15000 },
   { id: 'kaiju', n: 'TOKYO HERO', d: 'Rescue all 6 groups before the monster gets there', goal: 1, v: () => ST.monsterHero || 0, r: 50000 },
   { id: 'heli3', n: 'AIR RESCUE', d: 'Fly 3 people to the hospital helipad by helicopter', goal: 3, v: () => ST.heliRescues || 0, r: 40000 },
+  { id: 'coins10', n: 'SHINY!', d: 'Find 10 golden coins', goal: 10, v: () => ST.coins || 0, r: 10000 },
+  { id: 'coins100', n: 'GOLD RUSH', d: 'Find all 100 golden coins', goal: 100, v: () => ST.coins || 0, r: 1000000 },
   { id: 'fire3', n: 'FIREFIGHTER', d: 'Put out 3 fires with the AMBOOLA Fire Engine', goal: 3, v: () => ST.fireJobs || 0, r: 40000 },
 ];
 let achvQ = [], achvBusy = false;
@@ -3362,6 +3366,7 @@ function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
   let lastCat = '';
   CARS.forEach((c, i) => {
+    if (c.hidden && !owns(c)) return;   // secret prizes only show up once you have won them
     if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', FORD: 'FORD', CHEVROLET: 'CHEVROLET', NISSAN: 'NISSAN · NISMO', HONDA: 'HONDA', PAGANI: 'PAGANI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
@@ -5463,7 +5468,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
@@ -7186,7 +7191,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing(); buildHeliPad();
+  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing(); buildHeliPad(); buildCoins();
 }
 
 /* =====================================================================
@@ -9107,7 +9112,7 @@ function updateHeli(dt) {
     info = [J.phase === 'pickup' ? '🟢 PICK UP' : '🏥 HELIPAD', d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m'];
   } else if (H.arrow) H.arrow.position.y = -999;
   actHud([['ALTITUDE', `${Math.round(H.y)} m`], ['SPEED', `${Math.round(Math.hypot(H.vx, H.vz) * 3.6)} km/h`], info, ['', H.landed && ground < .5 ? 'ENTER: GET OUT' : 'ESC: GARAGE']], '#ffc21f');
-  updateWeather(dt, { x: H.x, z: H.z, vx: H.vx, vz: H.vz }); $('walletHud').textContent = fmtUSD(wallet.usd);
+  updateCoins(dt, H.x, H.y, H.z); updateWeather(dt, { x: H.x, z: H.z, vx: H.vx, vz: H.vz }); $('walletHud').textContent = fmtUSD(wallet.usd);
 }
 function endHeli() {
   const H = heli; if (!H) return; heliSound(false); scene.remove(H.car.group); if (H.job) scene.remove(H.job.g); if (H.arrow) scene.remove(H.arrow); heli = null; actHud(null);
@@ -9118,6 +9123,49 @@ function heliGetOut() {   // landed on a street: hop into your car right here
   const at = { x: H.x + Math.cos(H.yaw) * 7, z: H.z - Math.sin(H.yaw) * 7, h: H.yaw }; endHeli();
   carIdx = lastCarIdx(); paintIdx = savedPaint(CARS[carIdx]); if (player) { player.dispose(); player = null; }
   startDrive(); Object.assign(player, { x: at.x, z: at.z, heading: at.h, vx: 0, vz: 0, y: 0 }); camPos.set(at.x - Math.sin(at.h) * 8, 3, at.z - Math.cos(at.h) * 8);
+}
+/* =====================================================================
+   THE GOLDEN COIN HUNT — 100 spinning gold coins hidden all over the world: 55 on the streets of Tokyo, 3 in every
+   area (on its road and in its town), and 3 on top of skyscrapers (you need the helicopter for those!). Drive
+   through a coin to collect it. Find all 100 and the secret GOLDEN TORA is yours. Found coins stay found
+   (amboola.coins).
+   ===================================================================== */
+const COINS = [];
+let coinsGot = new Set(JSON.parse(localStorage.getItem('amboola.coins') || '[]'));
+function buildCoins() {
+  const r = mulberry32(100100), geo = new THREE.CylinderGeometry(1.1, 1.1, .25, 28).rotateX(Math.PI / 2), face = canvasTex(128, 128, (c, w, h) => { c.fillStyle = '#ffcf33'; c.fillRect(0, 0, w, h); c.strokeStyle = '#b8860b'; c.lineWidth = 10; c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 10, 0, 7); c.stroke(); c.fillStyle = '#b8860b'; c.font = `900 70px ${OR}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('A', w / 2, h / 2 + 4); });
+  const mat = new THREE.MeshStandardMaterial({ map: face, color: 0xffd23a, metalness: .85, roughness: .25, emissive: 0x8a5a00, emissiveIntensity: .6 });
+  const add = (x, y, z, where) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y + 1.6, z); m.castShadow = true; scene.add(m); const k = COINS.length; COINS.push({ m, x, y: y + 1.6, z, where, k }); m.visible = !coinsGot.has(k); };
+  // Tokyo: on the streets, never in the middle of a crossing
+  for (let n = 0; n < 55; n++) { const along = Math.floor(r() * N) * CELL + 20 + r() * 40, line = rc(1 + Math.floor(r() * (N - 1))), lane = (r() < .5 ? -1 : 1) * LANES[0];
+    if (r() < .5) add(line + lane, 0, -HALF + along, 'Tokyo'); else add(-HALF + along, 0, line + lane, 'Tokyo'); }
+  // every area: two along its road, one in its town
+  for (const A of AREAS) { const R = A.R; for (const f of [.35, .7]) { const i = Math.floor(R.n * f); add(R.x[i], R.y[i], R.z[i], A.name); }
+    const P = A.pads[0], [x0, z0, x1, z1] = P.rects[0], x = lerp(x0, x1, .3 + r() * .4), z = lerp(z0, z1, .3 + r() * .4); add(x, P.yAt(x, z), z, A.name); }
+  // and on the highest roofs: a job for the helicopter
+  const roofs = [...new Set([...roofGrid.values()].flat())].filter(q => q[4] > 120).sort((a, b) => b[4] - a[4]).slice(0, 12);
+  for (let n = 0; n < 100 - COINS.length && roofs.length; n++) { const q = roofs.splice(Math.floor(r() * roofs.length), 1)[0]; add((q[0] + q[2]) / 2, q[4], (q[1] + q[3]) / 2, 'a skyscraper roof'); }
+  while (COINS.length < 100) { const x = rc(2 + COINS.length % 15) + LANES[0], z = rc(3) + 40; add(x, 0, z, 'Tokyo'); }
+  if (!$('coinHud')) { const d = document.createElement('div'); d.id = 'coinHud'; d.style.cssText = 'position:fixed;right:22px;top:150px;color:#ffd23a;font:900 15px Orbitron,sans-serif;letter-spacing:2px;text-shadow:0 2px 6px #000;z-index:5;pointer-events:none;text-align:right'; $('hud').appendChild(d); }
+  coinHud();
+}
+function coinHud(near) { const d = $('coinHud'); if (d) d.innerHTML = `🪙 ${coinsGot.size}/100${near != null && coinsGot.size < 100 ? `<br><small style="font-size:11px;color:#fff">NEAREST ${near > 1000 ? (near / 1000).toFixed(1) + ' km' : Math.round(near) + ' m'}</small>` : ''}`; }
+let coinT = 0;
+function updateCoins(dt, x, y, z) {
+  if (!COINS.length) return;
+  const t = performance.now() / 1000; let near = Infinity;
+  for (const C of COINS) {
+    if (coinsGot.has(C.k)) { if (C.fly != null) { C.fly += dt; C.m.position.y += dt * 12; C.m.rotation.y += dt * 20; C.m.scale.setScalar(Math.max(.01, 1 - C.fly)); if (C.fly > 1) { C.m.visible = false; C.fly = null; } } continue; }
+    const d = Math.hypot(C.x - x, C.z - z); near = Math.min(near, d);
+    if (d < 350) { C.m.rotation.y = t * 2.5 + C.k; C.m.position.y = C.y + Math.sin(t * 2 + C.k) * .3; }
+    if (d < 3.4 && Math.abs(C.y - 1.6 - y) < 3.5) {
+      coinsGot.add(C.k); C.fly = 0; localStorage.setItem('amboola.coins', JSON.stringify([...coinsGot]));
+      audio.beep(1320, .08); setTimeout(() => audio.beep(1760, .12), 70); earn(500); bump('coins');
+      if (coinsGot.size === 100) { wallet.owned.add('goldtora'); saveWallet(); buildMenu(); banner('🪙 ALL 100 COINS!', 'THE GOLDEN TORA IS YOURS', 'Pick it in the garage · AMBOOLA'); }
+      else toast(`🪙 COIN ${coinsGot.size}/100`, `+$500 · FOUND IN ${C.where.toUpperCase()}`);
+    }
+  }
+  if ((coinT -= dt) < 0) { coinT = .5; coinHud(near); }
 }
 function lastCarIdx() {
   const saved = +localStorage.getItem('amboola.lastcar');
@@ -9777,7 +9825,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
