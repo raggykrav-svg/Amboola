@@ -603,3 +603,15 @@ There are no audio files; all sound is generated live with the Web Audio API.
   - Press **Enter** on a street to get out and drive.
 
 The new models are made in Blender: `models/blender/work_trucks.py`, `monster.py` and `heli.py`.
+
+## Even MORE fun 🪙🏗️⭐🎆👑🐶
+
+- **🪙 Golden coin hunt.** 100 spinning gold coins are hidden around Tokyo, in every area and on the tallest roofs (bring the helicopter!). Each coin pays $500. Find all 100 to unlock the secret **AMBOOLA Golden Tora**.
+- **🏗️ Track builder.** Go to the 🏗 ring in Tokyo.
+  - Put down jumps, mega ramps, landings, loops, walls, ⚡ boost pads and 🏁 gates.
+  - ↻ turns a piece, and the eraser removes one.
+  - Press ▶ DRIVE to race through your gates for a lap time. Your track is saved.
+- **⭐ Levels and badges.** Everything you do gives stars. Each level pays a gift and unlocks new paint colours, wheels and horns. Press **J** to honk. See your badges with ⭐ LEVEL & BADGES in the pause menu.
+- **🎆 Festival nights.** At night (press T), Tokyo has lanterns over the streets and fireworks. The 🏮 Lantern Race goes through 8 torii gates against the clock.
+- **👑 Final boss.** The Shadow King races you when you reach level 15. Beat him for $5,000,000 and the Champion badge.
+- **🐱 More pets.** Choose a cat, a parrot or a tiny flying dragon in CUSTOMIZE.

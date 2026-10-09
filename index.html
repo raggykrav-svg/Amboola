@@ -3334,6 +3334,7 @@ addEventListener('keydown', e => {
   if (state === 'ad' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endAd(); return; }
   if (state === 'ferry' && ['Escape', 'Enter', 'Space'].includes(e.code)) { endFerry(true); return; }
   if (state === 'photo' && (e.code === 'Escape' || e.code === 'KeyF') && !keys[e.code]) { keys[e.code] = true; endPhoto(); return; }
+  if (state === 'build' && e.code === 'Escape') { closeBuilder(); return; }
   if (state === 'heli' && !keys[e.code]) { if (e.code === 'Enter') heliGetOut(); if (e.code === 'Escape') { endHeli(); enterGarage(); } }
   if (state === 'fly' && !keys[e.code]) { if (e.code === 'KeyL') landJet(); if (e.code === 'Escape') { endFlight(); enterGarage(); } }
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
@@ -5541,7 +5542,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateFestival(dt, p); updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateBuild(dt, p); updateFestival(dt, p); updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
@@ -7264,7 +7265,7 @@ function buildActs() {
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
-  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing(); buildHeliPad(); buildCoins(); buildKingRing(); levelHud(); checkBadges(); buildFestival();
+  buildFerry(); buildBusStops(); buildSecrets(); buildGasStations(); buildSoccerRing(); buildMonsterRing(); buildParkRing(); buildHeliPad(); buildCoins(); buildKingRing(); buildRing(); levelHud(); checkBadges(); buildFestival();
 }
 
 /* =====================================================================
@@ -8827,6 +8828,135 @@ function boatCollide(p) {
   if (v > 4 && Math.random() < .9) { const fx = Math.sin(p.heading), fz = Math.cos(p.heading); spray.spray(p.x - fx * 2.8, p.z - fz * 2.8, -p.vx * .3, -p.vz * .3, 1, BOAT.water + .6); }
   return hit;
 }
+/* =====================================================================
+   BUILD YOUR OWN TRACK — the AMBOOLA Builder Yard (🏗 ring in Tokyo). A 300 m square seen from above on a 10 m grid:
+   pick a piece in the toolbar and click (or tap) to put it down; ↻ turns it; the eraser takes pieces away.
+   Pieces: jump ramp, mega ramp, landing ramp, loop, wall, boost pad and numbered GATES. Press ▶ DRIVE to drive it:
+   pass the gates in order (1, 2, 3…) for a timed lap; the best time is kept. Your track is saved (amboola.build).
+   ===================================================================== */
+const BLD = { x: 12000, z: -12000, size: 300, cell: 10 };
+const BLD_PAD = new Pad({ name: 'Builder Yard', y: 0, rects: [[BLD.x - BLD.size / 2, BLD.z - BLD.size / 2, BLD.x + BLD.size / 2, BLD.z + BLD.size / 2]] }); BLD_PAD.air = true;
+const BLD_ROUTE = new Route({ id: 'build', name: 'Builder Yard', w: 12, rail: .8, pts: [[BLD.x - 20, BLD.z, 0], [BLD.x + 20, BLD.z, 0]] });
+AREAS.push({ id: 'build', name: 'Builder Yard', R: BLD_ROUTE, pads: [BLD_PAD], gate: [HALF, WANGAN_Z], col: '#ffc21f', box: [BLD.x - 400, BLD.z - 400, BLD.x + 400, BLD.z + 400], visit: { n: 'BUILDER YARD', jp: 'ビルダー', pad: BLD_PAD } });
+const BTOOLS = [{ id: 'ramp', n: '🛹 Jump' }, { id: 'mega', n: '🚀 Mega ramp' }, { id: 'land', n: '🛬 Landing' }, { id: 'loop', n: '➰ Loop' }, { id: 'wall', n: '🧱 Wall' }, { id: 'boost', n: '⚡ Boost' }, { id: 'gate', n: '🏁 Gate' }, { id: 'erase', n: '🧽 Eraser' }];
+let build = { pieces: JSON.parse(localStorage.getItem('amboola.build') || '[]'), tool: 'ramp', rot: 0, mode: null, run: null };
+function buildRing() { addAct({ x: rc(4) + 4, z: rc(9) + 40, r: 9, col: '#ffc21f', title: '🏗 Track Builder', sub: 'BUILD YOUR OWN TRACK AND RACE IT', sign: 'TRACK BUILDER · ビルダー', go: () => openBuilder(), face: Math.PI / 2 }); }
+const cellXZ = (gx, gz) => [BLD.x - BLD.size / 2 + (gx + .5) * BLD.cell, BLD.z - BLD.size / 2 + (gz + .5) * BLD.cell];
+function rebuildTrack() {   // throw every piece away and make them again from the saved list
+  const B = BLD;
+  if (B.stunts) for (const S of B.stunts) { const i = STUNTS.indexOf(S); if (i >= 0) STUNTS.splice(i, 1); }
+  if (B.group) scene.remove(B.group);
+  B.group = new THREE.Group(); scene.add(B.group); B.stunts = []; BLD_PAD.grid = new Map(); B.boosts = []; B.gates = [];
+  const ry = r => r * Math.PI / 2, wallM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .5 }), redM = new THREE.MeshStandardMaterial({ color: 0xd8261c, roughness: .5 });
+  let gate = 0;
+  for (const P of build.pieces) {
+    const [x, z] = cellXZ(P.gx, P.gz), a = ry(P.rot), fx = Math.sin(a), fz = Math.cos(a);
+    if (P.t === 'ramp' || P.t === 'mega' || P.t === 'land') {
+      const o = P.t === 'ramp' ? { prof: 'kick', W: 8, L: 10, H: 2.4, col: '#ff6a1a' } : P.t === 'mega' ? { prof: 'kick', W: 9, L: 20, H: 5.5, col: '#c8141b' } : { prof: 'land', W: 10, L: 20, H: 3, col: '#1e5bff' };
+      const S = addRamp({ ...o, x: x - fx * o.L / 2, z: z - fz * o.L / 2, ry: a }); B.stunts.push(S); B.group.add(rampMesh(S));
+    } else if (P.t === 'loop') { const S = addLoop({ x: x - fx * 2, z: z - fz * 2, ry: a, R: 7, col: '#ff5fa2', addCol: (a0, b0, c0, d0) => BLD_PAD.addCol(a0, b0, c0, d0) }); B.stunts.push(S); B.group.add(loopMesh(S)); }
+    else if (P.t === 'wall') { const w = new THREE.Mesh(new THREE.BoxGeometry(10, 1.6, 1), P.gx % 2 ? wallM : redM); w.position.set(x, .8, z); w.rotation.y = a; w.castShadow = true; B.group.add(w);
+      const hx = Math.abs(fx) > .5 ? .5 : 5, hz = Math.abs(fx) > .5 ? 5 : .5; BLD_PAD.addCol(x - hx, z - hz, x + hx, z + hz); }
+    else if (P.t === 'boost') { const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 9), new THREE.MeshBasicMaterial({ map: BOOST_TEX(), transparent: true })); m.rotation.set(-Math.PI / 2, 0, a + Math.PI); m.position.set(x, .05, z); B.group.add(m); B.boosts.push({ x, z, fx, fz }); }
+    else if (P.t === 'gate') { gate++; const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = a; B.group.add(g);
+      for (const s of [-1, 1]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.6, 6, .6), redM); post.position.set(s * 5, 3, 0); g.add(post); }
+      const sm = new THREE.MeshBasicMaterial({ map: signTex(512, 128, '#111216', [[`🏁 ${gate}`, .55, .6, OR, '#ffc21f']], '#ffc21f'), side: THREE.DoubleSide }); dynMats.neon.push(sm);
+      const sg = new THREE.Mesh(new THREE.PlaneGeometry(10.6, 2.6), sm); sg.position.y = 6.6; sg.rotation.y = Math.PI; g.add(sg); B.gates.push({ x, z, fx, fz, sign: sg }); }
+    // a big picture tile over every piece, seen from above while you edit
+    const tile = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshBasicMaterial({ map: buildIcon(P.t, P.t === 'gate' ? gate : 0), transparent: true, depthTest: false }));
+    tile.rotation.set(-Math.PI / 2, 0, a + Math.PI); tile.position.set(x, 9, z); tile.renderOrder = 5; tile.visible = build.mode === 'edit'; tile.userData.icon = true; B.group.add(tile);
+  }
+  localStorage.setItem('amboola.build', JSON.stringify(build.pieces));
+}
+const ICONS = {};
+function buildIcon(t, n) {   // a rounded tile with the piece's emoji and an arrow showing which way it faces
+  const key = t + n; if (ICONS[key]) return ICONS[key];
+  const col = { ramp: '#ff6a1a', mega: '#c8141b', land: '#1e5bff', loop: '#ff5fa2', wall: '#e8e8e8', boost: '#ffc21f', gate: '#7dff3a' }[t];
+  return ICONS[key] = canvasTex(128, 128, (c, w, h) => { c.fillStyle = col + 'dd'; c.beginPath(); c.roundRect(4, 4, w - 8, h - 8, 18); c.fill(); c.lineWidth = 5; c.strokeStyle = '#111'; c.stroke();
+    c.font = '54px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(BTOOLS.find(T => T.id === t).n.split(' ')[0], w / 2, h / 2 + 10);
+    c.fillStyle = '#111'; c.beginPath(); c.moveTo(w / 2, 10); c.lineTo(w / 2 + 16, 30); c.lineTo(w / 2 - 16, 30); c.fill(); if (n) { c.font = `900 26px ${OR}`; c.fillText(n, w - 24, h - 22); } });
+}
+const BOOST_TEX = (() => { let t; return () => t ??= canvasTex(128, 192, (c, w, h) => { c.fillStyle = 'rgba(255,194,31,.85)'; c.fillRect(0, 0, w, h); c.fillStyle = '#111'; for (const y of [20, 80, 140]) { c.beginPath(); c.moveTo(w / 2, y); c.lineTo(w - 16, y + 40); c.lineTo(w - 40, y + 40); c.lineTo(w / 2, y + 16); c.lineTo(40, y + 40); c.lineTo(16, y + 40); c.fill(); } }); })();
+function buildYard() {
+  const g = new THREE.Group(); scene.add(g); BLD.yard = g;
+  const t = canvasTex(512, 512, (c, w, h) => { c.fillStyle = '#5a5f66'; c.fillRect(0, 0, w, h); noise(c, w, h, 14); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 2; for (let k = 0; k <= 30; k++) { const p = k / 30 * w; c.beginPath(); c.moveTo(p, 0); c.lineTo(p, h); c.stroke(); c.beginPath(); c.moveTo(0, p); c.lineTo(w, p); c.stroke(); } });
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(BLD.size, BLD.size), new THREE.MeshStandardMaterial({ map: t, roughness: .9 })); fl.rotation.x = -Math.PI / 2; fl.position.set(BLD.x, .02, BLD.z); fl.receiveShadow = true; g.add(fl);
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400), new THREE.MeshStandardMaterial({ color: 0x4f7a3a, roughness: 1 })); grass.rotation.x = -Math.PI / 2; grass.position.set(BLD.x, -.03, BLD.z); g.add(grass);
+  const yel = new THREE.MeshStandardMaterial({ color: 0xffc21f }), blk = new THREE.MeshStandardMaterial({ color: 0x16171b });
+  for (let k = 0; k < 60; k++) { const s = Math.floor(k / 15), u = (k % 15 + .5) / 15 * BLD.size - BLD.size / 2, e = BLD.size / 2 + .6, [x, z] = s === 0 ? [u, -e] : s === 1 ? [u, e] : s === 2 ? [-e, u] : [e, u];
+    const b = new THREE.Mesh(new THREE.BoxGeometry(s < 2 ? BLD.size / 15 : 1, 1.2, s < 2 ? 1 : BLD.size / 15), k % 2 ? yel : blk); b.position.set(BLD.x + x, .6, BLD.z + z); g.add(b); }
+  rebuildTrack();
+}
+function openBuilder() {
+  endActs(); endChase(null, player); clearNav(true);
+  if (!BLD.yard) buildYard();
+  build.back ??= { x: player.x, z: player.z, h: player.heading };
+  if (build.mode !== 'edit' && Math.abs(player.x - BLD.x) > 400) build.back = { x: player.x, z: player.z, h: player.heading };
+  build.mode = 'edit'; build.run = null; actHud(null); state = 'build'; BLD.group?.children.forEach(o => { if (o.userData.icon) o.visible = true; }); $('hud').classList.add('hidden');
+  Object.assign(player, { x: BLD.x, z: BLD.z + BLD.size / 2 - 12, heading: Math.PI, vx: 0, vz: 0, y: 0 });
+  buildBar(); toast('🏗 TRACK BUILDER', 'PICK A PIECE, CLICK THE GROUND · ↻ TURNS IT · ▶ DRIVE TO TRY IT');
+}
+function buildBar() {
+  let d = $('buildBar'); if (!d) { d = document.createElement('div'); d.id = 'buildBar'; d.style.cssText = 'position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:96vw;z-index:30'; document.body.appendChild(d); }
+  const btn = (k, label, on) => `<button data-b="${k}" style="padding:9px 12px;border-radius:10px;border:2px solid ${on ? '#ffc21f' : '#444'};background:${on ? '#3a2e08' : 'rgba(12,14,20,.88)'};color:#fff;font:700 13px Orbitron,sans-serif;letter-spacing:1px;cursor:pointer">${label}</button>`;
+  d.style.display = build.mode ? 'flex' : 'none';
+  d.innerHTML = build.mode === 'edit' ? BTOOLS.map(T => btn(T.id, T.n, build.tool === T.id)).join('') + btn('rot', `↻ ${['↑', '→', '↓', '←'][build.rot]}`) + btn('clear', '🗑 Clear') + btn('drive', '▶ DRIVE', true) + btn('exit', '🏙 Exit')
+    : btn('edit', '🏗 EDIT', true) + btn('restart', '🔁 Restart') + btn('exit', '🏙 Exit');
+  d.querySelectorAll('button').forEach(b => b.onclick = e => { e.stopPropagation(); const k = b.dataset.b;
+    if (BTOOLS.some(T => T.id === k)) build.tool = k; else if (k === 'rot') build.rot = (build.rot + 1) % 4;
+    else if (k === 'clear') { build.pieces = []; rebuildTrack(); } else if (k === 'drive' || k === 'restart') return buildDrive(); else if (k === 'edit') return openBuilder(); else if (k === 'exit') return closeBuilder();
+    buildBar(); });
+}
+function buildClick(e) {   // put a piece where you clicked
+  if (state !== 'build' || build.mode !== 'edit' || e.target !== canvas) return;
+  const r = canvas.getBoundingClientRect(), ndc = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), rc_ = new THREE.Raycaster(); rc_.setFromCamera(ndc, camera);
+  const hit = new THREE.Vector3(); if (!rc_.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit)) return;
+  const gx = Math.floor((hit.x - BLD.x + BLD.size / 2) / BLD.cell), gz = Math.floor((hit.z - BLD.z + BLD.size / 2) / BLD.cell), n = BLD.size / BLD.cell;
+  if (gx < 1 || gz < 1 || gx > n - 2 || gz > n - 2) return;
+  build.pieces = build.pieces.filter(P => !(P.gx === gx && P.gz === gz));
+  if (build.tool !== 'erase') build.pieces.push({ t: build.tool, gx, gz, rot: build.rot });
+  rebuildTrack(); audio.init?.(); audio.beep(build.tool === 'erase' ? 330 : 880, .05);
+}
+canvas.addEventListener('pointerdown', buildClick);
+function buildCam(dt) {
+  camera.position.set(BLD.x, 285, BLD.z + 26); camera.lookAt(BLD.x, 0, BLD.z + 14); camera.fov = 58; camera.updateProjectionMatrix();
+  sky.position.copy(camera.position); sun.position.set(BLD.x + sunDir.x * 400, sunDir.y * 400, BLD.z + sunDir.z * 400); sun.target.position.set(BLD.x, 0, BLD.z);
+}
+function buildDrive() {
+  camera.fov = 62; camera.updateProjectionMatrix(); build.mode = 'drive'; state = 'drive'; const G = BLD.gates; BLD.group.children.forEach(o => { if (o.userData.icon) o.visible = false; }); $('hud').classList.remove('hidden');
+  if (G.length) { const g0 = G[0]; Object.assign(player, { x: g0.x - g0.fx * 30, z: g0.z - g0.fz * 30, heading: Math.atan2(g0.fx, g0.fz) }); }
+  else Object.assign(player, { x: BLD.x, z: BLD.z + BLD.size / 2 - 15, heading: Math.PI });
+  Object.assign(player, { vx: 0, vz: 0, y: 0, vy: 0, yawRate: 0, air: false });
+  camPos.set(player.x - Math.sin(player.heading) * 8, 3, player.z - Math.cos(player.heading) * 8);
+  build.run = G.length ? { next: 0, t: null, boost: 0 } : { next: -1, boost: 0 };
+  G.forEach((g, k) => g.sign.material.color.set(k ? 0x888888 : 0xffffff));
+  buildBar(); toast(G.length ? `🏁 ${G.length} GATES` : '🏗 FREE DRIVE', G.length ? 'DRIVE THROUGH THEM IN ORDER · THE CLOCK STARTS AT GATE 1' : 'PUT DOWN SOME 🏁 GATES TO RACE');
+}
+function updateBuild(dt, p) {
+  const R = build.run; if (!R || build.mode !== 'drive') return;
+  if (Math.abs(p.x - BLD.x) > 500 || Math.abs(p.z - BLD.z) > 500) { build.mode = null; build.run = null; buildBar(); actHud(null); return; }
+  for (const b of BLD.boosts) if (Math.abs(p.x - b.x) < 3.5 && Math.abs(p.z - b.z) < 4.5 && R.boost <= 0) { R.boost = .6; audio.beep(1200, .08); }
+  if (R.boost > 0) { R.boost -= dt; const fx = Math.sin(p.heading), fz = Math.cos(p.heading), v = Math.hypot(p.vx, p.vz); if (v < 90) { p.vx += fx * 30 * dt; p.vz += fz * 30 * dt; } }
+  const G = BLD.gates; if (!G.length) return;
+  if (R.t != null) R.t += dt;
+  const g = G[R.next]; if (g && Math.hypot(p.x - g.x, p.z - g.z) < 6.5) {
+    g.sign.material.color.set(0x7dff3a); audio.beep(990, .1);
+    if (R.next === 0) { R.t = 0; toast('🏁 GO!', 'THE CLOCK IS RUNNING'); }
+    R.next++;
+    if (R.next >= G.length) {
+      const key = 'amboola.buildbest.' + JSON.stringify(build.pieces).length + '.' + G.length, best = +(localStorage.getItem(key) || 0), rec = !best || R.t < best; if (rec) localStorage.setItem(key, R.t.toFixed(2));
+      bump('buildRaces'); earn(2000 + G.length * 500);
+      banner(rec ? '🏁 NEW TRACK RECORD!' : '🏁 FINISHED!', `${R.t.toFixed(2)} s`, rec ? 'Your best time on this track' : `Best: ${best.toFixed(2)} s`);
+      R.next = 0; R.t = null; G.forEach((q, k) => q.sign.material.color.set(k ? 0x888888 : 0xffffff)); return;
+    }
+    G[R.next].sign.material.color.set(0xffffff);
+  }
+  actHud([['GATE', `${Math.min(R.next + 1, G.length)}/${G.length}`], ['TIME', R.t == null ? 'GO TO GATE 1' : R.t.toFixed(2)]], '#ffc21f');
+}
+function closeBuilder() {
+  camera.fov = 62; camera.updateProjectionMatrix(); const b = build.back || { x: rc(4) + 4, z: rc(9) + 52, h: 0 }; $('hud').classList.remove('hidden'); build.mode = null; build.run = null; buildBar(); actHud(null); state = 'drive';
+  Object.assign(player, { x: b.x, z: b.z, heading: b.h, vx: 0, vz: 0, y: 0, vy: 0, air: false }); camPos.set(b.x - Math.sin(b.h) * 8, 3, b.z - Math.cos(b.h) * 8); build.back = null;
+}
 let gravK = 1, moonSky = false;
 function buildMoon() {
   const g = new THREE.Group(); scene.add(g); MOON.group = g;
@@ -9896,6 +10026,7 @@ $('bGarage').onclick = () => { endActs(); endChase(null, player); endMeetRace(fa
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
+  if (build.mode) { build.mode = null; build.run = null; buildBar(); camera.fov = 62; camera.updateProjectionMatrix(); }
   state = 'garage'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   renderPass.scene = gScene; renderPass.camera = gCamera; bloomPass.threshold = .9; bloomPass.strength = .35; renderer.toneMappingExposure = .9;
   updateMenu(); showGarageCar();
@@ -9937,6 +10068,7 @@ function tick(dt) {
   if (state === 'ad') { updateAd(dt); return; }
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
+  if (state === 'build') { buildCam(dt); composer.render(dt); return; }
   if (state === 'heli') { updateHeli(dt); if (state === 'heli') composer.render(dt); return; }
   if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
@@ -10012,7 +10144,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
