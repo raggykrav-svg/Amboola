@@ -77,6 +77,8 @@ class Car:
             'Disc': mat('Disc', (0.18, 0.18, 0.19), metal=0.9, rough=0.45),
             'Caliper': mat('Caliper', srgb(caliper), metal=0.1, rough=0.35, coat=0.6),
             'Accent': mat('Accent', (0.8, 0.02, 0.02), rough=0.35, coat=0.5),     # tow hooks, badges (red)
+            'TireLetter': mat('TireLetter', (0.2, 0.2, 0.21), rough=0.8),       # raised sidewall lettering
+            'Logo': mat('Logo', (0.85, 0.85, 0.86), rough=0.3),                  # caliper logo
         }
 
     # ------------------------------------------------------------ plumbing
@@ -163,6 +165,7 @@ class Car:
 
     def cut_box(self, center, size, round_=0.0):
         """open a cockpit / recess: boolean-subtract a (optionally rounded) box"""
+        self.open_top = True
         bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
         bmesh.ops.scale(bm, verts=bm.verts, vec=size); bmesh.ops.translate(bm, verts=bm.verts, vec=center)
         if round_:
@@ -536,6 +539,13 @@ class Car:
             prof += [(R, h - .05), (R - .008, h - .022), (R - .035, h - .002), (RR + .03, h), (RR + .005, h - .02)]
         prof.sort(key=lambda p: p[1])
         objs.append(self.lathe(prof, 72, 'Tire', 'tire', core=(R + RR) / 2))
+        rl = (R + RR) / 2 + .008   # raised sidewall lettering: two "words" of grey blocks on the outer sidewall
+        for wa in (0, math.pi):
+            for k in range(7):
+                a = wa + (k - 3) * 0.075; bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
+                bmesh.ops.scale(bm, verts=bm.verts, vec=(0.03 if k % 3 else 0.022, 0.006, min(0.022, (R - RR) * .3)))
+                bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h + .001), rl)); bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
+                objs.append(self.mesh('letter', bm, 'TireLetter', smooth=False))
         if offroad:   # staggered tread blocks
             for k in range(40):
                 a = k * 2 * math.pi / 40
@@ -563,6 +573,12 @@ class Car:
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
             bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
             objs.append(self.mesh('spoke', bm, 'Rim', smooth=False))
+            bm = bmesh.new()   # a diamond-cut strip down the middle of the spoke's outer face (two-tone wheels)
+            fq = [(r0 + .012, -w0 * .42, y_in), (r1 - .012, -w1 * .42, y_out), (r1 - .012, w1 * .42, y_out), (r0 + .012, w0 * .42, y_in)]
+            f = bm.faces.new([bm.verts.new((r, yy + out * .0135, t)) for r, t, yy in fq]); bm.normal_update()
+            if f.normal.y * out < 0: f.normal_flip()
+            bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
+            objs.append(self.mesh('spokeface', bm, 'RimLip', smooth=False))
         bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=24, radius1=.075, radius2=.06, depth=.05, cap_ends=True)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(-out * math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .07), 0)); objs.append(self.mesh('hub', bm, 'Rim'))
@@ -582,24 +598,156 @@ class Car:
         bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=48, radius1=RR - .055, radius2=RR - .055, depth=.034, cap_ends=True)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .13), 0)); objs.append(self.mesh('disc', bm, 'Disc'))
+        bm = bmesh.new()   # cross-drilled holes in three staggered rings
+        for ring, rr_ in enumerate((RR - .075, RR - .095, RR - .115)):
+            for k in range(12):
+                a = (k + ring / 3) * 2 * math.pi / 12
+                g = bmesh.ops.create_cone(bm, segments=6, radius1=.0065, radius2=.0065, depth=.04, cap_ends=True)['verts']
+                bmesh.ops.rotate(bm, verts=g, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
+                bmesh.ops.translate(bm, verts=g, vec=(math.cos(a) * rr_, out * (h - .13), math.sin(a) * rr_))
+        if RR - .115 > .09: objs.append(self.mesh('drill', bm, 'Black', smooth=False))
+        else: bm.free()
         self.activate(objs[0])
         for o in objs: o.select_set(True)
         bpy.ops.object.join(); wheel = bpy.context.object
         tag = f'{key}{"L" if s > 0 else "R"}'
         wheel.name = f'Wheel_{tag}'; wheel.location = (wd['x'], s * wd['y'], R)
-        bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
-        bmesh.ops.scale(bm, verts=bm.verts, vec=caliper)
         m = Matrix.Rotation((-1 if key == 'F' else 1) * math.radians(35), 3, 'Y')   # front calipers behind the axle, rear ahead
-        bmesh.ops.translate(bm, verts=bm.verts, vec=(0, 0, RR - .085)); bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=m)
-        bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .10), 0))
-        cal = self.mesh(f'Caliper_{tag}', bm, 'Caliper')
-        cm = cal.modifiers.new('bev', 'BEVEL'); cm.width = .02; cm.segments = 2; self.apply(cal)
+        def arc(r0, r1, y0, y1, span, steps=10):   # a block bent round the disc
+            bm = bmesh.new(); rows = []
+            for i in range(steps + 1):
+                ph = (i / steps - .5) * span; sx, cz = math.sin(ph), math.cos(ph)
+                rows.append([bm.verts.new((r * sx, y, r * cz)) for r, y in ((r0, y0), (r1, y0), (r1, y1), (r0, y1))])
+            for a_, b_ in zip(rows, rows[1:]):
+                for j in range(4): bm.faces.new((a_[j], a_[(j + 1) % 4], b_[(j + 1) % 4], b_[j]))
+            bm.faces.new(rows[0]); bm.faces.new(list(reversed(rows[-1]))); bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=m); return bm
+        cw, ct, cr = caliper; rc_ = RR - .085; span = cw / rc_; yc = out * (h - .10)
+        cal = self.mesh(f'Caliper_{tag}', arc(rc_ - cr / 2, rc_ + cr / 2, yc - ct / 2, yc + ct / 2, span), 'Caliper')
+        cm = cal.modifiers.new('bev', 'BEVEL'); cm.width = .012; cm.segments = 2; self.apply(cal)
+        logo = self.mesh('caliperlogo', arc(rc_ - cr * .18, rc_ + cr * .18, yc + out * (ct / 2 + .001), yc + out * (ct / 2 + .003), span * .55, 6), 'Logo')
+        self.activate(cal); logo.select_set(True); bpy.ops.object.join(); cal = bpy.context.object; cal.name = f'Caliper_{tag}'
         cal.location = wheel.location.copy()
         self.activate(wheel); bpy.ops.object.shade_smooth_by_angle(angle=math.radians(35))
+
+    # ------------------------------------------------------------ finishing touches (every car, automatically)
+    def slab(self, name, mat, c, u, n, lu, lt, ln, bevel=0.0):
+        """a small flat block centred on c: long axis u (half-length lu), thickness along n (ln), width across (lt)"""
+        u = Vector(u); n = Vector(n).normalized(); u = (u - n * u.dot(n)).normalized(); t = n.cross(u)
+        bm = bmesh.new(); c = Vector(c)
+        vs = [bm.verts.new(c + u * a * lu + t * b * lt + n * d * ln) for d in (-1, 1) for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        for ids in [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]: bm.faces.new([vs[i] for i in ids])
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        o = self.mesh(name, bm, mat, smooth=False)
+        if bevel: m = o.modifiers.new('bev', 'BEVEL'); m.width = bevel; m.segments = 2; self.apply(o)
+        self.parts.append(o); return o
+
+    def details(self):
+        """finishing touches added to every car by join(): windscreen wipers, door handles, a gloss-black sill, front
+        and rear badges and a shark-fin antenna. Each is skipped when the car already has its own version (or no
+        windscreen / door line / roof to put it on)."""
+        names = {o.name.split('.')[0] for o in self.parts}
+        objs = lambda key: [o for o in self.parts if o.name.split('.')[0] == key]
+        F, R = self.wheel_spec['F'], self.wheel_spec['R']; xm = (F['x'] + R['x']) / 2
+        p, _ = self.hit((xm, 0, -3), (0, 0, 1)); zb = p.z if p else 0.2
+        # windscreen wipers: two black blades parked along the bottom edge of the glass
+        if 'wiper' not in names:
+            for ws in objs('windscreen')[:1]:
+                vs = [ws.matrix_world @ v.co for v in ws.data.vertices]
+                if len(vs) < 8: break
+                z0 = min(v.z for v in vs); bot = [v for v in vs if v.z < z0 + 0.025]
+                ymin, ymax = min(v.y for v in bot), max(v.y for v in bot); hw = (ymax - ymin) / 2
+                nrm = sum((ws.matrix_world.to_3x3() @ pl_.normal for pl_ in ws.data.polygons), Vector()).normalized()
+                up = (Vector((-1, 0, 0)) - nrm * Vector((-1, 0, 0)).dot(nrm)).normalized()   # up the glass, towards the roof
+                for yc, L in ((ymin + hw * .55, hw * .42), (ymin + hw * 1.45, hw * .42)):
+                    near = min(bot, key=lambda v: abs(v.y - yc)); c = Vector((near.x, yc, near.z)) + up * 0.05 + nrm * 0.012
+                    self.slab('wiper', 'Black', c, (0, 1, 0), nrm, L, 0.009, 0.006)
+                    self.slab('wiperarm', 'Black', c + Vector((0, L * .55, 0)) - up * 0.02, up, nrm, 0.035, 0.008, 0.008)
+        # door handles: just ahead of each door's rear shut line, under the window
+        if 'handle' not in names:
+            for dl in objs('doorline'):
+                vs = [dl.matrix_world @ v.co for v in dl.data.vertices]
+                if not vs: continue
+                xd = sum(v.x for v in vs) / len(vs); s = 1 if sum(v.y for v in vs) > 0 else -1; z1 = max(v.z for v in vs)
+                if z1 - min(v.z for v in vs) < 0.25: continue
+                hx = xd + 0.17 if xd < xm + 0.15 else xd - 0.85
+                if not (R['x'] + R['r'] < hx < F['x'] - F['r']): continue
+                hp, hn = self.hit((hx, s * 5, z1 - 0.11), (0, -s, 0))
+                if hp is None: continue
+                self.slab('handle', 'Chrome', hp + hn * 0.012, (1, 0, 0), hn, 0.075, 0.016, 0.009, bevel=0.006)
+                self.slab('handlecup', 'Gloss', hp + hn * 0.004, (1, 0, 0), hn, 0.085, 0.024, 0.003)
+        # a gloss-black sill between the wheel arches
+        if not names & {'skirt', 'sill', 'archtrim'}:
+            x0, x1 = R['x'] + R['r'] + 0.13, F['x'] - F['r'] - 0.13
+            if x1 - x0 > 0.6:
+                for s in (1, -1): self.decal('sill', 'Gloss', side(s), x0, x1, zb + 0.015, zb + 0.085, 24, 2, off=.005)
+        # badges: a small chrome oval with a red centre on the nose and on the tail
+        if not names & {'badge', 'horse', 'horseshoe'}:
+            hits = [(self.hit((8, 0, z), (-1, 0, 0)), z) for z in [0.25 + i * .025 for i in range(30)]]
+            hits = [(h[0], h[1], z) for h, z in hits if h[0] is not None]
+            if hits:
+                hp, hn, z = max(hits, key=lambda q: q[0].x)
+                bz = z + 0.06; bp, bn = self.hit((8, 0, bz), (-1, 0, 0))
+                if bp is not None:
+                    self.oval('badge', 'Chrome', bp, bn, 0.055, 0.034, .008, n=6); self.oval('badge', 'Accent', bp, bn, 0.036, 0.019, .011, n=4)
+            hits = [(self.hit((-8, 0, z), (1, 0, 0)), z) for z in [0.5 + i * .025 for i in range(24)]]
+            hits = [(h[0], h[1], z) for h, z in hits if h[0] is not None and h[1].x < -0.5]
+            if hits:
+                bp, bn, z = min(hits, key=lambda q: q[1].x)
+                self.oval('badge', 'Chrome', bp, bn, 0.05, 0.03, .008, n=6); self.oval('badge', 'Accent', bp, bn, 0.032, 0.017, .011, n=4)
+        # bonnet shut lines: a thin black U round the front lid, from the windscreen base to the nose
+        if not names & {'hoodline', 'lidline', 'frunkline'}:
+            for ws in objs('windscreen')[:1]:
+                vs = [ws.matrix_world @ v.co for v in ws.data.vertices]
+                if not vs: break
+                x0 = max(v.x for v in vs) + 0.06
+                nose = [self.hit((8, 0, z), (-1, 0, 0))[0] for z in [0.35 + i * 0.05 for i in range(10)]]
+                nose = [p_.x for p_ in nose if p_ is not None]
+                if not nose: break
+                x1 = max(nose) - 0.32
+                if x1 - x0 < 0.5: break
+                xm_ = (x0 + x1) / 2; zt_ = self.deck_z(xm_)
+                wp = self.hit((xm_, 5, zt_ - 0.12), (0, -1, 0))[0]
+                yh = (wp.y if wp is not None else 0.9) * 0.6
+                for s_ in (1, -1): self.decal('hoodline', 'Black', 'top', x0, x1, s_ * yh - .004, s_ * yh + .004, 20, 1, off=.004)
+                self.decal('hoodline', 'Black', 'top', x0 - .004, x0 + .004, -yh, yh, 1, 16, off=.004)
+        # honeycomb mesh over the black grilles and intakes: rows of small raised diamonds, every other row offset
+        mesh_keys = ('grille', 'intake', 'mouth', 'lowgrille', 'hexmouth', 'agrille', 'cintake', 'quarterintake', 'snorkelmouth')
+        for g in [o for o in self.parts if o.name.split('.')[0] in mesh_keys and o.data.materials and o.data.materials[0].name in ('Black', 'GlossBlack', 'Carbon')]:
+            bm = bmesh.new(); M = g.matrix_world; N3 = M.to_3x3()
+            for f in g.data.polygons:
+                q = [M @ g.data.vertices[i].co for i in f.vertices]
+                if len(q) != 4: continue
+                nrm = (N3 @ f.normal).normalized(); a_, b_ = q[1] - q[0], q[3] - q[0]
+                na, nb = max(1, int(a_.length / 0.032)), max(1, int(b_.length / 0.028))
+                for i in range(na):
+                    for j in range(nb):
+                        u, v = (i + .5 + (.5 if j % 2 else 0)) / na, (j + .5) / nb
+                        if u > 1: continue
+                        c = q[0].lerp(q[1], u).lerp(q[3].lerp(q[2], u), v) + nrm * 0.004
+                        e1 = a_.normalized() * 0.009; e2 = b_.normalized() * 0.007
+                        vs = [bm.verts.new(c + e1), bm.verts.new(c + e2), bm.verts.new(c - e1), bm.verts.new(c - e2)]
+                        ff = bm.faces.new(vs); ff.normal_update()
+                        if ff.normal.dot(nrm) < 0: ff.normal_flip()
+            if bm.faces: self.parts.append(self.mesh('grillemesh', bm, 'Gloss', smooth=False))
+            else: bm.free()
+        # shark-fin antenna at the back of the roof (not on open cars or cars with roof racks)
+        if not getattr(self, 'open_top', False) and not names & {'rack', 'fin', 'antenna'}:
+            xs = [R['x'] - 0.6 + i * 0.05 for i in range(int((F['x'] - R['x'] + 0.6) / 0.05))]
+            top = [(x, self.hit((x, 0, 6), (0, 0, -1))[0]) for x in xs]; top = [(x, p.z) for x, p in top if p is not None]
+            if top:
+                zt = max(z for _, z in top); xt = [x for x, z in top if z > zt - 0.03]
+                if zt > 0.95:
+                    xr = min(xt); xf = xr + 0.16; pz = self.hit((xf, 0, 6), (0, 0, -1))[0]
+                    if pz is not None and pz.z > zt - 0.06:
+                        z = pz.z
+                        self.pod('antenna', 'Black', [(xf + .07, 0, z + .004, .006, .006), (xf + .02, 0, z + .018, .02, .024), (xf - .05, 0, z + .03, .026, .045),
+                                                      (xf - .1, 0, z + .02, .026, .03), (xf - .13, 0, z + .004, .01, .008)], segs=10, sub=1, mirror=False, flat=.7)
 
     # ------------------------------------------------------------ finish
     def join(self, lift=0.0):
         """merge every part into the Body object; `lift` raises the whole body (Dakar) - wheels are placed after"""
+        if self.bvh is not None and getattr(self, 'wheel_spec', None) and not getattr(self, 'no_details', False): self.details()
         self.activate(self.body)
         for o in self.parts: o.select_set(True)
         bpy.ops.object.join()

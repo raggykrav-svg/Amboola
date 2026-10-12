@@ -624,3 +624,12 @@ The new models are made in Blender: `models/blender/work_trucks.py`, `monster.py
 - **🎆 Festival nights.** At night (press **T**), Tokyo has lanterns and fireworks. Win the 🏮 **Lantern Race** through 8 torii gates.
 - **👑 The final boss.** The Shadow King races you once you reach level 15 or have almost finished every mission. His ring is outside AMBOOLA HQ.
 - **🏗 Track builder.** Put down jumps, loops, walls, boost pads and numbered gates from above, then press ▶ DRIVE and race your own lap.
+
+## Better-looking cars ✨
+
+Every car is now rebuilt in Blender with extra details, added automatically by the shared car kit (`models/blender/carkit.py`):
+
+- **Wheels:** two-tone spokes with a shiny strip down each spoke, drilled brake discs, curved brake calipers with a logo, and grey lettering on the tyres.
+- **Body:** windscreen wipers, door handles, a gloss-black sill between the wheels, a badge on the front and the back, a shark-fin antenna on the roof, shut lines round the bonnet, and a honeycomb mesh in the black grilles and air intakes.
+
+Each detail is skipped when a car already has its own version, or when there is nowhere to put it (for example, no antenna on open-top cars). A car script can turn all of them off with `k.no_details = True`.

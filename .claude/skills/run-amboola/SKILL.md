@@ -265,3 +265,11 @@ Model gotchas:
 - **`game never finished loading` printed by the driver**: a syntax error stops the whole module from running, and the page shows no error. Find it with `node --check` on the extracted module script. One real cause: an inline `//` comment in a one-line statement that swallowed a closing `}`.
 - **Garage or scene renders completely black for one car**: a degenerate triangle in an extruded body gave a zero-length normal, which becomes NaN in the shader, and bloom smears NaN over the whole frame. `extrude()` now replaces zero normals. To check a car, scan `normal` attributes for length 0 via `eval`.
 - **Loading stuck on "Starting engine…"**: the three.js modules failed to load. Check that `/tmp/amboola-three/package/build/three.module.js` exists, and that the three version in the `index.html` import map matches the cache (delete the cache dir to refetch).
+
+## Car kit details pass
+
+`Car.join()` calls `Car.details()` before it merges the parts.
+- It adds wipers along the bottom of the `windscreen` patch, chrome door handles just ahead of each `doorline`, a gloss-black `sill` decal, front and rear `badge` ovals, an `antenna` shark fin (skipped on open tops, which `cut_box` flags), `hoodline` shut lines, and a `grillemesh` of raised diamonds over black `grille`/`intake`/`mouth` patches.
+- Each detail is skipped when a part with that name already exists. Set `k.no_details = True` to turn the whole pass off.
+- `_wheel` now adds `spokeface` (RimLip) strips, a `drill` pattern on the disc, `letter` blocks (TireLetter) on the sidewall, and curved `Caliper_*` arcs with a `Logo` strip.
+- New material names (`TireLetter`, `Logo`, `Accent`) are not in the game's `MAT` table, so they keep their glTF colours.
