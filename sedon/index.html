@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEDON — Every Car in the World</title>
+<meta name="description" content="SEDON: look up any car in the world. Specs, history, photos, videos and the latest car news.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --surface-2: #eceef2; --text: #14161a; --muted: #5d6470;
+  --line: #dde0e6; --accent: #e8442e; --accent-ink: #ffffff; --chip: #e7e9ee; --shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0f12; --surface: #171a1f; --surface-2: #20242b; --text: #eef0f3; --muted: #9aa2ae;
+    --line: #2a2f37; --accent: #ff5a40; --accent-ink: #ffffff; --chip: #23272e; --shadow: 0 2px 14px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0f12; --surface: #171a1f; --surface-2: #20242b; --text: #eef0f3; --muted: #9aa2ae;
+  --line: #2a2f37; --accent: #ff5a40; --accent-ink: #ffffff; --chip: #23272e; --shadow: 0 2px 14px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+a { color: inherit; }
+button { font: inherit; color: inherit; cursor: pointer; }
+img { max-width: 100%; display: block; }
+
+header { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 14px; align-items: center; }
+.logo { font-weight: 800; letter-spacing: .18em; font-size: 22px; text-decoration: none; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.logo b { font-weight: 800; }
+.logo span { color: var(--accent); }
+.search { flex: 1; position: relative; min-width: 0; }
+.search input { width: 100%; padding: 11px 14px 11px 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; outline: none; }
+.search input:focus { border-color: var(--accent); }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.suggest { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; display: none; max-height: 70vh; overflow-y: auto; }
+.suggest.open { display: block; }
+.suggest button { display: flex; width: 100%; gap: 10px; align-items: center; padding: 9px 12px; border: 0; background: none; text-align: left; }
+.suggest button:hover, .suggest button.active { background: var(--surface-2); }
+.suggest img, .suggest .ph { width: 54px; height: 38px; object-fit: cover; border-radius: 6px; background: var(--chip); flex: none; }
+.suggest small { color: var(--muted); display: block; }
+.theme { display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; width: 40px; height: 40px; flex: none; }
+nav.tabs { max-width: 1180px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs a { padding: 10px 14px; text-decoration: none; color: var(--muted); font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
+nav.tabs a.on { color: var(--text); border-bottom-color: var(--accent); }
+
+main { max-width: 1180px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: clamp(26px, 5vw, 40px); line-height: 1.15; margin: 0 0 8px; letter-spacing: -.01em; }
+h2 { font-size: 20px; margin: 30px 0 12px; }
+.muted { color: var(--muted); }
+.hero { padding: 26px 0 8px; }
+.hero p { max-width: 640px; color: var(--muted); font-size: 17px; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 14px; }
+.chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; box-shadow: var(--shadow); transition: transform .12s; }
+.card:hover { transform: translateY(-2px); }
+.card .img { aspect-ratio: 16/10; background: var(--chip); }
+.card .img img { width: 100%; height: 100%; object-fit: cover; }
+.card .body { padding: 10px 12px 12px; }
+.card b { display: block; }
+.card small { color: var(--muted); }
+.brands { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.brand { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: left; }
+.brand b { display: block; }
+.brand small { color: var(--muted); }
+.list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.list button { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+
+.car-top { display: grid; grid-template-columns: 1.3fr 1fr; gap: 22px; align-items: start; }
+.car-top .main-img { border-radius: 16px; overflow: hidden; background: var(--chip); aspect-ratio: 16/10; }
+.car-top .main-img img { width: 100%; height: 100%; object-fit: cover; }
+.desc { color: var(--muted); font-weight: 600; margin: 0 0 12px; }
+.extract { margin: 0 0 14px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; font-weight: 600; font-size: 14px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.specs { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.specs th, .specs td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+.specs th { width: 34%; color: var(--muted); font-weight: 600; }
+.specs tr:last-child th, .specs tr:last-child td { border-bottom: 0; }
+.photos { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.photos button { padding: 0; border: 0; border-radius: 10px; overflow: hidden; aspect-ratio: 4/3; background: var(--chip); }
+.photos img { width: 100%; height: 100%; object-fit: cover; }
+.videos { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.video { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.video video { width: 100%; aspect-ratio: 16/9; background: #000; display: block; }
+.video p { margin: 0; padding: 8px 12px; font-size: 13px; color: var(--muted); }
+.news { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.story { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; }
+.story .img { aspect-ratio: 16/9; background: var(--chip); }
+.story .img img { width: 100%; height: 100%; object-fit: cover; }
+.story .body { padding: 10px 12px 14px; }
+.story b { display: block; line-height: 1.35; margin-bottom: 6px; }
+.story small { color: var(--muted); }
+.note { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 14px; color: var(--muted); }
+.loading { color: var(--muted); padding: 20px 0; }
+.loading::before { content: ""; display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; vertical-align: -2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; flex-direction: column; gap: 10px; }
+.lightbox.open { display: flex; }
+.lightbox img { max-height: 82vh; max-width: 100%; object-fit: contain; border-radius: 8px; }
+.lightbox p { color: #ddd; margin: 0; text-align: center; max-width: 800px; font-size: 14px; }
+.lightbox .x { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff2; color: #fff; font-size: 22px; }
+.lightbox .nav { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: 0; background: #fff2; color: #fff; font-size: 22px; }
+.lightbox .prev { left: 12px; } .lightbox .next { right: 12px; }
+.fav { min-width: 44px; }
+footer { max-width: 1180px; margin: 0 auto; padding: 0 16px 30px; color: var(--muted); font-size: 13px; }
+@media (max-width: 760px) {
+  .car-top { grid-template-columns: 1fr; }
+  .logo { font-size: 18px; letter-spacing: .12em; }
+  .logo svg { display: none; }
+  .specs th { width: 42%; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="logo" href="#/"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5a3 3 0 0 1 2.8-2h8.4A3 3 0 0 1 19 8l2 5v4a1 1 0 0 1-1 1h-1a2 2 0 0 1-4 0H9a2 2 0 0 1-4 0H4a1 1 0 0 1-1-1z"/><path d="M3 13h18"/></svg><b>SED<span>O</span>N</b></a>
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search any car… e.g. Porsche 911, Tesla Model Y, Lada Niva" autocomplete="off">
+      <div class="suggest" id="suggest"></div>
+    </div>
+    <button class="theme" id="theme" title="Light / dark" aria-label="Switch light or dark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
+  </div>
+  <nav class="tabs">
+    <a href="#/" data-tab="home">Home</a>
+    <a href="#/brands" data-tab="brands">All brands</a>
+    <a href="#/news" data-tab="news">Car news</a>
+    <a href="#/garage" data-tab="garage">My garage</a>
+  </nav>
+</header>
+
+<main id="app"></main>
+
+<div class="lightbox" id="lightbox">
+  <button class="x" aria-label="Close">×</button>
+  <button class="nav prev" aria-label="Previous">‹</button>
+  <img alt="">
+  <p></p>
+  <button class="nav next" aria-label="Next">›</button>
+</div>
+
+<footer>SEDON uses free public data: car info, photos and videos from Wikipedia and Wikimedia Commons, model lists from the NHTSA vehicle database, and news from Motor1, Car and Driver, Road &amp; Track, InsideEVs and Electrek.</footer>
+
+<script>
+// ---------- data ----------
+// Car brands from around the world (name, country). Searching also covers anything not listed here.
+const BRANDS = [
+  ["Abarth","Italy"],["AC","UK"],["Acura","Japan"],["Aiways","China"],["Alfa Romeo","Italy"],["Alpina","Germany"],["Alpine","France"],
+  ["Ariel","UK"],["Aston Martin","UK"],["Audi","Germany"],["Aurus","Russia"],["Avatr","China"],["BAIC","China"],["Bentley","UK"],
+  ["BMW","Germany"],["Brabus","Germany"],["Bugatti","France"],["Buick","USA"],["BYD","China"],["Cadillac","USA"],["Caterham","UK"],
+  ["Changan","China"],["Chery","China"],["Chevrolet","USA"],["Chrysler","USA"],["Citroën","France"],["Cupra","Spain"],["Dacia","Romania"],
+  ["Daewoo","South Korea"],["Daihatsu","Japan"],["Datsun","Japan"],["DeLorean","USA"],["Denza","China"],["Dodge","USA"],["DS","France"],
+  ["Ferrari","Italy"],["Fiat","Italy"],["Fisker","USA"],["Ford","USA"],["Geely","China"],["Genesis","South Korea"],["GMC","USA"],
+  ["Gordon Murray","UK"],["Great Wall","China"],["Haval","China"],["Hennessey","USA"],["Hispano Suiza","Spain"],["Holden","Australia"],
+  ["Honda","Japan"],["Hongqi","China"],["Hummer","USA"],["Hyundai","South Korea"],["Ineos","UK"],["Infiniti","Japan"],["Isuzu","Japan"],
+  ["Iveco","Italy"],["Jaguar","UK"],["Jeep","USA"],["Jetour","China"],["Kia","South Korea"],["Koenigsegg","Sweden"],["KTM","Austria"],
+  ["Lada","Russia"],["Lamborghini","Italy"],["Lancia","Italy"],["Land Rover","UK"],["Leapmotor","China"],["Lexus","Japan"],["Li Auto","China"],
+  ["Lincoln","USA"],["Lotus","UK"],["Lucid","USA"],["Lynk & Co","China"],["Mahindra","India"],["Maruti Suzuki","India"],["Maserati","Italy"],
+  ["Maybach","Germany"],["Mazda","Japan"],["McLaren","UK"],["Mercedes-Benz","Germany"],["Mercury","USA"],["MG","UK / China"],["Mini","UK"],
+  ["Mitsubishi","Japan"],["Morgan","UK"],["NIO","China"],["Nissan","Japan"],["Noble","UK"],["Oldsmobile","USA"],["Opel","Germany"],
+  ["Pagani","Italy"],["Perodua","Malaysia"],["Peugeot","France"],["Pininfarina","Italy"],["Plymouth","USA"],["Polestar","Sweden"],
+  ["Pontiac","USA"],["Porsche","Germany"],["Proton","Malaysia"],["RAM","USA"],["Renault","France"],["Rimac","Croatia"],["Rivian","USA"],
+  ["Rolls-Royce","UK"],["Saab","Sweden"],["Saturn","USA"],["Scion","USA"],["SEAT","Spain"],["Škoda","Czech Republic"],["Smart","Germany"],
+  ["SsangYong (KGM)","South Korea"],["Subaru","Japan"],["Suzuki","Japan"],["Tata","India"],["Tesla","USA"],["Togg","Turkey"],
+  ["Toyota","Japan"],["Trabant","Germany"],["TVR","UK"],["UAZ","Russia"],["VinFast","Vietnam"],["Volkswagen","Germany"],["Volvo","Sweden"],
+  ["W Motors","UAE"],["Wiesmann","Germany"],["Wuling","China"],["XPeng","China"],["Zagato","Italy"],["Zeekr","China"],["ZAZ","Ukraine"]
+];
+const POPULAR = ["Toyota Corolla","Porsche 911","Ford Mustang","Tesla Model 3","Volkswagen Golf","Lamborghini Revuelto","Honda Civic",
+  "BMW M3","Nissan GT-R","Ferrari SF90 Stradale","Mazda MX-5","Bugatti Chiron","Toyota Land Cruiser","Koenigsegg Jesko","BYD Seal","Land Rover Defender"];
+const FEEDS = [
+  ["Motor1","https://www.motor1.com/rss/news/all/"],
+  ["Car and Driver","https://www.caranddriver.com/rss/all.xml/"],
+  ["Road & Track","https://www.roadandtrack.com/rss/all.xml/"],
+  ["InsideEVs","https://insideevs.com/rss/news/all/"],
+  ["Electrek","https://electrek.co/feed/"],
+];
+const CAR_WORDS = /\b(car|automobile|vehicle|sedan|saloon|coupé|coupe|hatchback|suv|crossover|roadster|supercar|hypercar|sports car|pickup|truck|minivan|van|wagon|estate|convertible|grand tourer|electric|automaker|manufacturer|marque|engine|racing car|kei car|microcar)\b/i;
+
+// ---------- helpers ----------
+const $ = (s, el = document) => el.querySelector(s);
+const app = $("#app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const enc = encodeURIComponent;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("sedon:" + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("sedon:" + k, JSON.stringify(v)); } catch {} }
+};
+const cache = new Map();
+async function getJSON(url) {
+  if (cache.has(url)) return cache.get(url);
+  const p = fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  cache.set(url, p);
+  p.catch(() => cache.delete(url));
+  return p;
+}
+const WIKI = "https://en.wikipedia.org";
+const wikiApi = params => getJSON(WIKI + "/w/api.php?format=json&formatversion=2&origin=*&" + params);
+const commonsApi = params => getJSON("https://commons.wikimedia.org/w/api.php?format=json&formatversion=2&origin=*&" + params);
+// Wikipedia gives a small thumbnail; ask for a sharper standard size.
+const bigThumb = src => src.includes("/thumb/") ? src.replace(/\/\d+px-/, "/960px-") : src;
+const titleToSlug = t => t.replace(/ /g, "_");
+const loading = text => `<div class="loading">${esc(text)}</div>`;
+let renderId = 0;
+
+// Search Wikipedia for car pages (with thumbnails), car-related results first.
+async function searchCars(q, limit = 10) {
+  const d = await wikiApi(`action=query&generator=search&gsrsearch=${enc(q)}&gsrlimit=${limit * 2}&prop=pageimages|description&piprop=thumbnail&pithumbsize=240&redirects=1`);
+  const pages = (d.query?.pages || []).sort((a, b) => a.index - b.index);
+  const scored = pages.map(p => ({ ...p, car: CAR_WORDS.test(p.description || "") || CAR_WORDS.test(p.title) }));
+  return [...scored.filter(p => p.car), ...scored.filter(p => !p.car)].slice(0, limit);
+}
+async function findCarPage(q) {
+  const r = await searchCars(q, 5);
+  return r[0]?.title;
+}
+
+// ---------- search box ----------
+const qInput = $("#q"), sug = $("#suggest");
+let sugTimer, sugItems = [], sugActive = -1;
+qInput.addEventListener("input", () => {
+  clearTimeout(sugTimer);
+  const q = qInput.value.trim();
+  if (q.length < 2) { sug.classList.remove("open"); return; }
+  sugTimer = setTimeout(async () => {
+    try {
+      const res = await searchCars(q, 8);
+      if (qInput.value.trim() !== q) return;
+      sugItems = res; sugActive = -1;
+      sug.innerHTML = res.length ? res.map((p, i) => `<button data-i="${i}">${p.thumbnail ? `<img src="${esc(p.thumbnail.source)}" alt="">` : `<div class="ph"></div>`}<span><b>${esc(p.title)}</b><small>${esc(p.description || "")}</small></span></button>`).join("")
+        + `<button data-all="1"><div class="ph"></div><span><b>See all results for “${esc(q)}”</b></span></button>`
+        : `<button data-all="1"><span><b>Search for “${esc(q)}”</b></span></button>`;
+      sug.classList.add("open");
+    } catch { sug.classList.remove("open"); }
+  }, 220);
+});
+sug.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.all) go("#/search/" + enc(qInput.value.trim()));
+  else go("#/car/" + enc(titleToSlug(sugItems[+b.dataset.i].title)));
+});
+qInput.addEventListener("keydown", e => {
+  const btns = [...sug.querySelectorAll("button")];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault(); if (!btns.length) return;
+    sugActive = (sugActive + (e.key === "ArrowDown" ? 1 : -1) + btns.length) % btns.length;
+    btns.forEach((b, i) => b.classList.toggle("active", i === sugActive));
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    if (sugActive >= 0 && btns[sugActive]) btns[sugActive].click();
+    else if (qInput.value.trim()) go("#/search/" + enc(qInput.value.trim()));
+  } else if (e.key === "Escape") sug.classList.remove("open");
+});
+document.addEventListener("click", e => { if (!e.target.closest(".search")) sug.classList.remove("open"); });
+function go(hash) { sug.classList.remove("open"); qInput.blur(); location.hash = hash; }
+
+// ---------- theme ----------
+const applyTheme = t => { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; };
+applyTheme(store.get("theme", null));
+$("#theme").onclick = () => {
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cur = document.documentElement.dataset.theme || (dark ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  applyTheme(next); store.set("theme", next);
+};
+
+// ---------- pages ----------
+function cardHTML(p) {
+  return `<a class="card" href="#/car/${enc(titleToSlug(p.title))}"><div class="img">${p.thumbnail ? `<img loading="lazy" src="${esc(p.thumbnail.source)}" alt="">` : ""}</div><div class="body"><b>${esc(p.title)}</b><small>${esc(p.description || "")}</small></div></a>`;
+}
+
+async function pageHome(id) {
+  app.innerHTML = `<section class="hero"><h1>Every car in the world.</h1><p>Search any car from any country and any year — see what it is, its specs, photos and videos, and read the latest car news.</p></section>
+  <h2>Popular cars</h2><div class="grid" id="pop">${loading("Loading cars…")}</div>
+  <h2>Latest car news</h2><div id="homeNews">${loading("Loading news…")}</div>`;
+  try {
+    const d = await wikiApi(`action=query&titles=${enc(POPULAR.join("|"))}&prop=pageimages|description&piprop=thumbnail&pithumbsize=400&redirects=1`);
+    if (id !== renderId) return;
+    const byTitle = new Map((d.query?.pages || []).map(p => [p.title, p]));
+    const norm = new Map([...(d.query?.normalized || []), ...(d.query?.redirects || [])].map(r => [r.from, r.to]));
+    const list = POPULAR.map(t => { let k = t; while (norm.has(k)) k = norm.get(k); return byTitle.get(k) || { title: t }; });
+    $("#pop").innerHTML = list.map(cardHTML).join("");
+  } catch { if (id === renderId) $("#pop").innerHTML = POPULAR.map(t => cardHTML({ title: t })).join(""); }
+  const items = await loadNews();
+  if (id !== renderId) return;
+  $("#homeNews").innerHTML = newsHTML(items.slice(0, 6)) + `<p><a class="btn" href="#/news">More car news →</a></p>`;
+}
+
+async function pageSearch(id, q) {
+  qInput.value = q;
+  app.innerHTML = `<h1>Results for “${esc(q)}”</h1><div class="grid" id="res">${loading("Searching…")}</div>`;
+  try {
+    const res = await searchCars(q, 24);
+    if (id !== renderId) return;
+    $("#res").outerHTML = res.length ? `<div class="grid">${res.map(cardHTML).join("")}</div>` : `<div class="note">No cars found. Try the brand and model, like “Toyota Supra”.</div>`;
+  } catch { if (id === renderId) $("#res").outerHTML = errorNote(); }
+}
+
+function pageBrands() {
+  const filter = store.get("brandFilter", "All");
+  const countries = ["All", ...[...new Set(BRANDS.map(b => b[1]))].sort()];
+  const draw = f => {
+    store.set("brandFilter", f);
+    const list = BRANDS.filter(b => f === "All" || b[1] === f);
+    app.innerHTML = `<h1>All car brands</h1><p class="muted">${BRANDS.length} brands from ${countries.length - 1} countries. Pick one to see its models — or search for any brand that isn't here.</p>
+      <div class="chips">${countries.map(c => `<button class="chip ${c === f ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+      <div class="brands">${list.map(b => `<button class="brand" data-b="${esc(b[0])}"><b>${esc(b[0])}</b><small>${esc(b[1])}</small></button>`).join("")}</div>`;
+    app.querySelectorAll(".chip").forEach(c => c.onclick = () => draw(c.dataset.c));
+    app.querySelectorAll(".brand").forEach(b => b.onclick = () => go("#/brand/" + enc(b.dataset.b)));
+  };
+  draw(countries.includes(filter) ? filter : "All");
+}
+
+async function pageBrand(id, brand) {
+  const country = BRANDS.find(b => b[0] === brand)?.[1];
+  app.innerHTML = `<p><a href="#/brands" class="muted">← All brands</a></p><h1>${esc(brand)}</h1><p class="muted">${esc(country || "")}</p>
+    <div id="brandInfo"></div><h2>Models</h2><div id="models">${loading("Finding models…")}</div>`;
+  // Brand summary from Wikipedia
+  // Try the brand's own page first ("Toyota"), then a search
+  const brandSummary = async () => {
+    const name = brand.replace(/ \(.*\)/, "");
+    for (const t of [name + " (marque)", name + " (automobile)", name + " Motor", name]) {
+      const s = await getJSON(`${WIKI}/api/rest_v1/page/summary/${enc(titleToSlug(t))}`).catch(() => null);
+      if (s?.type === "standard" && /manufactur|automaker|marque|brand|company|car/i.test(s.description || "")) return s;
+    }
+    const t = await findCarPage(name + " car manufacturer");
+    return t ? getJSON(`${WIKI}/api/rest_v1/page/summary/${enc(titleToSlug(t))}`) : null;
+  };
+  brandSummary().then(s => {
+    if (!s || id !== renderId) return;
+    if (id !== renderId) return;
+    $("#brandInfo").innerHTML = `<div class="car-top"><div><p class="extract">${esc(s.extract)}</p><a class="btn" href="#/car/${enc(titleToSlug(s.title))}">More about ${esc(brand)}</a></div>${s.thumbnail ? `<div class="main-img" style="aspect-ratio:auto;background:none"><img src="${esc(s.thumbnail.source)}" alt="" style="max-height:180px;object-fit:contain"></div>` : ""}</div>`;
+  }).catch(() => {});
+  // Models: NHTSA database (US-sold models), plus Wikipedia for everything else
+  const models = new Set();
+  try {
+    const mk = brand.replace(/ \(.*\)/, "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const d = await getJSON(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/${enc(mk)}?format=json`);
+    (d.Results || []).forEach(r => models.add(r.Model_Name.trim()));
+  } catch {}
+  let wiki = [];
+  try { wiki = await searchCars(`${brand} car model`, 20); } catch {}
+  if (id !== renderId) return;
+  const sorted = [...models].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  let html = "";
+  if (wiki.length) html += `<div class="grid">${wiki.filter(p => p.car).map(cardHTML).join("")}</div>`;
+  if (sorted.length) html += `<h2>All ${sorted.length} models in the NHTSA database</h2><div class="list">${sorted.map(m => `<button data-m="${esc(m)}">${esc(m)}</button>`).join("")}</div>`;
+  $("#models").innerHTML = html || `<div class="note">No models found. Try searching for “${esc(brand)}” above.</div>`;
+  $("#models").querySelectorAll(".list button").forEach(b => b.onclick = async () => {
+    b.textContent = "Loading…";
+    const t = await findCarPage(`${brand} ${b.dataset.m}`).catch(() => null);
+    go(t ? "#/car/" + enc(titleToSlug(t)) : "#/search/" + enc(`${brand} ${b.dataset.m}`));
+  });
+}
+
+// Pull the spec table (infobox) out of a Wikipedia article.
+async function loadSpecs(title) {
+  const d = await wikiApi(`action=parse&page=${enc(title)}&prop=text&section=0&redirects=1&disableeditsection=1`);
+  const doc = new DOMParser().parseFromString(d.parse?.text || "", "text/html");
+  const box = doc.querySelector("table.infobox");
+  if (!box) return [];
+  const rows = [];
+  box.querySelectorAll("tr").forEach(tr => {
+    const th = tr.querySelector("th.infobox-label, th[scope=row]"), td = tr.querySelector("td.infobox-data, td");
+    if (!th || !td) return;
+    td.querySelectorAll("sup, style, .reference, .noprint").forEach(n => n.remove());
+    td.querySelectorAll("br").forEach(n => n.replaceWith("\n"));
+    td.querySelectorAll("li").forEach(n => n.append("\n"));
+    const val = td.textContent.replace(/\[\d+\]/g, "").replace(/[ \t]+/g, " ").replace(/\n\s*/g, "\n").trim();
+    const key = th.textContent.trim();
+    if (key && val) rows.push([key, val]);
+  });
+  return rows;
+}
+
+// Photos and videos from the article, plus more from Wikimedia Commons.
+async function loadMedia(title) {
+  const photos = [], videos = [], seen = new Set();
+  try {
+    const m = await getJSON(`${WIKI}/api/rest_v1/page/media-list/${enc(titleToSlug(title))}`);
+    for (const it of m.items || []) {
+      if (seen.has(it.title)) continue; seen.add(it.title);
+      if (it.type === "image" && it.srcset?.length && !/\.svg/i.test(it.title) && !/logo|icon|flag|map|diagram/i.test(it.title)) {
+        const src = it.srcset[it.srcset.length - 1].src;
+        photos.push({ thumb: (src.startsWith("//") ? "https:" : "") + src, full: (src.startsWith("//") ? "https:" : "") + src, caption: it.caption?.text || it.title.replace(/^File:/, "") });
+      } else if (it.type === "video") videos.push({ file: it.title, caption: it.caption?.text || it.title.replace(/^File:/, "") });
+    }
+  } catch {}
+  const base = title.replace(/\s*\(.*?\)\s*/g, " ").trim();
+  const [pics, vids] = await Promise.all([
+    commonsApi(`action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(`"${base}" filetype:bitmap`)}&gsrlimit=30&prop=imageinfo&iiprop=url&iiurlwidth=480`).catch(() => null),
+    commonsApi(`action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(`"${base}" filetype:video`)}&gsrlimit=8&prop=imageinfo&iiprop=url|mime&iiurlwidth=640`).catch(() => null),
+  ]);
+  for (const p of (pics?.query?.pages || []).sort((a, b) => a.index - b.index)) {
+    const ii = p.imageinfo?.[0]; if (!ii || seen.has(p.title)) continue; seen.add(p.title);
+    photos.push({ thumb: ii.thumburl || ii.url, full: ii.url, caption: p.title.replace(/^File:/, "").replace(/\.\w+$/, "") });
+  }
+  const vidInfo = new Map((vids?.query?.pages || []).map(p => [p.title, p]));
+  // Resolve URLs for videos found in the article itself
+  const missing = videos.filter(v => !vidInfo.has(v.file)).map(v => v.file);
+  if (missing.length) {
+    const r = await commonsApi(`action=query&titles=${enc(missing.join("|"))}&prop=imageinfo&iiprop=url|mime&iiurlwidth=640`).catch(() => null);
+    (r?.query?.pages || []).forEach(p => vidInfo.set(p.title, p));
+  }
+  for (const [t, p] of vidInfo) if (!videos.some(v => v.file === t)) videos.push({ file: t, caption: t.replace(/^File:/, "").replace(/\.\w+$/, "") });
+  const outVideos = videos.map(v => { const ii = vidInfo.get(v.file)?.imageinfo?.[0]; return ii ? { ...v, url: ii.url, poster: ii.thumburl, mime: ii.mime } : null; }).filter(Boolean);
+  return { photos: photos.slice(0, 48), videos: outVideos.slice(0, 8) };
+}
+
+async function pageCar(id, slug) {
+  const title = slug.replace(/_/g, " ");
+  app.innerHTML = loading("Loading " + title + "…");
+  let s;
+  try { s = await getJSON(`${WIKI}/api/rest_v1/page/summary/${enc(slug)}`); }
+  catch { if (id === renderId) app.innerHTML = errorNote(); return; }
+  if (id !== renderId) return;
+  if (s.type === "disambiguation") return pageSearch(id, title);
+  const favs = store.get("garage", []);
+  const isFav = () => store.get("garage", []).some(f => f.title === s.title);
+  const yt = `https://www.youtube.com/results?search_query=${enc(s.title + " review")}`;
+  app.innerHTML = `
+    <div class="car-top">
+      <div class="main-img">${s.thumbnail ? `<img src="${esc(bigThumb(s.thumbnail.source))}" data-fallback="${esc(s.thumbnail.source)}" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.dataset.fallback=''}" alt="${esc(s.title)}">` : ""}</div>
+      <div>
+        <h1>${esc(s.title)}</h1>
+        <p class="desc">${esc(s.description || "")}</p>
+        <p class="extract">${esc(s.extract)}</p>
+        <div class="actions">
+          <button class="btn primary fav" id="fav"></button>
+          <a class="btn" href="#photos">Photos</a>
+          <a class="btn" href="#videos">Videos</a>
+          <a class="btn" href="#carnews">News</a>
+          <a class="btn" target="_blank" rel="noopener" href="${esc(s.content_urls?.desktop?.page || WIKI + "/wiki/" + enc(slug))}">Full article ↗</a>
+        </div>
+      </div>
+    </div>
+    <h2>Specs</h2><div id="specs">${loading("Loading specs…")}</div>
+    <h2 id="photos">Photos</h2><div id="ph">${loading("Loading photos…")}</div>
+    <h2 id="videos">Videos</h2><div id="vid">${loading("Loading videos…")}</div>
+    <p><a class="btn" target="_blank" rel="noopener" href="${esc(yt)}">▶ Watch ${esc(s.title)} reviews on YouTube ↗</a></p>
+    <h2 id="carnews">${esc(s.title)} in the news</h2><div id="cn">${loading("Looking for news…")}</div>`;
+  const fav = $("#fav");
+  const drawFav = () => fav.textContent = isFav() ? "★ In my garage" : "☆ Add to my garage";
+  drawFav();
+  fav.onclick = () => {
+    let g = store.get("garage", []);
+    g = isFav() ? g.filter(f => f.title !== s.title) : [{ title: s.title, description: s.description, thumbnail: s.thumbnail }, ...g];
+    store.set("garage", g); drawFav();
+  };
+  app.querySelectorAll('.actions a[href^="#"]:not([href^="#/"])').forEach(a => a.onclick = e => { e.preventDefault(); $(a.getAttribute("href")).scrollIntoView({ behavior: "smooth" }); });
+  addRecent(s);
+
+  loadSpecs(s.title).then(rows => {
+    if (id !== renderId) return;
+    $("#specs").innerHTML = rows.length ? `<table class="specs">${rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v).replace(/\n/g, "<br>")}</td></tr>`).join("")}</table>` : `<div class="note">No spec sheet for this page.</div>`;
+  }).catch(() => { if (id === renderId) $("#specs").innerHTML = errorNote(); });
+
+  loadMedia(s.title).then(({ photos, videos }) => {
+    if (id !== renderId) return;
+    $("#ph").innerHTML = photos.length ? `<div class="photos">${photos.map((p, i) => `<button data-i="${i}" title="${esc(p.caption)}"><img loading="lazy" src="${esc(p.thumb)}" alt="${esc(p.caption)}"></button>`).join("")}</div>` : `<div class="note">No photos found.</div>`;
+    $("#ph").querySelectorAll("button").forEach(b => b.onclick = () => openLightbox(photos, +b.dataset.i));
+    $("#vid").innerHTML = videos.length ? `<div class="videos">${videos.map(v => `<div class="video"><video controls preload="none" ${v.poster ? `poster="${esc(v.poster)}"` : ""}><source src="${esc(v.url)}" type="${esc(v.mime || "")}"></video><p>${esc(v.caption)}</p></div>`).join("")}</div>` : `<div class="note">No free videos of this car on Wikimedia Commons yet — the YouTube button below shows reviews and drive videos.</div>`;
+  });
+
+  carNews(s.title).then(items => {
+    if (id !== renderId) return;
+    $("#cn").innerHTML = items.length ? newsHTML(items) : `<div class="note">No recent stories about the ${esc(s.title)} in our news feeds. <a target="_blank" rel="noopener" href="https://news.google.com/search?q=${enc(s.title)}">Search Google News ↗</a></div>`;
+  });
+}
+
+// ---------- news ----------
+let newsPromise;
+function loadNews() {
+  if (!newsPromise) newsPromise = Promise.all(FEEDS.map(([name, url]) =>
+    getJSON(`https://api.rss2json.com/v1/api.json?rss_url=${enc(url)}`)
+      .then(d => (d.items || []).map(it => ({ ...it, source: name })))
+      .catch(() => [])
+  )).then(lists => {
+    const all = lists.flat().map(it => {
+      const img = it.thumbnail || it.enclosure?.link || (it.description || "").match(/<img[^>]+src="([^"]+)"/)?.[1] || "";
+      const text = new DOMParser().parseFromString(it.description || "", "text/html").body.textContent.trim();
+      return { title: it.title, link: it.link, date: new Date((it.pubDate || "").replace(" ", "T") + "Z"), source: it.source, img, text };
+    }).filter(it => it.title && it.link);
+    all.sort((a, b) => b.date - a.date);
+    if (!all.length) newsPromise = null;
+    return all;
+  });
+  return newsPromise;
+}
+function ago(d) {
+  const m = Math.round((Date.now() - d) / 60000);
+  if (!isFinite(m)) return "";
+  if (m < 60) return m + " min ago";
+  if (m < 1440) return Math.round(m / 60) + " h ago";
+  return Math.round(m / 1440) + " d ago";
+}
+function newsHTML(items) {
+  if (!items.length) return `<div class="note">Couldn't load the news right now. Check your internet and refresh.</div>`;
+  return `<div class="news">${items.map(n => `<a class="story" target="_blank" rel="noopener" href="${esc(n.link)}"><div class="img">${n.img ? `<img loading="lazy" src="${esc(n.img)}" alt="">` : ""}</div><div class="body"><b>${esc(n.title)}</b><small>${esc(n.source)} · ${ago(n.date)}</small></div></a>`).join("")}</div>`;
+}
+async function carNews(title) {
+  const all = await loadNews();
+  const words = title.replace(/\(.*?\)/g, "").split(/\s+/).filter(w => w.length > 1);
+  const brand = words[0]?.toLowerCase(), rest = words.slice(1).map(w => w.toLowerCase());
+  const exact = all.filter(n => { const t = (n.title + " " + n.text).toLowerCase(); return t.includes(brand) && rest.every(w => t.includes(w)); });
+  return (exact.length ? exact : all.filter(n => n.title.toLowerCase().includes(brand))).slice(0, 9);
+}
+async function pageNews(id) {
+  const src = store.get("newsSource", "All");
+  app.innerHTML = `<h1>Car news</h1><p class="muted">The latest stories from the world's car magazines, updated all day.</p><div id="news">${loading("Loading news…")}</div>`;
+  const items = await loadNews();
+  if (id !== renderId) return;
+  const draw = f => {
+    store.set("newsSource", f);
+    const list = items.filter(n => f === "All" || n.source === f);
+    $("#news").innerHTML = `<div class="chips">${["All", ...FEEDS.map(f => f[0])].map(c => `<button class="chip ${c === f ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>${newsHTML(list)}`;
+    $("#news").querySelectorAll(".chip").forEach(c => c.onclick = () => draw(c.dataset.c));
+  };
+  draw(src);
+}
+
+// ---------- garage & recents ----------
+function addRecent(s) {
+  const r = store.get("recent", []).filter(x => x.title !== s.title);
+  r.unshift({ title: s.title, description: s.description, thumbnail: s.thumbnail });
+  store.set("recent", r.slice(0, 12));
+}
+function pageGarage() {
+  const g = store.get("garage", []), r = store.get("recent", []);
+  app.innerHTML = `<h1>My garage</h1><p class="muted">Cars you saved with ☆ Add to my garage.</p>
+    ${g.length ? `<div class="grid">${g.map(cardHTML).join("")}</div>` : `<div class="note">Your garage is empty. Search for a car and tap ☆ to save it here.</div>`}
+    <h2>Recently viewed</h2>${r.length ? `<div class="grid">${r.map(cardHTML).join("")}</div>` : `<div class="note">Nothing yet.</div>`}`;
+}
+
+// ---------- lightbox ----------
+const lb = $("#lightbox"); let lbList = [], lbIdx = 0;
+function openLightbox(list, i) { lbList = list; lbIdx = i; showLb(); lb.classList.add("open"); }
+function showLb() { const p = lbList[lbIdx]; $("img", lb).src = p.full; $("p", lb).textContent = `${p.caption}  (${lbIdx + 1}/${lbList.length})`; }
+lb.onclick = e => {
+  if (e.target.classList.contains("prev")) { lbIdx = (lbIdx - 1 + lbList.length) % lbList.length; showLb(); }
+  else if (e.target.classList.contains("next")) { lbIdx = (lbIdx + 1) % lbList.length; showLb(); }
+  else if (e.target.tagName !== "IMG") lb.classList.remove("open");
+};
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("open")) return;
+  if (e.key === "Escape") lb.classList.remove("open");
+  if (e.key === "ArrowLeft") { lbIdx = (lbIdx - 1 + lbList.length) % lbList.length; showLb(); }
+  if (e.key === "ArrowRight") { lbIdx = (lbIdx + 1) % lbList.length; showLb(); }
+});
+
+function errorNote() { return `<div class="note">Couldn't load this right now. Check your internet connection and try again.</div>`; }
+
+// ---------- router ----------
+function route() {
+  const id = ++renderId;
+  const [, page = "", arg = ""] = location.hash.split("/");
+  const a = decodeURIComponent(arg);
+  document.querySelectorAll("nav.tabs a").forEach(t => t.classList.toggle("on", t.dataset.tab === ({ "": "home", brand: "brands" }[page] || page)));
+  window.scrollTo(0, 0);
+  if (page !== "search") qInput.value = "";
+  if (page === "car") pageCar(id, titleToSlug(a));
+  else if (page === "search") pageSearch(id, a);
+  else if (page === "brands") pageBrands();
+  else if (page === "brand") pageBrand(id, a);
+  else if (page === "news") pageNews(id);
+  else if (page === "garage") pageGarage();
+  else pageHome(id);
+  document.title = page === "car" ? `${a.replace(/_/g, " ")} — SEDON` : "SEDON — Every Car in the World";
+}
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>

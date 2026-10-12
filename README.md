@@ -12,6 +12,21 @@ Free, in your browser: no download, no install, no account. It works on computer
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
+## 🚗 SEDON — every car in the world
+
+**[Open SEDON → raggykrav-svg.github.io/Amboola/sedon/](https://raggykrav-svg.github.io/Amboola/sedon/)** (file: `sedon/index.html`)
+
+A car encyclopedia app that runs in your browser. Search any car from any country and any year and see:
+
+- **Info and specs**: what the car is, its history and its spec sheet (engine, power, production years, body styles…)
+- **Photos**: a gallery you can tap through full screen
+- **Videos**: free videos from Wikimedia Commons, plus a button for YouTube reviews
+- **Car news**: the latest stories from Motor1, Car and Driver, Road & Track, InsideEVs and Electrek, and news about the car you're looking at
+- **All brands**: 130 car brands from 23 countries, each with its models
+- **My garage**: save your favourite cars with ☆
+
+It uses free public data (Wikipedia, Wikimedia Commons, the NHTSA vehicle database and car-magazine news feeds), so it needs an internet connection.
+
 ## How to play
 
 **Option 1 — just open it:** download `index.html` and double-click it. Chrome, Edge, Firefox and Safari all work.
