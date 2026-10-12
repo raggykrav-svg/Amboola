@@ -615,3 +615,12 @@ The new models are made in Blender: `models/blender/work_trucks.py`, `monster.py
 - **🎆 Festival nights.** At night (press T), Tokyo has lanterns over the streets and fireworks. The 🏮 Lantern Race goes through 8 torii gates against the clock.
 - **👑 Final boss.** The Shadow King races you when you reach level 15. Beat him for $5,000,000 and the Champion badge.
 - **🐱 More pets.** Choose a cat, a parrot or a tiny flying dragon in CUSTOMIZE.
+
+## Even more fun 🪙⭐🎆👑🏗🐉
+
+- **🐈 🦜 🐉 More pets** (CUSTOMIZE): a cat that looks out of the window, a parrot on the roof and a tiny dragon flying above your car. Made in `models/blender/pets.py`.
+- **🪙 Golden coin hunt.** 100 spinning coins are hidden all over the world: on Tokyo streets, in every country and area, and on top of skyscrapers (take the helicopter!). Find all 100 to unlock the secret **AMBOOLA Golden Tora**.
+- **⭐ Levels and badges.** Everything you do gives stars. Each new level gives you money and unlocks new paint colours, wheels and horns (press **J** to honk). Your badges are under **⭐ LEVEL & BADGES** in the pause menu.
+- **🎆 Festival nights.** At night (press **T**), Tokyo has lanterns and fireworks. Win the 🏮 **Lantern Race** through 8 torii gates.
+- **👑 The final boss.** The Shadow King races you once you reach level 15 or have almost finished every mission. His ring is outside AMBOOLA HQ.
+- **🏗 Track builder.** Put down jumps, loops, walls, boost pads and numbered gates from above, then press ▶ DRIVE and race your own lap.
