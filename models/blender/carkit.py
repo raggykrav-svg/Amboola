@@ -29,6 +29,7 @@ def disc_map(u, v):  # unit square -> unit disc with a clean quad grid (no pole)
     x, y = u * 2 - 1, v * 2 - 1
     return x * math.sqrt(1 - y * y / 2), y * math.sqrt(1 - x * x / 2)
 def side(s): return 'left' if s > 0 else 'right'   # +Y is the car's left
+def clamp01(x): return 0.0 if x < 0 else 1.0 if x > 1 else x
 def both(fn): fn(1); fn(-1)
 
 COLS = 'x zb w zs wb zbl wg zg wr zr zt'.split()
@@ -130,12 +131,16 @@ class Car:
         if max(bm.faces, key=lambda f: f.calc_center_median().z).normal.z < 0:   # make sure the shell faces outward
             bmesh.ops.reverse_faces(bm, faces=bm.faces)
         cr = bm.edges.layers.float.new('crease_edge')
+        crease_front, crease_rear = max(crease_front, 0.6), max(crease_rear, 0.8)   # crisp nose and tail panels
         for r, c in ((rings[0], crease_front), (rings[-1], crease_rear)):
             for j in range(n): bm.edges.get((r[j], r[(j + 1) % n]))[cr] = c
         for a, b in zip(rings, rings[1:]):
             for j in (2, 5, n - 2, n - 5): bm.edges.get((a[j], b[j]))[cr] = crease_lines
             if a[0].co.x > crisp_front:                 # front lid shut line + fender crowns
                 for j in (6, 7, n - 6, n - 7): bm.edges.get((a[j], b[j]))[cr] = crisp
+        for a, b in zip(rings, rings[1:]):              # a crisp shoulder and beltline the whole length of the car
+            for j in (5, 6, n - 5, n - 6):
+                e = bm.edges.get((a[j], b[j])); e[cr] = max(e[cr], 0.5)
         if crease_all is not None:                      # flat-panel bodies (Cybertruck): every edge stays sharp
             for e in bm.edges: e[cr] = crease_all
         body = self.mesh('Body', bm, 'Paint')
@@ -151,9 +156,62 @@ class Car:
         mod = self.body.modifiers.new('cut', 'BOOLEAN'); mod.operation = 'DIFFERENCE'; mod.object = cut; mod.solver = solver; mod.material_mode = 'TRANSFER'
         self.apply(self.body); bpy.data.objects.remove(cut)
 
+    def sculpt(self, wheels):
+        """shape the smooth shell before the wheel wells are cut: muscular fender flares that swell out round every
+        wheel (so the doors between them read as a waist), a crisper shoulder, and a tail that tapers in plan view.
+        Strength from self.flare_amt (default 0.045 m); 0 turns it off."""
+        amt = getattr(self, 'flare_amt', 0.045)
+        if not amt: return
+        me = self.body.data; vs = me.vertices
+        if max(v.co.x for v in vs) - min(v.co.x for v in vs) > 5.6: amt *= 0.4   # buses and trucks: only a hint
+        W = max(abs(v.co.y) for v in vs); xs = [v.co.x for v in vs]; xmin, xmax = min(xs), max(xs)
+        for wd in wheels.values():
+            ra = wd['r'] + wd.get('gap', 0.055); cz = wd.get('cz', wd['r'] + .01)
+            for v in vs:
+                ay = abs(v.co.y)
+                if ay < W * 0.55: continue
+                dx, dz = v.co.x - wd['x'], v.co.z - cz; d = math.hypot(dx, dz)
+                if d > ra * 2.0 or v.co.z < cz - ra * 0.2 or v.co.z > cz + ra * 1.75: continue
+                t = clamp01((ra * 2.0 - d) / (ra * 0.95))            # full strength out to ~1.05 r, gone by 2 r
+                t = t * t * (3 - 2 * t)
+                side_w = clamp01((ay - W * 0.55) / (W * 0.25))        # only the outer skin, not the bonnet
+                v.co.y += math.copysign(amt * t * side_w, v.co.y)
+                v.co.z += amt * 0.25 * t * side_w * max(0.0, -dx / ra * 0.0 + (1 if dz > 0 else 0))   # crown lifts a touch
+        # a sculpted bonnet: between the front wheels the middle of the lid sits lower than the fender crowns
+        F = wheels.get('F'); nx = max(xs)
+        if F:
+            x0, x1 = F['x'] - 0.7, nx - 0.12
+            ztop = {}
+            for v in vs:
+                if x0 < v.co.x < x1 and abs(v.co.y) < W * 0.62: ztop[round(v.co.x, 2)] = max(ztop.get(round(v.co.x, 2), -9), v.co.z)
+            for v in vs:
+                if not (x0 < v.co.x < x1): continue
+                q = abs(v.co.y) / (W * 0.62)
+                if q >= 1: continue
+                zt_ = ztop.get(round(v.co.x, 2))
+                if zt_ is None or v.co.z < zt_ - 0.12: continue           # only the top skin
+                fx = min(clamp01((v.co.x - x0) / 0.35), clamp01((x1 - v.co.x) / 0.3))
+                v.co.z -= amt * 0.55 * fx * (1 - q * q) ** 2
+        # undercut ends: below the bumper line the nose and the tail are pulled in, so they read as a sharp prow and
+        # a diffuser kick instead of the rounded ends of a bar of soap
+        zs_ = [v.co.z for v in vs]; zmin = min(zs_); H = max(zs_) - zmin
+        for v in vs:
+            lo = clamp01((zmin + H * 0.30 - v.co.z) / (H * 0.25))
+            if not lo: continue
+            f = clamp01((v.co.x - (xmax - (xmax - xmin) * 0.09)) / ((xmax - xmin) * 0.09))
+            r_ = clamp01(((xmin + (xmax - xmin) * 0.10) - v.co.x) / ((xmax - xmin) * 0.10))
+            v.co.x -= 0.06 * f * f * lo; v.co.x += 0.08 * r_ * r_ * lo
+        # tail taper: the last 12 % of the car narrows a little in plan view so the back is not a box
+        L = xmax - xmin
+        for v in vs:
+            u = (xmin + L * 0.12 - v.co.x) / (L * 0.12)
+            if u > 0: v.co.y *= 1 - 0.035 * min(u, 1) ** 2
+        me.update()
+
     def arches(self, wheels, gap=0.055, depth=0.32):
         """wheel wells: one boolean cylinder per wheel. wheels = dict(F=dict(x, r, w, y, rim[, cz, gap]), R=...)"""
         self.wheel_spec = wheels
+        self.sculpt(wheels)
         for wd in wheels.values():
             for s in (1, -1):
                 bm = bmesh.new(); r = wd['r'] + wd.get('gap', gap)
@@ -731,6 +789,26 @@ class Car:
                         if ff.normal.dot(nrm) < 0: ff.normal_flip()
             if bm.faces: self.parts.append(self.mesh('grillemesh', bm, 'Gloss', smooth=False))
             else: bm.free()
+        # a front splitter lip and rear diffuser fins sit the car down on the road
+        lowc = lambda x0, x1: [(x, self.hit((x, 0, -3), (0, 0, 1))[0]) for x in [x0 + i * (x1 - x0) / 20 for i in range(21)]]
+        if not names & {'splitter', 'lip'}:
+            # the lowest point of the nose: scan up from the floor until the ray hits near the front of the car
+            prow = [(z, self.hit((8, 0, z), (-1, 0, 0))[0]) for z in [zb + i * 0.01 for i in range(60)]]
+            prow = [(z, p_) for z, p_ in prow if p_ is not None]
+            if prow:
+                xf = max(p_.x for _, p_ in prow); zl, pl_ = next((z, p_) for z, p_ in prow if p_.x > xf - 0.12)
+                wy = self.hit((pl_.x - 0.2, 5, zl + 0.03), (0, -1, 0))[0]
+                hw = (wy.y if wy is not None else 0.8) * 0.85
+                self.box('splitter', 'Carbon', (pl_.x - 0.04, 0, zl - 0.004), (0.14, hw * 2, 0.02), bevel=0.006)
+        if not names & {'difffin'}:
+            ps = [self.hit((-8, 0, zb + dz), (1, 0, 0))[0] for dz in (0.04, 0.08)]
+            ps = [p_ for p_ in ps if p_ is not None]
+            if ps:
+                rx = max(p_.x for p_ in ps); wy = self.hit((rx + 0.25, 5, zb + 0.08), (0, -1, 0))[0]
+                hw = (wy.y if wy is not None else 0.8) * 0.7
+                if 'diffuser' not in names: self.box('diffuser', 'Gloss', (rx + 0.08, 0, zb + 0.03), (0.22, hw * 2, 0.025))
+                for f_ in (-0.62, -0.22, 0.22, 0.62):
+                    self.box('difffin', 'Gloss', (rx + 0.06, f_ * hw, zb + 0.07), (0.24, 0.012, 0.11))
         # shark-fin antenna at the back of the roof (not on open cars or cars with roof racks)
         if not getattr(self, 'open_top', False) and not names & {'rack', 'fin', 'antenna'}:
             xs = [R['x'] - 0.6 + i * 0.05 for i in range(int((F['x'] - R['x'] + 0.6) / 0.05))]

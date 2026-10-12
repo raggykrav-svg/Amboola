@@ -273,3 +273,5 @@ Model gotchas:
 - Each detail is skipped when a part with that name already exists. Set `k.no_details = True` to turn the whole pass off.
 - `_wheel` now adds `spokeface` (RimLip) strips, a `drill` pattern on the disc, `letter` blocks (TireLetter) on the sidewall, and curved `Caliper_*` arcs with a `Logo` strip.
 - New material names (`TireLetter`, `Logo`, `Accent`) are not in the game's `MAT` table, so they keep their glTF colours.
+- `Car.sculpt(wheels)` (called at the start of `arches`) deforms the subdivided shell. It adds fender flares (`flare_amt`, default 0.045 m, ×0.4 for bodies longer than 5.6 m), a dished bonnet between the front wheels, undercut nose and tail below 30 % of the height, and a 3.5 % plan taper over the last 12 %. `loft` also forces creases of at least 0.5 on the shoulder and beltline edges, and at least 0.6/0.8 on the nose and tail rings.
+- `details()` also adds a `splitter` (Carbon) under the lowest point of the nose and four `difffin`s (plus a `diffuser` plate if the car has none).

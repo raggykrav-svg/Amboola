@@ -633,3 +633,16 @@ Every car is now rebuilt in Blender with extra details, added automatically by t
 - **Body:** windscreen wipers, door handles, a gloss-black sill between the wheels, a badge on the front and the back, a shark-fin antenna on the roof, shut lines round the bonnet, and a honeycomb mesh in the black grilles and air intakes.
 
 Each detail is skipped when a car already has its own version, or when there is nowhere to put it (for example, no antenna on open-top cars). A car script can turn all of them off with `k.no_details = True`.
+
+### Better shapes 🏎️
+
+Every car's body is also sculpted by the kit (`Car.sculpt()`, run just before the wheel wells are cut):
+
+- **Fender flares:** muscular bulges round every wheel, so the doors between them look slimmer.
+- **Sculpted bonnet:** the middle of the front lid sits lower than the fender tops.
+- **Crisp edges:** a sharper shoulder line from nose to tail, and sharper nose and tail panels.
+- **Cut-in nose and tail:** the lower nose and tail are pulled in, so they look like a sharp front and a diffuser instead of a round bar of soap.
+- **Tapered tail:** the back narrows a little.
+- **Low parts:** a carbon splitter lip under the nose and fins in the rear diffuser.
+
+Buses and trucks only get a light version. A car script can set `k.flare_amt` (0 turns the sculpting off).
