@@ -281,3 +281,35 @@ Model gotchas:
 - `models/blender/traffic.py` builds `tr_kei`, `tr_taxi`, `tr_sedan`, `tr_van`, `tr_truck` and `tr_police` with `k.lite = True` and `loft(levels=2)`. Lite wheels have a 28-segment tyre without grooves or letters, 24-segment rims/discs, no `spokeface`, `drill` or calipers; `details()` skips the grille mesh. That is 11–22k triangles a car. The sedan and police car remap the Taycan table (`TTAY`) and the taxi the Cayenne SUV table (`TCAY_SUV`), using the Teslas' `glass()` helper. Kei, van and truck have their own station tables. `two_tone(k, z, nose_x, drop)` bisects the police shell and paints the lower half `GlossBlack`.
 - In `index.html`, `TRAFFIC_MODELS` load before the game starts on desktop and first in `loadAllModels` everywhere. `trafficKit(id)` merges a model into one geometry per material (Paint stays per car; lamps use `tHeadM`/`tTailM`, which `applyTime` dims with `userData.k`). `buildTrafficCar(T)` builds the box car as `userData.lo` and `dressTraffic(g)` wraps it with the model in a `THREE.LOD` (switch at `TRAFFIC_LOD`, 70 m, 45 m on touch). Cars built before their model arrives wait in `trafficWaiting` and are dressed by `trafficModelIn(id)` from `loadModel`. `buildPoliceCar()` uses `POLICE_T` (`n: 'police'`) and moves its light bar to `kit.top`.
 - Check: every `traffic.cars[i].mesh` should have exactly one child, a `THREE.LOD`. Cameras close to traffic go through `window.__camHook`. The player's headlights blow out a white car parked right in front of them at night, so frame traffic from the side.
+
+## Country towns (Blender)
+
+- **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:
+  - `Node`: one object, with a material index per face. `build_all()` finishes every node.
+  - Primitives: `box`, `cyl`, `lathe`, `prism`, `extrude`, `tube`, `blob` (metaball), `arch`.
+  - `Face`/`Frame3` give facade coordinates `(u, v, w)`. `window`, `door`, `storey`, `shopfront`, `arch_wall` build on them.
+  - Roofs: `gable`, `hip`, `mansard`, `flat_roof`. `at=(x, y)` moves a roof off centre.
+  - Trees: `tree_palm`, `tree_round`, `tree_cypress`, `tree_fir`.
+- **Node names (the contract with the game):**
+  - `G<k>` / `U<k>` / `B<k>` / `R<k>`: family k's ground storey, upper storey, balcony storey and roof. Each has custom props `W`, `D`, `H` (exported as extras → `userData`). The same name plus `l` is the plain far-away twin.
+  - `T_<kind>`: trees.
+  - `L_<key>`: a landmark modelled around its game anchor. Blender Y = game −z.
+  - `P_<key>`: a prop placed many times.
+  - `L_eye_wheel`: the London Eye wheel. Its axle runs along Blender Y; the game puts it in a group turned π/2, 10 m out from the legs, 68 m up, and `C.eye.rotateZ` spins it.
+- **Materials:**
+  - `Wall` and `Roof` are white and tinted per house with `instanceColor` from the country's `S.walls` / `S.roofs`.
+  - `Window` glows at night (`cityMats.win`, in `dynMats.windows`). `Glow` uses `dynMats.lamps`. `Glass` keeps its glTF material.
+  - Every other material is baked into vertex colours (`misc`).
+- **Game:**
+  - `countryTown` stores `C.town = { S, b, meshes }`. `countryTrees(C, g, list, fn)` keeps each tree list. `lmGroup(C, g, key, x, z, tilt)` holds each procedural landmark.
+  - `C.props[key]` lists `[x, z, ry, scale]`.
+  - `updateCountryCulling` asks for `city_<id>` within 9 km. `upgradeCity(C)` then:
+    - stacks the modules on every plot in 400 m cells: `F = 1 + round((h − G.H) / U.H)` storeys, `B` on the second and top floor, scaled to the plot, turned by a multiple of 90°;
+    - hides the boxes, trees and landmark groups it replaces.
+  - Cells show the detailed modules within `CITY_NEAR` (500 m, 300 m on touch, 0 on Graphics LOW) and the plain ones out to 1.7 km. Tree cells show to 1.3 km.
+  - `CITY_MODELS` are left out of `loadAllModels`.
+- **Check:**
+  - After `travelTo({kind:'area', zone:id, idx:C.R.n-1, end:[mx, C.z0+70]})`, wait for `C.city`.
+  - Every `C.lm[key].visible` should be `false` and `C.town.meshes` hidden.
+  - SwiftShader takes about 0.3–0.5 s a frame in a town, so wait a few frames before reading `renderer.info`. The `LOW FPS` toast in headless runs is expected.
+  - About 0.4–0.85 M triangles a frame in a town, roughly 2× the old boxes, and about 450 draw calls.

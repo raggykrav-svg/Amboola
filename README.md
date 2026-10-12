@@ -659,3 +659,18 @@ The cars driving around the city are real Blender models now too, made with the 
 - **Police car:** white on top and black below, like a real Japanese police car. The red and blue lights on the roof still flash.
 
 They are a lighter version of the kit (simpler tyres, no brake calipers), because dozens are on the road at once. Up close you see the Blender model; far away (70 m, 45 m on phones) the game shows the old simple box car, so the game stays fast. They drive in the city, on the expressway, on the highway and the bridges, and ride on the ferry.
+
+### Countries from Blender 🌍
+
+Every country's town is now made in Blender too (`models/blender/cities.py`, one `city_<country>.py` per country, built with `citykit.py`):
+
+- **🇨🇾 Cyprus:** white houses with blue shutters and solar water heaters on the roofs, stone houses with wooden balconies, palms and olive trees, Kolossi Castle, the old Kourion theatre, Aphrodite's Rock and a church with a red dome.
+- **🇮🇹 Italy:** ochre houses with green shutters and red-tile roofs, cypress trees, the Colosseum (you can drive in through its arches), the Leaning Tower and a fountain square.
+- **🇦🇪 Dubai:** glass towers with lit tops, the Burj Khalifa, the Burj Al Arab on its island and the Grand Mosque with gold domes.
+- **🇫🇷 Paris:** cream apartment blocks with shops, awnings, iron balconies and roof windows, the Eiffel Tower, the Arc de Triomphe (drive through it) and café tables with red parasols.
+- **🇺🇸 New York:** stone, brick and glass skyscrapers with water tanks and fire escapes, the Empire State Building with its glowing top, and the Statue of Liberty on her star-shaped island.
+- **🇨🇭 Swiss Alps:** wooden chalets with red flowers, carved balconies and snowy roofs, snowy fir trees, the village church and the fondue hut.
+- **🇬🇧 London:** brick houses with coloured doors, a pub, Big Ben with its clock faces, the London Eye (its wheel turns), the palace, red phone boxes and red double-decker buses.
+- **🇪🇬 Egypt:** sandy houses with wooden balconies, little domes and pigeon towers, date palms, the Sphinx, three stepped pyramids with gold tops and an obelisk.
+
+Windows light up at night. Houses close to you are detailed, and houses far away are simpler, so the game stays fast (on **Graphics: LOW** every house is the simple kind). A country's Blender town loads when you come near it (9 km). Until then, and if it can't load, you see the old box houses.
