@@ -22,7 +22,8 @@ A car encyclopedia app that runs in your browser. Search any car from any countr
 - **Photos**: a gallery you can tap through full screen
 - **Videos**: free videos from Wikimedia Commons, plus a button for YouTube reviews
 - **Car news**: the latest stories from Motor1, Car and Driver, Road & Track, InsideEVs and Electrek, and news about the car you're looking at
-- **All brands**: 130 car brands from 23 countries, each with its models
+- **296 hand-picked cars** in 15 collections: supercars, hypercars, electric, SUVs, pickups, sports cars, JDM legends, classics, muscle cars, race cars and more
+- **All brands**: 208 car brands from 31 countries, each with its models
 - **My garage**: save your favourite cars with ☆
 
 It uses free public data (Wikipedia, Wikimedia Commons, the NHTSA vehicle database and car-magazine news feeds), so it needs an internet connection.

@@ -58,6 +58,7 @@ h2 { font-size: 20px; margin: 30px 0 12px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 14px; }
 .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chip.on .muted { color: inherit; opacity: .8; }
 .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; box-shadow: var(--shadow); transition: transform .12s; }
 .card:hover { transform: translateY(-2px); }
@@ -173,10 +174,63 @@ const BRANDS = [
   ["Rolls-Royce","UK"],["Saab","Sweden"],["Saturn","USA"],["Scion","USA"],["SEAT","Spain"],["Škoda","Czech Republic"],["Smart","Germany"],
   ["SsangYong (KGM)","South Korea"],["Subaru","Japan"],["Suzuki","Japan"],["Tata","India"],["Tesla","USA"],["Togg","Turkey"],
   ["Toyota","Japan"],["Trabant","Germany"],["TVR","UK"],["UAZ","Russia"],["VinFast","Vietnam"],["Volkswagen","Germany"],["Volvo","Sweden"],
-  ["W Motors","UAE"],["Wiesmann","Germany"],["Wuling","China"],["XPeng","China"],["Zagato","Italy"],["Zeekr","China"],["ZAZ","Ukraine"]
+  ["W Motors","UAE"],["Wiesmann","Germany"],["Wuling","China"],["XPeng","China"],["Zagato","Italy"],["Zeekr","China"],["ZAZ","Ukraine"],
+  ["Aixam","France"],["Apollo","Germany"],["Arash","UK"],["Artega","Germany"],["Austin","UK"],["Austin-Healey","UK"],["Autobianchi","Italy"],
+  ["Ballot","France"],["Bizzarrini","Italy"],["Borgward","Germany"],["Bristol","UK"],["BAC","UK"],
+  ["Cord","USA"],["Czinger","USA"],["Dallara","Italy"],["Daimler","UK"],["De Tomaso","Italy"],["Delage","France"],["Dongfeng","China"],
+  ["Duesenberg","USA"],["Elfin","Australia"],["Eunos","Japan"],["Exeed","China"],["FAW","China"],
+  ["GAC","China"],["GAZ","Russia"],["Gumpert","Germany"],["HiPhi","China"],["Hindustan","India"],["Iran Khodro","Iran"],
+  ["Isdera","Germany"],["JAC","China"],["Jensen","UK"],["Kamaz","Russia"],["Karma","USA"],["Lagonda","UK"],["Laraki","Morocco"],
+  ["Lister","UK"],["Lucra","USA"],["Lykan","Lebanon"],["Mazzanti","Italy"],["Mercedes-AMG","Germany"],["Microlino","Switzerland"],
+  ["Moskvitch","Russia"],["Nash","USA"],["Neta","China"],["Ora","China"],["Packard","USA"],["Panoz","USA"],["Pierce-Arrow","USA"],
+  ["Puritalia","Italy"],["Radical","UK"],["Rambler","USA"],["Reliant","UK"],["Rover","UK"],["Saipa","Iran"],["Salmson","France"],
+  ["Shelby","USA"],["Simca","France"],["Singer","USA"],["Spyker","Netherlands"],["SSC","USA"],["Studebaker","USA"],["Sunbeam","UK"],
+  ["Talbot","France"],["Tank","China"],["Tatra","Czech Republic"],["Triumph","UK"],["Tucker","USA"],["Vauxhall","UK"],["Vector","USA"],
+  ["Venturi","Monaco"],["Volga","Russia"],["Wartburg","Germany"],["Yugo","Serbia"],["Zastava","Serbia"],["Zenvo","Denmark"],["ZIL","Russia"]
 ];
+BRANDS.sort((a, b) => a[0].localeCompare(b[0]));
 const POPULAR = ["Toyota Corolla","Porsche 911","Ford Mustang","Tesla Model 3","Volkswagen Golf","Lamborghini Revuelto","Honda Civic",
   "BMW M3","Nissan GT-R","Ferrari SF90 Stradale","Mazda MX-5","Bugatti Chiron","Toyota Land Cruiser","Koenigsegg Jesko","BYD Seal","Land Rover Defender"];
+// Hand-picked cars, grouped. Search still finds any car that isn't listed.
+const COLLECTIONS = {
+  "Popular": POPULAR,
+  "Supercars": ["Ferrari 296 GTB","Ferrari F8 Tributo","Ferrari 812 Superfast","Ferrari 12Cilindri","Lamborghini Huracán","Lamborghini Aventador","Lamborghini Temerario",
+    "McLaren 720S","McLaren 750S","McLaren Artura","Porsche 911 GT3","Audi R8","Mercedes-AMG GT","Chevrolet Corvette (C8)","Aston Martin Vantage (2018)","Maserati MC20",
+    "Lotus Emira","Ford GT","Acura NSX (second generation)","Lexus LFA"],
+  "Hypercars": ["Bugatti Chiron","Bugatti Veyron","Bugatti Tourbillon","Koenigsegg Jesko","Koenigsegg Agera","Koenigsegg Regera","Koenigsegg Gemera","Pagani Zonda",
+    "Pagani Huayra","Pagani Utopia","Rimac Nevera","McLaren P1","McLaren F1","McLaren Senna","Ferrari LaFerrari","Ferrari SF90 Stradale","Ferrari F80","Porsche 918 Spyder",
+    "Aston Martin Valkyrie","Mercedes-AMG One","Hennessey Venom F5","SSC Tuatara","Lotus Evija","Gordon Murray T.50"],
+  "Electric": ["Tesla Model S","Tesla Model 3","Tesla Model X","Tesla Model Y","Tesla Cybertruck","Lucid Air","Rivian R1T","Rivian R1S","Porsche Taycan","Audi e-tron GT",
+    "BMW i4","BMW iX","Mercedes-Benz EQS","Hyundai Ioniq 5","Hyundai Ioniq 6","Kia EV6","Kia EV9","Ford Mustang Mach-E","Ford F-150 Lightning","Nissan Leaf",
+    "Chevrolet Bolt","Volkswagen ID.4","Polestar 2","BYD Seal","BYD Dolphin","BYD Atto 3","NIO ET7","XPeng P7","Xiaomi SU7","Zeekr 001"],
+  "SUVs": ["Toyota RAV4","Honda CR-V","Toyota Land Cruiser","Land Rover Defender","Range Rover","Jeep Wrangler","Jeep Grand Cherokee","Ford Explorer","Ford Bronco",
+    "Chevrolet Tahoe","Cadillac Escalade","BMW X5","Mercedes-Benz G-Class","Mercedes-Benz GLE","Audi Q7","Porsche Cayenne","Porsche Macan","Volvo XC90",
+    "Lamborghini Urus","Rolls-Royce Cullinan","Bentley Bentayga","Hyundai Tucson","Kia Sportage","Mazda CX-5","Nissan Patrol","Toyota 4Runner","Subaru Forester","Tesla Model Y"],
+  "Pickup trucks": ["Ford F-Series","Ford F-150 Raptor","Chevrolet Silverado","Ram pickup","GMC Sierra","Toyota Tacoma","Toyota Tundra","Toyota Hilux","Nissan Navara",
+    "Nissan Frontier","Ford Ranger","Isuzu D-Max","Mitsubishi Triton","Volkswagen Amarok","Honda Ridgeline","Jeep Gladiator","GMC Hummer EV","Rivian R1T","Tesla Cybertruck","Ford Maverick (2022)"],
+  "Sports cars": ["Porsche 911","Porsche 718 Cayman","Mazda MX-5","Toyota GR86","Subaru BRZ","Toyota GR Supra","Nissan Z (RZ34)","BMW M2","BMW M3","BMW M4","Audi RS 3",
+    "Mercedes-AMG C 63","Ford Mustang","Chevrolet Camaro","Dodge Challenger","Dodge Charger","Alpine A110","Lotus Elise","Honda Civic Type R","Toyota GR Yaris",
+    "Hyundai i30 N","Volkswagen Golf GTI","Jaguar F-Type","Caterham Seven"],
+  "JDM legends": ["Nissan Skyline GT-R","Nissan GT-R","Toyota Supra","Honda NSX","Mazda RX-7","Mazda RX-8","Mitsubishi Lancer Evolution","Subaru Impreza WRX STI",
+    "Toyota AE86","Nissan Silvia","Nissan 240SX","Nissan 300ZX","Honda S2000","Honda Integra Type R","Toyota MR2","Toyota Celica","Toyota 2000GT","Datsun 240Z",
+    "Mitsubishi 3000GT","Honda Civic Type R","Toyota Chaser","Nissan Stagea"],
+  "Classics": ["Ford Model T","Volkswagen Beetle","Mini (Mark I)","Citroën 2CV","Citroën DS","Fiat 500","Jaguar E-Type","Mercedes-Benz 300 SL","Ferrari 250 GTO",
+    "Ferrari 250 GT California Spyder","Aston Martin DB5","Porsche 356","Shelby Cobra","Ford Mustang (first generation)","Chevrolet Corvette (C2)","Chevrolet Bel Air",
+    "Cadillac Eldorado","Lamborghini Miura","Lamborghini Countach","DeLorean DMC-12","Ford GT40","Volkswagen Type 2","Land Rover Series","Lancia Stratos",
+    "BMW 507","Alfa Romeo Spider","Bugatti Type 57","Rolls-Royce Silver Ghost"],
+  "Muscle cars": ["Ford Mustang","Ford Mustang Shelby GT500","Chevrolet Camaro","Chevrolet Chevelle","Chevrolet Nova","Dodge Charger","Dodge Challenger","Dodge Charger Daytona",
+    "Plymouth Barracuda","Plymouth Road Runner","Plymouth Superbird","Pontiac GTO","Pontiac Firebird","Buick GSX","Oldsmobile 442","AMC Javelin","Mercury Cougar","Chevrolet Impala SS"],
+  "Family cars": ["Toyota Corolla","Toyota Camry","Honda Civic","Honda Accord","Volkswagen Golf","Volkswagen Passat","Hyundai Elantra","Kia Forte","Mazda3","Nissan Altima",
+    "Ford Focus","Skoda Octavia","Peugeot 308","Renault Clio","Opel Astra","Toyota Prius","Honda Odyssey","Toyota Sienna","Chrysler Pacifica","Kia Carnival","Volvo V90","Subaru Outback"],
+  "Luxury": ["Rolls-Royce Phantom","Rolls-Royce Ghost","Rolls-Royce Spectre","Bentley Continental GT","Bentley Mulsanne (2010)","Mercedes-Benz S-Class","Maybach 57 and 62",
+    "BMW 7 Series","Audi A8","Lexus LS","Genesis G90","Porsche Panamera","Aston Martin DBS","Maserati Quattroporte","Cadillac CT6","Lincoln Navigator","Range Rover","Lucid Air"],
+  "Off-road": ["Jeep Wrangler","Land Rover Defender","Mercedes-Benz G-Class","Toyota Land Cruiser","Ford Bronco","Lada Niva","Suzuki Jimny","Toyota FJ Cruiser","Nissan Patrol",
+    "Ineos Grenadier","Hummer H1","Hummer H2","Toyota Land Cruiser Prado","Mitsubishi Pajero","Ford Bronco (sixth generation)","UAZ-469","Land Rover Discovery","Jeep Cherokee (XJ)"],
+  "Small & city cars": ["Fiat 500 (2007)","Mini Hatch","Smart Fortwo","Toyota Yaris","Honda Fit","Volkswagen Polo","Volkswagen up!","Renault Twingo","Peugeot 208","Kia Picanto",
+    "Hyundai i10","Suzuki Swift","Nissan Micra","Citroën C3","Dacia Sandero","Tata Nano","Honda N-Box","Suzuki Alto","Wuling Hongguang Mini EV","Microlino"],
+  "Race cars": ["Porsche 917","Porsche 962","Ferrari 312","McLaren MP4/4","Lotus 72","Audi R18","Toyota TS050 Hybrid","Porsche 919 Hybrid","Ford GT40","Mazda 787B",
+    "Audi Quattro","Lancia Delta Integrale","Peugeot 205 T16","Subaru Impreza WRC","Toyota GR Yaris Rally1","Red Bull RB19","Mercedes-AMG F1 W11 EQ Performance","Ferrari F2004","Bugatti Bolide","Porsche 963"],
+};
 const FEEDS = [
   ["Motor1","https://www.motor1.com/rss/news/all/"],
   ["Car and Driver","https://www.caranddriver.com/rss/all.xml/"],
@@ -214,7 +268,7 @@ let renderId = 0;
 
 // Search Wikipedia for car pages (with thumbnails), car-related results first.
 async function searchCars(q, limit = 10) {
-  const d = await wikiApi(`action=query&generator=search&gsrsearch=${enc(q)}&gsrlimit=${limit * 2}&prop=pageimages|description&piprop=thumbnail&pithumbsize=240&redirects=1`);
+  const d = await wikiApi(`action=query&generator=search&gsrsearch=${enc(q)}&gsrlimit=${Math.min(50, limit * 2)}&prop=pageimages|description&piprop=thumbnail&pithumbsize=240&redirects=1`);
   const pages = (d.query?.pages || []).sort((a, b) => a.index - b.index);
   const scored = pages.map(p => ({ ...p, car: CAR_WORDS.test(p.description || "") || CAR_WORDS.test(p.title) }));
   return [...scored.filter(p => p.car), ...scored.filter(p => !p.car)].slice(0, limit);
@@ -278,18 +332,37 @@ function cardHTML(p) {
   return `<a class="card" href="#/car/${enc(titleToSlug(p.title))}"><div class="img">${p.thumbnail ? `<img loading="lazy" src="${esc(p.thumbnail.source)}" alt="">` : ""}</div><div class="body"><b>${esc(p.title)}</b><small>${esc(p.description || "")}</small></div></a>`;
 }
 
-async function pageHome(id) {
-  app.innerHTML = `<section class="hero"><h1>Every car in the world.</h1><p>Search any car from any country and any year — see what it is, its specs, photos and videos, and read the latest car news.</p></section>
-  <h2>Popular cars</h2><div class="grid" id="pop">${loading("Loading cars…")}</div>
-  <h2>Latest car news</h2><div id="homeNews">${loading("Loading news…")}</div>`;
-  try {
-    const d = await wikiApi(`action=query&titles=${enc(POPULAR.join("|"))}&prop=pageimages|description&piprop=thumbnail&pithumbsize=400&redirects=1`);
-    if (id !== renderId) return;
-    const byTitle = new Map((d.query?.pages || []).map(p => [p.title, p]));
+// Load cards (photo + one-line description) for a list of Wikipedia titles, 50 at a time.
+async function loadCards(titles) {
+  const out = new Map();
+  for (let i = 0; i < titles.length; i += 50) {
+    const chunk = titles.slice(i, i + 50);
+    const d = await wikiApi(`action=query&titles=${enc(chunk.join("|"))}&prop=pageimages|description&piprop=thumbnail&pithumbsize=400&redirects=1`);
+    const byTitle = new Map((d.query?.pages || []).filter(p => !p.missing).map(p => [p.title, p]));
     const norm = new Map([...(d.query?.normalized || []), ...(d.query?.redirects || [])].map(r => [r.from, r.to]));
-    const list = POPULAR.map(t => { let k = t; while (norm.has(k)) k = norm.get(k); return byTitle.get(k) || { title: t }; });
+    chunk.forEach(t => { let k = t; while (norm.has(k)) k = norm.get(k); out.set(t, byTitle.get(k) || { title: t }); });
+  }
+  return titles.map(t => out.get(t));
+}
+
+async function pageHome(id) {
+  const total = new Set(Object.values(COLLECTIONS).flat()).size;
+  app.innerHTML = `<section class="hero"><h1>Every car in the world.</h1><p>Search any car from any country and any year — see what it is, its specs, photos and videos, and read the latest car news.</p></section>
+  <h2>Explore ${total} cars</h2><div class="chips" id="cols"></div><div class="grid" id="pop">${loading("Loading cars…")}</div>
+  <h2>Latest car news</h2><div id="homeNews">${loading("Loading news…")}</div>`;
+  const drawCol = async name => {
+    store.set("collection", name);
+    $("#cols").innerHTML = Object.keys(COLLECTIONS).map(c => `<button class="chip ${c === name ? "on" : ""}" data-c="${esc(c)}">${esc(c)} <span class="muted">${COLLECTIONS[c].length}</span></button>`).join("");
+    $("#cols").querySelectorAll(".chip").forEach(c => c.onclick = () => drawCol(c.dataset.c));
+    $("#pop").innerHTML = loading("Loading cars…");
+    const titles = COLLECTIONS[name];
+    let list;
+    try { list = await loadCards(titles); } catch { list = titles.map(t => ({ title: t })); }
+    if (id !== renderId || store.get("collection") !== name) return;
     $("#pop").innerHTML = list.map(cardHTML).join("");
-  } catch { if (id === renderId) $("#pop").innerHTML = POPULAR.map(t => cardHTML({ title: t })).join(""); }
+  };
+  const saved = store.get("collection", "Popular");
+  drawCol(COLLECTIONS[saved] ? saved : "Popular");
   const items = await loadNews();
   if (id !== renderId) return;
   $("#homeNews").innerHTML = newsHTML(items.slice(0, 6)) + `<p><a class="btn" href="#/news">More car news →</a></p>`;
@@ -348,11 +421,18 @@ async function pageBrand(id, brand) {
     (d.Results || []).forEach(r => models.add(r.Model_Name.trim()));
   } catch {}
   let wiki = [];
-  try { wiki = await searchCars(`${brand} car model`, 20); } catch {}
+  try {
+    const name = brand.replace(/ \(.*\)/, "");
+    const lists = await Promise.all([`${name} car model`, `${name} automobile`, `${name} car`].map(q => searchCars(q, 50).catch(() => [])));
+    const seen = new Set();
+    const first = name.toLowerCase().split(/[\s-]/)[0];
+    wiki = lists.flat().filter(p => p.car && !seen.has(p.title) && seen.add(p.title))
+      .sort((a, b) => (b.title.toLowerCase().includes(first)) - (a.title.toLowerCase().includes(first)));
+  } catch {}
   if (id !== renderId) return;
   const sorted = [...models].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   let html = "";
-  if (wiki.length) html += `<div class="grid">${wiki.filter(p => p.car).map(cardHTML).join("")}</div>`;
+  if (wiki.length) html += `<p class="muted">${wiki.length} ${esc(brand)} cars and pages</p><div class="grid">${wiki.map(cardHTML).join("")}</div>`;
   if (sorted.length) html += `<h2>All ${sorted.length} models in the NHTSA database</h2><div class="list">${sorted.map(m => `<button data-m="${esc(m)}">${esc(m)}</button>`).join("")}</div>`;
   $("#models").innerHTML = html || `<div class="note">No models found. Try searching for “${esc(brand)}” above.</div>`;
   $("#models").querySelectorAll(".list button").forEach(b => b.onclick = async () => {
@@ -421,7 +501,7 @@ async function pageCar(id, slug) {
   app.innerHTML = loading("Loading " + title + "…");
   let s;
   try { s = await getJSON(`${WIKI}/api/rest_v1/page/summary/${enc(slug)}`); }
-  catch { if (id === renderId) app.innerHTML = errorNote(); return; }
+  catch { if (id === renderId) pageSearch(id, title); return; }
   if (id !== renderId) return;
   if (s.type === "disambiguation") return pageSearch(id, title);
   const favs = store.get("garage", []);
