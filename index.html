@@ -2852,6 +2852,8 @@ class Traffic {
   head(c) { return c.axis === 'z' ? (c.dir > 0 ? 0 : Math.PI) : c.dir * Math.PI / 2; }
   nextInter(c) { const k = (c.s + HALF) / CELL; c.nextK = c.dir > 0 ? Math.floor(k + 1e-3) + 1 : Math.ceil(k - 1e-3) - 1; }
   update(dt, p) {
+    if (worldRace) { if (!this.closed) { this.closed = true; this.cars.forEach(c => c.mesh.visible = false); } return; }   // Tokyo closes its roads for the world race
+    if (this.closed) { this.closed = false; this.cars.forEach(c => { c.mesh.visible = true; this.spawn(c); }); }
     for (const c of this.cars) {
       const [wx, wz] = [c.mesh.position.x, c.mesh.position.z];
       const dpx = p.x - wx, dpz = p.z - wz, dist = Math.hypot(dpx, dpz);
@@ -5124,6 +5126,8 @@ class HwyTraffic {
     c.lane = Math.floor(Math.random() * 3); c.v = c.target = [22, 27, 32][c.lane] + rr(-2, 2);
   }
   update(dt, p) {
+    if (worldRace || cRace) { if (!this.closed) { this.closed = true; this.cars.forEach(c => c.mesh.visible = false); } return; }   // the road is closed for the races
+    if (this.closed) { this.closed = false; this.cars.forEach(c => c.mesh.visible = true); }
     const R = this.R, onHwy = p && areaOf(p) === 'wangan' && R.hint >= 0 && !BEACH_PAD.inside(p.x, p.z), pi = Math.max(R.hint, 0);
     _frus.setFromProjectionMatrix(_fm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     const ps = pi * R.step, pLat = onHwy ? (p.x - R.x[pi]) * -R.tz[pi] + (p.z - R.z[pi]) * R.tx[pi] : 0, pv = p ? (p.vx * R.tx[pi] + p.vz * R.tz[pi]) : 0;
@@ -6988,7 +6992,7 @@ class BridgeTraffic {
   }
   seen(c, R) { this.pose(c, R); return _frus.containsPoint(_fv.set(c.x, c.y + 1, c.z)) && Math.hypot(c.x - camera.position.x, c.z - camera.position.z) < 700; }
   update(dt, p) {
-    const A = areaNow, R = A?.country && p && p.surf === 'route' ? A.R : null;
+    const A = areaNow, R = A?.country && p && p.surf === 'route' && !worldRace && !cRace ? A.R : null;   // the road is closed for the races
     if (R !== this.R) { this.R = R; for (const c of this.cars) { c.mesh.visible = !!R; if (R) { this.place(c, R.hint * R.step, R, true); this.pose(c, R); } } }
     if (!R) return;
     _frus.setFromProjectionMatrix(_fm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
@@ -7101,7 +7105,8 @@ function addAct(o) {
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 140, 14, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   beam.position.y = 70; g.add(beam);
   const t = signTex(1024, 256, '#0d1018', [[o.title.toUpperCase(), .42, .3, OR, '#fff'], [o.sign || o.sub, .78, .17, OR, o.col]], o.col), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
-  const s = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), sm); s.position.y = 6.5; s.rotation.y = o.face || 0; g.add(s);
+  sm.side = THREE.FrontSide;   // two signs back to back, so the words never read backwards from behind
+  for (const k of [0, 1]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), sm); s.position.y = 6.5; s.rotation.y = (o.face || 0) + k * Math.PI; g.add(s); }
   o.g = g; ACTS.push(o); return o;
 }
 function updateActs(dt, p) {
@@ -7141,6 +7146,17 @@ function startActCommon(start) {
   Object.assign(player, { x: start.x, z: start.z, y: start.y || 0, heading: start.h, vx: 0, vz: 0, yawRate: 0, gear: 1, reverse: false, air: false, loop: null, vy: 0 });
   camPos.set(player.x - Math.sin(start.h) * 8, (start.y || 0) + 3, player.z - Math.cos(start.h) * 8);
 }
+// glowing arrows along the race line, like the taxi route: the next ~250 m, flowing forward
+let raceArr = null;
+function updateRaceArrows(T, hint, col) {
+  raceArr ??= buildRoadArrows(); if (!T) { raceArr.count = 0; return; }
+  raceArr.material.color.set(col).multiplyScalar(1.6);
+  const flow = Math.floor(performance.now() / 110) % 4; let n = 0;
+  for (let i = hint + 3 + flow; i < T.n - 1 && n < ROAD_ARROWS; i += 4) {
+    _ap.set(T.x[i], (T.y[i] || 0) + .14, T.z[i]); _am.compose(_ap, _aq.setFromAxisAngle(_ay, Math.atan2(T.tx[i], T.tz[i])), _as); raceArr.setMatrixAt(n++, _am);
+  }
+  raceArr.count = n; raceArr.instanceMatrix.needsUpdate = true;
+}
 /* ---------- the country Grand Prix ---------- */
 function countryCircuit(C) {
   const { xs, zs } = cStreets(C), c = C.circuit || { x: [3, 6], z: [0, 4] }, x0 = xs[c.x[0]], x1 = xs[c.x[1]], z0 = zs[c.z[0]], z1 = zs[c.z[1]], mx = (x0 + x1) / 2;
@@ -7157,7 +7173,7 @@ function startCRace(C) {
 function updateCRace(dt, p) {
   const R = cRace; R.t += dt;
   if (R.state === 'count') countDown(R, dt, R.hold);
-  R.hint = pathIndex(R.T, p.x, p.z, R.hint, 20, 160); const pS = R.hint * 2;
+  R.hint = pathIndex(R.T, p.x, p.z, R.hint, 20, 160); const pS = R.hint * 2; updateRaceArrows(R.T, R.hint, R.C.col);
   racersStep(R, dt, p, pS);
   const order = [...R.ais.map(a => ({ s: a.done ? 1e9 - (a.fin ?? 0) : a.s, me: false })), { s: R.done ? 2e9 : pS, me: true }].sort((a, b) => b.s - a.s), pos = order.findIndex(o => o.me) + 1;
   for (const a of R.ais) if (a.done && a.fin == null) a.fin = R.t;
@@ -7165,7 +7181,7 @@ function updateCRace(dt, p) {
   if (R.state === 'race' && R.hint >= R.T.n - 4) endCRace(pos);
 }
 function endCRace(pos, quit) {
-  const R = cRace; if (!R) return; cRace = null; R.ais.forEach(a => a.dispose()); actHud(null); $('count').style.opacity = 0;
+  const R = cRace; if (!R) return; cRace = null; R.ais.forEach(a => a.dispose()); actHud(null); updateRaceArrows(null); $('count').style.opacity = 0;
   if (quit) return;
   const pay = [25000, 8000, 4000, 1000][pos - 1]; earn(pay); if (pos === 1) bump('cRaceWins');
   const key = 'amboola.gp.' + R.C.id, b = +localStorage.getItem(key) || 0; if (pos === 1 && (!b || R.t < b)) localStorage.setItem(key, R.t.toFixed(2));
@@ -7242,7 +7258,7 @@ function updateWorldRace(dt, p) {
   if (R.state === 'count') countDown(R, dt, R.hold);
   if (!R.cp && Math.hypot(p.x - T.cp[0], p.z - T.cp[1]) < 45) { R.cp = true; R.hint = Math.max(R.hint, T.ret); audio.beep(1320, .2); toast('ITALY ✓', 'NOW BACK TO TOKYO AND ON TO DUBAI!'); }
   R.hint = pathIndex(T, p.x, p.z, R.hint, 20, 260); if (!R.cp) R.hint = Math.min(R.hint, T.ret - 1);
-  const pS = R.hint * 2;
+  const pS = R.hint * 2; updateRaceArrows(T, R.hint, '#2fe0ff');
   racersStep(R, dt, p, pS);
   for (const a of R.ais) if (a.done && a.fin == null) a.fin = R.t;
   const order = [...R.ais.map(a => ({ s: a.done ? 1e9 - a.fin : a.s })), { s: pS, me: true }].sort((a, b) => b.s - a.s), pos = order.findIndex(o => o.me) + 1;
@@ -7250,7 +7266,7 @@ function updateWorldRace(dt, p) {
   if (R.state === 'race' && R.cp && Math.hypot(p.x - T.fin[0], p.z - T.fin[1]) < 30) endWorldRace(pos);
 }
 function endWorldRace(pos, quit) {
-  const R = worldRace; if (!R) return; worldRace = null; R.ais.forEach(a => a.dispose()); actHud(null); $('count').style.opacity = 0;
+  const R = worldRace; if (!R) return; worldRace = null; R.ais.forEach(a => a.dispose()); actHud(null); updateRaceArrows(null); $('count').style.opacity = 0;
   if (quit) return;
   const pay = [1000000, 250000, 100000, 25000][pos - 1]; earn(pay); if (pos === 1) bump('worldWins');
   audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
