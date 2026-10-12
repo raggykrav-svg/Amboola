@@ -1100,8 +1100,8 @@ function applyTime(name) {
   dynMats.lamps.forEach(m => m.color.setRGB(1, .85, .6).multiplyScalar(T.lamps > 0 ? 4 * T.lamps : .6));
   dynMats.pools.forEach(m => m.opacity = .5 * T.lamps);
   dynMats.ads.forEach(m => m.emissiveIntensity = T.ads);
-  dynMats.trafficHead.forEach(m => m.emissiveIntensity = T.lamps > 0 ? 6 : .3);
-  dynMats.trafficTail.forEach(m => m.emissiveIntensity = T.lamps > 0 ? 3 : .6);
+  dynMats.trafficHead.forEach(m => m.emissiveIntensity = (T.lamps > 0 ? 6 : .3) * (m.userData.k ?? 1));   // k: the Blender cars' bigger lamps glow less each
+  dynMats.trafficTail.forEach(m => m.emissiveIntensity = (T.lamps > 0 ? 3 : .6) * (m.userData.k ?? 1));
   dynMats.towerLights.forEach(m => m.emissiveIntensity = T.lamps > 0 ? 2.2 : 0);
   envGlow.visible = name !== 'day';
   if (player) player.setLights(T);
@@ -1901,10 +1901,11 @@ function buildWheel(B, spec, front, side, lift) {
 /* Blender models: decoded once at boot, then every buildCar() of that car id clones the meshes (geometry is shared)
    and swaps the Blender materials (matched by name) for the game's own, so paint, lights and calipers stay live. */
 const MODELS = {};
-// The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car
-// and the camel load before the game starts; the rest follow in the background, one at a time. Until a car's model
-// is in, it shows its simple built-in body (the garage swaps it in as soon as it arrives).
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora'];
+// The Blender models live in models/<id>.glb.js (a base64 GLB each, 16 MB in all). Only the car you drive, the ad car,
+// the camel and (not on phones) the traffic cars load before the game starts; the rest follow in the background, one at
+// a time, traffic first. Until a car's model is in, it shows its simple built-in body (swapped as soon as it arrives).
+const TRAFFIC_MODELS = ['tr_kei', 'tr_taxi', 'tr_sedan', 'tr_van', 'tr_truck', 'tr_police'];   // the city's traffic (see buildTrafficCar)
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora', ...TRAFFIC_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -1916,6 +1917,7 @@ function loadModel(id) {
         const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
         const gltf = await Promise.race([gltfLoader.parseAsync(bin, ''), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 20000))]);
         MODELS[id] = gltf.scene; delete window.AMBOOLA_MODELS[id];
+        if (id.startsWith('tr_')) trafficModelIn(id);
         if (state === 'garage' && CARS[carIdx]?.id === id) showGarageCar();
       } catch (e) { console.warn(`model ${id} not loaded, using the procedural body`, e); }
       res(MODELS[id] || null);
@@ -1927,7 +1929,7 @@ function loadModel(id) {
 }
 // after start-up: your own cars first, then everything else, gently (phones get more breathing room)
 function loadAllModels() {
-  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...own, ...MODEL_FILES])];
+  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, ...own, ...MODEL_FILES])];
   (async () => { for (const id of order) { await loadModel(id); await new Promise(r => setTimeout(r, isTouch ? 150 : 15)); } modelsDone = true; })();
 }
 const glossBlackMat = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: .16, clearcoat: 1, clearcoatRoughness: .05 });
@@ -2801,27 +2803,73 @@ const TRAFFIC_TYPES = [
   { n: 'van', L: 4.7, W: 1.7, H: 2.0, cab: [0, 1.0], cols: ['#f4f4f4', '#dcdcdc', '#20364f'] },
   { n: 'truck', L: 6.5, W: 2.1, H: 2.9, cab: [.62, 1.0], cols: ['#f0f0f0', '#2a5a9a', '#e0e0e0'], box: true },
 ];
+const POLICE_T = { ...TRAFFIC_TYPES[2], n: 'police', cols: ['#f4f4f4'] };   // the patrol car (buildPoliceCar)
 const tHead = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff4dd, emissiveIntensity: .3 });
 const tTail = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: .6 });
 dynMats.trafficHead.push(tHead); dynMats.trafficTail.push(tTail);
+const tHeadM = tHead.clone(), tTailM = tTail.clone(); tHeadM.userData.k = .35; tTailM.userData.k = .6; dynMats.trafficHead.push(tHeadM); dynMats.trafficTail.push(tTailM);
 const tWheelGeo = new THREE.CylinderGeometry(.3, .3, .22, 14); tWheelGeo.rotateZ(Math.PI / 2);
+// Traffic cars are Blender models (models/blender/traffic.py, ids tr_<type>) shown up close, and the simple box car
+// further away (a THREE.LOD swaps them by distance). Each model is merged once into one mesh per material and the
+// geometry is shared by every car of that type, so a car costs about a dozen draw calls; paint stays per car.
+const TRAFFIC_LOD = isTouch ? 45 : 70, trafficKits = {}, trafficWaiting = [];
+const trafficMats = {
+  black: new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: .6 }),
+  rim: new THREE.MeshStandardMaterial({ color: 0xc9cbce, roughness: .32, metalness: .85 }),
+  plate: new THREE.MeshStandardMaterial({ color: 0xdcded8, roughness: .45 }),
+  accent: new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .4 }),
+};
+function trafficKit(id) {
+  if (trafficKits[id] !== undefined) return trafficKits[id];
+  const src = MODELS[id]; if (!src) return null;
+  const MAP = { Glass: glassMat, Headlight: tHeadM, Taillight: tTailM, Tire: tireMat, Black: trafficMats.black, Carbon: trafficMats.black, TireLetter: trafficMats.black,
+    GlossBlack: glossBlackMat, Chrome: chromeMat, RimLip: chromeMat, Titanium: chromeMat, Logo: chromeMat, Rim: trafficMats.rim, Disc: trafficMats.rim,
+    Plate: trafficMats.plate, Accent: trafficMats.accent };
+  const buckets = new Map(); src.updateMatrixWorld(true);
+  src.traverse(o => {
+    if (!o.isMesh) return;
+    const name = o.material.name, key = name === 'Paint' ? 'Paint' : MAP[name] ? name : 'own:' + name;
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', o.geometry.attributes.position.clone());
+    if (o.geometry.index) g.setIndex(o.geometry.index.clone()); else return;
+    if (o.geometry.attributes.normal) g.setAttribute('normal', o.geometry.attributes.normal.clone()); else g.computeVertexNormals();
+    g.applyMatrix4(o.matrixWorld);
+    if (!buckets.has(key)) buckets.set(key, { geos: [], mat: name === 'Paint' ? null : MAP[name] || o.material });
+    buckets.get(key).geos.push(g);
+  });
+  const parts = [...buckets.values()].map(b => ({ geo: mergeGeometries(b.geos), mat: b.mat }));
+  const paint = parts.find(p => !p.mat); if (!paint) return (trafficKits[id] = null);
+  paint.geo.computeBoundingBox();
+  return (trafficKits[id] = { parts, top: paint.geo.boundingBox.max.y });
+}
+function dressTraffic(g) {
+  const kit = trafficKit('tr_' + g.userData.T.n); if (!kit) return false;
+  const hi = new THREE.Group();
+  for (const p of kit.parts) { const m = new THREE.Mesh(p.geo, p.mat || g.userData.paint); m.castShadow = !p.mat; hi.add(m); }
+  const lod = new THREE.LOD(); lod.addLevel(hi, 0); lod.addLevel(g.userData.lo, TRAFFIC_LOD); g.add(lod);
+  g.userData.top = kit.top; g.userData.onDress?.(kit); return true;
+}
+function trafficModelIn(id) {   // a traffic model arrived: dress every car of that type that is still a box
+  for (let k = trafficWaiting.length - 1; k >= 0; k--) if ('tr_' + trafficWaiting[k].userData.T.n === id && dressTraffic(trafficWaiting[k])) trafficWaiting.splice(k, 1);
+}
 function buildTrafficCar(T) {
-  const g = new THREE.Group(); const col = pick(T.cols);
+  const g = new THREE.Group(), lo = new THREE.Group(); const col = pick(T.cols);
   const paint = new THREE.MeshStandardMaterial({ color: col, roughness: .35, metalness: .4 });
   const L = T.L, W = T.W, H = T.H;
   const lowerH = T.box ? H * .45 : H * .52;
-  const body = new THREE.Mesh(new THREE.BoxGeometry(W, lowerH, L), paint); body.position.y = .28 + lowerH / 2; body.castShadow = true; g.add(body);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(W, lowerH, L), paint); body.position.y = .28 + lowerH / 2; body.castShadow = true; lo.add(body);
   const [c0, c1] = T.cab; const cabL = L * (c1 - c0) * (T.box ? .3 : .75);
   const cabZ = T.box ? L / 2 - cabL / 2 - .1 : L * (c0 + c1) / 2 - L / 2 + .2;
-  const cab = new THREE.Mesh(new THREE.BoxGeometry(W * .9, H - lowerH - .28, cabL), glassMat); cab.position.set(0, .28 + lowerH + (H - lowerH - .28) / 2, cabZ); g.add(cab);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(W * .92, .07, cabL * .92), paint); roof.position.set(0, H + .02, cabZ); g.add(roof);
-  if (T.box) { const bx = new THREE.Mesh(new THREE.BoxGeometry(W * 1.02, H * .92, L * .66), new THREE.MeshStandardMaterial({ color: 0xe9e9e9, roughness: .7 })); bx.position.set(0, .3 + H * .46, -L * .17); bx.castShadow = true; g.add(bx); }
-  if (T.roofSign) { const s = new THREE.Mesh(new THREE.BoxGeometry(.5, .18, .2), new THREE.MeshStandardMaterial({ color: 0xffcc33, emissive: 0xffaa00, emissiveIntensity: 1 })); s.position.set(0, H + .15, cabZ); g.add(s); }
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(W * .9, H - lowerH - .28, cabL), glassMat); cab.position.set(0, .28 + lowerH + (H - lowerH - .28) / 2, cabZ); lo.add(cab);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(W * .92, .07, cabL * .92), paint); roof.position.set(0, H + .02, cabZ); lo.add(roof);
+  if (T.box) { const bx = new THREE.Mesh(new THREE.BoxGeometry(W * 1.02, H * .92, L * .66), new THREE.MeshStandardMaterial({ color: 0xe9e9e9, roughness: .7 })); bx.position.set(0, .3 + H * .46, -L * .17); bx.castShadow = true; lo.add(bx); }
+  if (T.roofSign) { const s = new THREE.Mesh(new THREE.BoxGeometry(.5, .18, .2), new THREE.MeshStandardMaterial({ color: 0xffcc33, emissive: 0xffaa00, emissiveIntensity: 1 })); s.position.set(0, H + .15, cabZ); lo.add(s); }
   const hg = [], tg = [];
   for (const s of [-1, 1]) { const h = new THREE.BoxGeometry(.3, .12, .05); h.translate(s * W * .34, .28 + lowerH * .7, L / 2 + .01); hg.push(h); const t = new THREE.BoxGeometry(.28, .14, .05); t.translate(s * W * .36, .28 + lowerH * .7, -L / 2 - .01); tg.push(t); }
-  g.add(new THREE.Mesh(mergeGeometries(hg), tHead), new THREE.Mesh(mergeGeometries(tg), tTail));
+  lo.add(new THREE.Mesh(mergeGeometries(hg), tHead), new THREE.Mesh(mergeGeometries(tg), tTail));
   const wg = []; for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const w = tWheelGeo.clone(); w.translate(sx * (W / 2 - .1), .3, sz * (L / 2 - .75)); wg.push(w); }
-  g.add(new THREE.Mesh(mergeGeometries(wg), tireMat));
+  lo.add(new THREE.Mesh(mergeGeometries(wg), tireMat));
+  g.userData = { T, paint, lo };
+  if (!dressTraffic(g)) { g.add(lo); trafficWaiting.push(g); }
   return g;
 }
 class Traffic {
@@ -9803,13 +9851,15 @@ function newSafe(avoidX, avoidZ) {
   const s = taxiSpot(avoidX ?? 0, avoidZ ?? 0, avoidX == null ? 0 : 150, 99999);
   s.amount = Math.round((2000 + Math.random() * 6000) / 100) * 100; s.mesh = makeSafe(s); return s;
 }
+// the white-and-black patrol car (Blender model tr_police; its light bar is the game's own so it can flash)
 function buildPoliceCar() {
-  const g = buildTrafficCar(TRAFFIC_TYPES[2]);
-  g.children[0].material.color.set(0xf4f4f4);
-  const H = TRAFFIC_TYPES[2].H, red = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue = new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 });
-  const bar = new THREE.Group(); bar.position.y = H + .13;
-  const l = new THREE.Mesh(new THREE.BoxGeometry(.6, .14, .3), red); l.position.x = -.33; const r = new THREE.Mesh(new THREE.BoxGeometry(.6, .14, .3), blue); r.position.x = .33; bar.add(l, r); g.add(bar);
-  const doorBand = new THREE.Mesh(new THREE.BoxGeometry(1.84, .32, 2.6), new THREE.MeshStandardMaterial({ color: 0x0b0b0d, roughness: .4 })); doorBand.position.y = .62; g.add(doorBand);
+  const g = buildTrafficCar(POLICE_T);
+  const H = POLICE_T.H, red = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue = new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 });
+  const bar = new THREE.Group(); bar.position.y = g.userData.top != null ? g.userData.top + .11 : H + .13;   // on the model's roof, or the box car's
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, .05, .26), trafficMats.black); base.position.y = -.08;
+  const l = new THREE.Mesh(new THREE.BoxGeometry(.6, .14, .3), red); l.position.x = -.33; const r = new THREE.Mesh(new THREE.BoxGeometry(.6, .14, .3), blue); r.position.x = .33; bar.add(base, l, r); g.add(bar);
+  g.userData.onDress = kit => bar.position.y = kit.top + .11;
+  const doorBand = new THREE.Mesh(new THREE.BoxGeometry(1.84, .32, 2.6), new THREE.MeshStandardMaterial({ color: 0x0b0b0d, roughness: .4 })); doorBand.position.y = .62; g.userData.lo.add(doorBand);   // the box car's black doors
   g.userData.flash = [red, blue]; return g;
 }
 // an AI car that follows the street grid to a moving target (police cars and the AI outlaw)
@@ -10140,7 +10190,7 @@ async function boot() {
   setLoad(.05, 'Loading fonts…');
   try { await Promise.race([Promise.all([document.fonts.load(`900 40px Orbitron`), document.fonts.load(`900 40px "Noto Sans JP"`, '東京ラーメンカラオケ寿司居酒屋焼肉ホテル薬局ゲーム喫茶店酒場電気街バーサーキットのために生まれた純粋なパワー魂電動化中のスポーツカーミッドシップ頂点新しい時代へ馬力衝撃伝説は続く道終わりから始まる走れ首都高速ボード計測'), document.fonts.load('700 20px Rajdhani')]), new Promise(r => setTimeout(r, 3500))]); } catch (e) { }
   setupComposer();
-  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel'].map(loadModel));
+  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel', ...(isTouch ? [] : TRAFFIC_MODELS)].map(loadModel));
   setLoad(.15, 'Paving roads…'); await nextFrame();
   await buildWorld();
   setLoad(.8, 'Spawning traffic…'); await nextFrame();

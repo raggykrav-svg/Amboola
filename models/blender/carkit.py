@@ -592,13 +592,14 @@ class Car:
             prof = [(RR + .005, -h + .02), (RR + .03, -h), (R - .06, -h - .01), (R - .02, -h + .02), (R - .025, -h + .06), (R - .025, h - .06), (R - .02, h - .02), (R - .06, h + .01), (RR + .03, h), (RR + .005, h - .02)]
         else:
             prof = [(RR + .005, -h + .02), (RR + .03, -h), (R - .035, -h + .002), (R - .008, -h + .022), (R, -h + .05)]
-            for g in (-0.3, 0, 0.3):
+            for g in (() if getattr(self, 'lite', False) else (-0.3, 0, 0.3)):   # tread grooves (not on lite traffic cars)
                 prof += [(R, g * W - .018), (R - .008, g * W - .012), (R - .008, g * W + .012), (R, g * W + .018)]
             prof += [(R, h - .05), (R - .008, h - .022), (R - .035, h - .002), (RR + .03, h), (RR + .005, h - .02)]
         prof.sort(key=lambda p: p[1])
-        objs.append(self.lathe(prof, 72, 'Tire', 'tire', core=(R + RR) / 2))
+        lite = getattr(self, 'lite', False); segs = 24 if lite else 48
+        objs.append(self.lathe(prof, 28 if lite else 72, 'Tire', 'tire', core=(R + RR) / 2))
         rl = (R + RR) / 2 + .008   # raised sidewall lettering: two "words" of grey blocks on the outer sidewall
-        for wa in (0, math.pi):
+        for wa in (() if lite else (0, math.pi)):
             for k in range(7):
                 a = wa + (k - 3) * 0.075; bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
                 bmesh.ops.scale(bm, verts=bm.verts, vec=(0.03 if k % 3 else 0.022, 0.006, min(0.022, (R - RR) * .3)))
@@ -613,8 +614,8 @@ class Car:
                     bmesh.ops.translate(bm, verts=bm.verts, vec=(0, yc + (0.02 if k % 2 else -0.02), R - .02))
                     bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a + row * math.pi / 40, 3, 'Y'))
                     objs.append(self.mesh('block', bm, 'Tire', smooth=False))
-        objs.append(self.lathe([(RR - .012, -h + .02), (RR - .012, h - .02)], 48, 'Rim', 'barrel'))
-        bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=48, radius1=RR + .008, radius2=RR + .008, depth=.016, cap_ends=False)
+        objs.append(self.lathe([(RR - .012, -h + .02), (RR - .012, h - .02)], segs, 'Rim', 'barrel'))
+        bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=segs, radius1=RR + .008, radius2=RR + .008, depth=.016, cap_ends=False)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .02), 0)); objs.append(self.mesh('lip', bm, 'RimLip'))
         angles = []
@@ -631,6 +632,7 @@ class Car:
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
             bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
             objs.append(self.mesh('spoke', bm, 'Rim', smooth=False))
+            if lite: continue
             bm = bmesh.new()   # a diamond-cut strip down the middle of the spoke's outer face (two-tone wheels)
             fq = [(r0 + .012, -w0 * .42, y_in), (r1 - .012, -w1 * .42, y_out), (r1 - .012, w1 * .42, y_out), (r0 + .012, w0 * .42, y_in)]
             f = bm.faces.new([bm.verts.new((r, yy + out * .0135, t)) for r, t, yy in fq]); bm.normal_update()
@@ -653,7 +655,7 @@ class Car:
             bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=16, radius1=.03, radius2=.03, depth=.02, cap_ends=True)
             bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
             bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .045), 0)); objs.append(self.mesh('cap', bm, 'Chrome'))
-        bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=48, radius1=RR - .055, radius2=RR - .055, depth=.034, cap_ends=True)
+        bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=segs, radius1=RR - .055, radius2=RR - .055, depth=.034, cap_ends=True)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .13), 0)); objs.append(self.mesh('disc', bm, 'Disc'))
         bm = bmesh.new()   # cross-drilled holes in three staggered rings
@@ -663,7 +665,7 @@ class Car:
                 g = bmesh.ops.create_cone(bm, segments=6, radius1=.0065, radius2=.0065, depth=.04, cap_ends=True)['verts']
                 bmesh.ops.rotate(bm, verts=g, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
                 bmesh.ops.translate(bm, verts=g, vec=(math.cos(a) * rr_, out * (h - .13), math.sin(a) * rr_))
-        if RR - .115 > .09: objs.append(self.mesh('drill', bm, 'Black', smooth=False))
+        if RR - .115 > .09 and not lite: objs.append(self.mesh('drill', bm, 'Black', smooth=False))
         else: bm.free()
         self.activate(objs[0])
         for o in objs: o.select_set(True)
@@ -680,6 +682,7 @@ class Car:
                 for j in range(4): bm.faces.new((a_[j], a_[(j + 1) % 4], b_[(j + 1) % 4], b_[j]))
             bm.faces.new(rows[0]); bm.faces.new(list(reversed(rows[-1]))); bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
             bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=m); return bm
+        if lite: self.activate(wheel); bpy.ops.object.shade_smooth_by_angle(angle=math.radians(35)); return   # no calipers on traffic
         cw, ct, cr = caliper; rc_ = RR - .085; span = cw / rc_; yc = out * (h - .10)
         cal = self.mesh(f'Caliper_{tag}', arc(rc_ - cr / 2, rc_ + cr / 2, yc - ct / 2, yc + ct / 2, span), 'Caliper')
         cm = cal.modifiers.new('bev', 'BEVEL'); cm.width = .012; cm.segments = 2; self.apply(cal)
@@ -771,7 +774,7 @@ class Car:
                 self.decal('hoodline', 'Black', 'top', x0 - .004, x0 + .004, -yh, yh, 1, 16, off=.004)
         # honeycomb mesh over the black grilles and intakes: rows of small raised diamonds, every other row offset
         mesh_keys = ('grille', 'intake', 'mouth', 'lowgrille', 'hexmouth', 'agrille', 'cintake', 'quarterintake', 'snorkelmouth')
-        for g in [o for o in self.parts if o.name.split('.')[0] in mesh_keys and o.data.materials and o.data.materials[0].name in ('Black', 'GlossBlack', 'Carbon')]:
+        for g in [o for o in self.parts if not getattr(self, 'lite', False) and o.name.split('.')[0] in mesh_keys and o.data.materials and o.data.materials[0].name in ('Black', 'GlossBlack', 'Carbon')]:
             bm = bmesh.new(); M = g.matrix_world; N3 = M.to_3x3()
             for f in g.data.polygons:
                 q = [M @ g.data.vertices[i].co for i in f.vertices]

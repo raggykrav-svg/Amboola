@@ -646,3 +646,16 @@ Every car's body is also sculpted by the kit (`Car.sculpt()`, run just before th
 - **Low parts:** a carbon splitter lip under the nose and fins in the rear diffuser.
 
 Buses and trucks only get a light version. A car script can set `k.flare_amt` (0 turns the sculpting off).
+
+### Traffic cars from Blender 🚕
+
+The cars driving around the city are real Blender models now too, made with the same car kit as the cars you drive (`models/blender/traffic.py`):
+
+- **Kei car:** a tall little box car with a sliding door.
+- **Taxi:** a tall Tokyo taxi with round lamps, a chrome grille and a glowing roof sign.
+- **Sedan:** a family car with a chrome grille.
+- **Van:** a one-box van with a tall roof and a sliding door.
+- **Truck:** a flat-nosed truck with a big white box.
+- **Police car:** white on top and black below, like a real Japanese police car. The red and blue lights on the roof still flash.
+
+They are a lighter version of the kit (simpler tyres, no brake calipers), because dozens are on the road at once. Up close you see the Blender model; far away (70 m, 45 m on phones) the game shows the old simple box car, so the game stays fast. They drive in the city, on the expressway, on the highway and the bridges, and ride on the ferry.
