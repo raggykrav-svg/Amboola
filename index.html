@@ -1020,6 +1020,7 @@ function addCol(x0, z0, x1, z1) {
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const k = gkey(i, j); if (!colGrid.has(k)) colGrid.set(k, []); colGrid.get(k).push(b); }
 }
 const parks = [], landmarks = [];
+const TOKYO = { b: [], meshes: [], lm: {} };   // Tokyo's plain buildings (records + their meshes) and landmarks, for the Blender upgrade (upgradeTokyo)
 const roofGrid = new Map();   // building tops for the helicopter: [x0, z0, x1, z1, h] per city cell
 function addRoof(x0, z0, x1, z1, h) {
   if (colMute) return; const r = [x0, z0, x1, z1, h];
@@ -1336,6 +1337,7 @@ async function buildWorld() {
   const facades = FACADES.map((f, i) => { const t = facadeTex(f, 100 + i); const m = new THREE.MeshStandardMaterial({ map: t.map, emissiveMap: t.emis, emissive: 0xffffff, emissiveIntensity: 0, roughness: f.rough, metalness: f.metal, vertexColors: true }); dynMats.windows.push(m); return m; });
   const facadeGB = FACADES.map(() => new GB());
   const roofGB = new GB(), tileGB = new GB(), plainGB = new GB(), redGB = new GB();
+  const tkFacadeGB = FACADES.map(() => new GB()), tkRoofGB = new GB(), tkHouseGB = new GB(), tkTileGB = new GB();   // the block buildings (swapped by upgradeTokyo)
   const adTexs = ADS.map(adTex);
   const adMats = adTexs.map(t => { const m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 1, roughness: .5 }); dynMats.ads.push(m); return m; });
   const adInst = ADS.map(() => []);           // matrices per ad
@@ -1358,7 +1360,7 @@ async function buildWorld() {
   special.set(gkey(13, 9), 'stunt');                                         // the AMBOOLA Rescue fire station and tow depot (buildRescue)
   // A stunt block is first generated like any other block, so the random numbers (and the rest of the city) stay
   // exactly as they were, and then everything it made is thrown away.
-  const genSnap = () => { colMute = true; return { g: [...facadeGB, roofGB, tileGB, plainGB, redGB].map(b => [b, b.p.length, b.u.length, b.c.length]), a: [...adInst, ...neonInst, trees, sakura, vending, antennas, parks].map(a => [a, a.length]), kids: scene.children.length }; };
+  const genSnap = () => { colMute = true; return { g: [...facadeGB, roofGB, tileGB, plainGB, redGB, ...tkFacadeGB, tkRoofGB, tkHouseGB, tkTileGB].map(b => [b, b.p.length, b.u.length, b.c.length]), a: [...adInst, ...neonInst, trees, sakura, vending, antennas, parks, TOKYO.b].map(a => [a, a.length]), kids: scene.children.length }; };
   const genDrop = S => { colMute = false; for (const [b, p, u, c] of S.g) { b.p.length = p; b.u.length = u; b.c.length = c; } for (const [a, n] of S.a) a.length = n; while (scene.children.length > S.kids) scene.remove(scene.children[scene.children.length - 1]); };
 
   function facing(cx, cz, bx0, bz0, bx1, bz1) { // outward normal to closest block edge
@@ -1377,7 +1379,7 @@ async function buildWorld() {
     const isPark = sp === 'park' || (!sp && district > 0 && !harbor && rand() < .07);
     if (sp === 'showroom') { buildShowroom(bcx, bcz, facadeGB, roofGB, plainGB); continue; }
     if (sp === 'tower') { buildTower(bcx, bcz); parks.push([bx0, bz0, bx1, bz1]); addPark(bx0, bz0, bx1, bz1, grassTex, trees, sakura, .3); continue; }
-    if (sp === 'temple') { buildTemple(bcx, bcz, redGB, tileGB, plainGB); parks.push([bx0, bz0, bx1, bz1]); addPark(bx0, bz0, bx1, bz1, grassTex, trees, sakura, .8); continue; }
+    if (sp === 'temple') { buildTemple(bcx, bcz); parks.push([bx0, bz0, bx1, bz1]); addPark(bx0, bz0, bx1, bz1, grassTex, trees, sakura, .8); continue; }
     if (isPark) { parks.push([bx0, bz0, bx1, bz1]); addPark(bx0, bz0, bx1, bz1, grassTex, trees, sakura, .5); continue; }
 
     const inset = 3, ax0 = bx0 + inset, az0 = bz0 + inset, ax1 = bx1 - inset, az1 = bz1 - inset;
@@ -1392,8 +1394,8 @@ async function buildWorld() {
       const cx = ax0 + lw * (a + .5), cz = az0 + ld * (b + .5);
       const col = tint();
       if (district === 3) { // harbor warehouses + containers
-        const h = rr(8, 14); const G = facadeGB[3];
-        G.box(cx, 0, cz, w, h, d, 16, 32, rr(0, 1), [col[0] * .9, col[1] * .9, col[2]], roofGB);
+        const h = rr(8, 14); const G = tkFacadeGB[3];
+        G.box(cx, 0, cz, w, h, d, 16, 32, rr(0, 1), [col[0] * .9, col[1] * .9, col[2]], tkRoofGB); TOKYO.b.push({ k: 'ware', x: cx, z: cz, w, d, h, y0: 0, col });
         addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2); addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, h);
         continue;
       }
@@ -1401,13 +1403,14 @@ async function buildWorld() {
         if (rand() < .7) {
           const hw = Math.min(w, rr(7, 10)), hd = Math.min(d, rr(7, 10)), h = rr(5.5, 7.5);
           const wc = pick([[.93, .9, .84], [.85, .83, .8], [.78, .72, .64], [.95, .95, .95], [.6, .58, .55]]);
-          plainGB.box(cx, 0, cz, hw, h, hd, 4, 3, 0, wc, plainGB);
-          tileGB.gable(cx, h, cz, hw, hd, rr(1.6, 2.6), .6, pick([[.25, .27, .3], [.35, .2, .15], [.18, .22, .28], [.3, .3, .3]]));
+          tkHouseGB.box(cx, 0, cz, hw, h, hd, 4, 3, 0, wc, tkHouseGB);
+          const rise = rr(1.6, 2.6), rcol = pick([[.25, .27, .3], [.35, .2, .15], [.18, .22, .28], [.3, .3, .3]]);
+          tkTileGB.gable(cx, h, cz, hw, hd, rise, .6, rcol); TOKYO.b.push({ k: 'house', x: cx, z: cz, w: hw, d: hd, h, y0: 0, rise, col: wc, rcol });
           addCol(cx - hw / 2, cz - hd / 2, cx + hw / 2, cz + hd / 2); addRoof(cx - hw / 2, cz - hd / 2, cx + hw / 2, cz + hd / 2, h + 1.2);
           if (rand() < .25) { const [fx, fz] = facing(cx, cz, bx0, bz0, bx1, bz1); vending.push([cx + fx * (hw / 2 + .5), cz + fz * (hd / 2 + .5), Math.atan2(fx, fz)]); }
         } else {
           const h = rr(9, 16); const fi = pick([1, 3, 4]);
-          facadeGB[fi].box(cx, 0, cz, w, h, d, 16, 32, Math.floor(rr(0, 8)) / 8, col, roofGB);
+          tkFacadeGB[fi].box(cx, 0, cz, w, h, d, 16, 32, Math.floor(rr(0, 8)) / 8, col, tkRoofGB); TOKYO.b.push({ k: 'bld', fi, x: cx, z: cz, w, d, h, y0: 0, col });
           addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2); addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, h);
         }
         continue;
@@ -1415,18 +1418,19 @@ async function buildWorld() {
       let h = district === 0 ? (rand() < .35 ? rr(110, 230) : rr(45, 110)) : rr(12, 46);
       if (nearCross) h = rr(35, 70);
       const fi = district === 0 ? pick([0, 0, 2, 2, 4, 1]) : pick([1, 1, 3, 4, 0, 3]);
-      const G = facadeGB[fi];
+      const G = tkFacadeGB[fi];
       if (h > 90 && w > 20 && d > 20) {
-        const ph = rr(18, 30); G.box(cx, 0, cz, w, ph, d, 16, 32, 0, col, roofGB);
+        const ph = rr(18, 30); G.box(cx, 0, cz, w, ph, d, 16, 32, 0, col, tkRoofGB);
         const tw = w * rr(.6, .8), td = d * rr(.6, .8);
-        const G2 = facadeGB[pick([0, 2, 4])]; G2.box(cx, ph, cz, tw, h - ph, td, 16, 32, Math.floor(rr(0, 8)) / 8, col, roofGB);
+        const fi2 = pick([0, 2, 4]), G2 = tkFacadeGB[fi2]; G2.box(cx, ph, cz, tw, h - ph, td, 16, 32, Math.floor(rr(0, 8)) / 8, col, tkRoofGB);
         addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, ph); addRoof(cx - tw / 2, cz - td / 2, cx + tw / 2, cz + td / 2, h);
-        if (rand() < .5) { G2.box(cx, h, cz, tw * .6, rr(6, 14), td * .6, 16, 32, 0, col, roofGB); }
+        TOKYO.b.push({ k: 'bld', fi, x: cx, z: cz, w, d, h: ph, y0: 0, col, podium: true }, { k: 'bld', fi: fi2, x: cx, z: cz, w: tw, d: td, h: h - ph, y0: ph, col, top: true });
+        if (rand() < .5) { G2.box(cx, h, cz, tw * .6, rr(6, 14), td * .6, 16, 32, 0, col, tkRoofGB); }
         antennas.push([cx, h + 6, cz]);
       } else {
-        G.box(cx, 0, cz, w, h, d, 16, 32, Math.floor(rr(0, 8)) / 8, col, roofGB);
+        G.box(cx, 0, cz, w, h, d, 16, 32, Math.floor(rr(0, 8)) / 8, col, tkRoofGB); TOKYO.b.push({ k: 'bld', fi, x: cx, z: cz, w, d, h, y0: 0, col });
         // rooftop units
-        for (let k = 0; k < 3; k++) roofGB.box(cx + rr(-w / 3, w / 3), h, cz + rr(-d / 3, d / 3), rr(2, 4), rr(1.5, 3), rr(2, 4), 8, 8, 0, [.55, .56, .58]);
+        for (let k = 0; k < 3; k++) tkRoofGB.box(cx + rr(-w / 3, w / 3), h, cz + rr(-d / 3, d / 3), rr(2, 4), rr(1.5, 3), rr(2, 4), 8, 8, 0, [.55, .56, .58]);
         addRoof(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, h);
       }
       addCol(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2);
@@ -1481,6 +1485,8 @@ async function buildWorld() {
   const pm = new THREE.Mesh(plainGB.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85 })); pm.castShadow = pm.receiveShadow = true; scene.add(pm);
   const tm = new THREE.Mesh(tileGB.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6, metalness: .2, side: THREE.DoubleSide })); tm.castShadow = tm.receiveShadow = true; scene.add(tm);
   if (!redGB.empty) { const r = new THREE.Mesh(redGB.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .55 })); r.castShadow = true; scene.add(r); }
+  tkFacadeGB.forEach((g, i) => { if (g.empty) return; const m = new THREE.Mesh(g.build(), facades[i]); m.castShadow = m.receiveShadow = true; scene.add(m); TOKYO.meshes.push(m); });
+  for (const [g, m] of [[tkRoofGB, roofMat], [tkHouseGB, pm.material], [tkTileGB, tm.material]]) { if (g.empty) continue; const k = new THREE.Mesh(g.build(), m); k.castShadow = k.receiveShadow = true; scene.add(k); TOKYO.meshes.push(k); }
 
   const planeGeo = new THREE.PlaneGeometry(1, 1);
   adInst.forEach((arr, i) => { if (!arr.length) return; const im = new THREE.InstancedMesh(planeGeo, adMats[i], arr.length); arr.forEach((m, k) => im.setMatrixAt(k, m)); scene.add(im); });
@@ -1537,14 +1543,14 @@ async function buildWorld() {
     trunk.setMatrixAt(k, mat(x, 0, z, rand() * 6, s, s, s)); crown.setMatrixAt(k, mat(x, 0, z, rand() * 6, s * rr(.9, 1.2), s * rr(.8, 1.1), s * rr(.9, 1.2)));
     crown.setColorAt(k, sak ? cc.setHSL(rr(.92, .97), rr(.55, .8), rr(.75, .86)) : cc.setHSL(rr(.22, .32), rr(.4, .6), rr(.2, .32)));
   });
-  trunk.castShadow = crown.castShadow = true; crown.receiveShadow = true; scene.add(trunk, crown); seasonLook.trees = { crown, all };
+  trunk.castShadow = crown.castShadow = true; crown.receiveShadow = true; scene.add(trunk, crown); seasonLook.trees = { crown, all }; TOKYO.trees = { trunk, crown };
   const vmGeo = new THREE.BoxGeometry(1, 1.85, .75); vmGeo.translate(0, .925, 0);
   const vmFront = new THREE.PlaneGeometry(.8, 1.1); vmFront.translate(0, 1.15, .38);
   const vm = new THREE.InstancedMesh(vmGeo, new THREE.MeshStandardMaterial({ roughness: .4 }), vending.length);
   const vmfMat = new THREE.MeshBasicMaterial({ color: 0xe8f4ff }); dynMats.lamps.push(vmfMat);
   const vmf = new THREE.InstancedMesh(vmFront, vmfMat, vending.length);
   vending.forEach(([x, z, ry], k) => { vm.setMatrixAt(k, mat(x, 0, z, ry)); vmf.setMatrixAt(k, mat(x, 0, z, ry)); vm.setColorAt(k, cc.set(pick(['#d42a2a', '#1f5fc4', '#f2f2f2', '#2a8a4a']))); });
-  if (vending.length) scene.add(vm, vmf);
+  if (vending.length) scene.add(vm, vmf); TOKYO.vend = { vm, vmf };
   const antMat = new THREE.MeshStandardMaterial({ color: 0x222, emissive: 0xff2020, emissiveIntensity: 2 }); dynMats.towerLights.push(antMat);
   const ant = new THREE.InstancedMesh(new THREE.SphereGeometry(.6, 8, 6), antMat, antennas.length || 1);
   antennas.forEach(([x, y, z], k) => ant.setMatrixAt(k, mat(x, y, z))); scene.add(ant);
@@ -1621,7 +1627,7 @@ function buildTower(cx, cz) {
   const mast = new THREE.Mesh(new THREE.CylinderGeometry(.4, 1.6, 50, 8), white); mast.position.y = H + 25; g.add(mast);
   const lm = new THREE.MeshStandardMaterial({ color: 0x222, emissive: 0xff8a3a, emissiveIntensity: 2 }); dynMats.towerLights.push(lm);
   for (let k = 0; k < 10; k++) { const l = new THREE.Mesh(new THREE.SphereGeometry(.9, 8, 6), lm); const t = k / 10; l.position.set(legW(t) + 1, t * H, legW(t) + 1); g.add(l); const l2 = l.clone(); l2.position.x *= -1; l2.position.z *= -1; g.add(l2); }
-  g.position.set(cx, 0, cz); scene.add(g);
+  g.position.set(cx, 0, cz); scene.add(g); TOKYO.lm.tower = g;
   for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) addCol(cx + sx * 26 - 3, cz + sz * 26 - 3, cx + sx * 26 + 3, cz + sz * 26 + 3);
   landmarks.push({ x: cx, z: cz, c: '#ff4b2b', n: 'Tower' });
 }
@@ -1631,7 +1637,8 @@ function beamGeo(a, b, r) {
   const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize());
   geo.applyQuaternion(q); geo.translate(A.x, A.y, A.z); return geo;
 }
-function buildTemple(cx, cz, redGB, tileGB, plainGB) {
+function buildTemple(cx, cz) {   // its own meshes in a group, so the Blender temple can take its place
+  const redGB = new GB(), tileGB = new GB(), plainGB = new GB(), g = new THREE.Group(); g.position.set(cx, 0, cz); scene.add(g); TOKYO.lm.temple = g;
   const red = [.78, .12, .08], dark = [.16, .17, .19];
   // five storey pagoda
   let y = 0; for (let s = 0; s < 5; s++) { const w = 10 - s * 1.3, h = 4; plainGB.box(cx + 12, y, cz, w, h, w, 4, 4, 0, s ? [.45, .12, .08] : [.85, .82, .75]); y += h; tileGB.box(cx + 12, y - .3, cz, w + 4, .6, w + 4, 4, 4, 0, dark); }
@@ -1642,6 +1649,9 @@ function buildTemple(cx, cz, redGB, tileGB, plainGB) {
   addCol(cx - 17, cz - 14, cx + 1, cz - 2);
   // torii gates facing west road
   for (const k of [0, 1, 2]) { const tx = cx - 29 + k * 7; for (const s of [-1, 1]) redGB.box(tx, 0, cz + 10 + s * 3, .6, 6, .6, 4, 4, 0, red); redGB.box(tx, 6, cz + 10, .9, .7, 9, 4, 4, 0, dark); redGB.box(tx, 4.8, cz + 10, .5, .5, 7, 4, 4, 0, red); }
+  for (const [b, m] of [[plainGB, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85 })], [tileGB, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6, metalness: .2, side: THREE.DoubleSide })], [redGB, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .55 })]]) {
+    const mesh = new THREE.Mesh(b.build(), m); mesh.position.set(-cx, 0, -cz); mesh.castShadow = mesh.receiveShadow = true; g.add(mesh);
+  }
   landmarks.push({ x: cx, z: cz, c: '#e03030', n: 'Temple' });
 }
 function buildExpressway() {
@@ -1905,8 +1915,8 @@ const MODELS = {};
 // the camel and (not on phones) the traffic cars load before the game starts; the rest follow in the background, one at
 // a time, traffic first. Until a car's model is in, it shows its simple built-in body (swapped as soon as it arrives).
 const TRAFFIC_MODELS = ['tr_kei', 'tr_taxi', 'tr_sedan', 'tr_van', 'tr_truck', 'tr_police'];   // the city's traffic (see buildTrafficCar)
-const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // the countries' Blender towns (see upgradeCity)
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora', ...TRAFFIC_MODELS, ...CITY_MODELS];
+const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -1919,6 +1929,7 @@ function loadModel(id) {
         const gltf = await Promise.race([gltfLoader.parseAsync(bin, ''), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 20000))]);
         MODELS[id] = gltf.scene; delete window.AMBOOLA_MODELS[id];
         if (id.startsWith('tr_')) trafficModelIn(id);
+        if (id === 'city_tokyo' && TOKYO.built) upgradeTokyo();
         if (state === 'garage' && CARS[carIdx]?.id === id) showGarageCar();
       } catch (e) { console.warn(`model ${id} not loaded, using the procedural body`, e); }
       res(MODELS[id] || null);
@@ -1930,7 +1941,7 @@ function loadModel(id) {
 }
 // after start-up: your own cars first, then everything else, gently (phones get more breathing room)
 function loadAllModels() {
-  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id));   // towns load when you get near
+  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, 'city_tokyo', ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id));   // towns load when you get near
   (async () => { for (const id of order) { await loadModel(id); await new Promise(r => setTimeout(r, isTouch ? 150 : 15)); } modelsDone = true; })();
 }
 const glossBlackMat = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: .16, clearcoat: 1, clearcoatRoughness: .05 });
@@ -6312,6 +6323,97 @@ function cityInstances(parts, list, group, shadow = true) {
     im.computeBoundingSphere(); group.add(im);
   }
 }
+/* ---- Blender Tokyo (models/blender/city_tokyo.py -> models/city_tokyo.glb.js). Every block building (TOKYO.b) is
+   rebuilt from storey modules at its exact footprint and height (so the helicopter's rooftops and the collisions stay
+   true): families follow the facade styles, n/w sizes by footprint, a 5 m shop floor, four-floor sections and single
+   floors stretched a little to fit, and a roof. One InstancedMesh per module part covers the whole city; every
+   time the camera moves 25 m the buildings within TOKYO_NEAR get the detailed modules and the rest the plain twins. */
+const TOKYO_NEAR = isTouch ? 150 : 240;
+function upgradeTokyo() {
+  const src = MODELS.city_tokyo; if (!src || TOKYO.city || !TOKYO.b.length) return;
+  const nodes = {}; src.children.forEach(o => nodes[o.name] = o);
+  const M4 = (x, y, z, ry, sx, sy, sz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(sx, sy, sz));
+  const rnd = mulberry32(777), walls = FACADES.map(f => new THREE.Color(f.wall)), groups = new Map();   // node name -> placements
+  const put = (name, b, M, wc, rc) => { if (!nodes[name]) return; if (!groups.has(name)) groups.set(name, []); groups.get(name).push({ b, M, wc, rc }); };
+  TOKYO.b.forEach((B, i) => {
+    const q = Math.floor(rnd() * 4) * Math.PI / 2, turned = Math.abs(Math.sin(q)) > .5;
+    if (B.k === 'house') {
+      const k = Math.floor(rnd() * 3), qh = rnd() < .5 ? 0 : Math.PI, wc = new THREE.Color(...B.col), rc = new THREE.Color(...B.rcol);
+      put('H' + k, i, M4(B.x, 0, B.z, qh, B.w / 8.5, B.h / 6, B.d / 8.5), wc, rc); put('HR' + k, i, M4(B.x, B.h, B.z, qh, B.w / 8.5, B.rise / 2, B.d / 8.5), wc, rc);
+      return;
+    }
+    if (B.k === 'ware') {
+      const k = Math.floor(rnd() * 2), wc = walls[3].clone().multiply(new THREE.Color(B.col[0] * .9, B.col[1] * .9, B.col[2]));
+      put('W' + k, i, M4(B.x, 0, B.z, q, (turned ? B.d : B.w) / 26, B.h / 11, (turned ? B.w : B.d) / 26), wc, wc); put('WR' + k, i, M4(B.x, B.h, B.z, q, (turned ? B.d : B.w) / 26, 1, (turned ? B.w : B.d) / 26), wc, wc);
+      return;
+    }
+    const sz = Math.max(B.w, B.d) < 27 ? 'n' : 'w', W = sz === 'n' ? 18 : 36, sx = (turned ? B.d : B.w) / W, szz = (turned ? B.w : B.d) / W, f = B.fi;
+    const wc = walls[f].clone().multiply(new THREE.Color(...B.col)); let y = B.y0, rest = B.h;
+    if (B.y0 === 0) {
+      if (B.h < 6.8) { put(`G${f}${sz}`, i, M4(B.x, 0, B.z, q, sx, B.h / 5, szz), wc, wc); rest = 0; y = B.h; }
+      else { put(`G${f}${sz}`, i, M4(B.x, 0, B.z, q, sx, 1, szz), wc, wc); y = 5; rest = B.h - 5; }
+    }
+    if (rest > 0) {
+      const F = Math.max(1, Math.round(rest / 3.6)), sy = rest / (F * 3.6);
+      for (let k = 0; k < Math.floor(F / 4); k++) { put(`S${f}${sz}`, i, M4(B.x, y, B.z, q, sx, sy, szz), wc, wc); y += 14.4 * sy; }
+      for (let k = 0; k < F % 4; k++) { put(`U${f}${sz}`, i, M4(B.x, y, B.z, q, sx, sy, szz), wc, wc); y += 3.6 * sy; }
+    }
+    put(B.podium ? `Q${sz}` : `R${f}${sz}`, i, M4(B.x, B.y0 + B.h, B.z, q, sx, 1, szz), wc, wc);
+  });
+  // one InstancedMesh per part of every module and its plain twin, sized for all its placements
+  const sphere = new THREE.Sphere(new THREE.Vector3(0, 60, 0), HALF * 1.6), slots = [];
+  const grp = new THREE.Group(); scene.add(grp);
+  for (const [name, list] of groups) {
+    for (const [nm, near] of [[name, true], [name + 'l', false]]) {
+      if (!nodes[nm]) continue;
+      for (const p of cityParts(nodes[nm])) {
+        const im = new THREE.InstancedMesh(p.geo, p.mat, list.length); im.count = 0; im.boundingSphere = sphere;
+        im.castShadow = near && (p.kind === 'wall' || p.kind === 'glass'); im.receiveShadow = true; grp.add(im);
+        slots.push({ im, list, near, tint: p.kind === 'wall' ? 'wc' : p.kind === 'roof' ? 'rc' : null });
+      }
+    }
+  }
+  TOKYO.city = { grp, slots, at: null, near: new Uint8Array(TOKYO.b.length) };
+  TOKYO.meshes.forEach(m => m.visible = false);
+  // the trees and vending machines keep their places (and the seasons' colours); only their shapes change
+  const merged = (node, colours) => {
+    node.updateMatrixWorld(true); const inv = node.matrixWorld.clone().invert(), geos = [];
+    node.traverse(o => {
+      if (!o.isMesh) return; const g = new THREE.BufferGeometry(); g.setAttribute('position', o.geometry.attributes.position.clone()); g.setAttribute('normal', o.geometry.attributes.normal.clone()); g.setIndex(o.geometry.index.clone());
+      g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+      if (colours) { const c = o.material.name === 'Wall' ? new THREE.Color(1, 1, 1) : o.material.color, k = g.attributes.position.count, a = new Float32Array(k * 3); for (let j = 0; j < k; j++) a.set([c.r, c.g, c.b], j * 3); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+      geos.push(g);
+    });
+    return mergeGeometries(geos);
+  };
+  if (TOKYO.trees && nodes.T_trunk && nodes.T_crown) { TOKYO.trees.trunk.geometry = merged(nodes.T_trunk); TOKYO.trees.crown.geometry = merged(nodes.T_crown); TOKYO.trees.crown.material.flatShading = false; TOKYO.trees.crown.material.needsUpdate = true; }
+  if (TOKYO.vend && nodes.V_body && nodes.V_glow) { TOKYO.vend.vm.geometry = merged(nodes.V_body, true); TOKYO.vend.vm.material.vertexColors = true; TOKYO.vend.vm.material.needsUpdate = true; TOKYO.vend.vmf.geometry = merged(nodes.V_glow); }
+  // the landmarks
+  for (const [key, L] of Object.entries(TOKYO.lm)) {
+    const node = nodes['L_' + key]; if (!node) continue;
+    const g = new THREE.Group(); g.position.copy(L.position);
+    for (const p of cityParts(node, true)) { const m = new THREE.Mesh(p.geo, p.mat); m.castShadow = m.receiveShadow = true; g.add(m); }
+    scene.add(g); L.visible = false;
+  }
+  updateTokyoLOD(true);
+}
+// detailed modules on the buildings near the camera, plain ones on the rest (refilled when the camera moves 25 m)
+function updateTokyoLOD(force) {
+  const C = TOKYO.city; if (!C) return;
+  const cx = camera.position.x, cz = camera.position.z, R = quality === 'low' ? 0 : TOKYO_NEAR;
+  C.grp.visible = Math.abs(cx) < 7000 && cz > -7000 && cz < 9000;   // far off in the countries Tokyo is not drawn
+  if (!C.grp.visible || (!force && C.at && Math.hypot(C.at[0] - cx, C.at[1] - cz) < 25 && C.R === R)) return;
+  C.at = [cx, cz]; C.R = R;
+  TOKYO.b.forEach((B, i) => C.near[i] = Math.hypot(B.x - cx, B.z - cz) < R ? 1 : 0);
+  for (const s of C.slots) {
+    let n = 0;
+    for (const p of s.list) {
+      if (!C.near[p.b] !== !s.near) continue;
+      s.im.setMatrixAt(n, p.M); if (s.tint) s.im.setColorAt(n, p[s.tint]); n++;
+    }
+    s.im.count = n; s.im.visible = n > 0; s.im.instanceMatrix.needsUpdate = true; if (s.tint && s.im.instanceColor) s.im.instanceColor.needsUpdate = true;
+  }
+}
 function upgradeCity(C) {
   const src = MODELS['city_' + C.id], cfg = CITY_CFG[C.id]; if (!src || !cfg || C.city) return;
   const nodes = {}; src.children.forEach(o => nodes[o.name] = o);
@@ -6416,6 +6518,7 @@ for (const C of COUNTRIES) {
 let cullT = 0;
 function updateCountryCulling(dt) {
   const cx = camera.position.x, cz = camera.position.z;   // every frame: a teleport or the jet moves the camera kilometres at once
+  updateTokyoLOD();
   for (const C of COUNTRIES) {
     for (const g of C.R.chunks || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 7500;
     const d = Math.hypot(C.cx - cx, C.cz - cz); if (C.group) C.group.visible = d < 12000;
@@ -10340,9 +10443,10 @@ async function boot() {
   setLoad(.05, 'Loading fonts…');
   try { await Promise.race([Promise.all([document.fonts.load(`900 40px Orbitron`), document.fonts.load(`900 40px "Noto Sans JP"`, '東京ラーメンカラオケ寿司居酒屋焼肉ホテル薬局ゲーム喫茶店酒場電気街バーサーキットのために生まれた純粋なパワー魂電動化中のスポーツカーミッドシップ頂点新しい時代へ馬力衝撃伝説は続く道終わりから始まる走れ首都高速ボード計測'), document.fonts.load('700 20px Rajdhani')]), new Promise(r => setTimeout(r, 3500))]); } catch (e) { }
   setupComposer();
-  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel', ...(isTouch ? [] : TRAFFIC_MODELS)].map(loadModel));
+  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel', ...(isTouch ? [] : [...TRAFFIC_MODELS, 'city_tokyo'])].map(loadModel));
   setLoad(.15, 'Paving roads…'); await nextFrame();
   await buildWorld();
+  TOKYO.built = true; upgradeTokyo();   // the Blender Tokyo, if its model is already in
   setLoad(.8, 'Spawning traffic…'); await nextFrame();
   traffic = new Traffic(isTouch ? 26 : 40);
   skids = new Skids(); smoke = new Smoke(); spray = new Smoke(220); spray.mat.uniforms.tint.value.setRGB(.82, .86, .92);
@@ -10360,7 +10464,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

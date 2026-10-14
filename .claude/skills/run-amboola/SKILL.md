@@ -282,6 +282,30 @@ Model gotchas:
 - In `index.html`, `TRAFFIC_MODELS` load before the game starts on desktop and first in `loadAllModels` everywhere. `trafficKit(id)` merges a model into one geometry per material (Paint stays per car; lamps use `tHeadM`/`tTailM`, which `applyTime` dims with `userData.k`). `buildTrafficCar(T)` builds the box car as `userData.lo` and `dressTraffic(g)` wraps it with the model in a `THREE.LOD` (switch at `TRAFFIC_LOD`, 70 m, 45 m on touch). Cars built before their model arrives wait in `trafficWaiting` and are dressed by `trafficModelIn(id)` from `loadModel`. `buildPoliceCar()` uses `POLICE_T` (`n: 'police'`) and moves its light bar to `kit.top`.
 - Check: every `traffic.cars[i].mesh` should have exactly one child, a `THREE.LOD`. Cameras close to traffic go through `window.__camHook`. The player's headlights blow out a white car parked right in front of them at night, so frame traffic from the side.
 
+## Tokyo (Blender)
+
+- **Records:** `buildWorld` records every block building in `TOKYO.b`:
+  - kinds `bld` (`fi`, `y0`, `podium` / `top`), `house` (`rise`, `col`, `rcol`) and `ware`.
+  - It draws them into separate `tk*` GBs, so `TOKYO.meshes` can be hidden. The stunt-block rollback (`genSnap`) includes them.
+  - `TOKYO.lm.tower` / `.temple` are the landmark groups. `buildTemple` now has its own meshes.
+  - `TOKYO.trees` / `.vend` are the tree and vending-machine InstancedMeshes.
+- **Model:** `city_tokyo.py` builds:
+  - families 0–4, the same as `FACADES`, in sizes `n` (18 m) and `w` (36 m) as `G` (5 m), `U` (3.6 m), `S` (4×3.6 m) and `R`; `Q` is the podium roof;
+  - houses `H`/`HR` (8.5 m, 6 m + 2 m rise) and warehouses `W`/`WR` (26 m, 11 m);
+  - `T_trunk`/`T_crown`, `V_body`/`V_glow`, `L_tower`, `L_temple`;
+  - an `l`-suffixed plain twin of each building module.
+- **Rules:**
+  - Keep rooftop plant in the corners: `heliJob` puts its people in the middle of a roof.
+  - Keep wall details shallow (under about 1.4 m), or the facade billboards sink into them.
+- **Game:** `upgradeTokyo()` runs after `buildWorld` (desktop preloads `city_tokyo` with the traffic) or when the model arrives.
+  - It stacks modules to each record's exact height: `F = round(rest / 3.6)` floors, `S` for each group of four, `U` for the rest, stretched by `rest / (F × 3.6)`.
+  - It makes one InstancedMesh per module part for the whole city (shared bounding sphere).
+  - `updateTokyoLOD` (from `updateCountryCulling`) refills them when the camera has moved 25 m: buildings within `TOKYO_NEAR` (240 m, 150 m on touch, 0 on Graphics LOW) get the detailed modules and the rest get the `l` twins. Empty meshes are hidden.
+  - Trees and vending machines only get new geometry, so the seasons' crown colours and the machine colours stay.
+- **Check:**
+  - `window.amboola.TOKYO.city` exists and every `TOKYO.meshes` is hidden.
+  - At the start position, about 2.3 M triangles and 1,290 draw calls a frame, against 1.57 M and 1,014 for the old boxes.
+
 ## Country towns (Blender)
 
 - **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:

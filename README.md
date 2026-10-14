@@ -660,6 +660,21 @@ The cars driving around the city are real Blender models now too, made with the 
 
 They are a lighter version of the kit (simpler tyres, no brake calipers), because dozens are on the road at once. Up close you see the Blender model; far away (70 m, 45 m on phones) the game shows the old simple box car, so the game stays fast. They drive in the city, on the expressway, on the highway and the bridges, and ride on the ferry.
 
+### Tokyo from Blender 🗼
+
+Tokyo itself is rebuilt in Blender too (`models/blender/city_tokyo.py`). Every one of its 2,700 buildings keeps its exact place and height, so crashes and the helicopter's rooftops work just like before:
+
+- **Towers and offices:** blue glass towers with window frames, dark glass towers with fins and a glowing top line, grey offices with sun shades, and white modern buildings with roof gardens.
+- **Apartments ("mansions"):** long balconies with railings and air-conditioner units.
+- **Shops on every street:** big shop windows with coloured signs and awnings.
+- **Japanese houses:** two floors, a tiled roof, a balcony with a laundry pole, and some with a wooden lattice front.
+- **Harbour warehouses:** ribbed metal walls, roller doors and skylights.
+- **Tokyo Tower:** orange and white, with its observation decks and its lights.
+- **The temple:** a five-storey pagoda with a gold spire, the main hall, red torii gates and stone lanterns.
+- **New trees and vending machines.** The trees still change with the seasons, with pink cherry blossom in spring.
+
+Buildings close to you are detailed and the rest are simpler, so Tokyo stays fast (on **Graphics: LOW** all of them are the simple kind).
+
 ### Countries from Blender 🌍
 
 Every country's town is now made in Blender too (`models/blender/cities.py`, one `city_<country>.py` per country, built with `citykit.py`):

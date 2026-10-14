@@ -18,7 +18,7 @@ from citykit import (Node, M, V, lerp, Face, storey, band, corners, window, door
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ==================================================================================================== driver
-CITIES = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt']
+CITIES = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt', 'tokyo']
 
 def demo(cid, out):
     """a test street: a few stacked buildings, the trees and every landmark, rendered from above"""
@@ -53,6 +53,6 @@ if __name__ == '__main__':
     import importlib
     for cid in (CITIES if which == 'all' else which.split(',')):
         if not os.path.exists(os.path.join(HERE, f'city_{cid}.py')): print(f'skip {cid}: no city_{cid}.py'); continue
-        reset(); importlib.import_module(f'city_{cid}').build(); build_all()
-        if '--render' in argv: demo(cid, argv[argv.index('--render') + 1])
+        reset(); mod = importlib.import_module(f'city_{cid}'); mod.build(); build_all()
+        if '--render' in argv: (mod.demo if hasattr(mod, 'demo') else lambda out: demo(cid, out))(argv[argv.index('--render') + 1])
         export(os.path.join(HERE, '..', f'city_{cid}.glb'), f'city_{cid}', 'cities.py')
