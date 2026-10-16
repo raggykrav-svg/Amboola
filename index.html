@@ -121,6 +121,21 @@
   #bmClearRoute { flex:none; }
   .bmBtns button, #bmClearRoute { flex:1; padding:10px 8px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.15em; color:#fff; background:#1a1e27; border:1px solid #3a3f4b; cursor:pointer; }
   .bmBtns button:hover, #bmClearRoute:hover { border-color:var(--accent); background:rgba(255,90,31,.25); }
+  #bmAuto { flex-basis:100% !important; border-color:#c9b27a !important; background:rgba(201,178,122,.22) !important; font-size:14px !important; padding:13px 8px !important; }
+  #cabSpeed { position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; background:rgba(5,8,14,.55); }
+  #cabSpeed.hidden { display:none; }
+  .csCard { background:rgba(10,12,18,.94); border-top:3px solid #c9b27a; padding:22px 24px; max-width:min(560px,calc(100vw - 32px)); text-align:center; backdrop-filter:blur(8px); }
+  .csCard > b { display:block; font-family:'Orbitron',sans-serif; font-size:22px; letter-spacing:.2em; }
+  .csCard > span { display:block; color:var(--dim); font-size:16px; margin:8px 0 16px; } .csCard > span b { color:#fff; }
+  #csBtns { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  #csBtns button { width:96px; padding:14px 6px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:22px; color:#fff; background:#1a1e27; border:1px solid #3a3f4b; cursor:pointer; }
+  #csBtns button small { display:block; font-size:10px; letter-spacing:.2em; color:var(--dim); font-weight:700; }
+  #csBtns button:hover { border-color:#c9b27a; background:rgba(201,178,122,.25); }
+  #csBack { margin-top:14px; padding:9px 16px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.15em; color:var(--dim); background:none; border:1px solid #3a3f4b; cursor:pointer; }
+  #cabhud { position:absolute; left:50%; top:66px; transform:translateX(-50%); display:flex; gap:12px; align-items:center; background:var(--panel); padding:6px 8px 6px 16px;
+    border-bottom:2px solid #c9b27a; backdrop-filter:blur(6px); font-size:15px; letter-spacing:.05em; pointer-events:auto; white-space:nowrap; max-width:calc(100vw - 32px); }
+  #cabhud.hidden { display:none; } #cabTxt { overflow:hidden; text-overflow:ellipsis; }
+  #cabBtns { display:flex; gap:6px; } #cabBtns button { padding:7px 12px; font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; letter-spacing:.1em; color:#fff; background:#1a1e27; border:1px solid #c9b27a; cursor:pointer; }
   #bmRoute { border-color:#2fe0ff !important; } #bmRace { border-color:var(--accent) !important; }
   .bmHint { font-size:12px; color:var(--dim); letter-spacing:.08em; text-shadow:0 1px 3px #000; margin-top:auto; }
   #bmZoom { position:absolute; right:18px; top:70px; display:flex; flex-direction:column; gap:6px; }
@@ -476,6 +491,7 @@
   <div id="nitroBar" class="hidden"><small>N₂O</small><i></i></div>
   <canvas id="minimap" width="420" height="420" title="Open map (N)"></canvas>
   <div id="maptag">🗺 MAP · CLICK / N</div>
+  <div id="cabhud" class="hidden"><span id="cabTxt"></span><span id="cabBtns"></span></div>
   <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
   <div id="rBoard" class="hidden"></div>
@@ -520,16 +536,17 @@
 <div id="bigmap" class="hidden">
   <canvas id="bmCanvas"></canvas>
   <div id="bmPanel">
-    <div class="bmTitle">MAP · 地図</div>
+    <div class="bmTitle" id="bmTitle">MAP · 地図</div>
     <input id="bmSearch" type="search" placeholder="Search places… 検索" autocomplete="off" spellcheck="false">
     <div id="bmResults"></div>
     <div id="bmSel" class="hidden"><b id="bmSelName"></b><span id="bmSelInfo"></span>
-      <div class="bmBtns"><button id="bmRoute">SET ROUTE</button><button id="bmTravel">TRAVEL HERE</button><button id="bmRace" class="hidden">🏁 RACE</button></div></div>
+      <div class="bmBtns"><button id="bmAuto" class="hidden">🤖 DRIVE ME THERE</button><button id="bmRoute">SET ROUTE</button><button id="bmTravel">TRAVEL HERE</button><button id="bmRace" class="hidden">🏁 RACE</button></div></div>
     <button id="bmClearRoute" class="hidden">CLEAR CURRENT ROUTE</button>
     <div class="bmHint">Click the map to drop a pin · drag to move · wheel or +/− to zoom · Esc / N to close</div>
   </div>
   <div id="bmZoom"><button id="bmIn" title="Zoom in">+</button><button id="bmOut" title="Zoom out">−</button><button id="bmMe" title="Centre on my car">◎</button><button id="bmAll" title="Whole map">⤢</button></div>
   <button id="bmClose" title="Close (Esc)">✕</button>
+  <div id="cabSpeed" class="hidden"><div class="csCard"><b>HOW FAST? · 最高速度</b><span id="csInfo"></span><div id="csBtns"></div><button id="csBack">◀ BACK TO THE MAP</button></div></div>
 </div>
 <div id="pause" class="hidden">
   <h2>PAUSED</h2>
@@ -602,6 +619,7 @@ const PAINTS = [
   { n: 'Papaya Orange', c: '#ff7a00', m: .3 }, { n: 'Volcano Blue', c: '#1f4fa8', m: .7 }, { n: 'Bugatti Blue', c: '#173a8c', m: .65 }, { n: 'Argent Silver', c: '#c4c8cc', m: .95 },
   { n: 'Tang Orange', c: '#ff6a13', m: .35 }, { n: 'Naked Carbon', c: '#1a1c1f', m: .9, r: .22 }, { n: 'Emotional Red', c: '#b3121e', m: .45 }, { n: 'Nitro Yellow', c: '#f0cc00', m: .2 }, { n: 'Precious Metal', c: '#6d7176', m: .9 },
   { n: 'Amboola Sky', c: '#7cc8e8', m: .3 }, { n: 'Sakura Pink', c: '#f2a5c0', m: .3 }, { n: 'Ryu Green', c: '#1f7a3a', m: .5 }, { n: 'Taiyo Gold', c: '#f0a020', m: .55 },
+  { n: 'Cybercab Gold', c: '#c9b27a', m: .8, r: .3 },
 ];
 const CARS = [
   { id: 'gt3rs', name: '911 GT3 RS', cat: 'GT', body: '911', wing: 'rs', kw: 386, redline: 9000, mass: 1450, vmax: 296, drive: 'RWD', engine: 'f6na', gears: 7, zero: 3.2, grip: 1.42, aero: 1.0, paint: 4, rim: '#1b1b1d', caliper: '#e3c11b', usd: 241000, desc: '4.0 flat-six · 9,000 rpm' },
@@ -626,6 +644,7 @@ const CARS = [
   { id: 'modelxplaid', name: 'Tesla Model X Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelX', wing: 'none', kw: 750, redline: 20000, mass: 2455, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.6, grip: 1.38, aero: .1, paint: 17, rim: '#2a2b2e', caliper: '#c8141b', usd: 105000, desc: 'Tri-motor SUV · falcon wing' },
   { id: 'modelyp', name: 'Tesla Model Y Performance', brand: 'Tesla', cat: 'TESLA', body: 'modelY', wing: 'turbo', kw: 390, redline: 18000, mass: 2000, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.5, grip: 1.04, aero: .1, paint: 18, rim: '#2a2b2e', caliper: '#c8141b', usd: 57000, desc: 'Dual-motor SUV' },
   { id: 'cyberbeast', name: 'Tesla Cybertruck Cyberbeast', brand: 'Tesla', cat: 'TESLA', body: 'cybertruck', wing: 'none', kw: 630, redline: 16000, mass: 3100, vmax: 209, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.7, grip: 1.3, aero: 0, paint: 19, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 115000, desc: 'Tri-motor · stainless steel' },
+  { id: 'cybercab', name: 'Tesla Cybercab', brand: 'Tesla', cat: 'TESLA', body: 'cybercab', wing: 'none', kw: 1050, redline: 16000, mass: 1500, vmax: 200, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.2, launchG: 2.45, grip: 1.08, aero: 0, paint: 39, rim: '#c8c9cc', caliper: '#1b1b1d', usd: 20000, desc: 'Self-driving robotaxi · no steering wheel', robotaxi: true },
   // ---- Lamborghini
   { id: 'revuelto', name: 'Lamborghini Revuelto', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'turbo', hybrid: true, kw: 747, redline: 9500, mass: 1772, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 8, zero: 2.5, grip: 1.53, aero: .6, paint: 20, rim: '#1b1b1d', caliper: '#e3c11b', usd: 608000, desc: 'V12 hybrid · 1,015 CV' },
   { id: 'svj', name: 'Lamborghini Aventador SVJ', brand: 'Lamborghini', cat: 'LAMBO', body: 'lambo', wing: 'gt2', kw: 566, redline: 8700, mass: 1525, vmax: 350, drive: 'AWD', engine: 'v12na', gears: 7, zero: 2.8, grip: 1.32, aero: 1.0, paint: 21, rim: '#1b1b1d', caliper: '#1f8a5a', usd: 517000, desc: '6.5 V12 · 770 CV' },
@@ -1737,6 +1756,10 @@ Object.assign(BODIES, {
     lower: [[-2.84, .5], [-2.86, 1.12], [-1.0, 1.14], [1.0, 1.14], [2.84, 1.06], [2.84, .5]],
     cabin: [[-2.7, 1.12], [.15, 1.93], [2.55, 1.1], [-2.7, 1.1]], roof: [-1.9, 1.3],
     head: { x: 2.86, y: 1.02, z: 0 }, tail: { x: -2.87, y: 1.06 }, deck: { x: -2.7, y: 1.14 } },
+  cybercab: { L: 4.3, W: 1.95, cabW: 1.4, wr: .36, tw: [.245, .245], fX: 1.4, rX: -1.4, yb: .2, glassRoof: true, noGrille: true,
+    lower: [[-2.15, .4], [-2.15, .66], [-2.1, .95], [-1.8, 1.0], [-1.0, .96], [0, .92], [.9, .9], [1.6, .8], [2.05, .66], [2.15, .5], [2.15, .3]],
+    cabin: [[-1.9, 1.02], [-1.0, 1.29], [-.4, 1.4], [.2, 1.41], [.6, 1.26], [.9, .98], [-1.9, .98]], roof: [-.95, .15],
+    head: { x: 2.08, y: .72, z: .6, round: false }, tail: { x: -2.15, y: .92 }, deck: { x: -2.0, y: 1.0 } },
   roadster08: { L: 3.95, W: 1.85, cabW: 1.25, wr: .32, tw: [.24, .28], fX: 1.12, rX: -1.24, yb: .18, noGrille: true,
     lower: [[-1.97, .22], [-2.0, .5], [-1.95, .78], [-1.7, .88], [-1.1, .9], [-.4, .86], [.6, .82], [1.2, .84], [1.7, .7], [1.95, .52], [1.97, .35], [1.95, .22]],
     cabin: [[-.9, .86], [-.55, 1.08], [-.05, 1.13], [.3, 1.1], [.55, 1.0], [.95, .8], [-.9, .8]], roof: [-.5, .35],
@@ -1916,7 +1939,7 @@ const MODELS = {};
 // a time, traffic first. Until a car's model is in, it shows its simple built-in body (swapped as soon as it arrives).
 const TRAFFIC_MODELS = ['tr_kei', 'tr_taxi', 'tr_sedan', 'tr_van', 'tr_truck', 'tr_police'];   // the city's traffic (see buildTrafficCar)
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -2634,7 +2657,8 @@ class Player {
     }
     this.throttle = Math.max(0, drive);
     const g = 9.81, down = s.aero * Math.pow(speed / 80, 2) * 4;
-    const traction = g * gripK * (s.drive === 'AWD' ? .84 : .68) + down;
+    // launch control (Cybercab): extra pull off the line only, the tyres' cornering grip stays the same
+    const traction = Math.max(g * gripK * (s.drive === 'AWD' ? .84 : .68) + down, (s.launchG || 0) * g * gripK / s.grip);
     // drivetrain
     let F = 0; const wheelRpm = Math.abs(vf) / s.wr * 30 / Math.PI;
     this.shiftT -= dt; this.limiter = false;
@@ -3940,7 +3964,7 @@ function pickRivals(spec, n) {
   return CARS.filter(c => c.id !== spec.id).map(c => ({ c, d: Math.abs(Math.log((c.kw / c.mass) / pw)) + Math.random() * .3 })).sort((a, b) => a.d - b.d).slice(0, n).map(o => o.c);
 }
 function startRace(T, opts = {}) {
-  endMeetRace(false, true); endActs(); endCrime(true);
+  endMeetRace(false, true); endActs(); endCrime(true); cab = null;
   clearNav(true); $('navhud').classList.add('hidden');
   if (race) endRace(false);
   if (taxi) endTaxi();
@@ -3959,6 +3983,7 @@ function startRace(T, opts = {}) {
   race.boss = !!opts.boss; if (race.boss) race.ais.forEach(a => { a.skill = 1; a.name = opts.boss.name; a.car.paint?.color.set(0x0b0b0d); });
   ghostLoad(race); if (crazyMode && !race.boss) crazyStart(race);
   toast((race.cz ? '🍌 CRAZY · ' : '') + T.name.toUpperCase(), race.ghost ? `${T.jp} · ${T.laps} LAPS · 👻 RACE YOUR GHOST` : `${T.jp} · ${T.laps} LAPS`);
+  if (isCab(player.spec)) cabRaceStart(race);
 }
 function raceHold() { const g = race.grid; Object.assign(player, { x: g.x, z: g.z, heading: g.h, vx: 0, vz: 0, yawRate: 0 }); }
 function raceReset() {
@@ -4068,7 +4093,7 @@ function ghostLoad(R) {
   const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTex(512, 128, '#0d2a4a', [[`👻 YOU · ${fmtTime(G.t)}`, .55, .5, OR, '#bfe6ff']], '#4fb4ff'), transparent: true, opacity: .85, depthWrite: false }));
   lab.scale.set(3.2, .8, 1); lab.position.y = (BODIES[spec.body]?.roofY || 1.3) + 1.1; car.group.add(lab);
   car.group.visible = false; scene.add(car.group);
-  R.ghost = { ...G, car, mats: [...mats.values()], i: 0 };
+  R.ghost = { ...G, carId: G.car, car, mats: [...mats.values()], i: 0 };
 }
 function ghostStep(R) {
   const t = R.t, rec = R.rec; if (t < 0) return;
@@ -4080,10 +4105,10 @@ function ghostStep(R) {
   const a = pts[i], b = pts[i + 1] || a, k = b[0] > a[0] ? clamp((t - a[0]) / (b[0] - a[0]), 0, 1) : 0;
   const dh = ((b[4] - a[4] + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
   g.position.set(lerp(a[1], b[1], k), lerp(a[2], b[2], k), lerp(a[3], b[3], k)); g.rotation.set(0, a[4] + dh * k, 0);
-  g.visible = Math.hypot(g.position.x - player.x, g.position.z - player.z) > 2.5;   // fade out when you drive right through it
+  g.visible = R.auto !== 'ghost' && Math.hypot(g.position.x - player.x, g.position.z - player.z) > 2.5;   // fade out when you drive right through it
 }
 function ghostFinish(R, t) {   // the race is done: keep it if it beats the saved ghost
-  const old = R.ghost?.t;
+  const old = R.ghost?.t; if (R.auto === 'ghost' || R.cabG) return null;   // the Cybercab replaying your ghost is not a new best
   if (R.rec.length > 20 && (old == null || t < old)) {
     R.rec.push([+t.toFixed(2), +player.x.toFixed(2), +(player.y || 0).toFixed(2), +player.z.toFixed(2), +player.heading.toFixed(3)]);
     try { localStorage.setItem(ghostKey(R.T), JSON.stringify({ t: +t.toFixed(2), car: player.spec.id, pts: R.rec })); } catch (e) { }
@@ -9093,11 +9118,11 @@ function updatePark(dt, p) {
   } else if (parkRide && p.surf !== 'route') parkRide = null;
 }
 /* =====================================================================
-   BOAT MODE — at the 🚤 boat ramp on the harbour (the south edge, on road rc(6)) any car can drive down into the
+   BOAT MODE — at the 🚤 boat ramp on the harbour (the south edge, on road rc(4), clear of the Paris bridge on rc(6)) any car can drive down into the
    sea: it gets an orange-and-white hull, floats, leaves a wake and turns like a speedboat. Sail round the bay (the
    beach island, under the bridges, out to Volcano Island) and drive back up the ramp to be a car again.
    ===================================================================== */
-const BOAT = { x: rc(6), z0: HALF + 7, z1: HALF + 42, water: -1.2, cap: 30 };
+const BOAT = { x: rc(4), z0: HALF + 7, z1: HALF + 42, water: -1.2, cap: 30 };
 let boat = null;
 function buildBoatRamp() {
   const g = new THREE.Group(); scene.add(g); const L = BOAT.z1 - BOAT.z0 + 4;
@@ -9966,7 +9991,7 @@ function openMap() {
   $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.suspend();
   state = 'map'; $('bigmap').classList.remove('hidden');
   const cv = $('bmCanvas'); bm.cx = player.x; bm.cz = player.z; bm.s = Math.min(innerWidth, innerHeight) / 1900;
-  bm.sel = null; $('bmSel').classList.add('hidden'); $('bmSearch').value = ''; renderResults(''); $('bmClearRoute').classList.toggle('hidden', !nav);
+  bm.sel = null; $('bmSel').classList.add('hidden'); $('cabSpeed').classList.add('hidden'); $('bmTitle').textContent = isCab(player.spec) && !race ? '🤖 WHERE TO?' : 'MAP · 地図'; $('bmSearch').value = ''; renderResults(''); $('bmClearRoute').classList.toggle('hidden', !nav);
   resizeMap(); setTimeout(() => { if (!isTouch) $('bmSearch').focus(); }, 30);
 }
 function closeMap() { if (state !== 'map') return; $('bigmap').classList.add('hidden'); $('bmSearch').blur(); state = 'drive'; if (audio.ctx) audio.ctx.resume(); for (const k in keys) keys[k] = false; }
@@ -10011,7 +10036,7 @@ function selectPlace(pl, center) {
   bm.sel = pl; if (center) { bm.cx = pl.mapX ?? pl.x; bm.cz = pl.mapZ ?? pl.z; bm.s = Math.max(bm.s, .55); }
   const d = Math.round(routeLen(player.x, player.z, navRoute(player.x, player.z, pl)));
   $('bmSelName').textContent = pl.n; $('bmSelInfo').textContent = `${pl.jp ? pl.jp + ' · ' : ''}${pl.type} · ${d > 1000 ? (d / 1000).toFixed(1) + ' km' : d + ' m'} by road`;
-  $('bmRace').classList.toggle('hidden', pl.kind !== 'track'); $('bmSel').classList.remove('hidden');
+  $('bmRace').classList.toggle('hidden', pl.kind !== 'track'); $('bmAuto').classList.toggle('hidden', !isCab(player.spec) || !!race); $('bmSel').classList.remove('hidden');
 }
 function renderResults(q) {
   q = q.trim().toLowerCase();
@@ -10049,7 +10074,9 @@ function pickOnMap(wx, wz) {
   $('bmSearch').addEventListener('input', e => renderResults(e.target.value));
   $('bmSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const first = document.querySelector('.bmRes'); if (first) first.click(); } if (e.key === 'Escape') closeMap(); e.stopPropagation(); });
   $('bmClose').onclick = closeMap;
-  $('bmRoute').onclick = () => { if (bm.sel) { setNav(bm.sel); closeMap(); } };
+  $('bmRoute').onclick = () => { if (bm.sel) { cabStop(); setNav(bm.sel); closeMap(); } };
+  $('bmAuto').onclick = () => { if (bm.sel) cabChooseSpeed(bm.sel); };
+  $('csBack').onclick = () => $('cabSpeed').classList.add('hidden');
   $('bmTravel').onclick = () => { if (bm.sel && travelTo(bm.sel)) closeMap(); };
   $('bmRace').onclick = () => { if (bm.sel?.track) { const T = bm.sel.track; closeMap(); startRace(T); } };
   $('bmClearRoute').onclick = () => { clearNav(); $('bmClearRoute').classList.add('hidden'); };
@@ -10057,6 +10084,214 @@ function pickOnMap(wx, wz) {
   $('bMap').onclick = () => openMap();
   addEventListener('resize', () => { if (state === 'map') resizeMap(); });
 })();
+/* =====================================================================
+   CYBERCAB — Tesla's two-seat robotaxi drives itself. Pick it and press DRIVE: the map opens, you choose where to go,
+   then how fast it may drive, and the autopilot follows the GPS route there: it keeps to the left lane, slows for
+   corners, waits behind traffic (or pulls into the other lane), turns round when the route is behind it and backs out
+   if it gets stuck. In a race it drives your best race on that track (the saved ghost, from any car) exactly as you
+   drove it; with no ghost yet it drives its own racing line. Brake, steer or STOP takes back the wheel.
+   ===================================================================== */
+const isCab = s => !!s?.robotaxi;
+let cab = null;
+const CAB_IDLE = { throttle: 0, brake: 0, steer: 0, handbrake: 0, nitro: 0 };
+function cabAsk() { if (!isCab(player?.spec) || state !== 'drive' || race) return; openMap(); }
+function cabHud() {
+  const on = state !== 'garage' && isCab(player?.spec) && !drag && !soccer, el = $('cabhud');
+  el.classList.toggle('hidden', !on); if (!on) { cabHud.key = ''; return; }
+  let txt, btns;
+  if (race?.auto) { txt = race.auto === 'ghost' ? `🤖 SELF-DRIVING YOUR BEST RACE · 👻 ${fmtTime(race.cabG.t)}${race.cabG.carName ? ' · ' + race.cabG.carName : ''}` : '🤖 SELF-DRIVING · OWN RACING LINE'; btns = [['cabTake', '🙌 TAKE THE WHEEL']]; }
+  else if (race) { txt = '🙌 YOU ARE DRIVING'; btns = []; }
+  else if (cab?.arrived) { txt = `✅ ARRIVED · ${cab.d.n}`; btns = [['cabWhere', '🗺 WHERE NEXT?']]; }
+  else if (cab) { txt = `🤖 TO ${cab.d.n} · MAX ${cab.kmh} KM/H`; btns = [['cabSlow', '−'], ['cabFast', '+'], ['cabStopB', '■ STOP']]; }
+  else { txt = 'CYBERCAB · 🙌 YOU ARE DRIVING'; btns = [['cabWhere', '🗺 WHERE TO?']]; }
+  const key = txt + btns.join(); if (key === cabHud.key) return; cabHud.key = key;   // only rebuild when it changes
+  $('cabTxt').textContent = txt;
+  $('cabBtns').innerHTML = btns.map(([id, t]) => `<button id="${id}">${t}</button>`).join('');
+  const on_ = (id, f) => { const b = $(id); if (b) b.onclick = f; };
+  on_('cabWhere', () => cabAsk()); on_('cabStopB', () => cabStop('🙌 YOU HAVE THE WHEEL', 'AUTOPILOT OFF')); on_('cabTake', () => cabRaceOff());
+  on_('cabSlow', () => cabSpeed(-1)); on_('cabFast', () => cabSpeed(1));
+}
+// km/h steps offered for the top speed (up to what the car can do)
+const cabSteps = () => { const top = Math.round(player.spec.vmax); return [...[30, 50, 80, 100, 130, 160, 200, 250].filter(v => v < top - 5), top]; };
+function cabSpeed(dir) {
+  if (!cab) return; const st = cabSteps(); let i = st.findIndex(v => v >= cab.kmh); if (i < 0) i = st.length - 1;
+  i = clamp(i + dir, 0, st.length - 1); cab.kmh = st[i]; cab.vmax = cab.kmh / 3.6; cabHud(); toast(`MAX ${cab.kmh} KM/H`, '🤖 AUTOPILOT');
+}
+function cabChooseSpeed(d) {   // the map's "drive me there": now ask how fast
+  const top = Math.round(player.spec.vmax);
+  $('csInfo').innerHTML = `To <b>${d.n}</b> · the Cybercab can go up to <b>${top} km/h</b>`;
+  $('csBtns').innerHTML = cabSteps().map(v => `<button data-v="${v}">${v === top ? '🚀 ' : ''}${v}<small>KM/H</small></button>`).join('');
+  document.querySelectorAll('#csBtns button').forEach(b => b.onclick = () => { $('cabSpeed').classList.add('hidden'); closeMap(); cabStart(d, +b.dataset.v); });
+  $('cabSpeed').classList.remove('hidden');
+}
+function cabStart(d, kmh) {
+  if (taxi || crime) { toast('NOT NOW', 'END THE TAXI SHIFT / POLICE CHASE FIRST'); return; }
+  if ((d.zone || 'city') === 'moon' || zoneAt(player.x, player.z) === 'moon') { toast('NO ROAD TO THE MOON', 'THE CYBERCAB CAN ONLY DRIVE ON ROADS'); return; }
+  setNav(d); if (!nav) return;
+  cab = { d, kmh, vmax: kmh / 3.6, tx: nav.tx, tz: nav.tz, lane: LANES[0], stuckT: 0, backT: 0, backS: 1, blockT: 0, fails: 0, arrived: false };
+  cabHud(); toast('🤖 AUTOPILOT ON', `TO ${d.n.toUpperCase()} · MAX ${kmh} KM/H · BRAKE TO TAKE OVER`);
+}
+function cabStop(title, sub) { if (!cab) return; cab = null; clearNav(true); cabHud(); if (title) toast(title, sub || ''); }
+function cabInput(dt, raw) {
+  if (!cab && !race?.auto) return raw;
+  const touched = raw.brake > 0 || Math.abs(raw.steer) > .3 || raw.handbrake > 0;
+  if (race?.auto) {
+    if (touched && race.state === 'racing') { cabRaceOff(); return raw; }
+    return race.state === 'finished' ? { ...CAB_IDLE, handbrake: 1 } : CAB_IDLE;
+  }
+  if (race || cab.arrived) return raw;
+  if (fuel <= 0 && !freeFuel()) { cabStop('🔋 BATTERY EMPTY', 'PRESS R FOR ROADSIDE HELP, THEN PICK WHERE TO GO AGAIN'); return raw; }
+  if (touched) { cabStop('🙌 YOU HAVE THE WHEEL', 'AUTOPILOT OFF'); return raw; }
+  return cabDrive(dt);
+}
+function cabDrive(dt) {
+  const p = player, sp = p.spec, v = p.vf || 0;
+  if (!nav) {   // the GPS cleared the route: we are there (or something else took over) - pull up
+    if (Math.abs(v) > .4) return { ...CAB_IDLE, brake: v > 4 ? .7 : 0, handbrake: v > 4 ? 0 : 1 };
+    if (Math.hypot(p.x - cab.tx, p.z - cab.tz) < 40) { cab.arrived = true; cabHud(); audio.beep(660, .12); }
+    else cabStop('AUTOPILOT OFF', '');
+    return CAB_IDLE;
+  }
+  // our own copy of the GPS route: a fresh route that suddenly starts behind us (it flips as we cross a junction)
+  // does not replace one that still leads on ahead, and waypoints we have passed are dropped
+  const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
+  const behind = r => { const w = r?.[0]; if (!w) return false; const dx = w[0] - p.x, dz = w[1] - p.z; return Math.hypot(dx, dz) > 4 && dx * fx + dz * fz < 0; };
+  cab.rT = (cab.rT || 0) - dt;
+  if (cab.rT <= 0 || !cab.route) { const k = clamp(v * .3, 0, 8), r = navRoute(p.x + fx * k, p.z + fz * k, cab.d);   // planned from just ahead: no turning back at the junction we are crossing
+    cab.rT = .5; if (!(cab.route?.length && v > 4 && behind(r) && !behind(cab.route))) cab.route = r; }
+  while (cab.route.length > 1 && Math.hypot(cab.route[0][0] - p.x, cab.route[0][1] - p.z) < 6) cab.route.shift();
+  if (!cab.route.length) return CAB_IDLE;
+  const zn = zoneAt(p.x, p.z), city = zn === 'city', ZR = ZONES[zn]?.R;   // a highway with a middle wall: keep to the left carriageway
+  let lane = city ? cab.lane : ZR?.median ? ZR.w / 4 : Math.min(2.2, (ZR?.w || 11) / 4);
+  if (ZR?.median) {   // already on the far side of the middle wall: stay on that side rather than scrape along the wall
+    const nr = ZR.near(p.x, p.z, 40);
+    if (nr) { const i = nr.i, lat = (p.x - ZR.x[i]) * ZR.tz[i] - (p.z - ZR.z[i]) * ZR.tx[i], dir = fx * ZR.tx[i] + fz * ZR.tz[i] >= 0 ? 1 : -1;
+      if (lat * dir < -1) lane = -lane; }
+  }
+  const raw = [...(city ? [(s => [s.x, s.z])(snapToRoad(p.x, p.z))] : []), ...cab.route]; if (raw.length < 2) raw.push([nav.tx, nav.tz]);
+  // tidy the route: no repeated points, no short stubs that double back where two pieces of route join
+  const cl = [raw[0]];
+  for (let i = 1; i < raw.length; i++) {
+    const a = cl[cl.length - 1], b = raw[i], c = raw[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < .5) continue;
+    if (c && L < 15 && ((b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1])) / (L * (Math.hypot(c[0] - b[0], c[1] - b[1]) || 1)) < -.6) continue;
+    cl.push(b);
+  }
+  if (cl.length < 2) cl.push(raw[raw.length - 1]);
+  // the whole route moved left into our lane, corners mitred, so a turn's lane line starts where the lane does
+  const nrm = cl.slice(1).map((b, i) => { const a = cl[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[1] - a[1]) / L, -(b[0] - a[0]) / L]; });
+  const path = cl.map((q, i) => {
+    const a = nrm[i - 1], b = nrm[i]; if (!a || !b) { const n = a || b; return [q[0] + n[0] * lane, q[1] + n[1] * lane]; }
+    const k = lane / Math.max(.35, 1 + a[0] * b[0] + a[1] * b[1]); return [q[0] + (a[0] + b[0]) * k, q[1] + (a[1] + b[1]) * k];
+  });
+  // where are we along it: the closest point on its first few legs
+  let seg = 0, segU = 0, best = 1e18;
+  for (let i = 0; i < Math.min(path.length - 1, 8); i++) {
+    const [x0, z0] = path[i], [x1, z1] = path[i + 1], ex = x1 - x0, ez = z1 - z0, L2 = ex * ex + ez * ez || 1;
+    const u = clamp(((p.x - x0) * ex + (p.z - z0) * ez) / L2, 0, 1), d2 = (x0 + ex * u - p.x) ** 2 + (z0 + ez * u - p.z) ** 2;
+    if (d2 < best - 1) { best = d2; seg = i; segU = u; }
+  }
+  // aim point: Ld metres further along the lane line
+  const Ld = clamp(5 + Math.abs(v) * .55, 6, 28);
+  let ax, az, dx = 0, dz = 1, run = 0, rem = Ld, vT = cab.vmax;
+  for (let i = seg; i < path.length - 1; i++) {
+    const [x0, z0] = path[i], [x1, z1] = path[i + 1], L = Math.hypot(x1 - x0, z1 - z0); if (L < .01) continue;
+    const ex = (x1 - x0) / L, ez = (z1 - z0) / L, from = i === seg ? segU * L : 0, left = L - from;
+    if (rem > 0) { if (left >= rem) { ax = x0 + ex * (from + rem); az = z0 + ez * (from + rem); dx = ex; dz = ez; rem = 0; } else { rem -= left; dx = ex; dz = ez; } }
+    run += left;
+    // the corner at the end of this leg: slow enough to take it by the time we get there
+    const nx = path[i + 2]; if (!nx || run > 320) continue;
+    const L2 = Math.hypot(nx[0] - x1, nx[1] - z1); if (L2 < .01) continue;
+    const th = Math.acos(clamp((ex * (nx[0] - x1) + ez * (nx[1] - z1)) / L2, -1, 1)); if (th < .12) continue;
+    const toLeft = (nx[0] - x1) * ez - (nx[1] - z1) * ex > 0;   // a left turn is the tight one (we drive on the left)
+    const vc = th > .6 ? (toLeft ? clamp(7 - (th - 1.57) * 3, 5, 10) : clamp(7.5 - (th - 1.57) * 3, 5, 11)) : Math.sqrt(9.81 * sp.grip * .55 * Math.max(Math.min(L, L2) / th, 8));
+    vT = Math.min(vT, Math.sqrt(vc * vc + 2 * 4.5 * Math.max(0, run - 5)));
+  }
+  if (rem > 0) { const e = path[path.length - 1]; ax = e[0] + dx * rem; az = e[1] + dz * rem; }
+  vT = Math.min(vT, Math.sqrt(2 * 3.5 * Math.max(0, run - 10)) + 3);                // ease in to the stop at the end
+  // steer for the aim point (pure pursuit on the bicycle model the physics uses)
+  const tx = ax - p.x, tz = az - p.z, td = Math.max(Math.hypot(tx, tz), 3);
+  let al = Math.atan2(tx, tz) - p.heading; al = Math.atan2(Math.sin(al), Math.cos(al));
+  const maxSteer = .6 / (1 + p.speed * .042), kap = 2 * Math.sin(al) / td;
+  let steer = clamp(-Math.atan(kap * (sp.wb || 2.8)) / maxSteer, -1, 1);
+  cab.uT = Math.abs(al) > 1.4 ? (cab.uT || 0) + dt : 0;   // the route really is behind us: slow right down and turn round
+  if (Math.abs(al) > 1.4) { vT = Math.min(vT, 5); if (cab.uT > .4 || v < 6) steer = -Math.sign(al); } else if (Math.abs(al) > .6) vT = Math.min(vT, 9);
+  // traffic in our lane ahead: follow it, and after a while pull into the other lane
+  let gap = 1e9;
+  if (traffic && !traffic.closed) for (const c of traffic.cars) {
+    const ox = c.mesh.position.x - p.x, oz = c.mesh.position.z - p.z, a = ox * fx + oz * fz;
+    if (a > 2 && a < 45 && Math.abs(ox * fz - oz * fx) < 2.2) { gap = Math.min(gap, a); continue; }
+    if (a < 0 || a > 70 || v < 3) continue;   // cars crossing at a junction: will we meet in the next 2.5 s?
+    const r = c.mesh.rotation.y, cv = c.speed || 0;
+    for (let tt = .25; tt <= 2.5; tt += .25) if (Math.hypot(ox + Math.sin(r) * cv * tt - fx * v * tt, oz + Math.cos(r) * cv * tt - fz * v * tt) < 3.6) { gap = Math.min(gap, v * tt); break; }
+  }
+  const vFree = vT;
+  if (gap < 1e9) { vT = Math.min(vT, Math.max(0, (gap - 8) * .9)); cab.blockT += dt; } else cab.blockT = 0;
+  cab.waitT = gap < 1e9 && Math.abs(v) < 1 ? (cab.waitT || 0) + dt : 0;   // a car waiting for us while we wait for it: creep past
+  if (cab.waitT > 4) { cab.pushT = 3; cab.waitT = 0; }
+  if (cab.pushT > 0) { cab.pushT -= dt; vT = Math.min(vFree, 4); }
+  if (cab.blockT > 2.5 && city) { cab.lane = cab.lane > 4 ? LANES[0] : LANES[1]; cab.blockT = 0; cab.laneT = 8; }
+  if (cab.laneT > 0 && (cab.laneT -= dt) <= 0) cab.lane = LANES[0];   // back to the usual lane after overtaking
+  // stuck against something: back out with the wheels turned the other way, then try again
+  if (cab.backT > 0) { cab.backT -= dt; return { ...CAB_IDLE, throttle: 0, brake: .8, steer: cab.backS }; }
+  if (vT > 3 && Math.abs(v) < Math.min(2.5, vT * .3)) cab.stuckT += dt; else cab.stuckT = Math.max(0, cab.stuckT - dt);
+  if (v > 6) cab.fails = Math.max(0, cab.fails - dt * .2);
+  if (cab.stuckT > 1.6) {
+    cab.stuckT = 0; cab.fails++;
+    if (cab.fails >= 4) { p.resetToRoad(); cab.fails = 0; }
+    else { cab.backT = 1.3; cab.backS = Math.sign(al) || 1; return CAB_IDLE; }
+  }
+  // speed: gas up to the target, brake above it; the handbrake holds it still (a held brake would start reversing)
+  cab.dbg = { vT: +vT.toFixed(1), gap: +gap.toFixed(1), al: +al.toFixed(2), run: +run.toFixed(0), seg, n: path.length, r0: cab.route[0], aim: [+ax.toFixed(1), +az.toFixed(1)] };
+  const err = vT - v; let throttle = 0, brake = 0, handbrake = 0;
+  if (p.reverse && v < -.3) throttle = 1;
+  else if (err > 0) throttle = clamp(err * .35 + .1, 0, 1);
+  else if (err < -.8) { if (v > 3) brake = clamp(-err * .2, .1, 1); else handbrake = 1; }
+  if (vT < .5 && v < 3) { throttle = 0; brake = 0; handbrake = 1; }
+  return { throttle, brake, steer, handbrake, nitro: 0 };
+}
+// ---------- races: replay your best race, or drive a racing line
+function cabRaceStart(R) {
+  const G = R.ghost; R.auto = G ? 'ghost' : 'line';
+  if (G) { const p0 = G.pts[0]; R.cabG = { t: G.t, pts: G.pts, i: 0, ox: R.grid.x - p0[1], oz: R.grid.z - p0[3], carName: CARS.find(c => c.id === G.carId)?.name || '' }; }
+  else R.cabL = { s: R.grid.s, off: R.grid.lat, v: 0 };
+  toast('🤖 ' + R.T.name.toUpperCase(), G ? `THE CYBERCAB DRIVES YOUR BEST RACE · 👻 ${fmtTime(G.t)}` : 'NO BEST RACE YET · THE CYBERCAB DRIVES ITS OWN LINE');
+  cabHud();
+}
+function cabRaceOff() { if (!race?.auto) return; race.auto = null; cabHud(); toast('🙌 YOU HAVE THE WHEEL', 'DRIVE THE REST OF THE RACE YOURSELF'); }
+function cabRacePose(dt) {   // true when the Cybercab placed itself this step
+  const R = race, p = player, T = R.T, t = R.t; if (!(dt > 0)) return true;
+  let x, y = 0, z, h;
+  if (R.auto === 'ghost') {
+    const G = R.cabG, pts = G.pts; if (t > pts[pts.length - 1][0]) return false;
+    let i = G.i; if (pts[i][0] > t) i = 0; while (i < pts.length - 2 && pts[i + 1][0] <= t) i++; G.i = i;
+    const a = pts[i], b = pts[i + 1] || a, k = b[0] > a[0] ? clamp((t - a[0]) / (b[0] - a[0]), 0, 1) : 0;
+    const dh = ((b[4] - a[4] + Math.PI * 3) % (Math.PI * 2)) - Math.PI, f = clamp(1 - t / 2, 0, 1);   // ease off our grid slot onto the ghost's line
+    x = lerp(a[1], b[1], k) + G.ox * f; y = lerp(a[2], b[2], k); z = lerp(a[3], b[3], k) + G.oz * f; h = a[4] + dh * k;
+  } else {
+    if (R.p.finish != null) return false;
+    const L = R.cabL, sp = p.spec, g = 9.81, i0 = Math.floor(L.s / T.step) % T.n;
+    const latA = v => g * sp.grip * 1.02 + sp.aero * Math.pow(v / 80, 2) * 4, dec = g * sp.grip * .95;
+    let allow = sp.vmax / 3.6 * .985;
+    const m = Math.ceil(Math.min(420, L.v * L.v / (2 * dec) + 40) / T.step);
+    for (let k = 0; k < m; k += 2) {
+      const kk = Math.abs(T.k[(i0 + k) % T.n]); if (kk < 2e-4) continue;
+      const Rr = 1 / kk; let vc = Math.sqrt(latA(30) * Rr); vc = Math.sqrt(latA(vc) * Rr);
+      allow = Math.min(allow, Math.sqrt(vc * vc + 2 * dec * k * T.step));
+    }
+    const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(L.v, 4))) - sp.drag * L.v * L.v / sp.mass;
+    L.v = L.v < allow ? Math.min(allow, L.v + Math.max(acc, .5) * dt) : Math.max(allow, L.v - dec * dt);
+    L.off = damp(L.off, clamp(clamp(T.k[(i0 + 15) % T.n] * 400, -1, 1) * (T.w / 2 - 2.2) * .7, -(T.w / 2 - 1.3), T.w / 2 - 1.3), 1.6, dt);
+    L.s += L.v * dt; if (L.s >= T.L) L.s -= T.L;
+    const f = L.s / T.step, i = Math.floor(f) % T.n, j = (i + 1) % T.n, u = f - Math.floor(f), tx = lerp(T.tx[i], T.tx[j], u), tz = lerp(T.tz[i], T.tz[j], u);
+    x = lerp(T.x[i], T.x[j], u) - tz * L.off; z = lerp(T.z[i], T.z[j], u) + tx * L.off; h = Math.atan2(tx, tz);
+  }
+  const vx = (x - p.x) / dt, vz = (z - p.z) / dt, fx = Math.sin(h), fz = Math.cos(h), speed = Math.hypot(vx, vz);
+  let dh = h - p.heading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+  const vf = vx * fx + vz * fz, yaw = dh / dt;
+  Object.assign(p, { x, y, z, heading: h, vx: fx * vf, vz: fz * vf, vf, vr: 0, speed, yawRate: yaw, accel: (vf - (p.vf || 0)) / dt, slip: 0, spin: 0, throttle: 1, reverse: false, air: false, hb: 0, brake: 0, steer: 0,
+    sa: clamp(-Math.atan(yaw * (p.spec.wb || 2.8) / Math.max(vf, 3)), -.5, .5), rpm: Math.abs(vf) / p.spec.wr * 30 / Math.PI * (p.spec.ratios?.[0] || 1) });
+  return true;
+}
 
 /* =====================================================================
    OUTLAW: grab money safes around the city while police cars chase you;
@@ -10319,7 +10554,8 @@ function startDrive() {
   renderPass.scene = scene; renderPass.camera = camera;
   applyTime(timeName);
   state = 'drive';
-  toast(spec.name, 'TOKYO · 東京');
+  toast(spec.name, 'TOKYO · 東京'); cab = null; cabHud();
+  if (isCab(spec)) setTimeout(cabAsk, 900);   // the Cybercab asks where to go first
   if (!localStorage.getItem('amboola.helped')) { $('help').classList.remove('hidden'); localStorage.setItem('amboola.helped', '1'); setTimeout(() => $('help').classList.add('hidden'), 9000); }
 }
 function setPause(on) {
@@ -10359,7 +10595,7 @@ function simStep(dt, inp) {
   inp = fuelInput(inp);
   const sub = 3, h = dt / sub;
   if (dentCool > 0) dentCool -= dt;
-  for (let k = 0; k < sub; k++) {
+  if (!(race?.auto && race.state !== 'countdown' && cabRacePose(dt))) for (let k = 0; k < sub; k++) {
     if (player.loop) { player.update(h, { ...inp, steer: 0, handbrake: 0 }); loopStep(player, h); continue; }   // riding a loop
     const px = player.x, pz = player.z, py = player.y || 0;
     player.update(h, inp);
@@ -10398,7 +10634,7 @@ function tick(dt) {
     return;
   }
   if (state === 'drive') {
-    const inp = readInput(); simStep(dt, inp); updateViewpoint(dt, inp);
+    const inp = cabInput(dt, readInput()); simStep(dt, inp); updateViewpoint(dt, inp); cabHud();
     if (state !== 'drive') return;
     // fx
     const fx = Math.sin(player.heading), fz = Math.cos(player.heading), rx = -fz, rz = fx; const B = BODIES[player.spec.body];
@@ -10464,7 +10700,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

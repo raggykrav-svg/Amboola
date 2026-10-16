@@ -130,7 +130,7 @@ Gamepads work too: RT/LT for throttle and brake, the left stick steers, A is the
 **Bugatti:** Tourbillon · Chiron Super Sport · Chiron Pur Sport · Divo · Veyron Super Sport · Bolide
 **Koenigsegg:** Jesko Absolut · Jesko Attack · Regera · Gemera · CC850 · Agera RS
 **Toyota:** GR Supra · GR86 · GR Yaris · GR Corolla · Land Cruiser GR Sport · GR GT
-**Tesla:** Roadster (next-gen) · Roadster (2008) · Model S Plaid · Model 3 Performance · Model X Plaid · Model Y Performance · Cybertruck Cyberbeast
+**Tesla:** Roadster (next-gen) · Roadster (2008) · Model S Plaid · Model 3 Performance · Model X Plaid · Model Y Performance · Cybertruck Cyberbeast · Cybercab 🤖
 
 The Teslas have their own body shapes: glass roofs, smooth grille-less noses, and a flat-panel Cybertruck with a full-width light bar. They also get extra paints: Pearl White, Ultra Red, Stealth Grey, Quicksilver, Deep Blue, and brushed Stainless Steel for the Cybertruck. The next-gen Roadster uses Tesla's announced prototype figures (0–100 km/h in 1.9 s, 400 km/h).
 
@@ -229,11 +229,12 @@ blender -b --factory-startup --python models/blender/hypercars.py -- --car all  
 
 ![All 7 Teslas built in Blender](media/teslas-blender.jpg)
 
-The 7 Teslas are Blender models too, in [`models/blender/teslas.py`](models/blender/teslas.py). That makes **every one of the 47 cars** a Blender model. The Teslas have smooth noses with no grille, slim swept headlights, glass roofs, flush door handles and aero wheels.
+The 8 Teslas are Blender models too, in [`models/blender/teslas.py`](models/blender/teslas.py). That makes **every one of the 47 cars** a Blender model. The Teslas have smooth noses with no grille, slim swept headlights, glass roofs, flush door handles and aero wheels.
 - The fronts have LED eyebrow lamps with twin projectors, a lower intake with a body-coloured bar, and air curtains at the corners.
 - The **Model S** and **Model 3** are sleek sedans; the **Model Y** and **Model X** are crossovers. The X has its huge windscreen running over the front seats and falcon-wing door seams.
 - The **next-gen Roadster** has a removable glass roof, and the **2008 Roadster** is an open two-seater with a roll hoop.
 - The **Cybertruck** is built from flat stainless-steel panels with sharp edges, full-width light bars front and back, black arch cladding and off-road tyres.
+- The **Cybercab** is a gold two-seat robotaxi: one big butterfly door each side, a glass roof, thin light bars right across the nose and the tail, closed aero wheel covers, and no steering wheel inside.
 
 ```bash
 blender -b --factory-startup --python models/blender/teslas.py -- --car all     # or --car cyberbeast
@@ -285,6 +286,17 @@ The Mercedes cars have the vertical-slat grille with the three-pointed star. The
 
 ### Ford, Chevrolet, Nissan, Honda and Pagani
 Made in Blender (`models/blender/more_brands.py`): the **Ford Mustang Dark Horse** (5.0 V8, manual, three-bar tail lights, $60,000), the **Chevrolet Corvette Z06** (mid-engine flat-plane V8, 680 PS, $115,000), the **Nissan GT-R NISMO** "Godzilla" (four round tail lights, 600 PS, $220,000), the **Honda NSX Type S** (hybrid V6, 608 PS, $170,000) and the **Pagani Utopia** (twin-turbo V12 with a manual gearbox and the four-pipe exhaust, 864 PS, $3,100,000).
+
+## 🤖 The Tesla Cybercab ($20,000)
+
+The Cybercab drives itself!
+1. Pick it in the garage and press **DRIVE**. The map opens straight away: **where do you want to go?** Search for a place or click anywhere on the map.
+2. Press **🤖 DRIVE ME THERE**. Now choose **how fast** it may go, from 30 km/h up to its top speed of 200 km/h.
+3. Sit back. The Cybercab follows the GPS arrows: it keeps to the left lane, slows down for corners, waits behind cars or overtakes them, and turns round if it has to. It can drive to every place on the map: across Tokyo, up Mt. Amboola, to the beach, the snow and all the countries (but not to the Moon).
+- The bar at the top shows where it is going. **−** and **+** change the speed, **■ STOP** (or brake, or steer) gives you back the wheel.
+- When it arrives, press **🗺 WHERE NEXT?**.
+- **Races:** in a race the Cybercab drives your **best race on that track**, from any car you ever raced there, exactly the way you drove it. If you have no best race there yet, it drives its own racing line. Press **🙌 TAKE THE WHEEL** to drive the rest yourself.
+- **Launch control:** 0–100 km/h in **1.2 seconds**.
 
 ## 🏎 More driving fun
 
@@ -595,7 +607,7 @@ There are no audio files; all sound is generated live with the Web Audio API.
 - **🦖 Monster attack.** Gojira-chan, a friendly giant dinosaur, walks out of the sea and stomps through Tokyo. Rescue the 6 groups of people on its street before it gets to them. Start it from the 🦖 ring.
 - **🍌 Crazy races.** Switch on CRAZY MODE in the races list. Drive through ❓ boxes to get a 🚀 rocket, a 🍌 banana or a 🛡 shield, and press **I** to use it.
 - **🎢 AMBOOLA Land.** A theme park you reach from the 🎢 ring. Drive the red rollercoaster yourself, up to 34 m high. There is also a loop, jumps, a castle, a Ferris wheel, a carousel and a drop tower.
-- **🚤 Boat mode.** Drive down the boat ramp at the harbour and any car turns into a speedboat. Drive back up the ramp to be a car again.
+- **🚤 Boat mode.** Drive down the boat ramp at the harbour (one street west of the Paris bridge) and any car turns into a speedboat. Drive back up the ramp to be a car again.
 - **🚁 Helicopter.** Buy it in the garage and press FLY.
   - Controls: **W/S** fly forward and back, **A/D** turn, **↑ or Space** go up, **↓ or Shift** go down.
   - You can land on any roof.

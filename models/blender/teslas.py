@@ -198,6 +198,54 @@ def cyberbeast(k):
     k.interior(0.20, 1.60, 1.10, l=2.6, h=0.40, seats_x=0.0, seat_y=0.40, seat_z=1.15)
     k.join(); k.wheels(spokes=5, nut='bolts', spoke_w=(0.06, 0.05), offroad=True, caliper=(0.26, 0.09, 0.10))
 
+# ======================================================================= Cybercab - two-seat robotaxi, no steering wheel
+# 4.30 m long, 1.95 m wide, 1.42 m tall; axles at +-1.40; one big butterfly door each side, light bars front and rear
+TCAB = [
+    ( 2.15, .28, .64, .44, .62, .52, .52, .56, .32, .58, .58),
+    ( 2.08, .18, .86, .47, .84, .61, .70, .67, .44, .66, .66),
+    ( 1.92, .16, .94, .52, .92, .69, .76, .76, .52, .72, .72),
+    ( 1.65, .15, .965, .57, .95, .77, .78, .83, .54, .79, .79),
+    ( 1.40, .15, .975, .61, .96, .82, .79, .87, .54, .845, .84),
+    ( 1.10, .14, .965, .63, .95, .86, .79, .91, .55, .90, .895),
+    ( 0.85, .14, .955, .63, .94, .89, .80, .97, .62, 1.08, 1.10),
+    ( 0.45, .14, .95, .62, .935, .91, .77, 1.14, .65, 1.33, 1.36),
+    ( 0.00, .14, .95, .62, .935, .92, .76, 1.18, .66, 1.39, 1.415),
+    (-0.50, .14, .955, .63, .94, .93, .755, 1.17, .65, 1.37, 1.395),
+    (-1.00, .15, .975, .65, .955, .95, .74, 1.13, .62, 1.29, 1.31),
+    (-1.40, .16, .99, .67, .965, .965, .72, 1.09, .58, 1.20, 1.22),
+    (-1.75, .19, .98, .69, .955, .98, .68, 1.05, .52, 1.10, 1.115),
+    (-2.00, .25, .935, .70, .91, .98, .60, 1.03, .44, 1.05, 1.06),
+    (-2.12, .32, .84, .69, .81, .96, .52, 1.00, .36, 1.01, 1.015),
+    (-2.15, .40, .66, .66, .62, .91, .42, .94, .26, .95, .95),
+]
+def cybercab(k):
+    k.loft(stations(TCAB), **SOFT)
+    k.arches(dict(F=dict(x=1.40, r=0.36, w=0.245, y=0.80, rim=0.254), R=dict(x=-1.40, r=0.36, w=0.245, y=0.81, rim=0.254)))
+    k.surface()
+    k.arch_trim(0.035, mat='Gloss')
+    # one sweep of glass: raked windscreen into a glass roof, a long hatch window, small side windows
+    k.windscreen(0.86, 0.10, 0.95, 0.60, 0.70, 0.60, sweep=0.22)
+    k.decal('roof', 'Glass', 'top', -0.95, 0.15, -0.52, 0.52, 16, 12, off=.004)
+    k.rear_window(-1.95, -1.00, 1.03, 0.29, 0.50, 0.56)
+    k.side_glass([(0.78, 0.96), (0.50, 1.12), (0.20, 1.30), (-0.30, 1.35), (-0.85, 1.27), (-1.30, 1.16), (-1.62, 1.06)],
+                 [(0.78, 0.955), (-0.60, 0.965), (-1.30, 0.99), (-1.62, 1.01)], pillars=[-0.95], pillar_w=0.09)
+    # butterfly doors: the seam runs up the side and over into the roof, the door hinges at the windscreen
+    for s in (1, -1):
+        for xg in (0.80, -0.95): k.decal('doorline', 'Black', side(s), xg - .004, xg + .004, 0.26, 0.95, 1, 12, off=.002)
+        k.decal('butterfly', 'Black', 'top', -0.95, 0.15, s * 0.55 - .005, s * 0.55 + .005, 12, 1, off=.006)
+        k.decal('sill', 'Gloss', side(s), -1.00, 1.00, 0.22, 0.30, 24, 2, off=.005)
+        k.decal('camera', 'Gloss', side(s), 1.02, 1.10, 0.66, 0.71, 3, 2, off=.006)          # self-driving cameras on the fenders
+    flush_handles(k, [-0.55], 0.88)
+    # light bars: one thin strip right across the nose, one across the tail
+    k.fan('headbar_bg', 'Gloss', 0.6, 0.705, 0.745, -0.62, 0.62, 50, 2, off=.003, rear=False)
+    k.fan('headbar', 'Headlight', 0.6, 0.716, 0.734, -0.60, 0.60, 50, 1, off=.006, rear=False)
+    k.decal('intake', 'Gloss', 'front', -0.50, 0.50, 0.20, 0.30, 16, 3)
+    k.light_bar(-1.0, 0.905, 0.93, 0.55, bg=0.012, frac=0.8)
+    k.fan('diffuser', 'Gloss', -1.0, 0.30, 0.44, -0.60, 0.60, 30, 3)
+    k.interior(-0.30, 1.40, 0.76, l=2.0, h=0.38, seats_x=-0.30, seat_z=0.86)    # two seats, a screen, no wheel
+    k.box('screen', 'Gloss', (0.55, 0, 1.00), (0.06, 0.70, 0.22), rot=(0, math.radians(-25), 0), bevel=.01)
+    k.join(); k.wheels(spokes=16, nut='bolts', spoke_w=(0.016, 0.06))    # near-closed aero covers
+
 # ======================================================================= registry
 CARS = {
     'roadster2': (roadster2, '#9c0e1b', '#1b1b1d', '#c8141b'),
@@ -207,6 +255,7 @@ CARS = {
     'modelxplaid': (modelxplaid, '#8e9297', '#2a2b2e', '#c8141b'),
     'modelyp': (modelyp, '#1b2d58', '#2a2b2e', '#c8141b'),
     'cyberbeast': (cyberbeast, '#b7bbbf', '#1b1b1d', '#1b1b1d'),
+    'cybercab': (cybercab, '#c9b27a', '#c8c9cc', '#1b1b1d'),
 }
 
 if __name__ == '__main__':

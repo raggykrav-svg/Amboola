@@ -337,3 +337,12 @@ Model gotchas:
   - Every `C.lm[key].visible` should be `false` and `C.town.meshes` hidden.
   - SwiftShader takes about 0.3–0.5 s a frame in a town, so wait a few frames before reading `renderer.info`. The `LOW FPS` toast in headless runs is expected.
   - About 0.4–0.85 M triangles a frame in a town, roughly 2× the old boxes, and about 450 draw calls.
+
+## Cybercab (self-driving)
+
+- **Flow:** `startDrive` with a `robotaxi` car calls `cabAsk()` → `openMap()`. `selectPlace` shows `#bmAuto` → `cabChooseSpeed(d)` (`#cabSpeed`, steps up to `spec.vmax`) → `cabStart(d, kmh)` sets the GPS (`setNav`) and `cab`. `#cabhud` (`cabHud()`, rebuilt only when its text changes) has −/+/STOP or WHERE NEXT.
+- **Driving:** `tick` runs `cabInput(dt, readInput())`. Brake, steer (>0.3) or handbrake hands back the wheel. `cabDrive` keeps its own route copy (planned from just ahead of the car; a fresh route that starts behind it does not replace one still leading on), tidies it, shifts it left into the lane with mitred corners (city `cab.lane` 2.1 m or 5.7 m when overtaking; zones 2.2 m, or `w/4` on median highways, on whichever side of the wall the car is), then does pure pursuit plus corner/traffic/arrival speed limits, crossing-traffic prediction, a creep-past after 4 s of mutual waiting, and backing out when stuck. `cab.dbg` holds the last plan for tests.
+- **Races:** `startRace` calls `cabRaceStart`: `race.auto = 'ghost'` replays the saved ghost (any car; `race.cabG`) kinematically from `cabRacePose` in `simStep`, easing off the grid slot in 2 s; `'line'` drives a RaceAI-style line (`race.cabL`). A ghost replay never overwrites the ghost.
+- **Launch control:** `spec.launchG` (2.45 g) raises only the longitudinal traction in `Player.update`; bench shows 0-100 1.21 s.
+- **Test:** buy it (`{"car":21}` then click `#drive` twice), `closeMap()`, then loop `simStep(1/30, cabInput(1/30, idle))` until `cab.arrived`. Set `window.amboola.fuel = 1` before long trips (the battery runs out on the way to Paris otherwise; the autopilot then stops with "BATTERY EMPTY").
+- The boat ramp moved to road `rc(4)`: on `rc(6)` it sat on the Paris bridge entrance and turned cars into boats.
