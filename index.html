@@ -134,7 +134,9 @@
   #csBack { margin-top:14px; padding:9px 16px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.15em; color:var(--dim); background:none; border:1px solid #3a3f4b; cursor:pointer; }
   #cabhud { position:absolute; left:50%; top:66px; transform:translateX(-50%); display:flex; gap:12px; align-items:center; background:var(--panel); padding:6px 8px 6px 16px;
     border-bottom:2px solid #c9b27a; backdrop-filter:blur(6px); font-size:15px; letter-spacing:.05em; pointer-events:auto; white-space:nowrap; max-width:calc(100vw - 32px); }
-  #cabhud.hidden { display:none; } #cabTxt { overflow:hidden; text-overflow:ellipsis; }
+  #cabhud.hidden { display:none; }
+  #flyBtn { position:absolute; left:50%; top:66px; transform:translateX(-50%); pointer-events:auto; padding:9px 20px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:15px; letter-spacing:.15em; color:#fff; background:rgba(20,60,110,.85); border:1px solid #8fd8ff; box-shadow:0 0 14px rgba(143,216,255,.5); cursor:pointer; }
+  #flyBtn small { font-size:10px; color:#8fd8ff; margin-left:6px; } #flyBtn.hidden { display:none; } #cabTxt { overflow:hidden; text-overflow:ellipsis; }
   #cabBtns { display:flex; gap:6px; } #cabBtns button { padding:7px 12px; font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; letter-spacing:.1em; color:#fff; background:#1a1e27; border:1px solid #c9b27a; cursor:pointer; }
   #bmRoute { border-color:#2fe0ff !important; } #bmRace { border-color:var(--accent) !important; }
   .bmHint { font-size:12px; color:var(--dim); letter-spacing:.08em; text-shadow:0 1px 3px #000; margin-top:auto; }
@@ -491,6 +493,7 @@
   <div id="nitroBar" class="hidden"><small>N₂O</small><i></i></div>
   <canvas id="minimap" width="420" height="420" title="Open map (N)"></canvas>
   <div id="maptag">🗺 MAP · CLICK / N</div>
+  <button id="flyBtn" class="hidden">🚀 FLY <small>V</small></button>
   <div id="cabhud" class="hidden"><span id="cabTxt"></span><span id="cabBtns"></span></div>
   <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
@@ -637,7 +640,7 @@ const CARS = [
   { id: 'cayennegt', name: 'Cayenne Turbo GT', cat: 'SUV', body: 'cayenne', wing: 'turbo', kw: 485, redline: 6800, mass: 2220, vmax: 305, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.3, grip: 1.18, aero: .2, paint: 2, rim: '#2a2b2e', caliper: '#e3c11b', usd: 196000, desc: '4.0 twin-turbo V8 · SUV coupé' },
   { id: 'cayenneeh', name: 'Cayenne Turbo E-Hybrid', cat: 'SUV', body: 'cayenne', wing: 'none', kw: 544, redline: 6800, mass: 2535, vmax: 295, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 3.7, grip: 1.12, aero: .1, paint: 8, rim: '#9da1a6', caliper: '#1f8a5a', usd: 153000, desc: 'V8 plug-in hybrid · 739 PS' },
   // ---- Tesla (all electric, single-speed; "brand" switches on the Tesla sound profile)
-  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', usd: 200000, desc: 'Next-gen · prototype claims' },
+  { id: 'roadster2', name: 'Tesla Roadster', brand: 'Tesla', cat: 'TESLA', body: 'roadster', wing: 'none', fly: 500, kw: 1000, redline: 20000, mass: 1850, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.9, grip: 1.8, aero: .6, paint: 15, rim: '#1b1b1d', caliper: '#c8141b', usd: 200000, desc: 'Next-gen · prototype claims' },
   { id: 'roadster08', name: 'Tesla Roadster (2008)', brand: 'Tesla', cat: 'TESLA', body: 'roadster08', wing: 'none', kw: 185, redline: 14000, mass: 1235, vmax: 201, drive: 'RWD', engine: 'ev', gears: 1, zero: 3.9, grip: 1.15, aero: .1, paint: 0, rim: '#9da1a6', caliper: '#1b1b1d', usd: 109000, desc: 'The original · 248 hp' },
   { id: 'modelsplaid', name: 'Tesla Model S Plaid', brand: 'Tesla', cat: 'TESLA', body: 'modelS', wing: 'turbo', kw: 760, redline: 20000, mass: 2162, vmax: 322, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: .2, paint: 16, rim: '#2a2b2e', caliper: '#c8141b', usd: 95000, desc: 'Tri-motor · 1,020 hp' },
   { id: 'model3p', name: 'Tesla Model 3 Performance', brand: 'Tesla', cat: 'TESLA', body: 'model3', wing: 'turbo', kw: 460, redline: 18000, mass: 1836, vmax: 262, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.1, grip: 1.12, aero: .15, paint: 14, rim: '#2a2b2e', caliper: '#c8141b', usd: 55000, desc: 'Dual-motor · 510 hp' },
@@ -3428,6 +3431,7 @@ addEventListener('keydown', e => {
   if (keys[e.code]) return; keys[e.code] = true;
   if (state === 'drive') {
     if (e.code === 'KeyC') { camMode = (camMode + 1) % 4; toast(CAM_NAMES[camMode], 'CAMERA'); }
+    if (e.code === 'KeyV' && player?.spec.fly) startFlyCar();
     if (e.code === 'KeyT') cycleTime();
     if (e.code === 'KeyY') cycleWeather();
     if (e.code === 'KeyU') cycleSeason();
@@ -9592,7 +9596,7 @@ function heliSound(on) {
   const ctx = audio.ctx; if (!ctx) return;
   if (on && !heli.snd) { const o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), f = ctx.createBiquadFilter(), g = ctx.createGain(), am = ctx.createGain();
     o.type = 'sawtooth'; o.frequency.value = 55; lfo.type = 'square'; lfo.frequency.value = 14; lg.gain.value = .5; am.gain.value = .5; lfo.connect(lg).connect(am.gain);
-    f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0; o.connect(f).connect(am).connect(g).connect(audio.master); o.start(); lfo.start(); heli.snd = { o, lfo, g }; }
+    f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0; o.connect(f).connect(am).connect(g).connect(audio.master); o.start(); lfo.start(); heli.snd = { o, lfo, g, lg }; }
   if (!on && heli?.snd) { heli.snd.o.stop(); heli.snd.lfo.stop(); heli.snd = null; }
 }
 function heliJob() {   // a person waiting on a tall roof 300–1200 m away
@@ -9619,16 +9623,20 @@ function updateHeli(dt) {
   else {
     H.yaw += turn * 1.6 * dt;
     const fx = Math.sin(H.yaw), fz = Math.cos(H.yaw);
-    H.vx += fx * fwd * 16 * dt; H.vz += fz * fwd * 16 * dt; const drag = Math.exp(-.45 * dt); H.vx *= drag; H.vz *= drag;
-    const v = Math.hypot(H.vx, H.vz); if (v > HELI.vmax) { H.vx *= HELI.vmax / v; H.vz *= HELI.vmax / v; }
-    H.vy = damp(H.vy, up * HELI.climb, 2.5, dt);
+    const VM = H.flyCar ? player.spec.fly / 3.6 : HELI.vmax, ACC = H.flyCar ? 80 : 16;   // the Roadster: 500 km/h
+    H.vx += fx * fwd * ACC * dt; H.vz += fz * fwd * ACC * dt; const drag = Math.exp(-.45 * dt); H.vx *= drag; H.vz *= drag;
+    if (H.flyCar) { const vf = H.vx * fx + H.vz * fz; H.vx = damp(H.vx, fx * vf, 2, dt); H.vz = damp(H.vz, fz * vf, 2, dt); }   // it flies where it points
+    const v = Math.hypot(H.vx, H.vz); if (v > VM) { H.vx *= VM / v; H.vz *= VM / v; }
+    H.vy = damp(H.vy, up * (H.flyCar ? 25 : HELI.climb), 2.5, dt);
     if (!up && H.y - ground < 5 && Math.hypot(H.vx, H.vz) < 8) H.vy = Math.min(H.vy, -1.8);   // close to the ground and slow: it settles down by itself
+    if (H.liftT > 0) { H.liftT -= dt; H.vy = Math.max(H.vy, 9); }   // take-off: up into the air on its own
     H.x += H.vx * dt; H.z += H.vz * dt; H.y = Math.min(900, H.y + H.vy * dt);
     // the side of a building: bounce off it unless you are above its roof
     for (const r of roofsAt(H.x, H.z, 2)) if (H.y < r[4] - 1.5) {
       const o = [[H.x - r[0] + 2, -1, 0], [r[2] + 2 - H.x, 1, 0], [H.z - r[1] + 2, 0, -1], [r[3] + 2 - H.z, 0, 1]].sort((a, b) => a[0] - b[0])[0];
       H.x += o[1] * o[0]; H.z += o[2] * o[0]; H.vx = o[1] ? -H.vx * .3 : H.vx; H.vz = o[2] ? -H.vz * .3 : H.vz; audio.crash?.(4); }
     const g2 = heliGround(H.x, H.z);
+    if (H.y <= g2 && H.flyCar && g2 < .5 && !(H.liftT > 0)) { H.y = 0; flyLand(); return; }
     if (H.y <= g2) { H.y = g2; if (H.vy < -6) { audio.crash?.(6); toast('🚁 BUMP!', 'LAND MORE GENTLY'); } H.vy = 0; if (Math.hypot(H.vx, H.vz) < 6) { H.landed = true; } else { H.vx *= .7; H.vz *= .7; } }
   }
   if (H.landed) H.y = ground;
@@ -9637,10 +9645,12 @@ function updateHeli(dt) {
   const c = H.car; c.group.position.set(H.x, H.y, H.z); c.group.rotation.order = 'YXZ'; c.group.rotation.set(H.pitch, H.yaw, H.roll);
   if (c.rotor) c.rotor.rotation.y += H.spin * 28 * dt; if (c.tail) c.tail.rotation.x += H.spin * 40 * dt;
   if (H.snd) { H.snd.g.gain.setTargetAtTime(audio.muted ? 0 : .12 * H.spin, audio.ctx.currentTime, .1); H.snd.lfo.frequency.setTargetAtTime(8 + H.spin * 8, audio.ctx.currentTime, .2); }
+  if (H.flames) { const th = H.landed ? 0 : clamp(.55 + H.vy * .05 + Math.hypot(H.vx, H.vz) / 140, .35, 1.4); H.flames.children.forEach((f, i) => { f.visible = th > 0; f.scale.set(1, th * (.85 + Math.random() * .3), 1); }); }
   if (!H.landed && H.y - ground < 12 && Math.random() < dt * 30) smoke.emit(H.x + rr(-5, 5), H.z + rr(-5, 5), rr(-6, 6), rr(-6, 6), .5, ground);   // rotor wash
   // chase camera
-  const fx = Math.sin(H.yaw), fz = Math.cos(H.yaw), cx = H.x - fx * 17, cz = H.z - fz * 17, cy = Math.max(H.y + 6.5, heliGround(cx, cz) + 3);
-  camPos.x = damp(camPos.x, cx, 4, dt); camPos.y = damp(camPos.y, cy, 4, dt); camPos.z = damp(camPos.z, cz, 4, dt);
+  const cb = H.flyCar ? 9 : 17, ck = H.flyCar ? 12 : 4;   // the 500 km/h Roadster: a closer, stiffer camera
+  const fx = Math.sin(H.yaw), fz = Math.cos(H.yaw), cx = H.x - fx * cb, cz = H.z - fz * cb, cy = Math.max(H.y + (H.flyCar ? 3 : 6.5), heliGround(cx, cz) + 3);
+  camPos.x = damp(camPos.x, cx, ck, dt); camPos.y = damp(camPos.y, cy, ck, dt); camPos.z = damp(camPos.z, cz, ck, dt);
   if (!(window.__camHook && window.__camHook(camera, dt))) { camera.position.copy(camPos); camera.lookAt(H.x + fx * 8, H.y + 1, H.z + fz * 8); }
   sky.position.copy(camera.position); sun.position.set(H.x + sunDir.x * 400, H.y + sunDir.y * 400, H.z + sunDir.z * 400); sun.target.position.set(H.x, H.y, H.z);
   // the rescue job
@@ -9656,11 +9666,12 @@ function updateHeli(dt) {
     } } else J.t = 0;
     info = [J.phase === 'pickup' ? '🟢 PICK UP' : '🏥 HELIPAD', d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m'];
   } else if (H.arrow) H.arrow.position.y = -999;
-  actHud([['ALTITUDE', `${Math.round(H.y)} m`], ['SPEED', `${Math.round(Math.hypot(H.vx, H.vz) * 3.6)} km/h`], info, ['', H.landed && ground < .5 ? 'ENTER: GET OUT' : 'ESC: GARAGE']], '#ffc21f');
+  if (H.flyCar) actHud([['🚀 ALTITUDE', `${Math.round(H.y)} m`], ['SPEED', `${Math.round(Math.hypot(H.vx, H.vz) * 3.6)} km/h`], ['MAX', `${player.spec.fly} km/h`], ['', 'LAND ON A STREET TO DRIVE']], '#8fd8ff');
+  else actHud([['ALTITUDE', `${Math.round(H.y)} m`], ['SPEED', `${Math.round(Math.hypot(H.vx, H.vz) * 3.6)} km/h`], info, ['', H.landed && ground < .5 ? 'ENTER: GET OUT' : 'ESC: GARAGE']], '#ffc21f');
   updateCoins(dt, H.x, H.y, H.z); updateWeather(dt, { x: H.x, z: H.z, vx: H.vx, vz: H.vz }); $('walletHud').textContent = fmtUSD(wallet.usd);
 }
 function endHeli() {
-  const H = heli; if (!H) return; heliSound(false); scene.remove(H.car.group); if (H.job) scene.remove(H.job.g); if (H.arrow) scene.remove(H.arrow); heli = null; actHud(null);
+  const H = heli; if (!H) return; heliSound(false); if (H.flyCar) H.car.group.remove(H.flames); else scene.remove(H.car.group); if (H.job) scene.remove(H.job.g); if (H.arrow) scene.remove(H.arrow); heli = null; actHud(null);
   if (player) player.car.group.visible = true;
 }
 function heliGetOut() {   // landed on a street: hop into your car right here
@@ -9669,6 +9680,38 @@ function heliGetOut() {   // landed on a street: hop into your car right here
   carIdx = lastCarIdx(); paintIdx = savedPaint(CARS[carIdx]); if (player) { player.dispose(); player = null; }
   startDrive(); Object.assign(player, { x: at.x, z: at.z, heading: at.h, vx: 0, vz: 0, y: 0 }); camPos.set(at.x - Math.sin(at.h) * 8, 3, at.z - Math.cos(at.h) * 8);
 }
+/* =====================================================================
+   FLYING ROADSTER — the Tesla Roadster's rocket thrusters (the "SpaceX package"). Press V (or 🚀 FLY) while driving it:
+   the car lifts off on four blue thrusters and flies like the helicopter, but much faster (spec.fly km/h, 500). Land on
+   a street to drive on at the speed you touched down with; land on a roof to park there.
+   ===================================================================== */
+function canFly() { return player?.spec.fly && state === 'drive' && !race && !drag && !soccer && !meet && !cRace && !worldRace && !taxi && !crime && !boat && !player.loop && !cab; }
+function flyHud() { const b = $('flyBtn'); if (b) b.classList.toggle('hidden', !canFly()); }
+function startFlyCar() {
+  if (!canFly()) { if (player?.spec.fly && state === 'drive') toast('🚀 NOT NOW', 'FINISH THE RACE OR JOB FIRST'); return; }
+  const p = player, c = p.car, B = BODIES[p.spec.body], fl = new THREE.Group();
+  const flameM = new THREE.MeshBasicMaterial({ color: 0x8fd8ff, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false });
+  const coreM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false });
+  for (const x of [-.7, .7]) for (const z of [B.fX, B.rX]) {   // four thrusters under the corners, pointing down
+    const f = new THREE.Mesh(new THREE.ConeGeometry(.22, 1.6, 12, 1, true).rotateX(Math.PI).translate(0, -.8, 0), flameM); f.position.set(x, .12, z);
+    const k = new THREE.Mesh(new THREE.ConeGeometry(.1, .9, 10, 1, true).rotateX(Math.PI).translate(0, -.45, 0), coreM); f.add(k); fl.add(f);
+  }
+  c.group.add(fl);
+  heli = { car: c, flyCar: true, flames: fl, x: p.x, z: p.z, y: p.y || 0, yaw: p.heading, vx: p.vx, vz: p.vz, vy: 8, spin: 1, landed: false, liftT: 1.2, pitch: 0, roll: 0, job: null, jobs: 0, snd: null };
+  skids.lift(0); skids.lift(1); state = 'heli'; flyHud(); heliSound(true);
+  if (heli.snd) { heli.snd.lg.gain.value = 0; heli.snd.o.frequency.value = 90; }
+  audio.eng?.out.gain.setTargetAtTime(0, audio.ctx.currentTime, .1);
+  toast('🚀 ROADSTER FLYING!', `UP TO ${p.spec.fly} KM/H · SPACE/↑ UP · SHIFT/↓ DOWN · W/S A/D FLY · LAND ON A STREET TO DRIVE`);
+}
+function flyLand() {   // touched down on the street: drive on at the same speed
+  const H = heli, p = player; if (!H?.flyCar) return;
+  H.car.group.remove(H.flames); heliSound(false); heli = null; actHud(null);
+  Object.assign(p, { x: H.x, z: H.z, y: 0, vy: 0, heading: H.yaw, vx: H.vx, vz: H.vz, yawRate: 0, air: false, reverse: false, pitchG: 0, rollG: 0 });
+  if ((Math.abs(p.x) > HALF + 7 || Math.abs(p.z) > HALF + 7) && !areaAt(p.x, p.z) && !inMountain(p)) { p.resetToRoad(); p.vx = p.vz = 0; }   // over the sea: back to the nearest road
+  state = 'drive'; flyHud(); camPos.set(p.x - Math.sin(p.heading) * 8, 3, p.z - Math.cos(p.heading) * 8);
+  toast('🛬 LANDED', 'BACK ON THE ROAD · V TO FLY AGAIN');
+}
+
 /* =====================================================================
    THE GOLDEN COIN HUNT — 100 spinning gold coins hidden all over the world: 55 on the streets of Tokyo, 3 in every
    area (on its road and in its town), and 3 on top of skyscrapers (you need the helicopter for those!). Drive
@@ -10073,7 +10116,7 @@ function pickOnMap(wx, wz) {
   $('bmAll').onclick = () => { bm.cx = 1400; bm.cz = -200; bm.s = Math.min(innerWidth / 8600, innerHeight / 3800); };
   $('bmSearch').addEventListener('input', e => renderResults(e.target.value));
   $('bmSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { const first = document.querySelector('.bmRes'); if (first) first.click(); } if (e.key === 'Escape') closeMap(); e.stopPropagation(); });
-  $('bmClose').onclick = closeMap;
+  $('bmClose').onclick = closeMap; $('flyBtn').onclick = () => startFlyCar();
   $('bmRoute').onclick = () => { if (bm.sel) { cabStop(); setNav(bm.sel); closeMap(); } };
   $('bmAuto').onclick = () => { if (bm.sel) cabChooseSpeed(bm.sel); };
   $('csBack').onclick = () => $('cabSpeed').classList.add('hidden');
@@ -10638,7 +10681,7 @@ function tick(dt) {
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
   if (state === 'build') { buildCam(dt); composer.render(dt); return; }
-  if (state === 'heli') { updateHeli(dt); if (state === 'heli') composer.render(dt); return; }
+  if (state === 'heli') { updateHeli(dt); if (state === 'heli') { updateCountryCulling(dt); composer.render(dt); } return; }   // (the flying Roadster can reach the countries)
   if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
@@ -10648,7 +10691,7 @@ function tick(dt) {
     return;
   }
   if (state === 'drive') {
-    const inp = cabInput(dt, readInput()); simStep(dt, inp); updateViewpoint(dt, inp); cabHud();
+    const inp = cabInput(dt, readInput()); simStep(dt, inp); updateViewpoint(dt, inp); cabHud(); flyHud();
     if (state !== 'drive') return;
     // fx
     const fx = Math.sin(player.heading), fz = Math.cos(player.heading), rx = -fz, rz = fx; const B = BODIES[player.spec.body];
@@ -10714,7 +10757,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

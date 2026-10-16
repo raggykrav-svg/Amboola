@@ -299,6 +299,13 @@ The Cybercab drives itself!
 - **🚀 Race mode:** the Cybercab works out how fast the quickest hypercar in the race can go, and then drives just fast enough to **win**: it beats the Bugattis, the Koenigseggs and even the Shadow King. (If you take the wheel, race mode switches off.)
 - **Launch control:** 0–100 km/h in **1.2 seconds**.
 
+## 🚀 The flying Tesla Roadster
+
+The new **Tesla Roadster** has rocket thrusters! While you drive it, press **V** (or the **🚀 FLY** button) and it lifts off on four blue flames.
+- **W / S** fly forwards and backwards, **A / D** turn, **Space / ↑** go up, **Shift / ↓** go down. On a phone: gas, brake, left, right, handbrake = up, nitro = down.
+- Top speed in the air: **500 km/h**. Fly over the skyscrapers, out to sea or all the way to the countries.
+- Land on a street and you drive on at the speed you touched down. Land on a roof to park up there.
+
 ## 🏎 More driving fun
 
 ![Stunts, dents, speed cameras, night meets and the Dubai desert](media/driving-fun.jpg)

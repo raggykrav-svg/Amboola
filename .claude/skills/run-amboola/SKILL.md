@@ -347,3 +347,8 @@ Model gotchas:
 - **Launch control:** `spec.launchG` (2.45 g) raises only the longitudinal traction in `Player.update`; bench shows 0-100 1.21 s.
 - **Test:** buy it (`{"car":21}` then click `#drive` twice), `closeMap()`, then loop `simStep(1/30, cabInput(1/30, idle))` until `cab.arrived`. Set `window.amboola.fuel = 1` before long trips (the battery runs out on the way to Paris otherwise; the autopilot then stops with "BATTERY EMPTY").
 - The boat ramp moved to road `rc(4)`: on `rc(6)` it sat on the Paris bridge entrance and turned cars into boats.
+
+## Flying Roadster
+
+- `spec.fly` (km/h, 500 on `roadster2`). `startFlyCar()` (V key or `#flyBtn`, shown by `flyHud()` when `canFly()`) reuses the helicopter: `heli = { flyCar: true, car: player.car, flames, liftT }`, `state = 'heli'`. `updateHeli` uses `spec.fly / 3.6` top speed, 80 m/s² push, 25 m/s climb, keeps the velocity along the nose, scales the four thruster cones, and uses a closer camera. Touching a street (`heliGround < .5`) calls `flyLand()`: back to `state = 'drive'` with the flight velocity (off the map over the sea: `resetToRoad`). `endHeli` only removes the flames for the flying car. The heli state now also runs `updateCountryCulling`.
+- **Test:** `window.amboola.heliStep(dt)` steps the flight without rendering; set `window.amboola.keys.Space/KeyW/ShiftLeft` to steer. Full forward reaches 500 km/h in about 10 s.
