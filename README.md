@@ -296,6 +296,7 @@ The Cybercab drives itself!
 - The bar at the top shows where it is going. **−** and **+** change the speed, **■ STOP** (or brake, or steer) gives you back the wheel.
 - When it arrives, press **🗺 WHERE NEXT?**.
 - **Races:** in a race the Cybercab drives your **best race on that track**, from any car you ever raced there, exactly the way you drove it. If you have no best race there yet, it drives its own racing line. Press **🙌 TAKE THE WHEEL** to drive the rest yourself.
+- **🚀 Race mode:** the Cybercab works out how fast the quickest hypercar in the race can go, and then drives just fast enough to **win**: it beats the Bugattis, the Koenigseggs and even the Shadow King. (If you take the wheel, race mode switches off.)
 - **Launch control:** 0–100 km/h in **1.2 seconds**.
 
 ## 🏎 More driving fun

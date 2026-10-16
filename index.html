@@ -10099,7 +10099,7 @@ function cabHud() {
   const on = state !== 'garage' && isCab(player?.spec) && !drag && !soccer, el = $('cabhud');
   el.classList.toggle('hidden', !on); if (!on) { cabHud.key = ''; return; }
   let txt, btns;
-  if (race?.auto) { txt = race.auto === 'ghost' ? `🤖 SELF-DRIVING YOUR BEST RACE · 👻 ${fmtTime(race.cabG.t)}${race.cabG.carName ? ' · ' + race.cabG.carName : ''}` : '🤖 SELF-DRIVING · OWN RACING LINE'; btns = [['cabTake', '🙌 TAKE THE WHEEL']]; }
+  if (race?.auto) { txt = race.auto === 'ghost' ? `🤖 SELF-DRIVING YOUR BEST RACE · 👻 ${fmtTime(race.cabG.t)}${race.cabG.carName ? ' · ' + race.cabG.carName : ''}` : '🤖 SELF-DRIVING · OWN RACING LINE'; if (race.cabK > 1.001) txt += ' · 🚀 RACE MODE'; btns = [['cabTake', '🙌 TAKE THE WHEEL']]; }
   else if (race) { txt = '🙌 YOU ARE DRIVING'; btns = []; }
   else if (cab?.arrived) { txt = `✅ ARRIVED · ${cab.d.n}`; btns = [['cabWhere', '🗺 WHERE NEXT?']]; }
   else if (cab) { txt = `🤖 TO ${cab.d.n} · MAX ${cab.kmh} KM/H`; btns = [['cabSlow', '−'], ['cabFast', '+'], ['cabStopB', '■ STOP']]; }
@@ -10250,38 +10250,52 @@ function cabDrive(dt) {
   return { throttle, brake, steer, handbrake, nitro: 0 };
 }
 // ---------- races: replay your best race, or drive a racing line
+// one step of the racing-line speed a RaceAI uses: the fastest speed that still makes every corner ahead
+function lineSpeed(T, sp, s, v, dt) {
+  const g = 9.81, i0 = Math.floor(s / T.step) % T.n;
+  const latA = u => g * sp.grip * 1.02 + sp.aero * Math.pow(u / 80, 2) * 4, dec = g * sp.grip * .95;
+  let allow = sp.vmax / 3.6 * .985;
+  const m = Math.ceil(Math.min(420, v * v / (2 * dec) + 40) / T.step);
+  for (let k = 0; k < m; k += 2) {
+    const kk = Math.abs(T.k[(i0 + k) % T.n]); if (kk < 2e-4) continue;
+    const Rr = 1 / kk; let vc = Math.sqrt(latA(30) * Rr); vc = Math.sqrt(latA(vc) * Rr);
+    allow = Math.min(allow, Math.sqrt(vc * vc + 2 * dec * k * T.step));
+  }
+  const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(v, 4))) - sp.drag * v * v / sp.mass;
+  return v < allow ? Math.min(allow, v + Math.max(acc, .5) * dt) : Math.max(allow, v - dec * dt);
+}
+function lineTime(T, sp, dist) {   // about how long a car needs for `dist` metres of this track on the racing line
+  let s = 0, v = 0, t = 0; const dt = 1 / 15;
+  while (s < dist && t < 3600) { v = lineSpeed(T, sp, s % T.L, v, dt); s += v * dt; t += dt; }
+  return t;
+}
 function cabRaceStart(R) {
   const G = R.ghost; R.auto = G ? 'ghost' : 'line';
+  // RACE MODE: the Cybercab plans to beat the fastest car here. It times every rival on the racing line (at full skill,
+  // with the catch-up boost they get when behind) and runs its own line or your best race just quickly enough to win
+  const dist = R.laps * R.T.L, fastest = Math.min(...R.ais.map(a => lineTime(R.T, a.spec, dist))) / 1.05, goal = fastest * .97;
+  R.cabK = G ? Math.max(1, G.t / goal) : Math.max(1, lineTime(R.T, player.spec, dist) / goal);
   if (G) { const p0 = G.pts[0]; R.cabG = { t: G.t, pts: G.pts, i: 0, ox: R.grid.x - p0[1], oz: R.grid.z - p0[3], carName: CARS.find(c => c.id === G.carId)?.name || '' }; }
   else R.cabL = { s: R.grid.s, off: R.grid.lat, v: 0 };
-  toast('🤖 ' + R.T.name.toUpperCase(), G ? `THE CYBERCAB DRIVES YOUR BEST RACE · 👻 ${fmtTime(G.t)}` : 'NO BEST RACE YET · THE CYBERCAB DRIVES ITS OWN LINE');
+  toast('🤖 ' + R.T.name.toUpperCase(), (G ? `THE CYBERCAB DRIVES YOUR BEST RACE · 👻 ${fmtTime(G.t)}` : 'THE CYBERCAB DRIVES ITS OWN LINE') + (R.cabK > 1.001 ? ' · 🚀 RACE MODE' : ''));
   cabHud();
 }
 function cabRaceOff() { if (!race?.auto) return; race.auto = null; cabHud(); toast('🙌 YOU HAVE THE WHEEL', 'DRIVE THE REST OF THE RACE YOURSELF'); }
 function cabRacePose(dt) {   // true when the Cybercab placed itself this step
-  const R = race, p = player, T = R.T, t = R.t; if (!(dt > 0)) return true;
+  const R = race, p = player, T = R.T; if (!(dt > 0)) return true;
   let x, y = 0, z, h;
   if (R.auto === 'ghost') {
-    const G = R.cabG, pts = G.pts; if (t > pts[pts.length - 1][0]) return false;
+    const G = R.cabG, pts = G.pts, t = R.t * R.cabK; if (t > pts[pts.length - 1][0]) return false;
     let i = G.i; if (pts[i][0] > t) i = 0; while (i < pts.length - 2 && pts[i + 1][0] <= t) i++; G.i = i;
     const a = pts[i], b = pts[i + 1] || a, k = b[0] > a[0] ? clamp((t - a[0]) / (b[0] - a[0]), 0, 1) : 0;
-    const dh = ((b[4] - a[4] + Math.PI * 3) % (Math.PI * 2)) - Math.PI, f = clamp(1 - t / 2, 0, 1);   // ease off our grid slot onto the ghost's line
+    const dh = ((b[4] - a[4] + Math.PI * 3) % (Math.PI * 2)) - Math.PI, f = clamp(1 - R.t / 2, 0, 1);   // ease off our grid slot onto the ghost's line
     x = lerp(a[1], b[1], k) + G.ox * f; y = lerp(a[2], b[2], k); z = lerp(a[3], b[3], k) + G.oz * f; h = a[4] + dh * k;
   } else {
     if (R.p.finish != null) return false;
-    const L = R.cabL, sp = p.spec, g = 9.81, i0 = Math.floor(L.s / T.step) % T.n;
-    const latA = v => g * sp.grip * 1.02 + sp.aero * Math.pow(v / 80, 2) * 4, dec = g * sp.grip * .95;
-    let allow = sp.vmax / 3.6 * .985;
-    const m = Math.ceil(Math.min(420, L.v * L.v / (2 * dec) + 40) / T.step);
-    for (let k = 0; k < m; k += 2) {
-      const kk = Math.abs(T.k[(i0 + k) % T.n]); if (kk < 2e-4) continue;
-      const Rr = 1 / kk; let vc = Math.sqrt(latA(30) * Rr); vc = Math.sqrt(latA(vc) * Rr);
-      allow = Math.min(allow, Math.sqrt(vc * vc + 2 * dec * k * T.step));
-    }
-    const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(L.v, 4))) - sp.drag * L.v * L.v / sp.mass;
-    L.v = L.v < allow ? Math.min(allow, L.v + Math.max(acc, .5) * dt) : Math.max(allow, L.v - dec * dt);
+    const L = R.cabL, i0 = Math.floor(L.s / T.step) % T.n;
+    L.v = lineSpeed(T, p.spec, L.s, L.v, dt);
     L.off = damp(L.off, clamp(clamp(T.k[(i0 + 15) % T.n] * 400, -1, 1) * (T.w / 2 - 2.2) * .7, -(T.w / 2 - 1.3), T.w / 2 - 1.3), 1.6, dt);
-    L.s += L.v * dt; if (L.s >= T.L) L.s -= T.L;
+    L.s += L.v * R.cabK * dt; if (L.s >= T.L) L.s -= T.L;
     const f = L.s / T.step, i = Math.floor(f) % T.n, j = (i + 1) % T.n, u = f - Math.floor(f), tx = lerp(T.tx[i], T.tx[j], u), tz = lerp(T.tz[i], T.tz[j], u);
     x = lerp(T.x[i], T.x[j], u) - tz * L.off; z = lerp(T.z[i], T.z[j], u) + tx * L.off; h = Math.atan2(tx, tz);
   }
