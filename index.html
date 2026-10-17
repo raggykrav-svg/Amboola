@@ -6688,14 +6688,15 @@ function updateCountryCulling(dt) {
 const DMG_ZONES = { f: 'Front', r: 'Rear', L: 'Left doors', R: 'Right doors', t: 'Roof' };
 let DMG = (() => { try { return JSON.parse(localStorage.getItem('amboola.damage')) || {}; } catch (e) { return {}; } })();
 const saveDmg = () => { try { localStorage.setItem('amboola.damage', JSON.stringify(DMG)); } catch (e) { } };
-const dentsOf = id => Array.isArray(DMG[id]) ? DMG[id] : [];        // [x, y, z (car space), radius, depth, zone]
+const NO_DAMAGE = true;   // crashes never dent the cars (and old dents are gone); set false to bring car damage back
+const dentsOf = id => !NO_DAMAGE && Array.isArray(DMG[id]) ? DMG[id] : [];        // [x, y, z (car space), radius, depth, zone]
 function dmgZones(id) { const z = { f: 0, r: 0, L: 0, R: 0, t: 0 }; for (const d of dentsOf(id)) if (d[5] in z) z[d[5]] = Math.min(1, z[d[5]] + d[4] * 4); return z; }
 const dmgTotal = id => { const z = dmgZones(id); return Math.min(1, (z.f + z.r + z.L + z.R + z.t) / 2.5); };
 const repairCost = c => { const t = dmgTotal(c.id); return t ? Math.max(150, Math.round(t * Math.max(3000, (c.usd || 40000) * .06) / 50) * 50) : 0; };
 let dentCool = 0;
 // called for every hard hit: (dvx, dvz) is how the hit changed the car's velocity, so the car was hit on the other side
 function carHit(p, dvx, dvz, hit, zone) {
-  if (!p?.car?.model || hit < 4.5 || p.spec.jet || dentCool > 0) return;
+  if (NO_DAMAGE || !p?.car?.model || hit < 4.5 || p.spec.jet || dentCool > 0) return;
   const G = p.car.G ??= carGeom(p.car); if (!G) return;
   const fx = Math.sin(p.heading), fz = Math.cos(p.heading); let a = 0, b = 0;
   if (!zone) {

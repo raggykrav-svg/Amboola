@@ -325,6 +325,7 @@ Crash into something fast enough and it breaks!
 - **Loops:** go in at about **70 km/h or more** and you ride all the way round (+2,500). Too slow and you roll back, or fall off the top.
 
 ### Car damage 🔧
+**Now switched off:** crashing never damages your car any more, and old dents are gone. (To bring damage back, set `NO_DAMAGE = false` in index.html.) How it worked:
 - Crashes dent the car exactly where it was hit: the **front or rear bumper**, the **doors** on either side, or the **roof** after a wipeout. The bodywork really bends and gets scuffed.
 - A small car picture next to the speedometer turns yellow, orange and red as each part gets hurt. A smashed front smokes and loses a little power.
 - Dents stay on the car (they are saved). Fix them in the garage with **🔧 REPAIR DENTS**. The price depends on the damage and on how expensive the car is.

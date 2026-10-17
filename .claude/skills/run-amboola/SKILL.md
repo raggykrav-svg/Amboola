@@ -360,3 +360,4 @@ Model gotchas:
 - Traffic: `Traffic.collide` calls `wreckTraffic` above 9 m/s closing speed; `stepWreck` flies/tumbles the mesh (bouncing off `colGrid` buildings), settles it on the nearest quarter turn and returns true to respawn after 14 s and 70 m away.
 - **Test:** `window.amboola.BRK`, `smash`, `smashCheck`; aim the player at an entry and run `simStep` until `e.broken`.
 - Particles (`Smoke`) dim with the time of day (`Smoke.light`); damage smoke is `dmgSmoke` (dark, only below dmgK .92 and above 4 m/s).
+- Car damage is off: `NO_DAMAGE = true` makes `carHit` return early and `dentsOf` return `[]` (so `dmgK` = 1, no repair cost, no damage HUD). Saved dents stay in `amboola.damage` for when it is switched back on.
