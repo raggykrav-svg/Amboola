@@ -798,7 +798,7 @@ addEventListener('resize', () => {
   const pr = qualityPR(); // browser zoom / moving to another monitor changes devicePixelRatio
   renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false);
   composer.setPixelRatio(pr); composer.setSize(innerWidth, innerHeight);
-  if (smoke) smoke.mat.uniforms.scale.value = spray.mat.uniforms.scale.value = dust.mat.uniforms.scale.value = innerHeight * pr;
+  if (smoke) Smoke.all.forEach(S => S.mat.uniforms.scale.value = innerHeight * pr);
   if (WX.film) WX.filmQ = null;   // rebuild the reflection at the new size
 });
 
@@ -1119,6 +1119,7 @@ function applyTime(name) {
   renderer.toneMappingExposure = T.exp;
   if (bloomPass) { bloomPass.threshold = T.bloomT; bloomPass.strength = T.bloomS; }
   dynMats.windows.forEach(m => m.emissiveIntensity = T.win);
+  Smoke.light = name === 'night' ? .28 : name === 'sunset' ? .7 : 1; Smoke.all.forEach(S => S.mat.uniforms.light.value = Smoke.light);
   dynMats.neon.forEach(m => m.color.setScalar(T.neon));
   dynMats.lamps.forEach(m => m.color.setRGB(1, .85, .6).multiplyScalar(T.lamps > 0 ? 4 * T.lamps : .6));
   dynMats.pools.forEach(m => m.opacity = .5 * T.lamps);
@@ -1298,7 +1299,7 @@ function updateWeather(dt, p) {
 /* =====================================================================
    WORLD GENERATION
    ===================================================================== */
-let ocean = null, spray = null, dust = null;
+let ocean = null, spray = null, dust = null, dmgSmoke = null;
 const trafficPaths = [];
 async function buildWorld() {
   rand = mulberry32(4242);
@@ -3259,12 +3260,14 @@ class Skids {
   lift(k) { this.last[k] = null; }
 }
 class Smoke {
+  static all = []; static light = 1;
   constructor(n = 260) {
     this.n = n; this.p = []; const pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n);
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('size', new THREE.BufferAttribute(size, 1)); g.setAttribute('alpha', new THREE.BufferAttribute(alpha, 1));
-    this.mat = new THREE.ShaderMaterial({ uniforms: { map: { value: SMOKE_TEX() }, scale: { value: innerHeight * renderer.getPixelRatio() }, tint: { value: new THREE.Color(1, 1, 1) } }, transparent: true, depthWrite: false,
+    this.mat = new THREE.ShaderMaterial({ uniforms: { map: { value: SMOKE_TEX() }, scale: { value: innerHeight * renderer.getPixelRatio() }, tint: { value: new THREE.Color(1, 1, 1) }, light: { value: Smoke.light } }, transparent: true, depthWrite: false,
       vertexShader: `attribute float size; attribute float alpha; varying float vA; uniform float scale; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.); gl_PointSize = size * scale / -mv.z; gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `uniform sampler2D map; uniform vec3 tint; varying float vA; void main(){ vec4 c = texture2D(map, gl_PointCoord); gl_FragColor = vec4(tint * .85, c.a * vA); }` });
+      fragmentShader: `uniform sampler2D map; uniform vec3 tint; varying float vA; void main(){ vec4 c = texture2D(map, gl_PointCoord); gl_FragColor = vec4(tint * .85 * light, c.a * vA); }` });   // light: dimmer at sunset and night, so smoke never glows in the dark
+    this.grow = 3.2; Smoke.all.push(this);
     this.pts = new THREE.Points(g, this.mat); this.pts.frustumCulled = false; scene.add(this.pts);
     for (let i = 0; i < n; i++) this.p.push({ life: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, s: 1 }); this.k = 0;
   }
@@ -3273,7 +3276,7 @@ class Smoke {
   update(dt) {
     const g = this.pts.geometry, P = g.attributes.position.array, S = g.attributes.size.array, A = g.attributes.alpha.array;
     this.p.forEach((q, i) => {
-      if (q.life > 0) { q.life -= dt / q.max; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vx *= .97; q.vz *= .97; q.s += dt * 3.2; }
+      if (q.life > 0) { q.life -= dt / q.max; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vx *= .97; q.vz *= .97; q.s += dt * this.grow; }
       P[i * 3] = q.x; P[i * 3 + 1] = q.y; P[i * 3 + 2] = q.z; S[i] = q.life > 0 ? q.s : 0; A[i] = Math.max(0, q.life) * .45 * (q.a || 1);
     });
     g.attributes.position.needsUpdate = g.attributes.size.needsUpdate = g.attributes.alpha.needsUpdate = true;
@@ -10703,8 +10706,9 @@ function tick(dt) {
       if (grounded && player.terrain && player.speed > 4 && Math.random() < clamp(player.speed / 30, .2, 1) * dt * 26) (player.terrain === 'water' ? spray : dust).spray(wx, wz, player.vx, player.vz, player.terrain === 'water' ? 1 : clamp(player.speed / 35, .35, .9), player.y || 0);
       if (marking) { skids.add(k, wx, wz, fx, fz, player.y || 0); if (Math.random() < clamp((player.slip - .3) * .7, 0, .55) * dt * 60) smoke.emit(wx, wz, player.vx, player.vz, clamp(player.slip - .2, .2, .9), player.y || 0); } else skids.lift(k);
     });
-    if (player.dmgK < .96 && Math.random() < dt * (1 - player.dmgK) * 60) { const B2 = BODIES[player.spec.body]; smoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .55, (player.y || 0) + .5); }
-    smoke.update(dt); spray.update(dt); dust.update(dt);
+    // a badly damaged car trails a thin dark wisp while it drives (never a cloud piling up on a parked car)
+    if (player.dmgK < .92 && player.speed > 4 && Math.random() < dt * 14) { const B2 = BODIES[player.spec.body]; dmgSmoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .45, (player.y || 0) + .5); }
+    smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
     updateCamera(dt, player);
     // shadows follow player
@@ -10742,8 +10746,9 @@ async function boot() {
   TOKYO.built = true; upgradeTokyo();   // the Blender Tokyo, if its model is already in
   setLoad(.8, 'Spawning traffic…'); await nextFrame();
   traffic = new Traffic(isTouch ? 26 : 40);
-  skids = new Skids(); smoke = new Smoke(); spray = new Smoke(220); spray.mat.uniforms.tint.value.setRGB(.82, .86, .92);
+  skids = new Skids(); smoke = new Smoke(); spray = new Smoke(220); spray.mat.uniforms.tint.value.setRGB(.82, .86, .92); spray.grow = 1.8;   // smaller puffs: the spray must never hide the car
   dust = new Smoke(240); dust.mat.uniforms.tint.value.setRGB(.95, .78, .52);
+  dmgSmoke = new Smoke(60); dmgSmoke.mat.uniforms.tint.value.setRGB(.32, .32, .34); dmgSmoke.grow = 1.1;
   bridgeTraffic = new BridgeTraffic(isTouch ? 12 : 20);
   buildRain(); buildWetFilm();
   setLoad(.9, 'Opening the garage…'); await nextFrame();
