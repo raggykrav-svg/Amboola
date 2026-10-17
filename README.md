@@ -306,6 +306,13 @@ The new **Tesla Roadster** has rocket thrusters! While you drive it, press **V**
 - Top speed in the air: **500 km/h**. Fly over the skyscrapers, out to sea or all the way to the countries.
 - Land on a street and you drive on at the speed you touched down. Land on a roof to park up there.
 
+## 💥 Smash things
+
+Crash into something fast enough and it breaks!
+- **Trees, palm trees, cherry trees, street lamps and vending machines** fall over in the direction you hit them, bits fly everywhere, and your car loses a bit of speed. They grow back when you come back later.
+- **City cars** you ram hard (about 30 km/h faster than them) get **WRECKED**: they fly up, tumble and land on their wheels, their side or their roof, smoking. A tow truck takes them away after a while.
+- Every smash gives you skill points: 🌴 TIMBER!, 💡 LAMP DOWN, 🥤 VENDING SMASH, 💥 WRECKED!
+
 ## 🏎 More driving fun
 
 ![Stunts, dents, speed cameras, night meets and the Dubai desert](media/driving-fun.jpg)

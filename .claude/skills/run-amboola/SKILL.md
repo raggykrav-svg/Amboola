@@ -352,3 +352,11 @@ Model gotchas:
 
 - `spec.fly` (km/h, 500 on `roadster2`). `startFlyCar()` (V key or `#flyBtn`, shown by `flyHud()` when `canFly()`) reuses the helicopter: `heli = { flyCar: true, car: player.car, flames, liftT }`, `state = 'heli'`. `updateHeli` uses `spec.fly / 3.6` top speed, 80 m/s² push, 25 m/s climb, keeps the velocity along the nose, scales the four thruster cones, and uses a closer camera. Touching a street (`heliGround < .5`) calls `flyLand()`: back to `state = 'drive'` with the flight velocity (off the map over the sea: `resetToRoad`). `endHeli` only removes the flames for the flying car. The heli state now also runs `updateCountryCulling`.
 - **Test:** `window.amboola.heliStep(dt)` steps the flight without rendering; set `window.amboola.keys.Space/KeyW/ShiftLeft` to steer. Full forward reaches 500 km/h in about 10 s.
+
+## Smashable things
+
+- `regBreak(x, y, z, r, kind, refs)` puts a breakable into `BRK.grid` (24 m cells); `refs` are `[instancedMesh, index, falls]`. Registered: Tokyo street trees and sakura, lamps (pole/head fall, light pool just hides), vending machines, every `palmTrees`/`roundTrees`/`cypressTrees` list (they return their entries), and the countries' Blender trees in `upgradeCity` (the old entries collected by `countryTrees` via `BRK.collect` are marked `dead`).
+- `smashCheck(player)` (in `simStep`, not in races or the boat) breaks anything touching the car's footprint above 4.5 m/s: `smash()` zero-scales the instances, drops a tipping copy (`BRK.live`, instance colour kept), throws bits, keeps `BRK_KIND[kind].keep` of the speed. `updateBreak(dt)` animates and restores them 40 s later when the player is 200 m away.
+- Traffic: `Traffic.collide` calls `wreckTraffic` above 9 m/s closing speed; `stepWreck` flies/tumbles the mesh (bouncing off `colGrid` buildings), settles it on the nearest quarter turn and returns true to respawn after 14 s and 70 m away.
+- **Test:** `window.amboola.BRK`, `smash`, `smashCheck`; aim the player at an entry and run `simStep` until `e.broken`.
+- Particles (`Smoke`) dim with the time of day (`Smoke.light`); damage smoke is `dmgSmoke` (dark, only below dmgK .92 and above 4 m/s).

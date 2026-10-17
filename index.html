@@ -1554,6 +1554,7 @@ async function buildWorld() {
     poolMesh.setMatrixAt(k, mat(px, .09, pz, 0, 15, 1, 15));
   });
   scene.add(poleMesh, headMesh, poolMesh);
+  lampPos.forEach(([x, z], k) => regBreak(x, 0, z, .25, 'lamp', [[poleMesh, k, true], [headMesh, k, true], [poolMesh, k, false]]));
 
   // ---- trees / sakura / vending / antennas
   const trunkGeo = new THREE.CylinderGeometry(.14, .22, 3, 6); trunkGeo.translate(0, 1.5, 0);
@@ -1567,6 +1568,7 @@ async function buildWorld() {
     crown.setColorAt(k, sak ? cc.setHSL(rr(.92, .97), rr(.55, .8), rr(.75, .86)) : cc.setHSL(rr(.22, .32), rr(.4, .6), rr(.2, .32)));
   });
   trunk.castShadow = crown.castShadow = true; crown.receiveShadow = true; scene.add(trunk, crown); seasonLook.trees = { crown, all }; TOKYO.trees = { trunk, crown };
+  all.forEach(([x, z, s, sak], k) => regBreak(x, 0, z, .35 * s, sak ? 'sakura' : 'tree', [[trunk, k, true], [crown, k, true]]));
   const vmGeo = new THREE.BoxGeometry(1, 1.85, .75); vmGeo.translate(0, .925, 0);
   const vmFront = new THREE.PlaneGeometry(.8, 1.1); vmFront.translate(0, 1.15, .38);
   const vm = new THREE.InstancedMesh(vmGeo, new THREE.MeshStandardMaterial({ roughness: .4 }), vending.length);
@@ -1574,6 +1576,7 @@ async function buildWorld() {
   const vmf = new THREE.InstancedMesh(vmFront, vmfMat, vending.length);
   vending.forEach(([x, z, ry], k) => { vm.setMatrixAt(k, mat(x, 0, z, ry)); vmf.setMatrixAt(k, mat(x, 0, z, ry)); vm.setColorAt(k, cc.set(pick(['#d42a2a', '#1f5fc4', '#f2f2f2', '#2a8a4a']))); });
   if (vending.length) scene.add(vm, vmf); TOKYO.vend = { vm, vmf };
+  vending.forEach(([x, z], k) => regBreak(x, 0, z, .6, 'vending', [[vm, k, true], [vmf, k, true]]));
   const antMat = new THREE.MeshStandardMaterial({ color: 0x222, emissive: 0xff2020, emissiveIntensity: 2 }); dynMats.towerLights.push(antMat);
   const ant = new THREE.InstancedMesh(new THREE.SphereGeometry(.6, 8, 6), antMat, antennas.length || 1);
   antennas.forEach(([x, y, z], k) => ant.setMatrixAt(k, mat(x, y, z))); scene.add(ant);
@@ -2933,7 +2936,7 @@ class Traffic {
       const [wx, wz] = this.pos(c); const d = Math.hypot(wx - px, wz - pz);
       if ((initial ? d > 40 : d > 160) && d < 420) break;
     }
-    c.target = rr(10, 16); c.speed = c.target; this.nextInter(c);
+    c.target = rr(10, 16); c.speed = c.target; this.nextInter(c); c.wreck = null; c.mesh.rotation.x = c.mesh.rotation.z = 0; c.mesh.position.y = 0;
     const [wx, wz] = this.pos(c); c.mesh.position.set(wx, 0, wz); c.mesh.rotation.y = this.head(c); c.vx = wx; c.vz = wz;
   }
   pos(c) { const off = LANES[c.lane] * c.dir; return c.axis === 'z' ? [rc(c.line) + off, c.s] : [c.s, rc(c.line) - off]; }
@@ -2943,6 +2946,7 @@ class Traffic {
     if (worldRace) { if (!this.closed) { this.closed = true; this.cars.forEach(c => c.mesh.visible = false); } return; }   // Tokyo closes its roads for the world race
     if (this.closed) { this.closed = false; this.cars.forEach(c => { c.mesh.visible = true; this.spawn(c); }); }
     for (const c of this.cars) {
+      if (c.wreck) { if (stepWreck(c, dt)) this.spawn(c); continue; }
       const [wx, wz] = [c.mesh.position.x, c.mesh.position.z];
       const dpx = p.x - wx, dpz = p.z - wz, dist = Math.hypot(dpx, dpz);
       if (dist > 460) { this.spawn(c); continue; }
@@ -2987,7 +2991,7 @@ class Traffic {
       if (d < R && d > 1e-4) {
         dx /= d; dz /= d; const pen = R - d; p.x += dx * pen; p.z += dz * pen;
         const tvx = tfx * c.speed * c.dir * 0, vn = (p.vx - tvx) * dx + p.vz * dz;
-        if (vn < 0) { p.vx -= 1.4 * vn * dx; p.vz -= 1.4 * vn * dz; p.vx *= .85; p.vz *= .85; if (-vn > 2) { audio.crash(-vn); skillCrash(); taxiCrash(); carHit(p, dx, dz, -vn); } c.stun = 2.5; c.speed = 0; c.mesh.position.x -= dx * pen * .5; c.mesh.position.z -= dz * pen * .5; }
+        if (vn < 0) { p.vx -= 1.4 * vn * dx; p.vz -= 1.4 * vn * dz; p.vx *= .85; p.vz *= .85; if (-vn > 2) { audio.crash(-vn); skillCrash(); taxiCrash(); carHit(p, dx, dz, -vn); } c.stun = 2.5; c.speed = 0; c.mesh.position.x -= dx * pen * .5; c.mesh.position.z -= dz * pen * .5; if (-vn > 9) wreckTraffic(c, p, dx, dz, -vn); }
         return;
       }
     }
@@ -3266,7 +3270,7 @@ class Smoke {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('size', new THREE.BufferAttribute(size, 1)); g.setAttribute('alpha', new THREE.BufferAttribute(alpha, 1));
     this.mat = new THREE.ShaderMaterial({ uniforms: { map: { value: SMOKE_TEX() }, scale: { value: innerHeight * renderer.getPixelRatio() }, tint: { value: new THREE.Color(1, 1, 1) }, light: { value: Smoke.light } }, transparent: true, depthWrite: false,
       vertexShader: `attribute float size; attribute float alpha; varying float vA; uniform float scale; void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.); gl_PointSize = size * scale / -mv.z; gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `uniform sampler2D map; uniform vec3 tint; varying float vA; void main(){ vec4 c = texture2D(map, gl_PointCoord); gl_FragColor = vec4(tint * .85 * light, c.a * vA); }` });   // light: dimmer at sunset and night, so smoke never glows in the dark
+      fragmentShader: `uniform sampler2D map; uniform vec3 tint; uniform float light; varying float vA; void main(){ vec4 c = texture2D(map, gl_PointCoord); gl_FragColor = vec4(tint * .85 * light, c.a * vA); }` });   // light: dimmer at sunset and night, so smoke never glows in the dark
     this.grow = 3.2; Smoke.all.push(this);
     this.pts = new THREE.Points(g, this.mat); this.pts.frustumCulled = false; scene.add(this.pts);
     for (let i = 0; i < n; i++) this.p.push({ life: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, s: 1 }); this.k = 0;
@@ -6043,24 +6047,134 @@ function countryTown(C, S, group) {
 }
 // trees drawn by fn(list), moved into the country's group and kept so the Blender trees can replace them
 function countryTrees(C, group, list, fn) {
-  const n0 = scene.children.length; fn(list); const meshes = scene.children.slice(n0); if (meshes.length) group.add(...meshes);
-  (C.treeSets ??= []).push({ list, meshes });
+  const n0 = scene.children.length, entries = BRK.collect = []; fn(list); BRK.collect = null; const meshes = scene.children.slice(n0); if (meshes.length) group.add(...meshes);
+  (C.treeSets ??= []).push({ list, meshes, entries });
 }
 // a landmark's own group (the Blender model swaps in for it): anchor x, z on the ground, optional tilt about z
 function lmGroup(C, g, key, x, z, tilt = 0) { const L = new THREE.Group(); L.userData.at = [x, z, tilt]; g.add(L); (C.lm ??= {})[key] = L; return L; }
 const _stdTrunk = () => { const g = new THREE.CylinderGeometry(.2, .32, 9, 7, 6); g.translate(0, 4.5, 0); const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setX(i, p.getX(i) + (p.getY(i) / 9) ** 2 * 1.2); g.computeVertexNormals(); return g; };
+/* =====================================================================
+   SMASHABLE THINGS — hit a tree, a palm, a street lamp or a vending machine fast enough and it breaks: it tips over
+   the way you hit it, bits fly, and the car loses a little speed. City cars you ram hard are wrecked: they tumble
+   through the air, land smoking and are towed away later. Broken things are back the next time you come by
+   (40 s later, once you are 200 m away).
+   ===================================================================== */
+const BRK = { grid: new Map(), live: [], down: [], bits: [], ZERO: new THREE.Matrix4().makeScale(0, 0, 0), m4: new THREE.Matrix4(), bitMats: new Map(), bitGeo: new THREE.BoxGeometry(.28, .14, .38) };
+const brkKey = (x, z) => Math.floor(x / 24) + ',' + Math.floor(z / 24);
+function regBreak(x, y, z, r, kind, refs) {   // refs: [[instancedMesh, index, falls], ...]
+  const e = { x, y, z, r, kind, refs, broken: false }, k = brkKey(x, z);
+  if (!BRK.grid.has(k)) BRK.grid.set(k, []); BRK.grid.get(k).push(e); BRK.collect?.push(e); return e;
+}
+const regBreakList = (list, ims, kind, r) => list.map(([x, y, z], k) => regBreak(x, y, z, r, kind, ims.map(im => [im, k, true])));
+const BRK_KIND = {   // speed kept after the hit, bits colours, the shout
+  tree: { keep: .8, cols: ['#3f7a35', '#5a4632'], say: '🌳 TIMBER!' }, sakura: { keep: .8, cols: ['#f4b6cc', '#4a3627'], say: '🌸 TIMBER!' },
+  palm: { keep: .82, cols: ['#2f7a35', '#7a5c3e'], say: '🌴 TIMBER!' }, cypress: { keep: .8, cols: ['#1f4a2c', '#1f4a2c'], say: '🌲 TIMBER!' },
+  lamp: { keep: .9, cols: ['#5b5e63', '#ffd9a0'], say: '💡 LAMP DOWN' }, vending: { keep: .72, cols: ['#d42a2a', '#e8f4ff', '#ffd23a'], say: '🥤 VENDING SMASH' },
+};
+function brkBits(x, y, z, vx, vz, cols, n) {
+  for (let i = 0; i < n; i++) {
+    const col = cols[i % cols.length]; if (!BRK.bitMats.has(col)) BRK.bitMats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: .7 }));
+    const m = new THREE.Mesh(BRK.bitGeo, BRK.bitMats.get(col)); m.position.set(x + rr(-.5, .5), y + rr(.3, 1.5), z + rr(-.5, .5)); m.rotation.set(rr(0, 6), rr(0, 6), rr(0, 6)); scene.add(m);
+    BRK.bits.push({ m, vx: vx * rr(.3, .7) + rr(-3, 3), vy: rr(2, 6), vz: vz * rr(.3, .7) + rr(-3, 3), g: y, t: 0 });
+  }
+  while (BRK.bits.length > 90) scene.remove(BRK.bits.shift().m);
+}
+function smash(e, p) {
+  e.broken = true; e.t = performance.now(); BRK.down.push(e);
+  const sp = Math.hypot(p.vx, p.vz) || 1, dx = p.vx / sp, dz = p.vz / sp, K = BRK_KIND[e.kind] || BRK_KIND.tree;
+  // a copy of the thing tips over round its foot, the real instance disappears
+  const pivot = new THREE.Group(), holder = new THREE.Group(); pivot.position.set(e.x, e.y, e.z); holder.position.set(-e.x, -e.y, -e.z); pivot.add(holder); scene.add(pivot);
+  const mats = [];
+  e.saved = e.refs.map(([im, k, falls]) => {
+    const M = new THREE.Matrix4(); im.getMatrixAt(k, M);
+    if (falls) {
+      let mat = im.material; if (im.instanceColor) { mat = mat.clone(); im.getColorAt(k, mat.color); mats.push(mat); }
+      const m = new THREE.Mesh(im.geometry, mat); m.matrixAutoUpdate = false; im.updateMatrixWorld(); m.matrix.multiplyMatrices(im.matrixWorld, M); m.castShadow = true; holder.add(m);
+    }
+    im.setMatrixAt(k, BRK.ZERO); im.instanceMatrix.needsUpdate = true; return M;
+  });
+  BRK.live.push({ pivot, mats, axis: new THREE.Vector3(dz, 0, -dx), th: 0, w: .8 + sp * .05, t: 0 });
+  while (BRK.live.length > 24) brkDrop(BRK.live.shift());
+  brkBits(e.x, e.y, e.z, p.vx, p.vz, K.cols, 8);
+  p.vx *= K.keep; p.vz *= K.keep; audio.crash?.(Math.min(sp * .35, 9)); shakeT += .6;
+  skillAdd(150, K.say);
+}
+function brkDrop(L) { scene.remove(L.pivot); L.mats.forEach(m => m.dispose()); }
+function smashCheck(p) {   // anything breakable touching the car's footprint?
+  if (p.speed < 4.5 || p.loop) return;
+  const B = BODIES[p.spec.body], half = B.L / 2, hw = B.W / 2 * .9, fx = Math.sin(p.heading), fz = Math.cos(p.heading), py = p.y || 0;
+  const ci = Math.floor(p.x / 24), cj = Math.floor(p.z / 24);
+  for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+    const list = BRK.grid.get((ci + di) + ',' + (cj + dj)); if (!list) continue;
+    for (const e of list) {
+      if (e.broken || e.dead || Math.abs(py - e.y) > 3) continue;
+      const dx = e.x - p.x, dz = e.z - p.z, a = clamp(dx * fx + dz * fz, -half, half);
+      if (Math.hypot(dx - fx * a, dz - fz * a) < hw + e.r) smash(e, p);
+    }
+  }
+}
+function updateBreak(dt) {
+  for (let i = BRK.live.length - 1; i >= 0; i--) {   // falling: speeds up as it leans, a little bounce at the bottom
+    const L = BRK.live[i]; L.t += dt;
+    if (L.th < 1.45) { L.w += (2 + 9 * Math.sin(L.th)) * dt; L.th = Math.min(1.45, L.th + L.w * dt); } 
+    L.pivot.quaternion.setFromAxisAngle(L.axis, L.th);
+    if (L.t > 6) L.pivot.position.y -= dt * 1.2;
+    if (L.t > 8) { brkDrop(L); BRK.live.splice(i, 1); }
+  }
+  for (let i = BRK.bits.length - 1; i >= 0; i--) {
+    const b = BRK.bits[i]; b.t += dt; b.vy -= 14 * dt; b.m.position.x += b.vx * dt; b.m.position.y += b.vy * dt; b.m.position.z += b.vz * dt; b.m.rotation.x += 6 * dt; b.m.rotation.z += 4 * dt;
+    if (b.m.position.y < b.g + .07) { b.m.position.y = b.g + .07; b.vy *= -.3; b.vx *= .6; b.vz *= .6; }
+    if (b.t > 3) { scene.remove(b.m); BRK.bits.splice(i, 1); }
+  }
+  // grow back: 40 s later and out of sight
+  const now = performance.now(), p = player;
+  for (let i = BRK.down.length - 1; i >= 0; i--) {
+    const e = BRK.down[i]; if (now - e.t < 40000 || (p && Math.hypot(e.x - p.x, e.z - p.z) < 200)) continue;
+    e.refs.forEach(([im, k], j) => { im.setMatrixAt(k, e.saved[j]); im.instanceMatrix.needsUpdate = true; }); e.broken = false; BRK.down.splice(i, 1);
+  }
+}
+// a city car rammed hard: it flies, tumbles, lands and smokes, then is towed away
+function wreckTraffic(c, p, nx, nz, impact) {
+  const k = Math.min(impact, 40);
+  c.wreck = { t: 0, vx: -nx * k * .3 + p.vx * .25, vy: 2.5 + k * .22, vz: -nz * k * .3 + p.vz * .25, sx: rr(-1, 1) * (2 + k * .15), sz: rr(-1, 1) * (2 + k * .15), y: 0, rest: false };
+  c.speed = 0; brkBits(c.mesh.position.x, 0, c.mesh.position.z, -nx * k, -nz * k, ['#c8ccd2', '#9fd3ff', '#222428', '#ff3a2a'], 14);
+  audio.crash?.(Math.min(impact * .5, 10)); shakeT += 1; skillAdd(500, '💥 WRECKED!');
+}
+function stepWreck(c, dt) {
+  const W = c.wreck, m = c.mesh; W.t += dt;
+  if (!W.rest) {
+    W.vy -= 9.81 * dt; m.position.x += W.vx * dt; m.position.z += W.vz * dt; W.y += W.vy * dt; m.rotation.x += W.sx * dt; m.rotation.z += W.sz * dt;
+    const list = colGrid.get(gkey(Math.floor((m.position.x + HALF) / CELL), Math.floor((m.position.z + HALF) / CELL))) || [];
+    for (const b of list) {   // bounce off buildings, never fly into them
+      const r = 1.6, x = m.position.x, z = m.position.z; if (x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r) continue;
+      const o = [[x - (b.x0 - r), -1, 0], [b.x1 + r - x, 1, 0], [z - (b.z0 - r), 0, -1], [b.z1 + r - z, 0, 1]].sort((u, v) => u[0] - v[0])[0];
+      m.position.x += o[1] * o[0]; m.position.z += o[2] * o[0]; if (o[1]) W.vx *= -.25; else W.vz *= -.25;
+    }
+    if (W.y <= 0 && W.vy < 0) {
+      W.y = 0; W.vy *= -.28; W.vx *= .55; W.vz *= .55; W.sx *= .5; W.sz *= .5;
+      if (Math.abs(W.vy) < 1.2) {   // settle on its wheels, its side or its roof, whichever is nearest
+        W.rest = true; const q = v => Math.round(v / (Math.PI / 2)) * (Math.PI / 2); m.rotation.x = q(m.rotation.x); m.rotation.z = q(m.rotation.z);
+      }
+    }
+  }
+  m.position.y = W.y + (1 - Math.cos(m.rotation.x) * Math.cos(m.rotation.z)) * .72;   // on its side or its roof: lifted so it lies on the road
+  if (W.rest && Math.random() < dt * 3) dmgSmoke.emit(m.position.x + rr(-1, 1), m.position.z + rr(-1, 1), 0, 0, .5, .4);
+  return W.t > 14 && (!player || Math.hypot(m.position.x - player.x, m.position.z - player.z) > 70);   // done: tow it away
+}
 function palmTrees(list) {
   const leaves = []; for (let k = 0; k < 8; k++) { const l = new THREE.ConeGeometry(.6, 4.2, 4); l.rotateX(Math.PI / 2); l.scale(1, .18, 1); l.translate(0, 0, 2.1); l.rotateX(.45); l.rotateY(k / 8 * Math.PI * 2); l.translate(1.2, 9, 0); leaves.push(l); }
-  instanced(_stdTrunk(), new THREE.MeshStandardMaterial({ color: 0x7a5c3e, roughness: .9 }), list);
-  instanced(mergeGeometries(leaves), new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, flatShading: true, side: THREE.DoubleSide }), list);
+  const a = instanced(_stdTrunk(), new THREE.MeshStandardMaterial({ color: 0x7a5c3e, roughness: .9 }), list);
+  const b = instanced(mergeGeometries(leaves), new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, flatShading: true, side: THREE.DoubleSide }), list);
+  return regBreakList(list, [a, b], 'palm', .45);
 }
 function roundTrees(list, col) {
   const t = new THREE.CylinderGeometry(.18, .26, 2.6, 6); t.translate(0, 1.3, 0);
-  instanced(t, new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 }), list);
-  instanced(new THREE.IcosahedronGeometry(2.2, 0).translate(0, 3.6, 0), new THREE.MeshStandardMaterial({ color: col, roughness: .9, flatShading: true }), list);
+  const a = instanced(t, new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 }), list);
+  const b = instanced(new THREE.IcosahedronGeometry(2.2, 0).translate(0, 3.6, 0), new THREE.MeshStandardMaterial({ color: col, roughness: .9, flatShading: true }), list);
+  return regBreakList(list, [a, b], 'tree', .45);
 }
 function cypressTrees(list) {
-  instanced(new THREE.ConeGeometry(1.1, 11, 8).translate(0, 5.8, 0), new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9, flatShading: true }), list);
+  return regBreakList(list, [instanced(new THREE.ConeGeometry(1.1, 11, 8).translate(0, 5.8, 0), new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9, flatShading: true }), list)], 'cypress', .7);
 }
 function welcomeArch(C, text, col) {
   const mx = C.R.x[C.R.n - 1], g = new THREE.Group(); g.position.set(mx, 0, C.z0 + 30); scene.add(g);
@@ -6485,14 +6599,15 @@ function upgradeCity(C) {
       T.list.forEach(([x, y, z, ry = 0, sc = 1], i) => {
         const ck = Math.floor((x - C.x0) / 400) + ',' + Math.floor((z - C.z0) / 400);
         if (!cells.has(ck)) cells.set(ck, { x: 0, z: 0, n: 0, by: cfg.trees.map(() => []) }); const c = cells.get(ck);
-        c.x += x; c.z += z; c.n++; c.by[i % cfg.trees.length].push([M4(x, y, z, ry, sc)]);
+        c.x += x; c.z += z; c.n++; c.by[i % cfg.trees.length].push([M4(x, y, z, ry, sc)]); (c.pos ??= cfg.trees.map(() => []))[i % cfg.trees.length].push([x, y, z]);
       });
-      T.meshes.forEach(m => m.visible = false);
+      T.meshes.forEach(m => m.visible = false); T.entries?.forEach(e => e.dead = true);   // the Blender trees below break instead
     }
     C.city.trees = [];
     for (const c of cells.values()) {
       const grp = new THREE.Group(); grp.userData.c = [c.x / c.n, c.z / c.n]; C.group.add(grp); C.city.trees.push(grp);
-      c.by.forEach((list, i) => list.length && cityInstances(parts[i], list, grp));
+      c.by.forEach((list, i) => { if (!list.length) return; const n0 = grp.children.length; cityInstances(parts[i], list, grp); const ims = grp.children.slice(n0);
+        c.pos[i].forEach(([x, y, z], j) => regBreak(x, y, z, .45, cfg.trees[i] === 'T_palm' ? 'palm' : cfg.trees[i] === 'T_cypress' ? 'cypress' : 'tree', ims.map(im => [im, j, true]))); });
     }
   }
   // 3. the landmarks (and their props, placed many times)
@@ -10666,6 +10781,7 @@ function simStep(dt, inp) {
   if (!isFinite(player.x) || !isFinite(player.z) || !isFinite(player.y || 0) || !isFinite(player.vx) || !isFinite(player.vz)) { Object.assign(player, { x: -LANES[1], z: 150, heading: Math.PI, vx: 0, vz: 0, y: 0, vy: 0 }); player.resetToRoad(); }
   if (race && race.state === 'countdown') raceHold();
   if (drag && drag.state === 'tree') dragHold();
+  if (!race && !boat) smashCheck(player);
   player.sync(dt);
   if (race) updateRace(dt); else if (drag) updateDrag(dt); else if (soccer) updateSoccer(dt); else { traffic.update(dt, player); checkMarkers(); if (meet) updateMeetRace(dt); if (taxi) updateTaxi(dt); else if (crime) updateCrime(dt); else updateNav(dt); }
   updateBoards(dt, player); updateTraps(dt, player); updateSkill(dt, player);
@@ -10708,7 +10824,7 @@ function tick(dt) {
     });
     // a badly damaged car trails a thin dark wisp while it drives (never a cloud piling up on a parked car)
     if (player.dmgK < .92 && player.speed > 4 && Math.random() < dt * 14) { const B2 = BODIES[player.spec.body]; dmgSmoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .45, (player.y || 0) + .5); }
-    smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt);
+    smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt); updateBreak(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
     updateCamera(dt, player);
     // shadows follow player
@@ -10762,7 +10878,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
