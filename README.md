@@ -604,6 +604,9 @@ In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI 
 Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
 
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
+
+![Before and after the Horizon look](media/horizon-look.jpg)
+
 - A punchy colour grade: richer colours, more contrast, warm sunlight and cool shadows, a soft dark edge round the picture, and a crisper image.
 - **Clouds** drifting across the sky, lit on the side facing the sun, pink-orange at sunset and grey when it rains.
 - **Sun flare and light rays** when you look towards the sun. Buildings and clouds block them, just like real sunlight.
