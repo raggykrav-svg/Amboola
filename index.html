@@ -585,6 +585,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { mergeGeometries, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -785,12 +786,125 @@ function setupComposer() {
   bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.55, 0.85);
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
+  composer.addPass(makeHorizonPass());
   if (quality !== 'low') { smaaPass = new SMAAPass(innerWidth * pr, innerHeight * pr); composer.addPass(smaaPass); }
   composer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = quality !== 'low';
   if (sun) { sun.shadow.mapSize.setScalar(quality === 'ultra' ? 4096 : 2048); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   scene.traverse(o => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; });
 }
+/* =====================================================================
+   HORIZON LOOK — the bright, punchy "open-world festival" picture: a colour grade after the tone mapping (more
+   contrast, vibrance that lifts dull colours most, warm highlights and cool shadows, a soft vignette, a little
+   sharpening), plus a sun flare and light rays that only show when the sun is really in view (the pass checks how
+   bright the picture is where the sun should be, so buildings and clouds hide it) and a speed blur round the edges
+   when you go very fast. Each time of day (and rain) sets its own grade; Low graphics keeps just the grade.
+   ===================================================================== */
+const HZ = { sat: .25, con: .22, warm: .6, vig: .35, flare: .7, rays: .35, blur: 0, sunUV: new THREE.Vector2(), sunOn: 0, tint: new THREE.Color(1, .9, .7), v: new THREE.Vector3() };
+const HZ_SHADER = {
+  uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, sunUV: { value: new THREE.Vector2() }, sunOn: { value: 0 }, sunTint: { value: new THREE.Color() },
+    sat: { value: 0 }, con: { value: 0 }, warm: { value: 0 }, vig: { value: 0 }, flare: { value: 0 }, rays: { value: 0 }, blur: { value: 0 }, sharp: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 res, sunUV; uniform vec3 sunTint; uniform float sunOn, sat, con, warm, vig, flare, rays, blur, sharp; varying vec2 vUv;
+    float lum(vec3 c){ return dot(c, vec3(.2126, .7152, .0722)); }
+    vec3 tap(vec2 p){ return texture2D(tDiffuse, clamp(p, 0., 1.)).rgb; }
+    void main(){
+      vec2 uv = vUv, px = 1. / res; vec3 c = tap(uv);
+      if (blur > .001) {   // speed blur: streaks out from the middle, only round the edges
+        vec2 d = uv - .5; float e = smoothstep(.12, .62, length(d)) * blur; vec3 acc = c;
+        for (int i = 1; i < 7; i++) acc += tap(uv - d * e * float(i) * .018);
+        c = acc / 7.;
+      }
+      if (sharp > 0.) { vec3 n = tap(uv + vec2(px.x, 0.)) + tap(uv - vec2(px.x, 0.)) + tap(uv + vec2(0., px.y)) + tap(uv - vec2(0., px.y)); c += (c - n * .25) * sharp; }
+      float aspect = res.x / res.y;
+      if (sunOn > .001) {
+        // is the sun really visible? (the sky at its spot is bright, not a building or a thick cloud)
+        float v = 0.; for (int i = 0; i < 5; i++) { float a = float(i) * 1.2566; v += lum(tap(sunUV + vec2(cos(a), sin(a) * aspect) * .006)); }
+        float vis = smoothstep(.72, .93, v / 5.) * sunOn;
+        if (vis > .001) {
+          if (rays > 0.) {   // light rays: walk towards the sun, count the bright sky on the way
+            vec2 dir = sunUV - uv; float acc = 0.;
+            for (int i = 0; i < 14; i++) acc += smoothstep(.8, 1., lum(tap(uv + dir * (float(i) + .5) / 14.)));
+            float fall = exp(-length(dir * vec2(aspect, 1.)) * 1.8);
+            c += sunTint * (acc / 14.) * fall * rays * vis * .55;
+          }
+          if (flare > 0.) {   // lens flare: a glow, a sideways streak and ghosts on the line through the middle
+            vec2 q = (uv - sunUV) * vec2(aspect, 1.);
+            c += sunTint * (exp(-length(q) * 9.) * .35 + exp(-abs(q.y) * 90.) * exp(-abs(q.x) * 2.2) * .12) * flare * vis;
+            vec2 axis = .5 - sunUV;
+            for (int k = 0; k < 5; k++) {
+              float f = k == 0 ? .45 : k == 1 ? .8 : k == 2 ? 1.25 : k == 3 ? 1.6 : 2.1;
+              float r = k == 0 ? .035 : k == 1 ? .06 : k == 2 ? .025 : k == 3 ? .09 : .045;
+              vec3 tint = k == 0 ? vec3(1., .6, .3) : k == 1 ? vec3(.4, .8, 1.) : k == 2 ? vec3(1., .9, .5) : k == 3 ? vec3(.5, 1., .7) : vec3(.9, .5, 1.);
+              float dd = length((uv - (sunUV + axis * f)) * vec2(aspect, 1.));
+              c += tint * smoothstep(r, r * .55, dd) * .05 * flare * vis;
+            }
+            float ring = length((uv - (sunUV + axis * 1.)) * vec2(aspect, 1.));
+            c += sunTint * smoothstep(.02, 0., abs(ring - .22)) * .035 * flare * vis;
+          }
+        }
+      }
+      // the grade
+      c = clamp(c, 0., 1.);
+      c = mix(c, c * c * (3. - 2. * c), con);                                   // contrast
+      float l = lum(c), s = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+      c = mix(vec3(l), c, 1. + sat * (1. - s * .8));                             // vibrance: dull colours get the most
+      c += warm * (vec3(.05, .018, -.03) * smoothstep(.45, 1., l) + vec3(-.015, .004, .03) * (1. - smoothstep(0., .4, l)));
+      vec2 vq = uv - .5; c *= 1. - vig * dot(vq, vq) * 1.4;                     // vignette
+      gl_FragColor = vec4(clamp(c, 0., 1.), 1.);
+    }`,
+};
+let hzPass = null;
+function makeHorizonPass() {
+  hzPass = new ShaderPass(HZ_SHADER);
+  const base = hzPass.render.bind(hzPass);
+  hzPass.render = (r, w, rd, dt, mask) => { hzUniforms(); base(r, w, rd, dt, mask); };
+  return hzPass;
+}
+function hzUniforms() {
+  skyUniforms.time.value = performance.now() / 1000;
+  const U = hzPass.uniforms, low = quality === 'low', cam = renderPass.camera;
+  U.res.value.set(innerWidth, innerHeight); U.sat.value = HZ.sat; U.con.value = HZ.con; U.warm.value = HZ.warm; U.vig.value = HZ.vig;
+  U.sharp.value = low ? 0 : .22; U.blur.value = low || state !== 'drive' ? 0 : HZ.blur;
+  // where is the sun on screen? (only in the open world, and only when it is in front of us)
+  let on = 0;
+  if (cam === camera && state !== 'garage' && HZ.flare + HZ.rays > 0) {
+    const v = HZ.v.copy(camera.position).addScaledVector(sunDir, 3000).project(camera);
+    if (v.z < 1) { U.sunUV.value.set(v.x * .5 + .5, v.y * .5 + .5); on = clamp(1.6 - Math.max(Math.abs(v.x), Math.abs(v.y)), 0, 1); }
+  }
+  U.sunOn.value = on; U.flare.value = HZ.flare; U.rays.value = low ? 0 : HZ.rays; U.sunTint.value.copy(HZ.tint);
+}
+function hzSet(G, rain) {   // a time of day's grade (rain: greyer, no sun)
+  Object.assign(HZ, { sat: G.sat * (rain ? .45 : 1), con: G.con, warm: G.warm * (rain ? .3 : 1), vig: G.vig, flare: rain ? 0 : G.flare, rays: rain ? 0 : G.rays }); HZ.tint.set(G.tint);
+}
+/* ---- live car reflections (High/Ultra): a cube camera at your car draws the real street around it, one side per
+   frame or two, so the paint, glass and chrome mirror the buildings, the sky and the clouds as you drive. Only your
+   own car uses it (and while it lasts, anything that shares its glass); the garage keeps its studio reflections. */
+const CAR_ENV = { rt: null, cam: null, face: 0, ready: false, mats: [], car: null, frame: 0, size: 0 };
+function carReflect() {
+  if (quality === 'low' || !player?.car) { carEnvRelease(); return; }
+  const size = quality === 'ultra' ? 256 : 128;
+  if (CAR_ENV.size !== size) { CAR_ENV.rt?.dispose(); CAR_ENV.rt = new THREE.WebGLCubeRenderTarget(size, { type: THREE.HalfFloatType }); CAR_ENV.cam = new THREE.CubeCamera(1, 700, CAR_ENV.rt); CAR_ENV.size = size; CAR_ENV.ready = false; CAR_ENV.face = 0; carEnvRelease(); }
+  if (++CAR_ENV.frame % (quality === 'ultra' ? 1 : 2)) return;
+  const C = CAR_ENV.cam, p = player;
+  if (C.coordinateSystem !== renderer.coordinateSystem) { C.coordinateSystem = renderer.coordinateSystem; C.updateCoordinateSystem(); }
+  C.position.set(p.x, (p.y || 0) + 1.1, p.z); C.updateMatrixWorld(true);
+  const hide = [p.car.group, WX.film, WX.rain, WX.snow, ...Smoke.all.map(S => S.pts)].filter(o => o?.isObject3D), vis = hide.map(o => o.visible);
+  hide.forEach(o => o.visible = false);
+  const prev = renderer.getRenderTarget(), au = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
+  renderer.setRenderTarget(CAR_ENV.rt, CAR_ENV.face); renderer.render(scene, C.children[CAR_ENV.face]);
+  renderer.setRenderTarget(prev); renderer.shadowMap.autoUpdate = au;
+  hide.forEach((o, i) => o.visible = vis[i]);
+  CAR_ENV.face = (CAR_ENV.face + 1) % 6;
+  if (CAR_ENV.face === 0) { CAR_ENV.rt.texture.needsPMREMUpdate = true; CAR_ENV.ready = true; }   // a full turn done: blur it for the rough parts
+  if (CAR_ENV.ready && CAR_ENV.car !== p.car) carEnvApply(p.car);
+}
+function carEnvApply(car) {
+  carEnvRelease();
+  car.group.traverse(o => { if (!o.isMesh) return; for (const m of [].concat(o.material)) if (m?.isMeshStandardMaterial && !m.envMap && !CAR_ENV.mats.includes(m)) { m.envMap = CAR_ENV.rt.texture; m.needsUpdate = true; CAR_ENV.mats.push(m); } });
+  CAR_ENV.car = car;
+}
+function carEnvRelease() { if (!CAR_ENV.mats.length && !CAR_ENV.car) return; CAR_ENV.mats.forEach(m => { m.envMap = null; m.needsUpdate = true; }); CAR_ENV.mats = []; CAR_ENV.car = null; }
 let sun = null;
 addEventListener('resize', () => {
   camera.aspect = gCamera.aspect = innerWidth / innerHeight;
@@ -1056,18 +1170,30 @@ const roofsAt = (x, z, m = 0) => (roofGrid.get(gkey(Math.floor((x + HALF) / CELL
 const skyUniforms = {
   top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() }, ground: { value: new THREE.Color() },
   sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() }, stars: { value: 0 }, sunSize: { value: 800 },
+  time: { value: 0 }, cloudCov: { value: .55 }, cloudAmt: { value: 0 }, cloudLit: { value: new THREE.Color(1, 1, 1) }, cloudDark: { value: new THREE.Color(.6, .65, .75) },
 };
 const skyMat = new THREE.ShaderMaterial({
   uniforms: skyUniforms, side: THREE.BackSide, depthWrite: false, fog: false,
   vertexShader: `varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position,1.); gl_Position = p.xyww; }`,
-  fragmentShader: `uniform vec3 top, horizon, ground, sunDir, sunCol; uniform float stars, sunSize; varying vec3 vDir;
+  fragmentShader: `uniform vec3 top, horizon, ground, sunDir, sunCol, cloudLit, cloudDark; uniform float stars, sunSize, time, cloudCov, cloudAmt; varying vec3 vDir;
     float hash(vec3 p){ p = fract(p*0.3183099+.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+    float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(h2(i), h2(i+vec2(1.,0.)), f.x), mix(h2(i+vec2(0.,1.)), h2(i+vec2(1.,1.)), f.x), f.y); }
+    float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 5; i++) { v += a * vn(p); p = p * 2.03 + vec2(1.7, 9.2); a *= .5; } return v; }
     void main(){ vec3 d = normalize(vDir); float h = d.y;
       vec3 col = mix(horizon, top, pow(clamp(h,0.,1.), .45));
       col = mix(col, ground, smoothstep(0.0, -0.08, h));
       float s = max(dot(d, sunDir), 0.);
       col += sunCol * (pow(s, sunSize) * 30. + pow(s, 14.) * .25 + pow(s, 3.) * .12) * smoothstep(-0.05, 0.02, h);
       if (stars > 0.) { vec3 q = floor(d * 420.); float r = hash(q); col += stars * step(.9975, r) * (0.6 + 0.4 * hash(q + 3.)) * smoothstep(.02, .25, h) * vec3(.9,.95,1.); }
+      if (cloudAmt > 0. && h > 0.) {   // big fluffy clouds drifting over a flat cloud layer, lit on the side towards the sun
+        vec2 cp = d.xz / (h + .12) * 1.4 + vec2(time * .006, time * .0025);
+        float n = fbm(cp), cov = smoothstep(cloudCov, cloudCov + .26, n);
+        float n2 = fbm(cp + normalize(sunDir.xz + 1e-4) * .16), lit = clamp(.6 + (n - n2) * 3.4, 0., 1.);
+        float fade = smoothstep(0., .16, h);
+        col = mix(col, mix(cloudDark, cloudLit, lit), cov * fade * cloudAmt);
+        col += sunCol * pow(s, 8.) * cov * (1. - cov) * 2.2 * fade * cloudAmt;   // the silver lining near the sun
+      }
       gl_FragColor = vec4(col, 1.);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -1086,9 +1212,12 @@ scene.add(hemi);
 scene.fog = new THREE.FogExp2(0xbcd6ef, 0.0012);
 
 const TIMES = {
-  day: { top: 0x2f6ecf, hor: 0xc4dcf2, gnd: 0x8a8f96, el: 52, az: 140, sunC: 0xfff1dc, sunI: 3.4, hs: 0xcfe3ff, hg: 0x6b6258, hI: 1.15, fog: 0xc4d8ec, fogD: .0011, exp: .95, win: 0, neon: 1.1, lamps: 0, stars: 0, bloomT: .95, bloomS: .22, head: 0, ads: .35, sunSize: 900 },
-  sunset: { top: 0x2c4078, hor: 0xffa35a, gnd: 0x3a2a2a, el: 7, az: 250, sunC: 0xffb070, sunI: 2.8, hs: 0x9fa6c4, hg: 0x4a3a2e, hI: .8, fog: 0xc99474, fogD: .0013, exp: 1.0, win: .45, neon: 2.0, lamps: .6, stars: 0, bloomT: .85, bloomS: .4, head: 30, ads: .9, sunSize: 500 },
-  night: { top: 0x010309, hor: 0x16203c, gnd: 0x04050a, el: 38, az: 60, sunC: 0x7f98ff, sunI: .45, hs: 0x2a3a66, hg: 0x0c0c14, hI: .45, fog: 0x0b1020, fogD: .0015, exp: 1.0, win: .75, neon: 2.6, lamps: 1, stars: 1, bloomT: .75, bloomS: .6, head: 120, ads: 1.6, sunSize: 4000 },
+  day: { top: 0x1a56c4, hor: 0xb4d6f4, gnd: 0x8a8f96, el: 52, az: 140, sunC: 0xfff0d8, sunI: 3.7, hs: 0xc4dcff, hg: 0x7a6a56, hI: 1.1, fog: 0xb8d4ee, fogD: .0009, exp: 1.0,
+    cl: [.5, 1, 0xffffff, 0x9fb2cc], g: { sat: .3, con: .24, warm: .55, vig: .3, flare: .75, rays: .3, tint: 0xfff2d8 }, win: 0, neon: 1.1, lamps: 0, stars: 0, bloomT: .95, bloomS: .22, head: 0, ads: .35, sunSize: 900 },
+  sunset: { top: 0x24387a, hor: 0xff9448, gnd: 0x3a2a2a, el: 7, az: 250, sunC: 0xffa565, sunI: 3.0,
+    cl: [.5, .95, 0xffc08a, 0x6a5a78], g: { sat: .32, con: .26, warm: 1, vig: .4, flare: 1, rays: .75, tint: 0xffb070 }, hs: 0x9fa6c4, hg: 0x4a3a2e, hI: .8, fog: 0xc99474, fogD: .0013, exp: 1.0, win: .45, neon: 2.0, lamps: .6, stars: 0, bloomT: .85, bloomS: .4, head: 30, ads: .9, sunSize: 500 },
+  night: { top: 0x010309, hor: 0x16203c, gnd: 0x04050a, el: 38, az: 60, sunC: 0x7f98ff, sunI: .45,
+    cl: [.58, .5, 0x2a3350, 0x0c1020], g: { sat: .22, con: .2, warm: -.4, vig: .48, flare: 0, rays: 0, tint: 0x9fb0ff }, hs: 0x2a3a66, hg: 0x0c0c14, hI: .45, fog: 0x0b1020, fogD: .0015, exp: 1.0, win: .75, neon: 2.6, lamps: 1, stars: 1, bloomT: .75, bloomS: .6, head: 120, ads: 1.6, sunSize: 4000 },
 };
 const TIME_ORDER = ['day', 'sunset', 'night'];
 let timeName = localStorage.getItem('amboola.t') || 'sunset';
@@ -1113,6 +1242,7 @@ function applyTime(name) {
   const el = THREE.MathUtils.degToRad(T.el), az = THREE.MathUtils.degToRad(T.az);
   sunDir.set(Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az));
   skyUniforms.sunDir.value.copy(sunDir); skyUniforms.sunCol.value.set(T.sunC); skyUniforms.stars.value = T.stars; skyUniforms.sunSize.value = T.sunSize;
+  skyUniforms.cloudCov.value = T.cl[0]; skyUniforms.cloudAmt.value = T.cl[1]; skyUniforms.cloudLit.value.set(T.cl[2]); skyUniforms.cloudDark.value.set(T.cl[3]); hzSet(T.g, weather === 'rain');
   sun.color.set(T.sunC); sun.intensity = T.sunI;
   hemi.color.set(T.hs); hemi.groundColor.set(T.hg); hemi.intensity = T.hI;
   scene.fog.color.set(T.fog); scene.fog.density = T.fogD;
@@ -1155,6 +1285,7 @@ function weatherLook(T) {   // applyTime() calls this after setting the clear-sk
   const night = T.stars > 0;
   skyUniforms.top.value.copy(greyed(T.top, .8, night ? .8 : .55)); skyUniforms.horizon.value.copy(greyed(T.hor, .7, night ? 1.2 : .62)); skyUniforms.ground.value.copy(greyed(T.gnd, .6, .7));
   skyUniforms.sunCol.value.multiplyScalar(.04); skyUniforms.stars.value = 0;
+  skyUniforms.cloudCov.value = .3; skyUniforms.cloudAmt.value = night ? .6 : 1; skyUniforms.cloudLit.value.copy(greyed(T.hor, .85, night ? .5 : .75)); skyUniforms.cloudDark.value.copy(greyed(T.top, .8, night ? .3 : .45));
   sun.intensity = T.sunI * .3; hemi.intensity = T.hI * (night ? 1 : .8); WX.hemiBase = hemi.intensity;
   scene.fog.color.copy(greyed(T.fog, .65, night ? 1.3 : .72));
   renderer.toneMappingExposure = T.exp * (night ? 1.05 : .95);
@@ -10757,6 +10888,7 @@ $('bGarage').onclick = () => { endActs(); endChase(null, player); endMeetRace(fa
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
+  carEnvRelease();
   if (build.mode) { build.mode = null; build.run = null; buildBar(); camera.fov = 62; camera.updateProjectionMatrix(); }
   state = 'garage'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   renderPass.scene = gScene; renderPass.camera = gCamera; bloomPass.threshold = .9; bloomPass.strength = .35; renderer.toneMappingExposure = .9;
@@ -10811,7 +10943,7 @@ function tick(dt) {
     return;
   }
   if (state === 'drive') {
-    const inp = cabInput(dt, readInput()); simStep(dt, inp); updateViewpoint(dt, inp); cabHud(); flyHud();
+    const inp = cabInput(dt, readInput()); simStep(dt, inp); updateViewpoint(dt, inp); cabHud(); flyHud(); HZ.blur = clamp((player.speed * 3.6 - 150) / 230, 0, .85);   // speed blur from 150 km/h
     if (state !== 'drive') return;
     // fx
     const fx = Math.sin(player.heading), fz = Math.cos(player.heading), rx = -fz, rz = fx; const B = BODIES[player.spec.body];
@@ -10827,7 +10959,7 @@ function tick(dt) {
     if (player.dmgK < .92 && player.speed > 4 && Math.random() < dt * 14) { const B2 = BODIES[player.spec.body]; dmgSmoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .45, (player.y || 0) + .5); }
     smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt); updateBreak(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
-    updateCamera(dt, player);
+    updateCamera(dt, player); carReflect();
     // shadows follow player
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); // above the haze: the city view clears up
@@ -10879,7 +11011,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

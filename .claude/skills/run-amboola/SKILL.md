@@ -361,3 +361,11 @@ Model gotchas:
 - **Test:** `window.amboola.BRK`, `smash`, `smashCheck`; aim the player at an entry and run `simStep` until `e.broken`.
 - Particles (`Smoke`) dim with the time of day (`Smoke.light`); damage smoke is `dmgSmoke` (dark, only below dmgK .92 and above 4 m/s).
 - Car damage is off: `NO_DAMAGE = true` makes `carHit` return early and `dentsOf` return `[]` (so `dmgK` = 1, no repair cost, no damage HUD). Saved dents stay in `amboola.damage` for when it is switched back on.
+
+## Horizon look (graphics)
+
+- **Pass order:** Render → bloom → `OutputPass` → `hzPass` (`HZ_SHADER`, made by `makeHorizonPass`) → SMAA. `hzUniforms()` runs inside the pass's `render`: it sets the grade from `HZ` (`hzSet(T.g, rain)` in `applyTime`), projects the sun (`camera.position + sunDir·3000`), and drifts the clouds (`skyUniforms.time`). The shader checks the brightness at the sun's screen spot to hide the flare and rays behind buildings and clouds. Low: no sharpening, rays or speed blur.
+- **Clouds** live in the sky shader (fbm on `d.xz / (h + .12)`): uniforms `cloudCov`, `cloudAmt`, `cloudLit`, `cloudDark`, per time of day in `TIMES[t].cl`; `weatherLook` makes them overcast in rain.
+- **Speed blur:** `HZ.blur` is set in the drive tick from 150 km/h (drive state only).
+- **Car reflections:** `carReflect()` (after `updateCamera`) renders one face of `CAR_ENV.rt` (cube camera at the car, 128 px on High every 2nd frame, 256 px on Ultra every frame; shadow-map updates, the car, rain, wet film and particles skipped). After a full turn, `needsPMREMUpdate` is set, and the player car's Standard/Physical materials get it as `envMap` (`carEnvApply`); `carEnvRelease` on Low and in the garage. In a headless test, step `window.amboola.tick(1/30)` about 16 times (with `__manualFrames`) before `CAR_ENV.ready`.
+- `window.amboola.HZ`, `skyUniforms` and `CAR_ENV` are exposed for tests.
