@@ -135,6 +135,11 @@
   #cabhud { position:absolute; left:50%; top:66px; transform:translateX(-50%); display:flex; gap:12px; align-items:center; background:var(--panel); padding:6px 8px 6px 16px;
     border-bottom:2px solid #c9b27a; backdrop-filter:blur(6px); font-size:15px; letter-spacing:.05em; pointer-events:auto; white-space:nowrap; max-width:calc(100vw - 32px); }
   #cabhud.hidden { display:none; }
+  #mudFx { position:absolute; inset:0; pointer-events:none; opacity:0; background:
+    radial-gradient(ellipse 14% 11% at 8% 82%, rgba(74,50,26,.95), rgba(74,50,26,.6) 60%, transparent 72%), radial-gradient(ellipse 9% 7% at 17% 93%, rgba(92,63,33,.9), transparent 70%),
+    radial-gradient(ellipse 12% 9% at 91% 86%, rgba(70,47,24,.95), rgba(70,47,24,.55) 62%, transparent 74%), radial-gradient(ellipse 6% 5% at 82% 70%, rgba(96,66,35,.85), transparent 70%),
+    radial-gradient(ellipse 8% 6% at 4% 40%, rgba(80,55,28,.85), transparent 70%), radial-gradient(ellipse 7% 9% at 96% 30%, rgba(76,52,27,.85), transparent 70%),
+    radial-gradient(ellipse 5% 4% at 30% 12%, rgba(88,60,31,.8), transparent 70%), radial-gradient(ellipse 4% 3% at 64% 90%, rgba(88,60,31,.8), transparent 70%); }
   #flyBtn { position:absolute; left:50%; top:66px; transform:translateX(-50%); pointer-events:auto; padding:9px 20px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:15px; letter-spacing:.15em; color:#fff; background:rgba(20,60,110,.85); border:1px solid #8fd8ff; box-shadow:0 0 14px rgba(143,216,255,.5); cursor:pointer; }
   #flyBtn small { font-size:10px; color:#8fd8ff; margin-left:6px; } #flyBtn.hidden { display:none; } #cabTxt { overflow:hidden; text-overflow:ellipsis; }
   #cabBtns { display:flex; gap:6px; } #cabBtns button { padding:7px 12px; font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; letter-spacing:.1em; color:#fff; background:#1a1e27; border:1px solid #c9b27a; cursor:pointer; }
@@ -494,6 +499,7 @@
   <canvas id="minimap" width="420" height="420" title="Open map (N)"></canvas>
   <div id="maptag">🗺 MAP · CLICK / N</div>
   <button id="flyBtn" class="hidden">🚀 FLY <small>V</small></button>
+  <div id="mudFx"></div>
   <div id="cabhud" class="hidden"><span id="cabTxt"></span><span id="cabBtns"></span></div>
   <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
@@ -1265,6 +1271,7 @@ function applyTime(name) {
   envRT = pmrem.fromScene(envScene, 0.02);
   scene.environment = envRT.texture;
   scene.environmentIntensity = (name === 'night' ? 0.8 : 1.0) * (weather === 'rain' ? .8 : 1);
+  JG.baseFog = scene.fog.color.clone();   // the jungle tints the haze from this each frame
 }
 
 /* =====================================================================
@@ -1430,7 +1437,7 @@ function updateWeather(dt, p) {
 /* =====================================================================
    WORLD GENERATION
    ===================================================================== */
-let ocean = null, spray = null, dust = null, dmgSmoke = null;
+let ocean = null, spray = null, dust = null, dmgSmoke = null, mudFx = null;
 const trafficPaths = [];
 async function buildWorld() {
   rand = mulberry32(4242);
@@ -3338,7 +3345,7 @@ const MISSIONS = [
   { id: 'treasure', n: 'TREASURE HUNTER', d: 'Find all 7 secret cars', goal: 7, v: () => typeof secretsFound === 'function' ? secretsFound() : 0, r: 500000 },
   { id: 'sailor', n: 'SAILOR', d: 'Take the AMBOOLA Ferry 3 times', goal: 3, v: () => ST.ferries || 0, r: 15000 },
   { id: 'fujisan', n: 'FUJI-SAN', d: 'Drive to the lakes under Mt. Fuji', goal: 1, v: () => ST.visited?.includes('fuji') ? 1 : 0, r: 50000 },
-  { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 8 countries', goal: 8, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
+  { id: 'globe', n: 'GLOBETROTTER', d: 'Visit all 9 countries', goal: 9, v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length, r: 200000 },
   { id: 'flip', n: 'STUNT STAR', d: 'Land a flip or a barrel roll off a ramp', goal: 1, v: () => ST.flips || 0, r: 5000 },
   { id: 'flip10', n: 'FLIP MASTER', d: 'Land 10 flips', goal: 10, v: () => ST.flips || 0, r: 25000 },
   { id: 'loop', n: 'LOOP THE LOOP', d: 'Ride all the way round a loop', goal: 1, v: () => ST.loops || 0, r: 8000 },
@@ -6086,6 +6093,9 @@ const COUNTRY_DEFS = [
     rect: [8700, 27800, 9900, 28700],
     pts: [[rc(15), HALF - 8, 0], [rc(15), HALF + 60, 0], [rc(15) + 15, 1100, 6], [600, 2500, 14], [2200, 6000, 15], [6000, 11000, 15], [7600, 17000, 15], [8600, 23000, 15], [9250, 27300, 9], [9295, 27550, 1.5], [9300, 27800, 0], [9300, 27960, 0]] },
 ];
+COUNTRY_DEFS.push({ id: 'southafrica', name: 'South Africa', local: 'SUID-AFRIKA · SOUTH AFRICA', hello: 'WELCOME TO SOUTH AFRICA · SAWUBONA!', gx: rc(16), col: '#3fae4a', raceName: 'Jungle Grand Prix', jungle: true,
+  rect: [10200, 18600, 11800, 20000],
+  pts: [[rc(16), HALF - 8, 0], [rc(16), HALF + 60, 0], [rc(16) + 15, 1100, 6], [680, 2600, 14], [2600, 6000, 15], [6900, 10700, 15], [9400, 14100, 15], [10600, 17300, 15], [10950, 18200, 9], [10990, 18420, 1.5], [11000, 18600, 0], [11000, 18760, 0]] });
 const COUNTRIES = COUNTRY_DEFS.map(d => {
   const R = new Route({ id: d.id, name: `${d.name} Bridge`, w: 24, rail: .45, median: true, pts: d.pts });
   const [x0, z0, x1, z1] = d.rect;
@@ -6776,9 +6786,125 @@ function upgradeCity(C) {
     if (done) L.visible = false;
   }
 }
+/* ---- South Africa: one big jungle. Dirt trails (the same grid the other countries use for their streets, so races,
+   deliveries and the GPS work) run between walls of palms, jungle trees, ferns and hanging vines, and a roof of leaves
+   at 15-19 m hides the sky: only spots of sunlight come through. You arrive in an open camp clearing (runway, gas,
+   car wash, jobs). Mud: every trail is dirt and there are puddles - the car gets dirty fast, mud flies off the
+   wheels and splashes the screen; the jungle car wash at the camp (or the one in Tokyo) makes it shine again. */
+const JG = { C: null, cells: [], puddles: [], in: false, k: 0, splat: 0, fog: new THREE.Color(0x1d2b17), fogN: new THREE.Color(0x070b06), camp: 0 };
+const DIRT_TEX = () => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#6b4a2b'; g.fillRect(0, 0, w, h); noise(g, w, h, 26);
+  for (let k = 0; k < 160; k++) { g.fillStyle = `rgba(${40 + Math.random() * 40},${28 + Math.random() * 20},${14 + Math.random() * 12},.35)`; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 2 + Math.random() * 9, 0, 7); g.fill(); }
+  g.strokeStyle = 'rgba(30,20,10,.35)'; g.lineWidth = 10; for (const x of [70, 186]) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 4, h); g.stroke(); }   // tyre ruts
+}, { repeat: true });
+const LEAF_TEX = () => canvasTex(512, 512, (g, w, h) => {   // a sheet of leaves with a few holes for the sun
+  g.clearRect(0, 0, w, h);
+  for (let k = 0; k < 1500; k++) {
+    const x = Math.random() * w, y = Math.random() * h, r = 8 + Math.random() * 20, a = Math.random() * Math.PI;
+    if (((x - 140) ** 2 + (y - 300) ** 2 < 900) || ((x - 390) ** 2 + (y - 120) ** 2 < 600) || ((x - 300) ** 2 + (y - 420) ** 2 < 350)) continue;   // the sun holes
+    g.fillStyle = `hsl(${95 + Math.random() * 40},${45 + Math.random() * 25}%,${12 + Math.random() * 18}%)`;
+    g.save(); g.translate(x, y); g.rotate(a); g.beginPath(); g.ellipse(0, 0, r, r * .42, 0, 0, 7); g.fill(); g.restore();
+  }
+}, { repeat: true });
+function buildJungle(C, g) {
+  JG.C = C; JG.camp = C.z0 + 95;
+  const { xs, zs } = cStreets(C), mx = C.R.x[C.R.n - 1], rnd = mulberry32(2711), touch = isTouch ? .55 : 1;
+  const trails = [...xs.map(x => ['x', x, C.z0 + 20, C.z1 - 20]), ...zs.map(z => ['z', z, C.x0 + 20, C.x1 - 20]), ['x', mx, C.z0, zs[0] + 8]];
+  // the trails: wide dirt tracks
+  const rg = new GB();
+  for (const [a, v, t0, t1] of trails) {
+    if (a === 'x') rg.quad([v - 7, .04, t0], [v + 7, .04, t0], [v + 7, .04, t1], [v - 7, .04, t1], [0, t0 / 14, 1, t1 / 14]);
+    else rg.quad([t0, .04, v + 7], [t0, .04, v - 7], [t1, .04, v - 7], [t1, .04, v + 7], [0, t0 / 14, 1, t1 / 14]);
+  }
+  const tm = new THREE.Mesh(rg.build(), new THREE.MeshStandardMaterial({ map: DIRT_TEX(), roughness: .95, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 })); tm.receiveShadow = true; g.add(tm);
+  const trailD = (x, z) => Math.min(...trails.map(([a, v, t0, t1]) => a === 'x' ? (z > t0 - 8 && z < t1 + 8 ? Math.abs(x - v) : 1e9) : (x > t0 - 8 && x < t1 + 8 ? Math.abs(z - v) : 1e9)));
+  // mud puddles on the trails
+  const pm = new THREE.MeshStandardMaterial({ color: 0x3f2a15, roughness: .3, metalness: 0, envMapIntensity: .15 });   // wet brown mud, not a mirror of the (hidden) sky
+  for (let k = 0; k < 46; k++) {
+    const [a, v, t0, t1] = trails[Math.floor(rnd() * (trails.length - 1))], t = t0 + 40 + rnd() * (t1 - t0 - 80), r = 2.5 + rnd() * 3, o = (rnd() - .5) * 6;
+    const [x, z] = a === 'x' ? [v + o, t] : [t, v + o]; if (z < JG.camp + 20) continue;
+    const p = new THREE.Mesh(new THREE.CircleGeometry(r, 18), pm); p.rotation.x = -Math.PI / 2; p.scale.set(1, 1.5, 1); p.position.set(x, .07, z); g.add(p);
+    JG.puddles.push([x, z, r * 1.2]);
+  }
+  // the giant tree in the middle of the jungle (a landmark you can't drive through)
+  const gx = (xs[3] + xs[4]) / 2, gz = (zs[3] + zs[4]) / 2, bark = new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 1, flatShading: true });
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(4, 7, 34, 10), bark); trunk.position.set(gx, 17, gz); trunk.castShadow = true; g.add(trunk);
+  for (let k = 0; k < 6; k++) { const root = new THREE.Mesh(new THREE.ConeGeometry(2.4, 10, 5), bark); const a = k / 6 * Math.PI * 2; root.position.set(gx + Math.cos(a) * 6, 2.5, gz + Math.sin(a) * 6); root.rotation.set(Math.sin(a) * .9, 0, -Math.cos(a) * .9); g.add(root); }
+  C.P.addCol(gx - 7, gz - 7, gx + 7, gz + 7);
+  // everything leafy, in 400 m cells so far-away cells are not drawn
+  const cells = new Map(), cellOf = (x, z) => { const k = Math.floor((x - C.x0) / 400) + ',' + Math.floor((z - C.z0) / 400); if (!cells.has(k)) cells.set(k, { palms: [], trees: [], ferns: [], vines: [], crowns: [], x: 0, z: 0, n: 0 }); const c = cells.get(k); c.x += x; c.z += z; c.n++; return c; };
+  const free = (x, z, m) => z > JG.camp && Math.hypot(x - gx, z - gz) > 14 + m && x > C.x0 + 6 && x < C.x1 - 6 && z < C.z1 - 6;
+  for (let x = C.x0 + 4; x < C.x1; x += 10) for (let z = JG.camp; z < C.z1; z += 10) {
+    const px = x + (rnd() - .5) * 8, pz = z + (rnd() - .5) * 8, d = trailD(px, pz);
+    if (!free(px, pz, 0) || d < 9 || rnd() > (d < 30 ? .85 : .3) * touch) continue;
+    const c = cellOf(px, pz);
+    if (rnd() < .55) c.palms.push([px, 0, pz, rnd() * 6, .9 + rnd() * .55]); else { const w = .8 + rnd() * .9; c.trees.push([px, 0, pz, rnd() * 6, w, .85 + rnd() * .4, w]); }
+  }
+  for (const [a, v, t0, t1] of trails) for (let t = t0; t < t1; t += 7 / touch) for (const s of [-1, 1]) {   // ferns and vines along both edges
+    const o = s * (8 + rnd() * 4), [x, z] = a === 'x' ? [v + o, t] : [t, v + o]; if (!free(x, z, 2) || trailD(x, z) < 7.5) continue;
+    const c = cellOf(x, z), fs = .8 + rnd() * .9; c.ferns.push([x, 0, z, rnd() * 6, fs, fs * (.7 + rnd() * .5), fs]);
+    if (rnd() < .45) c.vines.push([x - o * .3, 16, z, rnd() * 6, 1, .6 + rnd() * .8, 1]);
+  }
+  for (let x = C.x0; x < C.x1; x += 15) for (let z = JG.camp; z < C.z1; z += 15) {   // the tops of the canopy, seen from the bridge and the sky
+    const px = x + rnd() * 12, pz = z + rnd() * 12; if (z < JG.camp + 6) continue;
+    cellOf(px, pz).crowns.push([px, 18 + rnd() * 4, pz, rnd() * 6, 8 + rnd() * 5, 3 + rnd() * 2.5, 8 + rnd() * 5]);
+  }
+  const fernM = new THREE.MeshStandardMaterial({ color: 0x356b26, roughness: .85, flatShading: true, side: THREE.DoubleSide }), vineM = new THREE.MeshStandardMaterial({ color: 0x24461c, roughness: 1 });
+  // ferns: a ring of arching fronds; jungle trees: tall trunks that vanish into the roof of leaves
+  const fronds = []; for (let k = 0; k < 7; k++) { const l = new THREE.ConeGeometry(.35, 2.4, 3); l.rotateX(Math.PI / 2); l.scale(1, .2, 1); l.translate(0, 0, 1.2); l.rotateX(-.55 - (k % 2) * .25); l.rotateY(k / 7 * Math.PI * 2); l.translate(0, .25, 0); fronds.push(l); }
+  const trunkG = new THREE.CylinderGeometry(.32, .62, 20, 7).translate(0, 10, 0), barkM = new THREE.MeshStandardMaterial({ color: 0x4a3a28, roughness: 1, flatShading: true });
+  const crownM = new THREE.MeshStandardMaterial({ color: 0x23481c, roughness: .9, flatShading: true }), fernG = mergeGeometries(fronds), vineG = new THREE.BoxGeometry(.12, 7, .12).translate(0, -3.5, 0), crownG = new THREE.IcosahedronGeometry(1, 0);
+  for (const c of cells.values()) {
+    const cg = new THREE.Group(); cg.userData.c = [c.x / c.n, c.z / c.n]; g.add(cg); JG.cells.push(cg);
+    const n0 = scene.children.length;
+    if (c.palms.length) palmTrees(c.palms);
+    if (c.trees.length) regBreakList(c.trees, [instanced(trunkG, barkM, c.trees)], 'tree', .5);
+    if (c.ferns.length) instanced(fernG, fernM, c.ferns, false);
+    if (c.vines.length) instanced(vineG, vineM, c.vines, false);
+    if (c.crowns.length) instanced(crownG, crownM, c.crowns, false);
+    const made = scene.children.slice(n0); if (made.length) cg.add(...made);
+  }
+  // the roof of leaves: two see-through layers in 100 m tiles (none over the camp), casting a dappled shadow
+  const leaf = LEAF_TEX(); leaf.wrapS = leaf.wrapT = THREE.RepeatWrapping;
+  const roofM = new THREE.MeshStandardMaterial({ map: leaf, alphaTest: .5, side: THREE.DoubleSide, roughness: .9 });
+  for (let x = C.x0 - 20; x < C.x1 + 20; x += 400) for (let z = JG.camp + 10; z < C.z1 + 20; z += 400) for (const [y, o] of [[19, 0], [15.5, .37]]) {
+    const w = Math.min(400, C.x1 + 20 - x), d = Math.min(400, C.z1 + 20 - z), pg = new THREE.PlaneGeometry(w, d), uv = pg.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w * .06 + o, uv.getY(i) * d * .06 + o * 1.65);   // 6 leaf sheets per 100 m, the lower layer shifted so its holes don't line up
+    const t = new THREE.Mesh(pg, roofM); t.rotation.x = -Math.PI / 2; t.position.set(x + w / 2, y, z + d / 2);
+    t.castShadow = true; t.receiveShadow = false; g.add(t);
+  }
+  // the camp: a wooden gate sign at the end of the clearing
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 3), new THREE.MeshBasicMaterial({ map: signTex(1024, 192, '#2a1c0f', [['🌴 INTO THE JUNGLE 🌴', .55, .5, OR, '#ffd23a']], '#7a5a2a'), side: THREE.DoubleSide }));
+  sign.position.set(mx, 9, JG.camp + 4); sign.rotation.y = Math.PI; g.add(sign);   // readable as you drive in from the camp
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.7, 10, .7), bark); p.position.set(mx + s * 8.5, 5, JG.camp + 4); g.add(p); C.P.addCol(mx + s * 8.5 - .5, JG.camp + 3.5, mx + s * 8.5 + .5, JG.camp + 4.5); }
+  return [[mx, C.z0 + 50, 'Jungle Camp'], [gx, gz, 'The Giant Tree'], [xs[6], zs[6], 'Deep Jungle']];
+}
+function updateJungle(dt) {
+  const C = JG.C, p = player; if (!C || !p) return;
+  JG.in = state === 'drive' && p.x > C.x0 - 10 && p.x < C.x1 + 10 && p.z > JG.camp && p.z < C.z1 + 10 && (p.y || 0) < 6;
+  JG.k = damp(JG.k, JG.in ? 1 : 0, 1.5, dt);
+  if (JG.k > .002) {   // under the leaves: a thick green haze instead of the sky
+    scene.fog.color.lerp(timeName === 'night' ? JG.fogN : JG.fog, JG.k * .85); scene.fog.density *= 1 + JG.k * 3.2;
+  }
+  const cx = camera.position.x, cz = camera.position.z, far = Math.hypot(C.cx - cx, C.cz - cz) > 3000;
+  for (const cg of JG.cells) cg.visible = !far && Math.hypot(cg.userData.c[0] - cx, cg.userData.c[1] - cz) < (JG.in ? 650 : 1500);
+  // mud: off the wheels, out of the puddles, onto the screen
+  if (JG.in && p.speed > 4 && !p.air) {
+    const fx = Math.sin(p.heading), fz = Math.cos(p.heading), B = BODIES[p.spec.body];
+    if (Math.random() < dt * p.speed * .9) mudFx.spray(p.x + fx * B.rX + rr(-.8, .8), p.z + fz * B.rX + rr(-.8, .8), p.vx * .3, p.vz * .3, clamp(p.speed / 25, .4, 1), 0);
+    for (const [x, z, r] of JG.puddles) if (Math.hypot(p.x - x, p.z - z) < r && p.speed > 6 && (JG.lastP !== x)) {
+      JG.lastP = x; for (let k = 0; k < 22; k++) mudFx.spray(p.x + rr(-2, 2), p.z + rr(-2, 2), p.vx * .5 + rr(-4, 4), p.vz * .5 + rr(-4, 4), 1, 0);
+      JG.splat = Math.min(1, JG.splat + .55); dirt = Math.min(1, dirt + .12); applyDirt(p.car); audio.beep?.(140, .08); toast('💦 SPLASH!', 'MUD EVERYWHERE');
+    }
+    if (p.speed > 14 && Math.random() < dt * .25) JG.splat = Math.min(1, JG.splat + .22);
+  }
+  JG.splat = Math.max(0, JG.splat - dt * .09);
+  const el = $('mudFx'); if (el) el.style.opacity = (JG.splat * .85).toFixed(3);
+  mudFx.update(dt);
+}
 function buildCountries() {
   const builders = { cyprus: [buildCyprus, '#e9d6a8', '#cdbb8e'], italy: [buildItaly, '#e9d6a8', '#9fa86a'], dubai: [buildDubai, '#f0dcae', '#e5cf9c'],
-    paris: [buildParis, '#d8d0bc', '#8fa36a'], london: [buildLondon, '#c9c3b4', '#6f9a52'], egypt: [buildEgypt, '#ecc98c', '#e2c590'], newyork: [buildNewYork, '#c9c3b4', '#7d9a5c'], alps: [buildAlps, '#f4f8fc', '#e9eff6'] };
+    paris: [buildParis, '#d8d0bc', '#8fa36a'], london: [buildLondon, '#c9c3b4', '#6f9a52'], egypt: [buildEgypt, '#ecc98c', '#e2c590'], newyork: [buildNewYork, '#c9c3b4', '#7d9a5c'], southafrica: [buildJungle, '#5b4128', '#2c3d1c'], alps: [buildAlps, '#f4f8fc', '#e9eff6'] };
   for (const C of COUNTRIES) {
     buildBridgeRoad(C.R, C.P, C);
     const g = new THREE.Group(); scene.add(g); C.group = g;
@@ -7788,7 +7914,8 @@ function endCRace(pos, quit) {
 /* ---------- delivery jobs ---------- */
 const JOBS = { cyprus: ['🧀', 'Halloumi delivery', 'Cheese for the tavernas', 2500], italy: ['🍕', 'Pizza delivery', 'Hot pizza, fast!', 3000], dubai: ['💰', 'Gold delivery', 'Gold bars to the towers', 6000],
   paris: ['🥐', 'Croissant delivery', 'Fresh from the bakery', 2800], newyork: ['🌭', 'Hot-dog delivery', 'Lunch for Manhattan', 3200], alps: ['🍫', 'Chocolate delivery', 'Swiss chocolate to the chalets', 3500],
-  london: ['☕', 'Tea delivery', 'Tea for the palace guards', 3000], egypt: ['🏺', 'Treasure delivery', 'Ancient treasures to the museum', 4500] };
+  london: ['☕', 'Tea delivery', 'Tea for the palace guards', 3000], egypt: ['🏺', 'Treasure delivery', 'Ancient treasures to the museum', 4500],
+  southafrica: ['🍌', 'Banana delivery', 'Bananas for the jungle camps', 4000] };
 let delivMark = null;
 function delivTarget(C, fx, fz) {
   const { xs, zs } = cStreets(C);
@@ -8886,19 +9013,25 @@ function buildGasStations() {
     GAS.push({ x, z, area });
     addAct({ x, z, r: 8, col: '#ff5a1f', title: '⛽ Gas Station', sub: 'FILL UP YOUR TANK (OR CHARGE)', sign: 'AMBOOLA GAS ⛽ ⚡', parent: C?.group, go: refuel, face: C ? Math.PI : 0 });
   }
-  // the car wash: an arch with big spinning brushes, in the city near the start
-  const W = { x: rc(8) + 4, z: rc(12) }; CARWASH.x = W.x; CARWASH.z = W.z;
-  const g = new THREE.Group(); g.position.set(W.x, 0, W.z); scene.add(g); CARWASH.g = g;
+  // the car washes: an arch with big spinning brushes in the city near the start, and one at the jungle camp
+  CARWASH = makeWash(rc(8) + 4, rc(12), scene, '🫧 AMBOOLA CAR WASH · 洗車');
+  for (const C of COUNTRIES) if (C.jungle) makeWash(C.R.x[C.R.n - 1] + 40, C.z0 + 55, C.group, '🫧 JUNGLE CAR WASH · MUD OFF!');
+}
+const WASHES = [];
+function makeWash(x, z, parent, label) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
   const blue = new THREE.MeshStandardMaterial({ color: 0x1d5fc4, roughness: .4 });
   for (const sx of [-5, 5]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.6, 5, 6), blue); post.position.set(sx, 2.5, 0); g.add(post); }
   const top = new THREE.Mesh(new THREE.BoxGeometry(10.6, 1, 6), blue); top.position.y = 5.3; g.add(top);
   const brushM = new THREE.MeshStandardMaterial({ color: 0x2fe0ff, roughness: 1, flatShading: true });
-  CARWASH.brushes = [-2.8, 2.8].map(sx => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 3.8, 10), brushM); b.position.set(sx, 2.1, 0); g.add(b); return b; });
-  const t = signTex(1024, 192, '#1d5fc4', [['🫧 AMBOOLA CAR WASH · 洗車', .55, .42, OR, '#fff']], '#2fe0ff'), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
+  const brushes = [-2.8, 2.8].map(sx => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 3.8, 10), brushM); b.position.set(sx, 2.1, 0); g.add(b); return b; });
+  const t = signTex(1024, 192, '#1d5fc4', [[label, .55, .42, OR, '#fff']], '#2fe0ff'), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon.push(sm);
   const sg = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.9), sm); sg.position.set(0, 6.8, 0); g.add(sg);
-  addAct({ x: W.x, z: W.z, r: 6, col: '#2fe0ff', title: '🫧 Car Wash', sub: 'MAKE YOUR CAR SHINE · $50', sign: 'CAR WASH', go: startWash });
+  const W = { x, z, t: 0, g, brushes }; WASHES.push(W);
+  addAct({ x, z, r: 6, col: '#2fe0ff', title: '🫧 Car Wash', sub: 'MAKE YOUR CAR SHINE · $50', sign: 'CAR WASH', parent: parent === scene ? undefined : parent, go: () => startWash(W) });
+  return W;
 }
-const CARWASH = { x: 0, z: 0, t: 0 };
+let CARWASH = { x: 0, z: 0, t: 0, brushes: [] };   // the wash in use (WASHES[0] is Tokyo's)
 function refuel() {
   const ev = player.spec.engine === 'ev', need = 1 - fuel, cost = Math.max(10, Math.round(need * (ev ? 150 : 300)));
   if (need < .02) { toast(ev ? '⚡ BATTERY FULL' : '⛽ TANK FULL', 'NOTHING TO FILL'); return; }
@@ -8906,9 +9039,9 @@ function refuel() {
   wallet.usd -= cost; saveWallet(); fuel = 1; fuelWarned = false; localStorage.setItem('amboola.fuel', 1);
   audio.beep(660, .1); setTimeout(() => audio.beep(990, .2), 120); toast(ev ? '⚡ FULLY CHARGED' : '⛽ FULL TANK', `−${fmtUSD(cost)} · ABOUT 90 KM`);
 }
-function startWash() {
+function startWash(W = WASHES[0]) {
   if (wallet.usd < 50) { toast('NOT ENOUGH MONEY', '$50'); return; }
-  wallet.usd -= 50; saveWallet(); CARWASH.t = 4; Object.assign(player, { x: CARWASH.x, z: CARWASH.z, heading: 0, vx: 0, vz: 0 });
+  CARWASH = W; wallet.usd -= 50; saveWallet(); CARWASH.t = 4; Object.assign(player, { x: CARWASH.x, z: CARWASH.z, heading: 0, vx: 0, vz: 0 });
   toast('🫧 WASHING…', 'BRUSHES, FOAM AND WAX');
 }
 const freeFuel = () => race || drag || cRace || worldRace || meet || crime || (typeof soccer !== 'undefined' && soccer);
@@ -8918,7 +9051,9 @@ function fuelInput(inp) {
 }
 function applyDirt(car) {
   if (!car?.paint) return; const m = car.paint; m.userData.base ??= m.color.clone();
-  m.color.copy(m.userData.base).lerp(new THREE.Color(0x6b5a44), dirt * .5); m.roughness = (m.userData.r0 ??= m.roughness) + dirt * .4;
+  m.color.copy(m.userData.base).lerp(new THREE.Color(0x5e4630), dirt * .62); m.roughness = Math.min(1, (m.userData.r0 ??= m.roughness) + dirt * .45);
+  m.userData.cc0 ??= m.clearcoat; m.userData.ccr0 ??= m.clearcoatRoughness;   // mud dulls the shine too
+  m.clearcoat = m.userData.cc0 * (1 - dirt * .75); m.clearcoatRoughness = Math.min(1, m.userData.ccr0 + dirt * .6);
 }
 function updateFuel(dt, p) {
   if (!freeFuel() && fuel > 0) {
@@ -8927,7 +9062,7 @@ function updateFuel(dt, p) {
     if (fuel <= 0) toast(p.spec.engine === 'ev' ? '⚡ BATTERY EMPTY!' : '⛽ OUT OF FUEL!', 'PRESS R FOR ROADSIDE HELP · $500');
   }
   // dirt: sand, snow and wet roads
-  const mud = (p.terrain ? .02 : 0) + (WX.snowy ? .006 : 0) + WX.wet * .004;
+  const mud = (p.terrain ? .02 : 0) + (WX.snowy ? .006 : 0) + WX.wet * .004 + (JG.in ? .035 : 0);   // the jungle: muddy in half a minute
   if (mud && p.speed > 3 && dirt < 1) { dirt = Math.min(1, dirt + mud * dt * Math.min(1, p.speed / 20)); applyDirt(p.car); }
   if ((fuelSaveT -= dt) < 0) { fuelSaveT = 2; localStorage.setItem('amboola.fuel', fuel.toFixed(4)); localStorage.setItem('amboola.dirt', dirt.toFixed(3)); }
   const fb = $('fuelBar'); fb.firstElementChild.textContent = p.spec.engine === 'ev' ? '⚡' : '⛽'; fb.lastElementChild.style.width = (fuel * 100) + '%'; fb.classList.toggle('low', fuel < .15);
@@ -10182,7 +10317,8 @@ function buildPlaces() {
   P.push({ n: 'Chureito Pagoda', jp: '忠霊塔', type: 'Five-storey pagoda · cherry blossom · Fuji view', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [FUJI.pagoda[0], FUJI.pagoda[1] + 40], face: Math.PI, x: FUJI.pagoda[0], z: FUJI.pagoda[1], col: '#ff7aa8' });
   P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
   GAS.filter(g => g.area === 'tokyo').forEach((g, k) => P.push({ n: `Gas Station ${k + 1}`, jp: 'ガソリンスタンド', type: 'Fuel and charging', kind: 'city', x: g.x, z: g.z, col: '#ff5a1f' }));
-  P.push({ n: 'Car Wash', jp: '洗車', type: 'Make your car shine · $50', kind: 'city', x: CARWASH.x, z: CARWASH.z, col: '#2fe0ff' });
+  P.push({ n: 'Car Wash', jp: '洗車', type: 'Make your car shine · $50', kind: 'city', x: WASHES[0].x, z: WASHES[0].z, col: '#2fe0ff' });
+  for (const C of COUNTRIES) if (C.jungle && WASHES[1]) P.push({ n: 'Jungle Car Wash', jp: '洗車', type: 'Wash the mud off · $50', kind: 'area', zone: C.id, idx: C.R.n - 1, end: [WASHES[1].x, WASHES[1].z - 14], x: WASHES[1].x, z: WASHES[1].z, col: '#2fe0ff' });
   P.push({ n: 'Volcano Island', jp: '火山島', type: 'Lava rivers to jump · through the undersea tunnel', kind: 'area', zone: 'volcano', idx: TUNNEL.n - 1, end: [4900, 3300], face: Math.PI / 2, x: (VOLC.x0 + VOLC.x1) / 2, z: (VOLC.z0 + VOLC.z1) / 2, col: '#ff5a1f' });
   P.push({ n: 'Undersea Tunnel', jp: '海底トンネル', type: 'Glass tunnel under the sea · from Amboola Beach', kind: 'area', zone: 'volcano', idx: Math.round(TUNNEL.n / 2), x: TUNNEL.x[Math.round(TUNNEL.n / 2)], z: TUNNEL.z[Math.round(TUNNEL.n / 2)], col: '#2fe0ff' });
   P.push({ n: 'The Moon', jp: '月', type: 'Moon base · low gravity · fly there in the jet', kind: 'area', zone: 'moon', idx: 1, end: [MOON.x + 20, MOON.z + 20], face: Math.PI / 2, x: MOON.x, z: MOON.z, col: '#cfd6dc' });
@@ -10979,7 +11115,7 @@ function tick(dt) {
     updateCamera(dt, player); carReflect();
     // shadows follow player
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
-    scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); // above the haze: the city view clears up
+    scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
     sky.position.copy(camera.position);
     updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player);
     audio.weather(WX.wet, player.speed, camMode >= 2);
@@ -11014,6 +11150,7 @@ async function boot() {
   traffic = new Traffic(isTouch ? 26 : 40);
   skids = new Skids(); smoke = new Smoke(); spray = new Smoke(220); spray.mat.uniforms.tint.value.setRGB(.82, .86, .92); spray.grow = 1.8;   // smaller puffs: the spray must never hide the car
   dust = new Smoke(240); dust.mat.uniforms.tint.value.setRGB(.95, .78, .52);
+  mudFx = new Smoke(220); mudFx.mat.uniforms.tint.value.setRGB(.36, .25, .14); mudFx.grow = 1.5;
   dmgSmoke = new Smoke(60); dmgSmoke.mat.uniforms.tint.value.setRGB(.32, .32, .34); dmgSmoke.grow = 1.1;
   bridgeTraffic = new BridgeTraffic(isTouch ? 12 : 20);
   buildRain(); buildWetFilm();
@@ -11028,7 +11165,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, JG, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

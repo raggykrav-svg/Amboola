@@ -392,7 +392,7 @@ Crash into something fast enough and it breaks!
 - **📷 Photo mode:** press **F** (or PHOTO MODE in the pause menu). Swing the camera round your car, pick a filter and **save the picture**.
 - **📻 Radio:** press **B** to switch between AMBOOLA FM, TOKYO LO-FI and HIGHWAY ROCK. The music is made live by the game.
 - **⛽ Fuel:** a tank lasts about 90 km. Fill up at a gas station (4 in Tokyo, one in every country town and at Fuji). If it runs out, press **R** for roadside help ($500).
-- **🫧 Car wash:** sand, snow and rain make your car dirty; the AMBOOLA Car Wash next to the Stunt Park makes it shine.
+- **🫧 Car wash:** sand, snow, rain and jungle mud make your car dirty; the AMBOOLA Car Wash next to the Stunt Park (or the Jungle Car Wash in South Africa) makes it shine.
 - **🔧 Tuning shop (in CUSTOMIZE):** rear wings (up to a MEGA wing), aero and rally body kits, neon wheels, and loud exhausts that pop flames.
 - **🐕 Pet dog:** turn on the Shiba in CUSTOMIZE → Pet. It rides with its head out of the window and barks at the police. Made in Blender (`models/blender/dog.py`).
 - **🗜 Junkyard:** by the harbour (east). The car crusher squashes the car you drive into a cube and pays you for the parts.
@@ -402,6 +402,16 @@ Crash into something fast enough and it breaks!
 - **London:** Big Ben with its four clock faces, the London Eye turning slowly, a palace with guards in red, phone boxes and double-decker buses. **Egypt:** the Sphinx, an obelisk and three great pyramids in the desert. Each has its own sea bridge from the harbour (that makes **8 countries**).
 - **Undersea tunnel 🌊:** from the sand at the south-east corner of Amboola Beach, a glass tunnel dives 20 m under the sea, with fish, seaweed and blue water all round. It comes up on **Volcano Island 🌋**: black rock, a smoking volcano with a glowing crater, and three **lava rivers** to jump with the ramps. Touch the lava and you're sent back!
 - **The Moon:** fly the AMBOOLA Jet to **Moon 🌙** (it's on the jet's list). Grey dust and craters, a black sky with stars and the Earth, the AMBOOLA moon base with domes and a flag, and big ramps. **Gravity is one sixth of Earth's**, so jumps last for ages. The 🚀 ring flies you home.
+
+### South Africa 🇿🇦: the big jungle 🌴
+
+![A jungle trail under the leaf roof, and the jungle camp](media/south-africa-jungle.jpg)
+
+- **Getting there:** its own sea bridge from the harbour, the ferry, the jet, or **South Africa** in the map's place list (that makes **9 countries**).
+- **One huge jungle:** dirt trails run between walls of palms, tall jungle trees, ferns and hanging vines. A thick roof of leaves hides the sky, so it is dark and green in there, with only little spots of sunlight. Find **The Giant Tree** in the middle.
+- **Mud everywhere:** the trails are dirt, so your car gets dirty fast. Mud flies off your wheels, and driving through a **mud puddle** goes 💦 SPLASH! and splats mud on the screen too.
+- **Make it shine again:** drive back to the camp at the start and use the **🫧 Jungle Car Wash** ($50), or pick *Jungle Car Wash* on the map. The brushes clean off all the mud and your car shines again.
+- **Things to do:** the Jungle Grand Prix race, banana deliveries, the runway for the jet, a gas station and a bus stop at the camp.
 
 ### Faster loading on phones
 - Only your own car's model loads at the start; the others load quietly in the background while you drive.
