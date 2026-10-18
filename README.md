@@ -104,7 +104,7 @@ The decals are painted inside the car's own paint, so they follow every curve an
 | `S` / `↓` | Brake, then hold to reverse |
 | `A` `D` / `←` `→` | Steer |
 | `Space` | Handbrake (drift) |
-| `C` | Camera: chase / far chase / hood / bumper |
+| `C` | Camera: chase / far chase / **inside the car** / hood / bumper (on phones and tablets: the 🎥 button at the top) |
 | `M` | Automatic ↔ manual gearbox |
 | `Q` / `E` | Shift down / up (manual) |
 | `T` | Time of day: day / sunset / night |
@@ -394,7 +394,11 @@ Crash into something fast enough and it breaks!
 - **⛽ Fuel:** a tank lasts about 90 km. Fill up at a gas station (4 in Tokyo, one in every country town and at Fuji). If it runs out, press **R** for roadside help ($500).
 - **🫧 Car wash:** sand, snow, rain and jungle mud make your car dirty; the AMBOOLA Car Wash next to the Stunt Park (or the Jungle Car Wash in South Africa) makes it shine.
 - **🔧 Tuning shop (in CUSTOMIZE):** rear wings (up to a MEGA wing), aero and rally body kits, neon wheels, and loud exhausts that pop flames.
-- **🐕 Pet dog:** turn on the Shiba in CUSTOMIZE → Pet. It rides with its head out of the window and barks at the police. Made in Blender (`models/blender/dog.py`).
+- **🐕 Pet dog:** turn on the Shiba in CUSTOMIZE → Pet. It rides with its head out of the window and barks at the police. Made in Blender (`models/blender/dog.py`). The cat was switched off once, because it stuck out of the door of low cars. It now fits, and you can pick it again in CUSTOMIZE → Pet.
+
+![The inside view: dashboard, dials, steering wheel and mirror](media/inside-view.jpg)
+
+- **🎥 Inside the car:** press **C** (or 🎥 on a phone) until it says INSIDE. You sit in the driver's seat and look out over the bonnet. There is a dashboard with live dials (speed, gear and a rev light bar), a steering wheel with your red gloves that turns when you steer, a middle screen, a rear-view mirror, the windscreen pillars, the roof and the doors. Every car gets a cockpit that fits its shape. Mud on the screen splats right in front of you.
 - **🗜 Junkyard:** by the harbour (east). The car crusher squashes the car you drive into a cube and pays you for the parts.
 - **🏠 Your own mansion:** Amboola Hills (north-west of the city), $1,000,000. Pool, palm trees, a helipad and your best cars on the drive; at home your butler fills the tank and washes the car.
 

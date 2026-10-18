@@ -388,3 +388,11 @@ Model gotchas:
 - **GPS in the jungle:** `navRoute` uses `jungleRoute(C, px, pz, tx, tz)` (Dijkstra over the `cStreets` crossings, the camp road first from the camp) instead of a straight line through the trees.
 - **Garage:** the Taiyō has `prize`: `buyCar` refuses it and the garage shows the prize text instead of a price.
 - **Test:** `window.amboola.JA`, `AN`, `hunt`, `startHunt`, `endHunt`, `jungleRoute`, `huntAhead`. Use `window.__autoInput = () => ({ throttle, brake, steer, handbrake, nitro })` to drive from a test; place a lion near the car with `st: 'chase'` and tick to see a catch.
+
+## Inside camera (cockpit)
+
+- `CAM_NAMES` is `CHASE, FAR CHASE, INSIDE, HOOD, BUMPER` (`CAM_INSIDE` = 2; hood is now 3, bumper 4). `nextCam()` (C key, gamepad button 3, touch `#tcam`) cycles them.
+- `buildCockpit(car, spec)` (made the first time you go inside, kept on `car.cockpit`) measures the car with `carGeom` and the paint vertices near the roof top (the eye goes just under the roof's highest part, on the right side): `E` is the eye in `car.group` space (+z forward, +x left). It adds a dash, a dial hood, a canvas speedo (`updateCockpit` redraws it at most ~14 times a second), a middle screen, a steering wheel (`spin` turns by `-steer × 2.3` about its axis, which points at the driver), A-pillars, a header bar, roof lining, mirror, doors, B-pillars, console and the passenger seat. `cockpit.hide` lists the meshes using `modelMats.black` (the Blender model's own cabin, seats, dash and wheel), hidden while inside along with the pet.
+- `updateCamera` calls `cockpitView(p, camMode === CAM_INSIDE)`; the camera sits at `E` (via `car.group.matrixWorld`, so it pitches and rolls with the car) with `near` .1, fov 70-80 and a third of the usual shake. `tick` switches the cockpit off in states that show the car from outside (photo, ferry, heli, garage...).
+- **Test:** `window.amboola.camMode = window.amboola.CAM_INSIDE`, tick a few frames, grab a frame; `player.car.cockpit` has `E`, `on`, `hide`.
+- Pets: the cat is sized to the car's height (`clamp(H * 1.3, .9, 1.6)`); a saved cat pet was switched off once (`amboola.catOff`).

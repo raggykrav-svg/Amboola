@@ -340,6 +340,7 @@
   #tg { right:24px; bottom:290px; } #tbk { right:114px; bottom:290px; } #th { right:24px; bottom:380px; width:60px!important; height:60px!important; font-size:11px!important; }
   #tn { right:100px; bottom:380px; width:60px!important; height:60px!important; font-size:11px!important; border-color:#2fe0ff!important; }
   #tpause { right:50%; top:10px; width:48px!important; height:48px!important; transform:translateX(50%); }
+  #tcam { right:calc(50% + 36px); top:10px; width:48px!important; height:48px!important; font-size:22px!important; }
   @media (max-width: 760px) {
     #carlist { top:auto; bottom:236px; left:12px; right:12px; width:auto; height:120px; display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; }
     .cat { display:none; } .caritem { min-width:150px; }
@@ -584,7 +585,7 @@
 <div id="touch" class="hidden">
   <div class="tb" id="tl">◀</div><div class="tb" id="tr">▶</div>
   <div class="tb" id="tg">GAS</div><div class="tb" id="tbk">BRK</div><div class="tb" id="th">HB</div><div class="tb" id="tn">N₂O</div>
-  <div class="tb" id="tpause">II</div>
+  <div class="tb" id="tpause">II</div><div class="tb" id="tcam">🎥</div>
 </div>
 
 <script type="module">
@@ -3521,7 +3522,7 @@ function drawTacho(p) {
 /* =====================================================================
    CAMERA
    ===================================================================== */
-let camMode = 0; const CAM_NAMES = ['CHASE', 'FAR CHASE', 'HOOD', 'BUMPER'];
+let camMode = 0; const CAM_NAMES = ['CHASE', 'FAR CHASE', 'INSIDE', 'HOOD', 'BUMPER'];
 const camPos = new THREE.Vector3(0, 5, 20), camLook = new THREE.Vector3();
 let shakeT = 0;
 // scenic camera at the summit: stop on the plaza and the camera glides out over the railing to look down on Tokyo
@@ -3543,11 +3544,110 @@ function viewpointCamera(dt) {
   camLook.x += (lookX - camLook.x) * k; camLook.y += (30 - camLook.y) * k; camLook.z += (lookZ - camLook.z) * k;
   camera.lookAt(camLook); camera.fov = damp(camera.fov, 40, 1.5, dt); camera.updateProjectionMatrix();
 }
+/* ---- the INSIDE camera: you sit in the driver's seat (on the right, as in Japan) and look out through the
+   windscreen over your own bonnet. The outside of a car can't be seen from in there (its faces point outwards), so the
+   game builds a cockpit for every car from its shape: a dashboard, a steering wheel that turns with you (with your two
+   gloved hands on it), live dials, the windscreen pillars, roof lining, rear-view mirror, door panels and the passenger
+   seat. The little black cabin inside the Blender model (its dash, seats and wheel) is hidden while you are inside. */
+const CAM_INSIDE = 2;
+let ckMats = null;
+const cockpitMats = () => ckMats ??= {
+  dash: new THREE.MeshStandardMaterial({ color: 0x1c1d21, roughness: .85 }), trim: new THREE.MeshStandardMaterial({ color: 0x34363d, roughness: .5, metalness: .4 }),
+  liner: new THREE.MeshStandardMaterial({ color: 0x3c3d42, roughness: 1 }), seat: new THREE.MeshStandardMaterial({ color: 0x26272c, roughness: .9 }),
+  red: new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .7 }), wheel: new THREE.MeshStandardMaterial({ color: 0x151517, roughness: .55 }),
+  glove: new THREE.MeshStandardMaterial({ color: 0xd8261c, roughness: .8 }), alu: new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: .3, metalness: .9 }),
+  mirror: new THREE.MeshStandardMaterial({ color: 0xa8b2be, roughness: .04, metalness: 1 }),
+};
+function buildCockpit(car, spec) {
+  const G = carGeom(car); if (!G) return null;
+  // the highest part of the body is the roof over the seats: the driver's head goes just under it
+  const inv = new THREE.Matrix4().copy(car.group.matrixWorld).invert(), M = new THREE.Matrix4(), v = new THREE.Vector3(); let zs = 0, n = 0;
+  car.group.traverse(o => {
+    if (!o.isMesh || o.material !== car.paint) return; M.multiplyMatrices(inv, o.matrixWorld); const P = o.geometry.attributes.position;
+    for (let i = 0; i < P.count; i += 2) { v.fromBufferAttribute(P, i).applyMatrix4(M); if (v.y > G.y1 - .08 && Math.abs(v.x) < G.xh * .6) { zs += v.z; n++; } }
+  });
+  const zr = n ? zs / n : G.mid, W = G.xh * 2, ey = Math.max(G.y0 + .72, G.y1 - .3), ez = zr - .1, ex = -Math.min(.4, G.xh * .4), top = G.y1 - .04, belt = ey - .3;
+  const K = cockpitMats(), g = new THREE.Group(), E = new THREE.Vector3(ex, ey, ez);
+  const box = (w, h, d, m, x, y, z, rx = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.x = rx; o.receiveShadow = true; g.add(o); return o; };
+  const face = (o, tx, ty, tz) => { const dx = tx - o.position.x, dy = ty - o.position.y, dz = tz - o.position.z; o.rotation.order = 'YXZ'; o.rotation.y = Math.atan2(dx, dz); o.rotation.x = -Math.atan2(dy, Math.hypot(dx, dz)); return o; };
+  const beam = (a, b, t, m) => { const d = new THREE.Vector3().subVectors(b, a), o = box(t, t, d.length(), m, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); face(o, b.x, b.y, b.z); return o; };
+  // the dashboard (its top runs from just past the wheel to the windscreen) and the dials' hood in front of the driver
+  const dt = ey - .26; box(W * .9, .3, .45, K.dash, 0, dt - .15, ez + .88);
+  box(.46, .05, .18, K.dash, ex, ey - .155, ez + .71);
+  for (const s of [-1, 1]) box(.12, .05, .03, K.trim, s * W * .3, dt - .05, ez + .65);   // air vents
+  // the dials: a screen that shows your speed, gear and revs
+  const gc = document.createElement('canvas'); gc.width = 512; gc.height = 192; const gt = new THREE.CanvasTexture(gc); gt.colorSpace = THREE.SRGBColorSpace;
+  const gauge = face(new THREE.Mesh(new THREE.PlaneGeometry(.42, .158), new THREE.MeshBasicMaterial({ map: gt, toneMapped: false })), 0, 0, 0); g.add(gauge);
+  gauge.position.set(ex, ey - .245, ez + .64); face(gauge, ex, ey, ez);   // seen above the top of the wheel
+  // the middle screen
+  const sc = document.createElement('canvas'); sc.width = 256; sc.height = 160; const sg = sc.getContext('2d');
+  const grd = sg.createLinearGradient(0, 0, 256, 160); grd.addColorStop(0, '#0b2a4a'); grd.addColorStop(1, '#06121f'); sg.fillStyle = grd; sg.fillRect(0, 0, 256, 160);
+  sg.fillStyle = '#2fe0ff'; sg.font = '900 30px Orbitron, Arial'; sg.textAlign = 'center'; sg.fillText('AMBOOLA', 128, 62);
+  sg.fillStyle = '#ffffff'; sg.font = '600 17px Arial'; sg.fillText((spec?.name || '').slice(0, 26), 128, 100); sg.fillStyle = '#ffc21f'; sg.fillText('♪ AMBOOLA FM', 128, 132);
+  const st = new THREE.CanvasTexture(sc); st.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(.26, .16), new THREE.MeshBasicMaterial({ map: st, toneMapped: false })); scr.position.set(0, dt - .1, ez + .66); face(scr, ex, ey, ez); g.add(scr);
+  // the steering wheel: a tilted ring with three spokes, a red top marker and your gloved hands; the inner part turns
+  const tilt = new THREE.Group(); tilt.position.set(ex, ey - .46, ez + .5); face(tilt, ex, ey - .2, ez - .3); g.add(tilt);
+  const spin = new THREE.Group(); tilt.add(spin);
+  spin.add(new THREE.Mesh(new THREE.TorusGeometry(.175, .026, 10, 36), K.wheel));
+  const mark = new THREE.Mesh(new THREE.BoxGeometry(.03, .03, .056), K.red); mark.position.y = .175; spin.add(mark);
+  for (const a of [0, Math.PI, -Math.PI / 2]) { const sp = new THREE.Mesh(new THREE.BoxGeometry(.15, .035, .02), K.wheel); sp.position.set(Math.cos(a) * .09, Math.sin(a) * .09, 0); sp.rotation.z = a; spin.add(sp); }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, .05, 20), K.wheel); hub.rotation.x = Math.PI / 2; spin.add(hub);
+  const badge = new THREE.Mesh(new THREE.CircleGeometry(.03, 20), K.red); badge.position.z = .027; spin.add(badge);
+  for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.SphereGeometry(.036, 12, 10), K.glove); h.scale.set(1, 1.3, .8); h.position.set(s * .175, .01, .012); spin.add(h); }
+  box(.06, .06, .24, K.wheel, ex, ey - .52, ez + .63, -.5);   // the column
+  // windscreen pillars, the bar over the windscreen, the roof lining and the rear-view mirror
+  const hz = ez + .55;   // where the windscreen meets the roof
+  for (const s of [-1, 1]) beam(new THREE.Vector3(s * W * .43, dt, ez + 1.08), new THREE.Vector3(s * W * .4, top - .03, hz), .08, K.dash);
+  box(W * .82, .07, .1, K.dash, 0, top - .05, hz);
+  box(W * .84, .03, 1.5, K.liner, 0, top - .015, hz - .75);
+  box(.02, .07, .02, K.trim, 0, top - .1, hz + .02);
+  const mir = box(.24, .07, .03, K.dash, 0, top - .155, hz + .03); face(mir, ex, ey, ez);
+  const mg = new THREE.Mesh(new THREE.PlaneGeometry(.23, .06), K.mirror); mg.position.z = .016; mir.add(mg);
+  // doors (with an armrest and a handle), the pillars behind your head, the middle console and the passenger seat
+  for (const s of [-1, 1]) {
+    const dx = s * (W * .46), dh = belt - (G.y0 + .2);
+    box(.07, dh, 1.7, K.dash, dx, G.y0 + .2 + dh / 2, ez + .1);
+    box(.09, .05, .55, K.trim, dx - s * .07, belt - .17, ez - .02);
+    box(.03, .03, .12, K.alu, dx - s * .045, belt - .06, ez + .32);
+    box(.08, top - belt, .16, K.dash, s * W * .44, (top + belt) / 2, ez - .55);
+  }
+  box(.26, .22, .95, K.dash, 0, belt - .34, ez + .22);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(.035, 12, 10), K.alu); knob.position.set(0, belt - .19, ez + .28); g.add(knob);
+  const seat = box(.52, .66, .13, K.seat, -ex, belt + .05, ez - .2, -.16); box(.07, .6, .135, K.red, -ex, belt + .05, ez - .199, -.16);
+  box(.52, .12, .5, K.seat, -ex, belt - .3, ez + .05);
+  g.visible = false; car.group.add(g);
+  // from in here only the faces that point inwards show: the model's own little black cabin and every two-sided part (stripes, trim, wheels)
+  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (o.material === modelMats.black || o.material.side !== THREE.FrontSide)) hide.push(o); });
+  return { g, E, spin, gauge: { c: gc, x: gc.getContext('2d'), t: gt, key: '', T: 0 }, hide, on: false, seat };
+}
+function cockpitView(p, on) {
+  const car = p?.car; if (!car) return;
+  if (on && !car.cockpit) car.cockpit = buildCockpit(car, p.spec) || { none: true };
+  const ck = car.cockpit; if (!ck || ck.none || ck.on === on) return;
+  ck.on = on; ck.g.visible = on; for (const o of ck.hide) o.visible = !on; if (car.dog) car.dog.visible = !on;
+}
+function updateCockpit(dt, p) {
+  const ck = p.car.cockpit; if (!ck?.on) return;
+  ck.spin.rotation.z = damp(ck.spin.rotation.z, -(p.steer || 0) * 2.3, 14, dt);   // turn right: the wheel turns clockwise (its axis points at you)
+  const G = ck.gauge, kmh = Math.round(p.speed * 3.6), red = p.spec.redline || 8000, key = `${kmh}|${p.gear}|${Math.round(p.rpm / 150)}`;
+  G.T -= dt; if (key === G.key || G.T > 0) return; G.key = key; G.T = .07;
+  const x = G.x, w = 512, h = 192, r = clamp(p.rpm / red, 0, 1);
+  x.fillStyle = '#05070b'; x.fillRect(0, 0, w, h);
+  for (let k = 0; k < 30; k++) { const on = k / 30 < r; x.fillStyle = on ? (k > 25 ? '#ff2a2a' : k > 20 ? '#ffc21f' : '#2fe0ff') : '#16202a'; x.fillRect(16 + k * 16.2, 14, 12, 26); }
+  x.textAlign = 'center'; x.fillStyle = '#ffffff'; x.font = '900 86px Orbitron, Arial'; x.fillText(String(kmh), 230, 136);
+  x.fillStyle = '#8fa0b0'; x.font = '700 22px Arial'; x.fillText('km/h', 230, 172);
+  x.fillStyle = '#ffc21f'; x.font = '900 64px Orbitron, Arial'; x.fillText(p.reverse ? 'R' : String(p.gear || 'N'), 430, 132);
+  x.fillStyle = dirt > .5 ? '#c8913c' : '#2a3a48'; x.font = '700 18px Arial'; x.fillText(dirt > .5 ? '🟤 DIRTY' : 'AMBOOLA', 70, 172);
+  G.t.needsUpdate = true;
+}
+let ckLook = 0;
 function updateCamera(dt, p) {
   if (window.__camHook && window.__camHook(camera, dt)) return; // cinematic cameras (video recording)
   if (vp.on) return viewpointCamera(dt);
   const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
   const B = BODIES[p.spec.body];
+  cockpitView(p, camMode === CAM_INSIDE);
   if (p.loop && camMode <= 1) {   // riding a loop: watch from beside the ring
     const L = p.loop.L, sd = L.cam ?? -20, tx = L.x + L.rx * sd - L.fx * 1.5, tz = L.z + L.rz * sd - L.fz * 1.5, ty = L.R + 1.2;
     camPos.x = damp(camPos.x, tx, 3.5, dt); camPos.z = damp(camPos.z, tz, 3.5, dt); camPos.y = damp(camPos.y, ty, 3.5, dt);
@@ -3567,17 +3667,23 @@ function updateCamera(dt, p) {
     camLook.set(p.x + lx * 2.5, .95 + (B.roofY - 1.3) * .7 + py + (p.slope || 0) * 2.5, p.z + lz * 2.5);
     if (py > -1 && (py > 0 || camPos.x < -HALF - 9 || Math.abs(camPos.z) > HALF + 9 || camPos.x > HALF + 9)) camPos.y = Math.max(camPos.y, mtnHeight(camPos.x, camPos.z) + 1.4, areaGround(camPos.x, camPos.z) + 1.4); // don't dip into the hillside (not in the undersea tunnel)
     camera.position.copy(camPos);
+  } else if (camMode === CAM_INSIDE && p.car.cockpit && !p.car.cockpit.none) {   // in the driver's seat, looking a little into the turns
+    const ck = p.car.cockpit, Mw = p.car.group.matrixWorld; p.car.group.updateMatrixWorld();
+    ckLook = damp(ckLook, -(p.steer || 0) * 1.6, 3, dt);
+    camera.position.copy(ck.E).applyMatrix4(Mw); camLook.set(ck.E.x + ckLook, ck.E.y - 1.1, ck.E.z + 10).applyMatrix4(Mw);
+    camPos.copy(camera.position);
   } else {
-    const off = camMode === 2 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
+    const off = camMode === 3 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
     const o = off[2], py = p.y || 0, sl = p.slope || 0; camera.position.set(p.x + fx * o, off[1] + py + sl * o, p.z + fz * o);
     camLook.set(p.x + fx * 30, off[1] - .6 + py + sl * 30, p.z + fz * 30);
     camPos.copy(camera.position);
   }
   shakeT += dt;
-  const sh = clamp((p.speed - 40) / 60, 0, 1) * .03 + clamp(p.slip - .5, 0, 1) * .02;
+  const sh = (clamp((p.speed - 40) / 60, 0, 1) * .03 + clamp(p.slip - .5, 0, 1) * .02) * (camMode === CAM_INSIDE ? .35 : 1);
   camera.position.x += Math.sin(shakeT * 37) * sh; camera.position.y += Math.sin(shakeT * 43) * sh;
   camera.lookAt(camLook);
-  camera.fov = damp(camera.fov, 60 + clamp(p.speed * 3.6 / 320, 0, 1) * 20 + (camMode >= 2 ? 5 : 0), 4, dt); camera.updateProjectionMatrix();
+  const ins = camMode === CAM_INSIDE; camera.near = ins ? .1 : .25;   // the wheel and the dash are close to your eyes
+  camera.fov = damp(camera.fov, ins ? 70 + clamp(p.speed * 3.6 / 320, 0, 1) * 10 : 60 + clamp(p.speed * 3.6 / 320, 0, 1) * 20 + (camMode >= 3 ? 5 : 0), 4, dt); camera.updateProjectionMatrix();
 }
 
 /* =====================================================================
@@ -3595,7 +3701,7 @@ addEventListener('keydown', e => {
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
   if (keys[e.code]) return; keys[e.code] = true;
   if (state === 'drive') {
-    if (e.code === 'KeyC') { camMode = (camMode + 1) % 4; toast(CAM_NAMES[camMode], 'CAMERA'); }
+    if (e.code === 'KeyC') nextCam();
     if (e.code === 'KeyV' && player?.spec.fly) startFlyCar();
     if (e.code === 'KeyT') cycleTime();
     if (e.code === 'KeyY') cycleWeather();
@@ -3639,7 +3745,7 @@ function readInput() {
     const rt = gp.buttons[7]?.value || 0, lt = gp.buttons[6]?.value || 0; if (rt > .05) thr = rt; if (lt > .05) brk = lt;
     if (gp.buttons[0]?.pressed) hb = 1; if (gp.buttons[1]?.pressed) nitro = 1;
     const pr = n => gp.buttons[n]?.pressed && !padPrev[gp.index + ':' + n];
-    if (pr(3)) { camMode = (camMode + 1) % 4; } if (pr(9)) setPause(state === 'drive'); if (pr(5) && player?.manual) player.doShift(1); if (pr(4) && player?.manual) player.doShift(-1); if (pr(2) && player) race ? raceReset() : player.resetToRoad(); if (pr(1) && nearMarker && !race) startRace(nearMarker); if (pr(8)) openMap();
+    if (pr(3)) nextCam(); if (pr(9)) setPause(state === 'drive'); if (pr(5) && player?.manual) player.doShift(1); if (pr(4) && player?.manual) player.doShift(-1); if (pr(2) && player) race ? raceReset() : player.resetToRoad(); if (pr(1) && nearMarker && !race) startRace(nearMarker); if (pr(8)) openMap();
     gp.buttons.forEach((b, n) => padPrev[gp.index + ':' + n] = b.pressed);
   }
   return { throttle: thr, brake: brk, steer: clamp(st, -1, 1), handbrake: hb, nitro };
@@ -3651,6 +3757,8 @@ function bindTouch(id, k) {
 }
 [['tl', 'l'], ['tr', 'r'], ['tg', 'g'], ['tbk', 'b'], ['th', 'h'], ['tn', 'n']].forEach(([a, b]) => bindTouch(a, b));
 $('tpause').addEventListener('pointerdown', () => setPause(true));
+function nextCam() { camMode = (camMode + 1) % CAM_NAMES.length; toast(CAM_NAMES[camMode], camMode === CAM_INSIDE ? 'YOU ARE IN THE DRIVER\'S SEAT · PRESS C FOR THE NEXT VIEW' : 'CAMERA'); }
+$('tcam').addEventListener('pointerdown', e => { e.preventDefault(); nextCam(); });
 
 /* =====================================================================
    GARAGE (menu)
@@ -9383,6 +9491,8 @@ const KITS = [{ n: 'Stock' }, { n: 'Aero kit' }, { n: 'Rally kit' }];
 const EXHAUSTS = [{ n: 'Stock' }, { n: 'Sport (loud)' }, { n: 'Flames 🔥' }];
 const PETS = [{ n: 'No pet' }, { n: 'Shiba dog 🐕', m: 'dog' }, { n: 'Cat 🐈', m: 'cat' }, { n: 'Parrot 🦜', m: 'parrot' }, { n: 'Tiny dragon 🐉', m: 'dragon' }];   // models/blender/dog.py and pets.py
 let pet = +(localStorage.getItem('amboola.pet') || 0) || 0; if (!PETS[pet]) pet = 0;
+if (PETS[pet].m === 'cat' && !localStorage.getItem('amboola.catOff')) { pet = 0; localStorage.setItem('amboola.pet', 0); }   // it poked out through the door of low cars
+localStorage.setItem('amboola.catOff', '1');
 const tuneCarbon = new THREE.MeshStandardMaterial({ color: 0x16181b, roughness: .35, metalness: .3 });
 function carDeckY(car, z, x = 0) {
   const ray = new THREE.Raycaster(); car.group.updateMatrixWorld(true);
@@ -9446,7 +9556,7 @@ function attachDog(car) {   // the pet: dog and cat look out of the window, the 
   const d = M.clone(), H = G.y1 - G.y0, win = G.y0 + H * .74;
   d.traverse(o => { if (o.isMesh) o.castShadow = true; });
   if (P.m === 'dog') { d.scale.setScalar(1.25); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .55, win - .74, G.mid + .15); }   // only the head and front paws stick out
-  else if (P.m === 'cat') { d.scale.setScalar(1.6); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .55, win - .78, G.mid + .1); }
+  else if (P.m === 'cat') { const s = clamp(H * 1.3, .9, 1.6); d.scale.setScalar(s); d.rotation.y = Math.PI / 2; d.position.set(G.xh - .3 - .25 * s, win - .49 * s, G.mid + .1); }   // smaller in low cars, so only its head is out of the window
   else if (P.m === 'parrot') { d.scale.setScalar(2.4); d.position.set(0, G.y1 - .02, G.mid - .2); }
   else { d.scale.setScalar(2.2); d.position.set(.7, G.y1 + 1.2, G.mid - .5); d.userData.fly = true; d.userData.wings = [d.getObjectByName('WingL'), d.getObjectByName('WingR')]; }
   d.userData.tune = true; d.userData.kind = P.m;
@@ -11382,6 +11492,7 @@ function frame() {
   tick(Math.min(clock.getDelta(), 1 / 20));
 }
 function tick(dt) {
+  if (player?.car?.cockpit?.on && !['drive', 'pause', 'overlay', 'map'].includes(state)) cockpitView(player, false);
   if (state === 'ad') { updateAd(dt); return; }
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
@@ -11412,7 +11523,7 @@ function tick(dt) {
     if (player.dmgK < .92 && player.speed > 4 && Math.random() < dt * 14) { const B2 = BODIES[player.spec.body]; dmgSmoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .45, (player.y || 0) + .5); }
     smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt); updateBreak(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
-    updateCamera(dt, player); carReflect();
+    updateCamera(dt, player); updateCockpit(dt, player); carReflect();
     // shadows follow player
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
@@ -11465,7 +11576,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
