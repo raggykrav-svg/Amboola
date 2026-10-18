@@ -135,6 +135,9 @@
   #cabhud { position:absolute; left:50%; top:66px; transform:translateX(-50%); display:flex; gap:12px; align-items:center; background:var(--panel); padding:6px 8px 6px 16px;
     border-bottom:2px solid #c9b27a; backdrop-filter:blur(6px); font-size:15px; letter-spacing:.05em; pointer-events:auto; white-space:nowrap; max-width:calc(100vw - 32px); }
   #cabhud.hidden { display:none; }
+  #banFx { position:absolute; inset:0; pointer-events:none; opacity:0; background: radial-gradient(ellipse 22% 18% at 38% 42%, rgba(255,226,60,.92), rgba(255,214,40,.7) 55%, transparent 70%),
+    radial-gradient(ellipse 8% 6% at 24% 30%, rgba(255,230,80,.85), transparent 70%), radial-gradient(ellipse 7% 9% at 52% 58%, rgba(250,220,60,.85), transparent 70%), radial-gradient(ellipse 5% 4% at 30% 62%, rgba(255,236,90,.8), transparent 70%); }
+  #banFx span { position:absolute; left:31%; top:30%; font-size:min(18vw, 150px); transform:rotate(-24deg); filter:drop-shadow(0 4px 8px #0006); }
   #mudFx { position:absolute; inset:0; pointer-events:none; opacity:0; background:
     radial-gradient(ellipse 14% 11% at 8% 82%, rgba(74,50,26,.95), rgba(74,50,26,.6) 60%, transparent 72%), radial-gradient(ellipse 9% 7% at 17% 93%, rgba(92,63,33,.9), transparent 70%),
     radial-gradient(ellipse 12% 9% at 91% 86%, rgba(70,47,24,.95), rgba(70,47,24,.55) 62%, transparent 74%), radial-gradient(ellipse 6% 5% at 82% 70%, rgba(96,66,35,.85), transparent 70%),
@@ -499,7 +502,7 @@
   <canvas id="minimap" width="420" height="420" title="Open map (N)"></canvas>
   <div id="maptag">🗺 MAP · CLICK / N</div>
   <button id="flyBtn" class="hidden">🚀 FLY <small>V</small></button>
-  <div id="mudFx"></div>
+  <div id="mudFx"></div><div id="banFx"><span>🍌</span></div>
   <div id="cabhud" class="hidden"><span id="cabTxt"></span><span id="cabBtns"></span></div>
   <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
@@ -716,7 +719,7 @@ const CARS = [
   { id: 'hayabusa', name: 'AMBOOLA Hayabusa', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_hayabusa', wing: 'none', hybrid: true, kw: 1397, redline: 8500, mass: 1390, vmax: 520, drive: 'AWD', engine: 'v8tt', gears: 7, zero: 2.4, grip: 1.44, aero: 0.3, paint: 29, rim: '#1d3a70', caliper: '#1d3a70', usd: 5000000, desc: 'V8 quad-turbo + motor · 1,900 PS', jp: '隼' },
   { id: 'kaminari', name: 'AMBOOLA Kaminari', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kaminari', wing: 'none', kw: 662, redline: 8000, mass: 1050, vmax: 330, drive: 'RWD', engine: 'v8tt', gears: 7, zero: 3.0, grip: 1.53, aero: 0.5, paint: 4, rim: '#111113', caliper: '#111113', usd: 750000, desc: 'V8 twin-turbo · 900 PS', jp: '雷' },
   { id: 'tsunami', name: 'AMBOOLA Tsunami', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_tsunami', wing: 'none', kw: 699, redline: 9000, mass: 1600, vmax: 350, drive: 'RWD', engine: 'v12na', gears: 8, zero: 3.4, grip: 1.39, aero: 0.45, paint: 27, rim: '#f8f8f6', caliper: '#f8f8f6', usd: 480000, desc: 'V12 · 950 PS', jp: '津波' },
-  { id: 'taiyo', name: 'AMBOOLA Taiyō', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_taiyo', wing: 'none', kw: 1103, redline: 18000, mass: 1450, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: 0.9, paint: 38, rim: '#c8141b', caliper: '#c8141b', usd: 1200000, desc: '3 electric motors · 1,500 PS', jp: '太陽' },
+  { id: 'taiyo', name: 'AMBOOLA Taiyō', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_taiyo', wing: 'none', kw: 1103, redline: 18000, mass: 1450, vmax: 400, drive: 'AWD', engine: 'ev', gears: 1, zero: 2.1, grip: 1.62, aero: 0.9, paint: 38, rim: '#c8141b', caliper: '#c8141b', usd: 1200000, prize: '🧩 FIND 2 PIECES IN SOUTH AFRICA', desc: '3 electric motors · 1,500 PS · win it in the jungle', jp: '太陽' },
   { id: 'kuro', name: 'AMBOOLA Kuro', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kuro', wing: 'none', hybrid: true, kw: 1250, redline: 8500, mass: 1320, vmax: 450, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 2.2, grip: 1.71, aero: 1.15, paint: 7, rim: '#3a3d41', caliper: '#c8141b', usd: 3000000, desc: 'V8 hybrid · 1,700 PS', jp: '黒' },
   { id: 'hoshi', name: 'AMBOOLA Hoshi', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_hoshi', wing: 'none', hybrid: true, kw: 735, redline: 8500, mass: 1700, vmax: 370, drive: 'RWD', engine: 'v12na', gears: 8, zero: 3.5, grip: 1.3, aero: 0.2, paint: 9, rim: '#c4c8cc', caliper: '#c4c8cc', usd: 650000, desc: 'V12 hybrid · 1,000 PS', jp: '星' },
   { id: 'kasai', name: 'AMBOOLA Kasai', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_kasai', wing: 'none', kw: 1176, redline: 9000, mass: 1250, vmax: 420, drive: 'AWD', engine: 'v10na', gears: 7, zero: 1.9, grip: 1.89, aero: 1.6, paint: 3, rim: '#111113', caliper: '#f6d10f', usd: 2200000, desc: 'V10 twin-turbo · 1,600 PS', jp: '火災' },
@@ -2084,7 +2087,7 @@ const MODELS = {};
 // a time, traffic first. Until a car's model is in, it shows its simple built-in body (swapped as soon as it arrives).
 const TRAFFIC_MODELS = ['tr_kei', 'tr_taxi', 'tr_sedan', 'tr_van', 'tr_truck', 'tr_police'];   // the city's traffic (see buildTrafficCar)
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -3247,7 +3250,7 @@ function earn(usd, why) {
 }
 const owns = c => wallet.owned.has(c.id);
 function buyCar(c) {
-  if (owns(c) || wallet.usd < c.usd) return false;
+  if (owns(c) || c.prize || wallet.usd < c.usd) return false;
   wallet.usd -= c.usd; wallet.owned.add(c.id); saveWallet(); checkMissions(); return true;
 }
 /* ---- upgrades: 5 engine + 5 tyre levels per owned car (saved per car id) */
@@ -3879,19 +3882,19 @@ function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => {
     const cc = CARS[+d.dataset.i], own = owns(cc); d.classList.toggle('sel', +d.dataset.i === carIdx); d.classList.toggle('locked', !own);
-    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : fmtUSD(cc.usd);
+    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : cc.prize ? '🧩 PRIZE' : fmtUSD(cc.usd);
   });
   $('walletV').textContent = fmtUSD(wallet.usd);
   const own = owns(c), pr = $('price'), dv = $('drive');
   const u = upgOf(c), t = tunedSpec(c);
-  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : `PRICE ${fmtUSD(c.usd)}`;
+  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : c.prize ? '🧩 JUNGLE HUNT PRIZE' : `PRICE ${fmtUSD(c.usd)}`;
   $('upgBtn').classList.toggle('hidden', !own || !!c.jet); $('custBtn').classList.toggle('hidden', !own);
   const rc0 = own ? repairCost(c) : 0, rb = $('repairBtn'); rb.classList.toggle('hidden', !rc0);
   if (rc0) rb.innerHTML = `🔧 REPAIR DENTS · ${fmtUSD(rc0)}<small>${Object.entries(dmgZones(c.id)).filter(([, v]) => v > .02).map(([k, v]) => `${DMG_ZONES[k]} ${Math.round(v * 100)}%`).join(' · ')}</small>`;
   const sb = $('sellBtn'); sb.classList.toggle('hidden', !own || wallet.owned.size <= 1); sb.classList.remove('confirm'); sb.textContent = `SELL FOR ${fmtUSD(sellValue(c))}`;
   $('misCount').textContent = `${ST.done.length}/${MISSIONS.length}`;
-  dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
-  dv.textContent = own ? 'DRIVE' : wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`;
+  dv.className = own ? '' : wallet.usd >= c.usd && !c.prize ? 'buy' : 'locked';
+  dv.textContent = own ? 'DRIVE' : c.prize || (wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`);
   for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own && !c.jet ? 1 : .35;
   if (c.jet && own) dv.textContent = c.heli ? '🚁 FLY' : '✈ FLY';
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
@@ -6901,6 +6904,299 @@ function updateJungle(dt) {
   JG.splat = Math.max(0, JG.splat - dt * .09);
   const el = $('mudFx'); if (el) el.style.opacity = (JG.splat * .85).toFixed(3);
   mudFx.update(dt);
+  updateAnimals(dt, p);
+  const inC = state === 'drive' && p.x > C.x0 && p.x < C.x1 && p.z > C.z0 - 10 && p.z < C.z1;   // just arrived in South Africa: the Taiyō Hunt begins
+  if (inC && !JG.wasIn && !hunt && !wallet.owned.has(TAIYO_ID) && !busyAct() && !boat) startHunt(C);
+  JG.wasIn = inC;
+}
+/* ---- Jungle animals: lions and monkeys (models/blender/jungle_animals.py). Each moving part of the Blender model (body,
+   legs, tail, jaw, mane) is merged into one vertex-coloured mesh, so an animal is 6-8 draw calls. Lion prides and
+   monkey troops live along the trails; only the ones near you are drawn and moved. They jump out of your way, and in
+   the Taiyō Hunt they chase you: a lion that catches you costs a life, a monkey jumps on your roof and slows you down. */
+const ANIMAL_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85 }), ANIMAL_T = {};
+const JA = { list: [], built: false, t: 0 };
+const AN = { lion: { walk: 1.8, run: 21, turn: 3.4, catchR: 3.4 }, monkey: { walk: 2.2, run: 15, turn: 5, catchR: 2.8 } };
+function animalTemplate(id) {
+  if (ANIMAL_T[id] || !MODELS[id]) return ANIMAL_T[id] || null;
+  const src = MODELS[id], root = new THREE.Group(), M = new THREE.Matrix4(); src.updateMatrixWorld(true);
+  for (const part of src.children) {
+    const inv = part.matrixWorld.clone().invert(), geos = [];
+    part.traverse(m => {
+      if (!m.isMesh) return; let g = m.geometry.clone().applyMatrix4(M.multiplyMatrices(inv, m.matrixWorld)); if (g.index) g = g.toNonIndexed();
+      if (!g.attributes.normal) g.computeVertexNormals(); for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+      const c = m.material.color, n = g.attributes.position.count, col = new Float32Array(n * 3); for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b], i * 3);
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3)); geos.push(g);
+    });
+    if (!geos.length) continue;
+    const mesh = new THREE.Mesh(mergeGeometries(geos), ANIMAL_MAT); mesh.name = part.name; mesh.position.copy(part.position); mesh.quaternion.copy(part.quaternion);
+    mesh.castShadow = part.name === 'Body' || part.name === 'Mane'; root.add(mesh);
+  }
+  return ANIMAL_T[id] = root;
+}
+function addAnimal(kind, x, z, o = {}) {
+  const g = animalTemplate(kind).clone(), P = {}; g.rotation.order = 'YXZ'; g.visible = false; scene.add(g);
+  for (const m of g.children) P[m.name] = m;
+  if (o.female && P.Mane) P.Mane.visible = false; g.scale.setScalar(o.s || 1);
+  const a = { kind, g, P, x, z, y: 0, vy: 0, h: Math.random() * 6.28, v: 0, home: [x, z], st: 'idle', t: Math.random() * 5, ph: Math.random() * 6, tx: x, tz: z, roarK: 0, sitK: 0, pounceT: 0 };
+  JA.list.push(a); return a;
+}
+// prides of lions (a male and two lionesses) and troops of four monkeys, a little way down a trail from a crossing
+function buildAnimals() {
+  const C = JG.C, { xs, zs } = cStreets(C), rnd = mulberry32(9071), spots = [];
+  for (const x of xs) for (const z of zs) if (z > JG.camp + 120) spots.push([x, z]);
+  for (let k = spots.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [spots[k], spots[j]] = [spots[j], spots[k]]; }
+  const along = ([x, z]) => { const d = (30 + rnd() * 50) * (rnd() < .5 ? -1 : 1); return rnd() < .5 ? [x + d, z] : [x, z + d]; };
+  spots.slice(0, 7).forEach(sp => { const [x, z] = along(sp); for (let k = 0; k < 3; k++) addAnimal('lion', x + (k - 1) * 4.5, z + rnd() * 3, { female: k > 0, s: k ? 1.22 : 1.4 }); });   // game-sized: a bit bigger than real ones
+  spots.slice(7, 19).forEach(sp => { const [x, z] = along(sp); for (let k = 0; k < 4; k++) addAnimal('monkey', x + (rnd() - .5) * 8, z + (rnd() - .5) * 8, { s: 1.1 + rnd() * .3 }); });
+  JA.built = true;
+}
+function lionRoar(vol = 1) {
+  const ctx = audio.ctx; if (!ctx || vol <= .02) return; const t = ctx.currentTime;
+  const o = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  o.type = 'sawtooth'; o2.type = 'square'; o.frequency.setValueAtTime(120, t); o.frequency.linearRampToValueAtTime(190, t + .3); o.frequency.linearRampToValueAtTime(75, t + 1.3);
+  o2.frequency.setValueAtTime(62, t); o2.frequency.linearRampToValueAtTime(44, t + 1.3); f.type = 'lowpass'; f.frequency.value = 700;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.32 * vol, t + .12); g.gain.linearRampToValueAtTime(.24 * vol, t + .9); g.gain.exponentialRampToValueAtTime(.001, t + 1.4);
+  o.connect(f); o2.connect(f); f.connect(g).connect(audio.master); o.start(t); o2.start(t); o.stop(t + 1.5); o2.stop(t + 1.5);
+  audio.burst({ type: 'lowpass', freq: 380, q: .8, gain: .35 * vol, attack: .1, dur: 1.2 });
+}
+function monkeyCall(vol = 1) { if (vol > .05) [620, 760, 980, 1180].forEach((f, k) => setTimeout(() => audio.beep(f + Math.random() * 80, .07 + (k > 1) * .05), k * 120)); }
+function animalThink(a, dt, p, d) {
+  const K = AN[a.kind], to = (x, z) => Math.atan2(x - a.x, z - a.z), C = JG.C; a.t -= dt; a.pounceT -= dt; a.roarK = Math.max(0, a.roarK - dt * 1.1);
+  if (a.st === 'ride') return monkeyRide(a, dt, p);
+  let want = 0, th = a.h;
+  if (a.st === 'idle' || a.st === 'sit') {
+    if (a.t <= 0) { const r = 6 + Math.random() * 16, an = Math.random() * 6.28; a.tx = a.home[0] + Math.cos(an) * r; a.tz = a.home[1] + Math.sin(an) * r; a.st = 'walk'; a.t = 12; }
+  } else if (a.st === 'walk') {
+    th = to(a.tx, a.tz); want = K.walk;
+    if (Math.hypot(a.tx - a.x, a.tz - a.z) < 1.5 || a.t <= 0) {
+      a.st = a.kind === 'monkey' && Math.random() < .6 ? 'sit' : 'idle'; a.t = 3 + Math.random() * 6;
+      if (a.kind === 'lion' && Math.random() < .25) { a.roarK = 1; lionRoar(clamp(1 - d / 140, 0, .6)); }
+    }
+  } else if (a.st === 'home') {
+    th = to(a.home[0], a.home[1]); want = K.run * .4; if (Math.hypot(a.home[0] - a.x, a.home[1] - a.z) < 4) { a.st = 'idle'; a.t = 4; }
+  } else if (a.st === 'flee') { want = K.run * .75; if (a.t <= 0) { a.st = 'home'; } }
+  else if (a.st === 'rest') { if (a.t <= 0) a.st = 'home'; }
+  else if (a.st === 'chase') {
+    const lead = clamp(d / 30, 0, .6); th = to(p.x + p.vx * lead, p.z + p.vz * lead); want = K.run;
+    if (a.kind === 'lion' && d < 10 && a.pounceT <= 0 && a.y <= 0) { a.pounceT = 2.5; a.vy = 5; a.v = 27; a.roarK = 1; }   // the pounce
+    if (d > 230 || p.z < JG.camp + 25) a.st = 'home';   // too far behind, or you reached the safe camp
+  }
+  // out of the way of the car (unless it is after you)
+  if (a.st !== 'chase' && a.st !== 'flee' && a.st !== 'rest' && a.y <= 0 && d < 9 && p.speed > 3) {
+    const fx = Math.sin(p.heading), fz = Math.cos(p.heading), rx = a.x - p.x, rz = a.z - p.z, f = rx * fx + rz * fz;
+    if (f > -3) { let qx = rx - f * fx, qz = rz - f * fz; if (Math.hypot(qx, qz) < .5) { qx = fz; qz = -fx; } a.h = Math.atan2(qx, qz); a.v = K.run * .8; a.vy = a.kind === 'monkey' ? 6 : 4.5; a.st = 'flee'; a.t = 2; th = a.h; want = a.v; if (a.kind === 'monkey') monkeyCall(.5); }
+  }
+  const dh = ((th - a.h + Math.PI * 3) % (Math.PI * 2)) - Math.PI; a.h += clamp(dh, -K.turn * dt, K.turn * dt);
+  a.v = a.pounceT > 2 ? a.v : damp(a.v, want, a.st === 'chase' ? 1.6 : 3, dt);
+  a.x += Math.sin(a.h) * a.v * dt; a.z += Math.cos(a.h) * a.v * dt;
+  if (a.y > 0 || a.vy > 0) { a.vy -= 20 * dt; a.y = Math.max(0, a.y + a.vy * dt); if (a.y === 0) a.vy = 0; }
+  a.x = clamp(a.x, C.x0 + 10, C.x1 - 10); a.z = clamp(a.z, JG.camp + 30, C.z1 - 10);   // the camp clearing is safe: no animals there
+}
+function animalPose(a, dt) {
+  const P = a.P, lion = a.kind === 'lion', run = clamp((a.v - 2.5) / 8, 0, 1), s = a.g.scale.x;
+  a.ph += dt * Math.PI * 2 * a.v / (lion ? lerp(1.5, 3.2, run) : lerp(.7, 1.5, run));
+  const A = a.v < .2 ? 0 : lerp(lion ? .35 : .45, lion ? .75 : .95, run), sn = Math.sin(a.ph), air = a.y > .05;
+  a.sitK = damp(a.sitK, a.st === 'sit' || a.st === 'ride' || a.st === 'rest' ? 1 : 0, 6, dt);
+  const k = a.sitK, bob = Math.abs(sn) * (lion ? lerp(.03, .12, run) : lerp(.04, .18, run)) * s;
+  if (lion) {
+    const fr = air ? -.9 : 0, bk = air ? .8 : 0;   // in a pounce: front paws reach out, back legs push
+    P.LegFL.rotation.x = lerp(sn * A + fr, .45, k); P.LegFR.rotation.x = lerp(Math.sin(a.ph + .5) * A + fr, .45, k);
+    P.LegBL.rotation.x = lerp(-sn * A + bk, -1.05, k); P.LegBR.rotation.x = lerp(-Math.sin(a.ph + .5) * A + bk, -1.05, k);
+    P.Tail.rotation.x = lerp(.15, .7, run); P.Tail.rotation.y = Math.sin(a.ph * .5 + JA.t) * .35;
+    if (P.Jaw) P.Jaw.rotation.x = a.roarK * .6;
+    a.g.rotation.x = lerp(Math.sin(a.ph) * .05 * run - (air ? .15 : 0), -.42, k);
+    a.g.position.set(a.x, a.y + bob + k * .12 * s, a.z);
+  } else {
+    const ride = a.st === 'ride' ? 1 : 0, wave = Math.sin(JA.t * 13) * .4;   // bounding: arms together, then legs together
+    P.ArmL.rotation.x = lerp(lerp(sn * A, .5, k), -2.5 + wave, ride); P.ArmR.rotation.x = lerp(lerp(Math.sin(a.ph + .3) * A, .5, k), -2.5 - wave, ride);
+    P.LegL.rotation.x = lerp(-sn * A, -1.2, k); P.LegR.rotation.x = lerp(-Math.sin(a.ph + .3) * A, -1.2, k);
+    P.Tail.rotation.x = Math.sin(a.ph * .5 + JA.t) * .2;
+    a.g.rotation.x = lerp(-sn * .12 * run, -.8, k);
+    a.g.position.set(a.x, a.y + bob + k * .14 * s, a.z);
+  }
+  a.g.rotation.y = a.h;
+}
+function updateAnimals(dt, p) {
+  const C = JG.C, near = C && state === 'drive' && Math.hypot(p.x - C.cx, p.z - C.cz) < 2600;
+  if (near && !JA.built) { if (MODELS.lion && MODELS.monkey) buildAnimals(); else { loadModel('lion'); loadModel('monkey'); } }
+  if (!JA.built) return;
+  JA.t += dt;
+  for (const a of JA.list) {
+    const d = Math.hypot(a.x - p.x, a.z - p.z), act = near && (d < 320 || a.st === 'chase' || a.st === 'ride');
+    a.g.visible = act; if (!act) continue;
+    animalThink(a, dt, p, d); animalPose(a, dt);
+  }
+}
+/* ---- the Taiyō Hunt: arrive in South Africa (or use the ring at the jungle camp) and a line on the trails shows you
+   the way to two pieces of the AMBOOLA Taiyō, deep in the jungle. Lions and monkeys come after you: 3 lions catching
+   you sends you back to the camp. Find both pieces and the Taiyō is yours. */
+let hunt = null;
+const TAIYO_ID = 'taiyo';
+function huntPieceMesh(k) {
+  const g = new THREE.Group(), item = new THREE.Group(), gold = new THREE.MeshStandardMaterial({ color: 0xffc21f, metalness: .85, roughness: .25, emissive: 0x7a4200, emissiveIntensity: .7 });
+  item.position.y = 1.7; g.add(item); g.userData.item = item;
+  if (k === 0) {   // the Sun Engine: a golden V-block with a glowing sun on top
+    item.add(new THREE.Mesh(new THREE.BoxGeometry(1.4, .8, 1.1), gold));
+    for (const s of [-1, 1]) { const hd = new THREE.Mesh(new THREE.BoxGeometry(.55, .45, 1.2), gold); hd.position.set(s * .55, .55, 0); hd.rotation.z = s * .55; item.add(hd); }
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(.34, 16, 12), new THREE.MeshBasicMaterial({ color: 0xff9a2a })); sun.position.y = .95; item.add(sun);
+    for (let r = 0; r < 8; r++) { const ray = new THREE.Mesh(new THREE.ConeGeometry(.08, .32, 6), sun.material); const an = r / 8 * Math.PI * 2; ray.position.set(Math.cos(an) * .5, .95 + Math.sin(an) * .5, 0); ray.rotation.z = an - Math.PI / 2; item.add(ray); }
+  } else {   // the Golden Wheel
+    item.add(new THREE.Mesh(new THREE.TorusGeometry(.66, .22, 12, 28), new THREE.MeshStandardMaterial({ color: 0x18181a, roughness: .8 })));
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .2, 24), gold); rim.rotation.x = Math.PI / 2; item.add(rim);
+    for (let s = 0; s < 5; s++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(.12, .5, .08), gold); sp.rotation.z = s / 5 * Math.PI * 2; sp.position.set(Math.sin(sp.rotation.z) * -.25, Math.cos(sp.rotation.z) * .25, .13); item.add(sp); }
+  }
+  const ring = new THREE.Mesh(new THREE.RingGeometry(5.5, 7, 40), new THREE.MeshBasicMaterial({ color: 0xffb020, side: THREE.DoubleSide, transparent: true, opacity: .9, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = .14; g.add(ring);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 90, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xffa020, transparent: true, opacity: .32, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  beam.position.y = 45; g.add(beam);   // through the roof of leaves: you can see it from far away
+  return g;
+}
+function huntSpots(C) {
+  const { xs, zs } = cStreets(C), mx = C.R.x[C.R.n - 1], cand = [];
+  for (const x of xs) for (const z of zs) if (Math.hypot(x - mx, z - C.z0) > 520) cand.push([x, z]);
+  for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
+  const a = cand[0], b = cand.find(q => Math.hypot(q[0] - a[0], q[1] - a[1]) > 500) || cand[1], camp = q => Math.hypot(q[0] - mx, q[1] - C.z0);
+  return camp(a) <= camp(b) ? [a, b] : [b, a];
+}
+function startHunt(C) {
+  if (hunt || state !== 'drive') return;
+  if (!MODELS.lion || !MODELS.monkey) {
+    toast('🦁 THE ANIMALS ARE WAKING UP…', 'ONE MOMENT');
+    Promise.all([loadModel('lion'), loadModel('monkey')]).then(m => { if (m[0] && m[1] && !hunt && state === 'drive') startHunt(C); }); return;
+  }
+  endActs(); endChase(null, player); if (!JA.built) buildAnimals();
+  const pieces = huntSpots(C).map(([x, z], k) => { const g = huntPieceMesh(k); g.position.set(x, 0, z); scene.add(g); return { x, z, g, got: false, n: k ? 'THE GOLDEN WHEEL' : 'THE SUN ENGINE' }; });
+  hunt = { C, pieces, got: 0, hearts: 3, hitT: 0, t: 0, amb: { lion: 2, monkey: 4 }, rider: null, rideCool: 0, banK: 0, steer: 0, shakes: 0, lastSteer: 0, alertT: 0 };
+  huntNav();
+  banner('🧩 TAIYŌ HUNT!', 'FIND THE 2 PIECES OF THE AMBOOLA TAIYŌ', 'Follow the line · the lions and monkeys will chase you!');
+  toast('🧩 TAIYŌ HUNT', 'FOLLOW THE LINE ON THE TRAIL · WATCH OUT FOR LIONS!');
+}
+function huntNav() {
+  const H = hunt, q = H.pieces.find(q => !q.got); if (!q) return;
+  setNav({ n: `🧩 Taiyō piece ${H.got + 1}/2`, zone: H.C.id, idx: H.C.R.n - 1, end: [q.x, q.z], keep: true, hunt: true });
+}
+// a point on the GPS line some way ahead of you (where an ambush can wait), with the sideways direction there
+function huntAhead(p, dist) {
+  const path = [[p.x, p.z], ...(nav?.route || [])]; let left = dist;
+  for (let k = 0; k < path.length - 1; k++) {
+    const [x0, z0] = path[k], [x1, z1] = path[k + 1], l = Math.hypot(x1 - x0, z1 - z0); if (l < .01) continue;
+    if (l >= left || k === path.length - 2) { const u = Math.min(1, left / l), dx = (x1 - x0) / l, dz = (z1 - z0) / l; return { x: x0 + (x1 - x0) * u, z: z0 + (z1 - z0) * u, nx: dz, nz: -dx }; }
+    left -= l;
+  }
+  const fx = Math.sin(p.heading), fz = Math.cos(p.heading); return { x: p.x + fx * dist, z: p.z + fz * dist, nx: fz, nz: -fx };
+}
+function huntAlert(a, d) {
+  const H = hunt; a.st = 'chase';
+  if (a.kind === 'lion') { a.roarK = 1; lionRoar(clamp(1.2 - d / 150, .3, 1)); } else monkeyCall(clamp(1.2 - d / 100, .3, 1));
+  if (H.alertT <= 0 && !H.rider) { H.alertT = 6; toast(a.kind === 'lion' ? '🦁 A LION IS CHASING YOU!' : '🐒 THE MONKEYS ARE COMING!', a.kind === 'lion' ? 'DRIVE! DON\'T LET IT CATCH YOU!' : 'THEY WANT TO RIDE ON YOUR CAR!'); }
+}
+function huntRecruit(p) {
+  const H = hunt, C = H.C; if (p.z < JG.camp + 25) return;   // nothing chases you in the camp
+  for (const kind of ['lion', 'monkey']) {
+    const want = 2 + H.got, mine = JA.list.filter(a => a.kind === kind);
+    if (mine.filter(a => a.st === 'chase' || a.st === 'ride').length >= want) continue;
+    const near = mine.filter(a => ['idle', 'walk', 'sit', 'home'].includes(a.st) && Math.hypot(a.x - p.x, a.z - p.z) < 150).sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
+    if (near) { huntAlert(near, Math.hypot(near.x - p.x, near.z - p.z)); continue; }
+    if (H.amb[kind] > 0) continue;   // otherwise one comes out of the trees ahead of you
+    const far = mine.filter(a => a.st !== 'chase' && a.st !== 'ride' && Math.hypot(a.x - p.x, a.z - p.z) > 330);
+    if (!far.length) continue;
+    const a = far[Math.floor(Math.random() * far.length)], q = huntAhead(p, 85 + Math.random() * 45), side = Math.random() < .5 ? -1 : 1;
+    a.x = clamp(q.x + q.nx * side * 18, C.x0 + 10, C.x1 - 10); a.z = clamp(q.z + q.nz * side * 18, JG.camp + 30, C.z1 - 10); a.y = 0; a.vy = 0; a.v = 0; a.h = Math.atan2(p.x - a.x, p.z - a.z);
+    H.amb[kind] = kind === 'lion' ? 6 - H.got : 5; huntAlert(a, Math.hypot(a.x - p.x, a.z - p.z));
+  }
+}
+function lionCatch(a, p) {
+  const H = hunt;
+  if (H.hitT > 0) { a.st = 'rest'; a.t = 3; a.v = 0; return; }
+  H.hitT = 2.5; H.hearts--; a.st = 'rest'; a.t = 7; a.v = 0; a.roarK = 1; lionRoar(1);
+  p.vx *= .35; p.vz *= .35; shakeT += 1.5; audio.crash(9);
+  if (H.hearts <= 0) return endHunt('lost');
+  toast('🦁 THE LION GOT YOU!', `${H.hearts} ${H.hearts > 1 ? 'LIVES' : 'LIFE'} LEFT · KEEP GOING!`);
+}
+function monkeyJump(a, p) {
+  const H = hunt;
+  if (H.rider || H.rideCool > 0) { a.st = 'flee'; a.t = 1.5; a.h = p.heading + Math.PI * (Math.random() < .5 ? .5 : -.5); a.v = 8; a.vy = 5; return; }
+  H.rider = a; a.st = 'ride'; a.t = 7; H.shakes = 0; H.lastSteer = 0; H.banana = 1.6; H.thrown = false;
+  const fx = Math.sin(p.heading), fz = Math.cos(p.heading), ray = new THREE.Raycaster(new THREE.Vector3(p.x - fx * .2, (p.y || 0) + 6, p.z - fz * .2), new THREE.Vector3(0, -1, 0));   // the roof right under the monkey (not the top of a wing)
+  p.car.group.updateMatrixWorld(true); const hit = ray.intersectObject(p.car.group, true).find(h => h.object.visible && h.object.isMesh); H.roofY = hit ? hit.point.y - (p.y || 0) + .12 : 1.3;
+  monkeyCall(1); toast('🐒 A MONKEY JUMPED ON YOUR CAR!', 'SHAKE IT OFF: STEER LEFT, RIGHT, LEFT, RIGHT!');
+}
+function monkeyRide(a, dt, p) {
+  const H = hunt; if (!H || H.rider !== a) { a.st = 'home'; a.y = 0; return; }
+  const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
+  a.x = p.x - fx * .2; a.z = p.z - fz * .2; a.y = (p.y || 0) + H.roofY - .14 * a.g.scale.x + Math.abs(Math.sin(JA.t * 9)) * .08; a.h = p.heading + Math.sin(JA.t * 3) * .4; a.v = 0; a.vy = 0;
+  H.banana -= dt; if (H.banana <= 0 && !H.thrown) { H.thrown = true; H.banK = 1; audio.whack(); toast('🍌 SPLAT!', 'THE MONKEY THREW A BANANA AT YOUR WINDOW'); }
+  if (Math.abs(H.steer) > .45 && Math.sign(H.steer) !== H.lastSteer) { H.lastSteer = Math.sign(H.steer); H.shakes++; }
+  if (H.shakes >= 5 || a.t <= 0) monkeyOff(a, p, H.shakes >= 5);
+}
+function monkeyOff(a, p, shook) {
+  const H = hunt; if (H) { H.rider = null; H.rideCool = 4; }
+  a.st = 'flee'; a.t = 2; a.h = p.heading + (Math.random() < .5 ? 1.6 : -1.6); a.v = 8; a.vy = 5; monkeyCall(.8);
+  if (H) toast(shook ? '🐒 YOU SHOOK THE MONKEY OFF!' : '🐒 THE MONKEY JUMPED OFF', shook ? 'WELL DONE!' : '');
+}
+const huntInput = inp => { if (!hunt) return inp; hunt.steer = inp.steer || 0; return hunt.rider ? { ...inp, throttle: (inp.throttle || 0) * .55 } : inp; };   // a monkey on the roof slows you down
+function updateHunt(dt, p) {
+  const H = hunt, C = H.C; H.t += dt; H.hitT -= dt; H.rideCool -= dt; H.alertT -= dt; H.amb.lion -= dt; H.amb.monkey -= dt;
+  if (p.x < C.x0 - 250 || p.x > C.x1 + 250 || p.z < C.z0 - 250 || p.z > C.z1 + 250) return endHunt(null);
+  for (const q of H.pieces) if (!q.got) { const it = q.g.userData.item; it.rotation.y += dt * 1.6; it.position.y = 1.7 + Math.sin(H.t * 2.4) * .25; }
+  const q = H.pieces.find(q => !q.got), dq = Math.hypot(p.x - q.x, p.z - q.z);
+  if (dq < 8) {
+    q.got = true; q.g.visible = false; H.got++; H.alertT = 5; skill.bank += 2500; audio.beep(988, .12); setTimeout(() => audio.beep(1319, .12), 120); setTimeout(() => audio.beep(1760, .3), 240);
+    for (let k = 0; k < 30; k++) mudFx.spray(q.x + rr(-2, 2), q.z + rr(-2, 2), rr(-5, 5), rr(-5, 5), 1, 0);
+    if (H.got >= 2) return endHunt('won');
+    huntNav(); toast(`🧩 PIECE 1/2: ${q.n}!`, 'ONE MORE · FOLLOW THE LINE · THE ANIMALS ARE ANGRY NOW!'); return;
+  }
+  if (H.t > 3) huntRecruit(p);
+  for (const a of JA.list) {
+    if (a.st !== 'chase') continue; const d = Math.hypot(a.x - p.x, a.z - p.z);
+    if (d < AN[a.kind].catchR && Math.abs(a.y - (p.y || 0)) < 2.5) { if (a.kind === 'lion') { lionCatch(a, p); if (!hunt) return; } else monkeyJump(a, p); }
+  }
+  H.banK = Math.max(0, H.banK - dt * .3); const bf = $('banFx'); if (bf) bf.style.opacity = H.banK.toFixed(3);
+  const nl = JA.list.filter(a => a.kind === 'lion' && a.st === 'chase').length, nm = JA.list.filter(a => a.kind === 'monkey' && (a.st === 'chase' || a.st === 'ride')).length;
+  actHud([['🧩 TAIYŌ HUNT', `${H.got}/2 PIECES`], ['LIVES', '❤️'.repeat(H.hearts) + '🖤'.repeat(3 - H.hearts)], ['NEXT PIECE', `${Math.round(dq)} m`], ['CHASING YOU', `🦁 ${nl} · 🐒 ${nm}`]], '#ffb020');
+}
+function endHunt(res, quiet) {
+  const H = hunt; if (!H) return; hunt = null;
+  for (const q of H.pieces) scene.remove(q.g);
+  if (nav?.d?.hunt) clearNav(true);
+  actHud(null); const bf = $('banFx'); if (bf) bf.style.opacity = 0;
+  for (const a of JA.list) if (a.st === 'chase' || a.st === 'ride') { a.st = 'home'; if (a === H.rider) { a.y = 0; a.x += 3; } }
+  if (quiet) return;
+  const p = player, C = H.C, mx = C.R.x[C.R.n - 1];
+  if (res === 'won') {
+    audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
+    if (wallet.owned.has(TAIYO_ID)) { earn(100000); banner('☀️ HUNT COMPLETE!', '+$100,000', 'Both pieces found again'); return; }
+    wallet.owned.add(TAIYO_ID); saveWallet(); buildMenu(); checkMissions();
+    banner('☀️ YOU FOUND BOTH PIECES!', 'THE AMBOOLA TAIYŌ IS YOURS!', 'Here it comes · it is in your garage too');
+    loadModel(TAIYO_ID).then(() => setTimeout(() => {   // swap into the new car right where you are
+      if (state !== 'drive' || hunt) return; const i = CARS.findIndex(c => c.id === TAIYO_ID);
+      carIdx = i; paintIdx = savedPaint(CARS[i]); localStorage.setItem('amboola.car', i); startDrive(); toast('☀️ AMBOOLA TAIYŌ', 'YOUR NEW CAR · 1,500 PS · 太陽');
+    }, 2500));
+  } else if (res === 'lost') {
+    banner('🦁 THE LIONS GOT YOU!', 'TRY AGAIN', 'Start the Taiyō Hunt again at the jungle camp');
+    Object.assign(p, { x: mx - 3.5, z: C.z0 + 30, heading: 0, vx: 0, vz: 0, yawRate: 0 }); camPos.set(p.x, 3, p.z - 8);
+  } else toast('🧩 HUNT STOPPED', 'COME BACK TO SOUTH AFRICA TO TRY AGAIN');
+}
+// the GPS line through the jungle: along the trails (a grid of crossings) instead of straight through the trees
+function jungleRoute(C, px, pz, tx, tz) {
+  const { xs, zs } = cStreets(C), mx = C.R.x[C.R.n - 1], nZ = zs.length, pts = [], adj = [];
+  const link = (a, b) => { const d = Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]); adj[a].push([b, d]); adj[b].push([a, d]); };
+  for (const x of xs) for (const z of zs) { pts.push([x, z]); adj.push([]); }
+  for (let i = 0; i < xs.length; i++) for (let j = 0; j < nZ; j++) { if (i + 1 < xs.length) link(i * nZ + j, (i + 1) * nZ + j); if (j + 1 < nZ) link(i * nZ + j, i * nZ + j + 1); }
+  const nearest = (a, v) => a.reduce((b, q, k) => Math.abs(q - v) < Math.abs(a[b] - v) ? k : b, 0);
+  const attach = (x, z) => {   // the point's spot on its trail, joined to the crossings either side
+    const pre = []; if (z < zs[0] - 10) { pre.push([mx, z], [mx, zs[0]]); x = mx; z = zs[0]; }   // the camp: up the camp road first
+    const ix = nearest(xs, x), iz = nearest(zs, z), onX = Math.abs(x - xs[ix]) < Math.abs(z - zs[iz]), id = pts.length;
+    if (onX) { const zz = clamp(z, zs[0], zs[nZ - 1]); pts.push([xs[ix], zz]); adj.push([]); let j = 0; while (j < nZ - 1 && zs[j + 1] < zz) j++; link(id, ix * nZ + j); link(id, ix * nZ + Math.min(nZ - 1, j + 1)); }
+    else { const xx = clamp(x, xs[0], xs[xs.length - 1]); pts.push([xx, zs[iz]]); adj.push([]); let i = 0; while (i < xs.length - 1 && xs[i + 1] < xx) i++; link(id, i * nZ + iz); link(id, Math.min(xs.length - 1, i + 1) * nZ + iz); }
+    return { id, pre };
+  };
+  const S = attach(px, pz), T = attach(tx, tz), dist = pts.map(() => 1e18), prev = pts.map(() => -1), done = new Set(); dist[S.id] = 0;
+  while (true) {
+    let u = -1; for (let k = 0; k < pts.length; k++) if (!done.has(k) && dist[k] < 1e18 && (u < 0 || dist[k] < dist[u])) u = k;
+    if (u < 0 || u === T.id) break; done.add(u); for (const [v, w] of adj[u]) if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; }
+  }
+  const path = []; for (let k = T.id; k >= 0; k = prev[k]) path.unshift(pts[k]);
+  return [...S.pre.slice(1), ...path, ...T.pre.slice().reverse(), [tx, tz]];
 }
 function buildCountries() {
   const builders = { cyprus: [buildCyprus, '#e9d6a8', '#cdbb8e'], italy: [buildItaly, '#e9d6a8', '#9fa86a'], dubai: [buildDubai, '#f0dcae', '#e5cf9c'],
@@ -7819,7 +8115,7 @@ function endChase(escaped, p) {
    ===================================================================== */
 const ACTS = [];
 let actNear = null, cRace = null, deliv = null, worldRace = null;
-const busyAct = () => race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster) || (typeof lantern !== 'undefined' && lantern);
+const busyAct = () => race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster) || (typeof lantern !== 'undefined' && lantern) || hunt;
 const cStreets = C => { const xs = [], zs = []; for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x); for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z); return { xs, zs }; };
 function addAct(o) {
   const g = new THREE.Group(), col = new THREE.Color(o.col); g.position.set(o.x, o.y || 0, o.z); (o.parent || scene).add(g);
@@ -7838,7 +8134,7 @@ function updateActs(dt, p) {
   const pr = $('actprompt');
   if (actNear && state === 'drive') { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
   else pr.classList.add('hidden');
-  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p); if (job) updateJob(dt, p); if (monster) updateMonster(dt, p); if (lantern) updateLantern(dt, p);
+  if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p); if (job) updateJob(dt, p); if (monster) updateMonster(dt, p); if (lantern) updateLantern(dt, p); if (hunt) updateHunt(dt, p);
 }
 function actHud(cells, col) {
   const h = $('acthud'); if (!cells) { h.classList.add('hidden'); return; }
@@ -7996,12 +8292,13 @@ function endWorldRace(pos, quit) {
   audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
   banner(pos === 1 ? '🌍 WORLD CHAMPION!' : `🌍 WORLD RACE · P${pos}`, `+${fmtUSD(pay)}`, `Tokyo → Italy → Dubai in ${fmtTime(R.t)}`);
 }
-function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); endBus(true); endJob(true); endSoccer(true); endMonster(true); endLantern(false, true); }
+function endActs() { endCRace(0, true); endDeliv(true); endWorldRace(0, true); endBus(true); endJob(true); endSoccer(true); endMonster(true); endLantern(false, true); endHunt(null, true); }
 function buildActs() {
   for (const C of COUNTRIES) {
     const K = countryCircuit(C), J = JOBS[C.id], mx = C.R.x[C.R.n - 1];
     C.raceName ??= `${C.name} Grand Prix`;
     addAct({ x: K.start[0] - 30, z: K.start[1], r: 9, col: C.col, title: C.raceName, sub: '2 LAPS · 3 RIVALS · $25,000 TO WIN', sign: 'STREET RACE · 2 LAPS', parent: C.group, go: () => startCRace(C) });
+    if (C.jungle) addAct({ x: mx - 36, z: C.z0 + 66, r: 9, col: '#ffb020', title: '🧩 Taiyō Hunt', sub: 'FIND 2 PIECES · WIN THE AMBOOLA TAIYŌ', sign: 'TAIYŌ HUNT · 太陽', parent: C.group, go: () => startHunt(C), face: Math.PI / 2 });
     if (J) addAct({ x: mx + 9, z: C.z0 + 75, r: 8, col: '#ffc21f', title: `${J[0]} ${J[1]}`, sub: `${J[2]} · 3 DROPS`, sign: 'DELIVERY JOB', parent: C.group, job: C.id, go: () => startDeliv(C), face: Math.PI / 2 });
   }
   addAct({ x: rc(10) + 4, z: HALF - 70, r: 10, col: '#2fe0ff', title: '🌍 World Race', sub: 'TOKYO → ITALY → DUBAI · $1,000,000', sign: 'TOKYO → ITALY → DUBAI', go: startWorldRace });
@@ -10363,9 +10660,12 @@ function navRoute(px, pz, d) {
   const zp = zoneAt(px, pz), zd = d.zone || 'city', out = []; let cx = px, cz = pz;
   if (zp !== 'city' && zp !== zd) { const Z = ZONES[zp]; out.push(...zPath(Z.R, zIndex(Z.R, px, pz), 0)); [cx, cz] = Z.gate; }
   if (zd === 'city') { const t = snapToRoad(d.x, d.z); out.push(...taxiRoute(cx, cz, t.x, t.z)); return out; }
-  const Z = ZONES[zd];
+  const Z = ZONES[zd], J = d.end && COUNTRIES.find(c => c.id === zd && c.jungle);
+  if (J && zp === zd && px > J.x0 - 20 && px < J.x1 + 20 && pz > J.z0 - 20) return [...out, ...jungleRoute(J, px, pz, d.end[0], d.end[1])];   // in the jungle: along the trails
   if (zp !== zd) out.push(...taxiRoute(cx, cz, Z.gate[0], Z.gate[1]));
-  out.push(...zPath(Z.R, zp === zd ? zIndex(Z.R, px, pz) : 0, d.idx)); if (d.end) out.push(d.end);
+  out.push(...zPath(Z.R, zp === zd ? zIndex(Z.R, px, pz) : 0, d.idx));
+  if (J) { while (out.length > 1 && out[out.length - 1][1] > J.z0 + 100) out.pop(); const [ex, ez] = out[out.length - 1] || [px, pz]; out.push(...jungleRoute(J, ex, ez, d.end[0], d.end[1])); }
+  else if (d.end) out.push(d.end);
   return out;
 }
 const navTarget = d => d.zone && d.zone !== 'city' ? (d.end ? { x: d.end[0], z: d.end[1] } : { x: ZONES[d.zone].R.x[d.idx], z: ZONES[d.zone].R.z[d.idx] }) : snapToRoad(d.x, d.z);
@@ -10395,7 +10695,7 @@ function updateNav(dt) {
   const L = routeLen(p.x, p.z, nav.route); $('nvDist').textContent = L > 1000 ? `${(L / 1000).toFixed(1)} km` : `${Math.round(L)} m`;
   const nx = path[1][0] - p.x, nz = path[1][1] - p.z;
   if (Math.hypot(nx, nz) > 12 && (nx * Math.sin(p.heading) + nz * Math.cos(p.heading)) / Math.hypot(nx, nz) < -.5 && toastT <= 0 && dist > 25) toast('TURN AROUND', 'Uターン · follow the arrows');
-  if (dist < 14) { const n = nav.d.n; clearNav(true); toast('ARRIVED', n.toUpperCase() + ' · 到着'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); }
+  if (dist < 14 && !nav.d.keep) { const n = nav.d.n; clearNav(true); toast('ARRIVED', n.toUpperCase() + ' · 到着'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150); }
 }
 function drawNavRoute(g) {
   if (!nav) return;
@@ -11053,7 +11353,7 @@ function enterGarage() {
    ===================================================================== */
 // one gameplay tick (physics, collisions, race/traffic, pickups); also driven directly by the headless test driver
 function simStep(dt, inp) {
-  inp = fuelInput(inp);
+  inp = huntInput(fuelInput(inp));
   const sub = 3, h = dt / sub;
   if (dentCool > 0) dentCool -= dt;
   if (!(race?.auto && race.state !== 'countdown' && cabRacePose(dt))) for (let k = 0; k < sub; k++) {
@@ -11165,7 +11465,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TOKYO, JG, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

@@ -412,6 +412,15 @@ Crash into something fast enough and it breaks!
 - **Mud everywhere:** the trails are dirt, so your car gets dirty fast. Mud flies off your wheels, and driving through a **mud puddle** goes 💦 SPLASH! and splats mud on the screen too.
 - **Make it shine again:** drive back to the camp at the start and use the **🫧 Jungle Car Wash** ($50), or pick *Jungle Car Wash* on the map. The brushes clean off all the mud and your car shines again.
 - **Things to do:** the Jungle Grand Prix race, banana deliveries, the runway for the jet, a gas station and a bus stop at the camp.
+- **🦁 Animals:** lions (big males with a mane, and lionesses) and monkeys live along the trails. They walk around, sit and roar, and jump out of the way when you drive at them. Made in Blender (`models/blender/jungle_animals.py`).
+
+![A lion chasing the car down a jungle trail, and a monkey riding on the roof](media/taiyo-hunt.jpg)
+
+- **🧩 The Taiyō Hunt:** when you arrive in South Africa, the hunt starts. A line on the trail shows you the way to the **2 golden pieces of the AMBOOLA Taiyō** (the Sun Engine and the Golden Wheel). Look for their orange light shining up through the leaves.
+  - **The animals chase you!** Lions run after you and jump out of the trees ahead of you. If a lion catches you, you lose a ❤️. Lose all 3 and you go back to the camp.
+  - **Monkeys** jump onto your roof, slow you down and throw a 🍌 at your window. Shake them off by steering left, right, left, right.
+  - The camp clearing is safe: the animals never come in there.
+  - Find both pieces and the **AMBOOLA Taiyō** is yours. You swap straight into it, and it is in your garage too. You can only win it this way. Play again at the **🧩 Taiyō Hunt** ring in the camp; once you own the Taiyō, finishing the hunt pays $100,000.
 
 ### Faster loading on phones
 - Only your own car's model loads at the start; the others load quietly in the background while you drive.
