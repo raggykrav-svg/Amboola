@@ -611,6 +611,7 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - **Clouds** drifting across the sky, lit on the side facing the sun, pink-orange at sunset and grey when it rains.
 - **Sun flare and light rays** when you look towards the sun. Buildings and clouds block them, just like real sunlight.
 - **Live reflections** on your car (High and Ultra): the paint, glass and chrome mirror the real street, buildings and sky as you drive.
+- **Showroom shine** on every car: a mirror-smooth clear coat with stronger sky and sun reflections, and tiny metal flakes that sparkle up close on metallic paints. City cars are glossier too.
 - **Speed blur** round the edges of the screen above 150 km/h.
 - Low graphics keeps the colour grade and the flare, but skips the heavier effects so phones stay smooth.
 
