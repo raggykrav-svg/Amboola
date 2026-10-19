@@ -568,6 +568,7 @@
   <button id="bWeather">WEATHER</button>
   <button id="bPhoto">📷 PHOTO MODE</button>
   <button id="bRadio">📻 RADIO</button>
+  <button id="bMusic">🎵 RACE MUSIC: ON</button>
   <button id="bBadges">⭐ LEVEL &amp; BADGES</button>
   <button id="bSeason">SEASON</button>
   <button id="bRaces">RACES</button>
@@ -4447,7 +4448,7 @@ function updateRace(dt) {
 function finishRace() {
   const T = race.T, P = race.p; P.finish = race.t; race.state = 'finished';
   const order = [...race.order].sort((a, b) => (a.me ? P.finish : a.finish ?? 1e9) - (b.me ? P.finish : b.finish ?? 1e9));
-  const pos = order.findIndex(e => e.me) + 1; if (pos === 1) bump('raceWins'); if (race.boss) kingResult(pos === 1);
+  const pos = order.findIndex(e => e.me) + 1; if (pos === 1) bump('raceWins'); musicFanfare(pos === 1); if (race.boss) kingResult(pos === 1);
   const prize = [5000, 3000, 2000][pos - 1] || 800; skill.bank += prize; localStorage.setItem('amboola.skill', skill.bank);
   const cash = Math.round(Math.max([10000, 5000, 3500][pos - 1] || 1500, (player.spec.usd || 0) * ([.05, .03, .02][pos - 1] || .005)) / 100) * 100; earn(cash);
   const best = T.best || {}; const nbRace = !best.race || P.finish < best.race, nbLap = !best.lap || P.best < best.lap;
@@ -4757,7 +4758,7 @@ function endDragRun() {
   const boss = D.ev.boss, firstBeat = boss && win && !ST.bosses.includes(D.ev.id);
   // a boss pays its full prize the first time, 10% on rematches
   const prize = D.foul ? 0 : boss ? (win ? (firstBeat ? boss.prize : Math.round(boss.prize * .1)) : 750) : win ? Math.round(Math.max(7500, (base.usd || 0) * .03) * D.ev.mult / 100) * 100 : 750;
-  if (win) { if (firstBeat) ST.bosses.push(D.ev.id); bump('dragWins'); }
+  if (win) { if (firstBeat) ST.bosses.push(D.ev.id); bump('dragWins'); } musicFanfare(win);
   earn(prize);
   const et = P.total != null ? P.total - (P.react ?? 0) : null;
   const best = dragBest(D.ev.id), nb = et != null && !D.foul && (!best || et < best.et);
@@ -6022,7 +6023,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateBuild(dt, p); updateFestival(dt, p); updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateMusic(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateBuild(dt, p); updateFestival(dt, p); updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
@@ -7890,7 +7891,7 @@ function endMeetRace(won, quit) {
   if (quit) return;
   const sp = R.sp, beaten = meetBeaten(), rematch = beaten.includes(R.r.id);
   if (won) {
-    bump('meetWins'); audio.beep(880, .25); setTimeout(() => audio.beep(1320, .5), 250);
+    bump('meetWins'); musicFanfare(true); audio.beep(880, .25); setTimeout(() => audio.beep(1320, .5), 250);
     if (!rematch) localStorage.setItem('amboola.meet.beaten', JSON.stringify([...beaten, R.r.id]));
     if (!rematch && !wallet.owned.has(sp.id)) {
       wallet.owned.add(sp.id); saveWallet();
@@ -8424,7 +8425,7 @@ function updateCRace(dt, p) {
 function endCRace(pos, quit) {
   const R = cRace; if (!R) return; cRace = null; R.ais.forEach(a => a.dispose()); actHud(null); updateRaceArrows(null); $('count').style.opacity = 0;
   if (quit) return;
-  const pay = [25000, 8000, 4000, 1000][pos - 1]; earn(pay); if (pos === 1) bump('cRaceWins');
+  const pay = [25000, 8000, 4000, 1000][pos - 1]; earn(pay); if (pos === 1) bump('cRaceWins'); musicFanfare(pos === 1);
   const key = 'amboola.gp.' + R.C.id, b = +localStorage.getItem(key) || 0; if (pos === 1 && (!b || R.t < b)) localStorage.setItem(key, R.t.toFixed(2));
   audio.beep(880, .25); setTimeout(() => audio.beep(1320, .5), 250);
   banner(pos === 1 ? '🏆 YOU WON!' : `🏁 P${pos}`, R.C.raceName, `${fmtTime(R.t)} · +${fmtUSD(pay)}`);
@@ -8510,7 +8511,7 @@ function updateWorldRace(dt, p) {
 function endWorldRace(pos, quit) {
   const R = worldRace; if (!R) return; worldRace = null; R.ais.forEach(a => a.dispose()); actHud(null); updateRaceArrows(null); $('count').style.opacity = 0;
   if (quit) return;
-  const pay = [1000000, 250000, 100000, 25000][pos - 1]; earn(pay); if (pos === 1) bump('worldWins');
+  const pay = [1000000, 250000, 100000, 25000][pos - 1]; earn(pay); if (pos === 1) bump('worldWins'); musicFanfare(pos === 1);
   audio.beep(880, .25); setTimeout(() => audio.beep(1320, .6), 250);
   banner(pos === 1 ? '🌍 WORLD CHAMPION!' : `🌍 WORLD RACE · P${pos}`, `+${fmtUSD(pay)}`, `Tokyo → Italy → Dubai in ${fmtTime(R.t)}`);
 }
@@ -9484,7 +9485,7 @@ function rNoise(t, dur, vol, type, freq) {
 function rKick(t, v = .9) { const ctx = audio.ctx, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .3); o.connect(g).connect(radio.out); o.start(t); o.stop(t + .35); }
 function updateRadio() {
   const R = RADIO[radio.st], ctx = audio.ctx;
-  if (!R || !ctx || ctx.state !== 'running' || state !== 'drive') return;
+  if (!R || !ctx || ctx.state !== 'running' || state !== 'drive' || music.id) return;   // the radio rests while a race song plays
   if (!radioInit()) return;
   const sp = 60 / R.bpm / 4; if (radio.next < ctx.currentTime) radio.next = ctx.currentTime + .05;
   const prog = R.s === 'rock' ? [52, 48, 55, 50] : R.s === 'lofi' ? [50, 55, 48, 57] : [57, 53, 48, 55];
@@ -9508,6 +9509,217 @@ function updateRadio() {
     }
     radio.next += sp; radio.step++;
   }
+}
+
+/* =====================================================================
+   RACE MUSIC — every race has its own happy song, written for the game and played live by the Web Audio API (no music
+   files). A song is a tempo, a key, an 8-bar chord loop and an 8-bar melody written in scale steps (eighth notes:
+   '_' holds the note, '.' is a rest, 'a~b' are two sixteenths, '+'/'-' move an octave, 'b'/'#' bend a note), plus a
+   style: the drums, the bass line, how the chords are played and the lead instrument. While the lights count down
+   only the drums and bass play; at GO the song starts with a crash. Every second time round a harmony joins the
+   tune. Winning plays a fanfare. The radio rests during races; P → RACE MUSIC turns the music off.
+   ===================================================================== */
+const SONGS = {
+  sunshine: { n: 'SUNSHINE GRAND PRIX', bpm: 150, key: 62, prog: '1 5 6 4 1 5 4 5', drums: 'rock', bass: 'pump', chords: 'stabs', lead: 'brass',
+    mel: '3 _ 5 _ +1 _ 5 3 | 2 _ 5 _ 7 _ 6 5 | 3 _ 1 _ 6 _ 5 3 | 4 _ 6 _ +1 6 5 4 | 3 _ 5 _ +1 _ +2 +3 | +2 _ +1 _ 7 _ 5 _ | 6 _ +1 _ 6 5 4 6 | 5 _ _ _ 7 _ +2 _' },
+  fujistar: { n: 'FUJI SPEED STAR', bpm: 156, key: 57, prog: '4 5 3 6 4 5 1 1', drums: 'four', bass: 'octave', chords: 'arp16', lead: 'saw',
+    mel: '6 _ +1 _ 6 5 4 5 | 7 _ +2 _ 7 6 5 6 | 7 _ 5 _ 3 _ 5 7 | +1 _ _ 7 6 _ . . | 6 6 +1 6 +2 _ +1 _ | 7 7 +2 7 +3 _ +2 _ | +1 _ 7 _ +1 _ +3 _ | +1 _ _ _ . 5 6 7' },
+  boogie: { n: 'BAYSIDE BOOGIE', bpm: 124, key: 53, prog: '2 5 1 6 2 5 1 1', drums: 'four', bass: 'funk', chords: 'stabs', lead: 'square',
+    mel: '4 . 4 . 6 _ 4 2 | 2 _ 7 _ 5 _ . 7 | +1 _ 5 3 5 _ +1 _ | +1 7 6 _ 3 _ . . | 4 4 6 +1 +2 _ +1 6 | 7 _ +2 _ 7 5 2 _ | 3 5 +1 _ +3 _ +2 +1 | +1 _ _ _ . . . .' },
+  akagi: { n: 'AKAGI EUROBEAT', bpm: 162, key: 52, prog: '6 4 5 1 6 4 5 5', drums: 'four', bass: 'octave', chords: 'arp16', lead: 'saw',
+    mel: '6 _ +1 _ +3 _ +1 6 | +1 _ 6 _ 4 _ 6 +1 | +2 _ 7 _ 5 _ 7 +2 | +3 _ _ +2 +1 _ 5 _ | 6 +1 +3 +1 +6 _ +5 _ | +4 _ +3 _ +1 _ 6 _ | +2 +2 +3 +2 7 _ 5 _ | +2 _ _ _ 7 _ +2 _' },
+  pixel: { n: 'PIXEL POWER', bpm: 150, key: 60, prog: '1 6 4 5 1 6 2 5', drums: 'chip', bass: 'pump', chords: 'arp16', lead: 'pulse',
+    mel: '+1 _ 5 _ 3 _ 5 +1 | +3 _ +1 _ 6 _ +1 +3 | +4 _ +3 _ +1 _ 6 _ | +2 _ 7 _ 5 _ 7 _ | +1 +1 +3 +1 +5 _ +3 _ | +3 +3 +1 +3 +6 _ +5 _ | +4 _ +2 _ 6 +1 +2 +4 | +5 _ _ _ +2 _ 7 _' },
+  sakura: { n: 'SAKURA FESTIVAL', bpm: 140, key: 55, prog: '1 4 6 5 1 4 5 1', drums: 'taiko', bass: 'pump', chords: 'koto', lead: 'flute',
+    mel: '5 _ 6 5 3 _ 2 3 | 5 _ 6 _ +1 _ 6 5 | 6 _ +1 _ 6 5 3 _ | 2 _ 3 2 -6 _ . . | 5 5 6 +1 +2 _ +1 6 | +1 _ 6 5 6 _ +1 _ | +2 _ +1 6 5 _ 6 _ | 5 _ _ _ . 3 5 6' },
+  champion: { n: "CHAMPION'S CHARGE", bpm: 164, key: 51, prog: '1 b7 4 1 6 4 5 5', drums: 'rock', bass: 'octave', chords: 'power', lead: 'brass',
+    mel: '1 _ 5 _ +1 _ _ 5 | 4 _ 2 _ 7b _ 2 4 | 6 _ +1 _ +4 _ +3 _ | +3 _ _ +2 +1 _ _ _ | +1 _ +3 _ +1 6 3 _ | 4 _ 6 _ +1 _ +4 _ | +2 _ +2 +3 +4 _ +2 _ | +5 _ _ _ +5 +4 +3 +2' },
+  candykart: { n: 'CANDY KART PARTY', bpm: 168, key: 53, prog: '1 6 2 5 1 6 2 5', drums: 'ska', bass: 'walk', chords: 'skank', lead: 'whistle',
+    mel: '5 3 5 +1 _ 7 +1 _ | 6 _ +1 _ 6 5 4 3 | 2 4 6 +2 _ +1 6 _ | 5 _ 7 _ +2 _ . . | +1 _ 5 _ 3 4 5 6 | +1 _ 6 _ +3 _ +1 _ | +2 _ +1 6 4 _ 2 _ | 5 6 7 +1 +2 _ . .' },
+  world: { n: 'AROUND THE WORLD', bpm: 158, key: 58, prog: '1 5 6 3 4 1 4 5', drums: 'four', bass: 'octave', chords: 'arp16', lead: 'saw',
+    mel: '+1 _ 7 +1 +3 _ +1 _ | 7 _ 6 7 +2 _ 7 _ | 6 _ 5 6 +1 _ 6 _ | 5 _ 3 5 7 _ 5 _ | 4 _ 6 _ +1 _ +4 _ | +3 _ +1 _ 5 _ +1 _ | +4 _ +3 _ +1 _ 6 _ | +2 _ _ _ 5 6 7 +2' },
+  nitro: { n: 'NITRO COUNTDOWN', bpm: 172, key: 52, prog: '1 1 b7 4 1 1 b6 b7', drums: 'rock', bass: 'octave', chords: 'power', lead: 'guitar',
+    mel: '1 _ 1 3 5 _ 3 _ | 5 _ 6 5 3 _ 1 _ | 7b _ 7b +1 +2 _ +1 7b | 6 _ _ 5 4 _ 6 _ | +1 _ +1 +1 7b _ 5 _ | 5 _ 6 _ 5 3 1 _ | 6b _ +1 _ 6b _ 5 _ | 7b _ _ _ +2 _ +1 7b' },
+  neon: { n: 'NEON NIGHT DRIVE', bpm: 112, key: 57, prog: '4 1 5 6 4 1 5 5', drums: 'synthwave', bass: 'octave', chords: 'pad', lead: 'saw',
+    mel: '6 _ _ _ +1 _ 7 6 | 5 _ _ _ 3 _ 5 _ | 7 _ _ _ +2 _ +1 7 | +1 _ _ _ 6 _ . . | +4 _ +3 _ +1 _ 6 _ | +3 _ +1 _ 5 _ +1 _ | +2 _ 7 _ +2 _ +3 _ | +2 _ _ _ _ _ . .' },
+  matsuri: { n: 'LANTERN MATSURI', bpm: 150, key: 62, prog: '1 1 4 5 6 4 5 1', drums: 'taiko', bass: 'pump', chords: 'koto', lead: 'flute',
+    mel: '1 2 3 5 6 _ 5 3 | 5 _ 6 +1 6 5 3 _ | 6 _ +1 _ +2 +1 6 5 | 6 _ 5 3 2 _ . . | 3 5 6 +1 +2 _ +3 +2 | +1 _ 6 +1 +2 _ +1 6 | 5 _ 6 5 3 _ 2 3 | 1 _ _ _ . . . .' },
+  island: { n: 'ISLAND BREEZE', bpm: 116, key: 55, prog: '1 5 6 4 1 5 4 4', drums: 'house', bass: 'sub', chords: 'marimba', lead: 'steel',
+    mel: '5 . 5 6 . 5 3 . | 2 . 2 3 . 2 -7 . | 3 . 3 5 . 3 2 . | 1 . 1 2 . 3 5 . | +1 . 7 5 . 3 5 . | 7 . 6 5 . 2 5 . | 6 . 5 4 . 3 1 . | 2 _ _ _ 5 _ 6 7' },
+  ciao: { n: 'CIAO VELOCITÀ', bpm: 150, key: 60, prog: '1 4 5 1 1 4 5 1', drums: 'polka', bass: 'polka', chords: 'oompah', lead: 'mandolin',
+    mel: '3 4 5 _ 5 _ 5 4 | 6 _ 6 5 4 _ 6 _ | 5 4 2 _ -7 _ 2 4 | 3 _ 1 _ 5 _ . . | +1 _ 7 +1 +3 _ +1 _ | 6 _ +1 6 4 _ 6 _ | 7 +2 7 5 2 _ 4 _ | 3 _ 1 _ 1 _ . .' },
+  jungle: { n: 'JUNGLE DRUMS', bpm: 122, key: 57, prog: '1 4 1 5 1 4 5 1', drums: 'afro', bass: 'funk', chords: 'marimba', lead: 'whistle',
+    mel: '5 _ 3 5 _ 6 5 3 | 4 _ 6 +1 _ 6 4 _ | 3 _ 5 +1 _ 7 +1 _ | +2 _ 7 5 _ . . . | +1 +1 7 5 6 5 3 _ | 4 6 +1 6 4 _ 1 _ | 2 _ 5 7 +2 _ 7 5 | 1 _ _ _ . 3 5 6' },
+  desert: { n: 'DESERT DASH', bpm: 132, key: 52, prog: '1 4 b7 1 1 4 5 1', drums: 'four', bass: 'pump', chords: 'stabs', lead: 'pluck',
+    mel: '1 2b 3 _ 5 _ 3 2b | 1 _ 4 _ 6 _ 4 3 | 4 _ 2 _ 7b _ 2 4 | 3 _ 2b _ 1 _ . . | 5 _ 6b 5 3 _ 5 _ | 6 _ +1 _ 6 _ 4 _ | 5 _ 7 _ +2 _ 7 5 | +1 _ _ _ 7 _ 5 _' },
+  cafe: { n: 'CAFÉ TURBO', bpm: 136, key: 55, prog: '1 6 2 5 3 6 2 5', drums: 'swing', bass: 'walk', chords: 'pompe', lead: 'accordion', swing: true,
+    mel: '5 _ 3 4 5 _ +1 _ | 7 _ 6 5 3 _ 5 _ | 6 _ 4 5 6 _ +2 _ | +1 _ 7 6 5 _ . . | 5 _ 7 +2 +3 _ +2 7 | +1 _ 6 5 3 _ 6 _ | 4 _ 6 +1 +2 _ +1 6 | 5 _ 7 _ +2 _ . .' },
+  london: { n: 'DOUBLE-DECKER POP', bpm: 140, key: 57, prog: '1 4 6 5 1 4 5 5', drums: 'rock', bass: 'pump', chords: 'stabs', lead: 'square',
+    mel: '5 5 6 5 3 _ 1 _ | 4 4 6 4 +1 _ 6 _ | 6 _ 5 _ 3 _ 1 _ | 2 _ 3 _ 5 _ . . | +1 _ 7 _ 6 5 3 5 | 6 _ +1 _ +2 _ +1 6 | 5 _ 7 _ +2 _ +1 7 | +1 _ _ _ . . . .' },
+  polka: { n: 'SNOWY POLKA', bpm: 150, key: 53, prog: '1 5 5 1 1 5 5 1', drums: 'polka', bass: 'polka', chords: 'oompah', lead: 'accordion',
+    mel: '5 3 5 3 +1 _ 5 _ | 4 2 4 2 7 _ 5 _ | 5 4 3 2 -7 _ 2 _ | 1 _ 3 _ 1 _ . . | 3 4 5 6 +1 _ 6 _ | 5 _ 4 _ 2 _ 7 _ | +2 _ +1 7 5 _ 4 _ | 3 _ 1 _ 1 _ . .' },
+};
+const TRACK_SONG = { gp: 'sunshine', fujimi: 'fujistar', oval: 'boogie', akagi: 'akagi', kanto: 'pixel', sakura: 'sakura' };
+const COUNTRY_SONG = { cyprus: 'island', italy: 'ciao', dubai: 'desert', paris: 'cafe', newyork: 'boogie', alps: 'polka', london: 'london', egypt: 'desert', southafrica: 'jungle' };
+const SCALE = [0, 2, 4, 5, 7, 9, 11];
+function degNote(tok, key) {   // '3' → the 3rd step of the scale an octave above the key note; '+1', '-7', '6b', '4#'
+  const m = /^([+-]*)(\d)([#b]?)$/.exec(tok); if (!m) return null;
+  const oct = (m[1].match(/\+/g) || []).length - (m[1].match(/-/g) || []).length;
+  return key + 12 + SCALE[+m[2] - 1] + 12 * oct + (m[3] === '#' ? 1 : m[3] === 'b' ? -1 : 0);
+}
+function chordOf(tok, key) {   // '6' = the triad on the 6th step, 'b7' = a major triad a tone below the key note
+  const fl = /^b(\d)$/.exec(tok); if (fl) { const r = SCALE[+fl[1] - 1] - 1; return [r, r + 4, r + 7].map(n => key + n); }
+  const d = +tok - 1, n = k => SCALE[(d + k) % 7] + 12 * Math.floor((d + k) / 7);
+  return [n(0), n(2), n(4)].map(x => key + x);
+}
+function prepSong(S) {
+  if (S.at) return S;
+  S.at = []; let s = 0, last = null;
+  for (const bar of S.mel.split('|')) for (const tok of bar.trim().split(/\s+/)) {
+    if (tok === '_') { if (last) last.len += 2; s += 2; continue; }
+    if (tok === '.') { last = null; s += 2; continue; }
+    const parts = tok.split('~');
+    for (const p of parts) { const m = degNote(p, S.key), len = parts.length > 1 ? 1 : 2; if (m != null) { last = { m, len }; S.at[s] = last; } s += len; }
+  }
+  S.ch = S.prog.split(' ').map(t => chordOf(t, S.key)); return S;
+}
+const music = { id: null, step: 0, next: 0, out: null, on: localStorage.getItem('amboola.racemusic') !== '0', live: false };
+function musicInit() {
+  const ctx = audio.ctx; if (!ctx || music.out) return !!music.out;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3; comp.connect(audio.master);
+  music.out = ctx.createGain(); music.out.gain.value = .0001; music.out.connect(comp); music.dest = music.out;
+  music.fan = ctx.createGain(); music.fan.gain.value = .2; music.fan.connect(comp);
+  const d = ctx.createDelay(1), fb = ctx.createGain(), wet = ctx.createGain(); fb.gain.value = .3; wet.gain.value = .25; d.connect(fb).connect(d); d.connect(wet).connect(music.out);
+  music.send = ctx.createGain(); music.send.gain.value = .6; music.send.connect(d); music.delay = d;
+  music.dist = ctx.createWaveShaper(); const cv = new Float32Array(256); for (let i = 0; i < 256; i++) cv[i] = Math.tanh((i / 128 - 1) * 5) * .6; music.dist.curve = cv; music.dist.connect(music.out);
+  const n = ctx.sampleRate, b = ctx.createBuffer(1, n, n), dd = b.getChannelData(0); for (let i = 0; i < n; i++) dd[i] = Math.random() * 2 - 1; music.noise = b;
+  return true;
+}
+// one note: an oscillator through a low-pass filter and an envelope (o.pluck: dies away like a plucked string; o.vib: vibrato;
+// o.sweep: the filter opens like a brass note; o.to: another input such as the guitar distortion; o.send: some goes to the echo)
+function mOsc(t, f, type, dur, vol, o = {}) {
+  const ctx = audio.ctx, osc = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  osc.type = type; osc.frequency.value = f; if (o.det) osc.detune.value = o.det;
+  if (o.vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 5.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * .012, t + .3); l.connect(lg).connect(osc.frequency); l.start(t); l.stop(t + dur + .1); }
+  lp.frequency.value = o.cut || 5000;
+  if (o.sweep) { lp.frequency.setValueAtTime(o.sweep[0], t); lp.frequency.exponentialRampToValueAtTime(o.sweep[1], t + o.sweep[2]); }
+  const a = o.a ?? .006, end = o.pluck ? t + o.pluck : t + dur;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + a);
+  if (!o.pluck) g.gain.setValueAtTime(vol, Math.max(t + a, end - Math.min(.15, dur * .4)));
+  g.gain.exponentialRampToValueAtTime(.0001, end);
+  osc.connect(lp).connect(g); g.connect(o.to || music.dest); if (o.send) g.connect(music.send);
+  osc.start(t); osc.stop(end + .05);
+}
+function mNoise(t, dur, vol, type, freq, q = 1) {
+  const ctx = audio.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  s.buffer = music.noise; f.type = type; f.frequency.value = freq; f.Q.value = q; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f).connect(g).connect(music.dest); s.start(t, Math.random() * .5, dur + .05);
+}
+function mDrop(t, f0, f1, dur, vol, type = 'sine') {   // kicks, toms and taiko: a tone that falls fast
+  const ctx = audio.ctx, o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
+  o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * .4); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g).connect(music.dest); o.start(t); o.stop(t + dur + .05);
+}
+const mKick = (t, v = .9) => mDrop(t, 150, 45, .3, v), mSnare = (t, v = .5) => { mNoise(t, .17, v, 'bandpass', 1900, .8); mDrop(t, 230, 160, .1, v * .5, 'triangle'); };
+const mClap = (t, v = .5) => { for (const d of [0, .012, .024]) mNoise(t + d, .12, v * .7, 'bandpass', 1500, 1.2); };
+const mHat = (t, v = .12, open) => mNoise(t, open ? .2 : .04, v, 'highpass', 7500);
+const mCrash = (t, v = .3) => mNoise(t, 1.3, v, 'highpass', 4500);
+// the lead instruments
+const LEADS = {
+  saw: (t, f, d, v) => { mOsc(t, f, 'sawtooth', d, v * .5, { det: -9, cut: 4200, send: 1 }); mOsc(t, f, 'sawtooth', d, v * .5, { det: 9, cut: 4200 }); },
+  square: (t, f, d, v) => { mOsc(t, f, 'square', d, v * .55, { cut: 3800, send: 1, vib: d > .3 }); mOsc(t, f * 2, 'sine', d, v * .2); },
+  pulse: (t, f, d, v) => mOsc(t, f, 'square', d, v * .6, { cut: 6500, vib: d > .25, send: 1 }),
+  brass: (t, f, d, v) => { mOsc(t, f, 'sawtooth', d, v * .65, { a: .02, sweep: [600, 3800, .09], send: 1, vib: d > .35 }); mOsc(t, f / 2, 'sawtooth', d, v * .25, { a: .02, cut: 1400 }); },
+  flute: (t, f, d, v) => { mOsc(t, f, 'sine', d, v, { a: .035, vib: true, send: 1 }); mOsc(t, f * 2, 'triangle', d, v * .1, { a: .05 }); mNoise(t, .06, v * .15, 'bandpass', f * 3); },
+  steel: (t, f, d, v) => { mOsc(t, f, 'sine', d, v, { pluck: .9, send: 1 }); mOsc(t, f * 2.01, 'sine', d, v * .4, { pluck: .4 }); mOsc(t, f * 3.98, 'sine', d, v * .14, { pluck: .2 }); },
+  pluck: (t, f, d, v) => { mOsc(t, f, 'triangle', d, v * 1.1, { pluck: .6, send: 1 }); mOsc(t, f * 2, 'sawtooth', d, v * .15, { pluck: .2, cut: 3000 }); },
+  mandolin: (t, f, d, v) => { for (let k = 0; k * .06 < d; k++) mOsc(t + k * .06, f, 'triangle', .07, v * (k ? .75 : 1.1), { pluck: .14 }); mOsc(t, f * 2, 'sine', d, v * .12, { pluck: d }); },
+  accordion: (t, f, d, v) => { mOsc(t, f, 'square', d, v * .4, { det: -7, cut: 2300, a: .02, vib: true, send: 1 }); mOsc(t, f, 'square', d, v * .4, { det: 7, cut: 2300, a: .02 }); },
+  guitar: (t, f, d, v) => mOsc(t, f, 'sawtooth', d, v * .55, { cut: 3200, to: music.dist, vib: d > .3 }),
+  whistle: (t, f, d, v) => mOsc(t, f, 'sine', d, v * 1.15, { a: .012, vib: true, send: 1 }),
+};
+function third(m, key) {   // the note two scale steps below (a harmony a third under the tune)
+  const r = ((m - key) % 12 + 12) % 12, i = SCALE.indexOf(r); if (i < 0) return null;
+  return m - ((SCALE[i] - SCALE[(i + 5) % 7] + 12) % 12);
+}
+function musicStep(S, t, sp, step, live) {
+  const st = step % 16, bar = Math.floor(step / 16) % 8, loop = Math.floor(step / 128), ch = S.ch[bar], nx = S.ch[(bar + 1) % 8];
+  const T = t + (S.swing && st % 4 === 2 ? sp * .55 : 0), root = ch[0] - 24;
+  // drums
+  const fill = live && bar === 7 && st >= 12;
+  if (live && step % 128 === 0) mCrash(T);
+  switch (S.drums) {
+    case 'four': if (st % 4 === 0) mKick(T); if (st === 4 || st === 12) mClap(T); mHat(T, st % 2 ? .05 : .09); if (st % 4 === 2) mHat(T, .1, true); break;
+    case 'house': if (st % 4 === 0) mKick(T, .8); if (st === 4 || st === 12) mClap(T, .35); mNoise(T, .05, st % 2 ? .05 : .08, 'bandpass', 6500); if (st % 4 === 2) mHat(T, .08, true); break;
+    case 'rock': if (st === 0 || st === 8 || st === 10) mKick(T); if (st === 4 || st === 12) mSnare(T, .55); if (st % 2 === 0) mHat(T, .1); break;
+    case 'chip': if (st === 0 || st === 8 || st === 11) mDrop(T, 200, 50, .15, .7, 'square'); if (st === 4 || st === 12) mNoise(T, .1, .4, 'highpass', 2000); if (st % 2 === 0) mNoise(T, .025, .08, 'highpass', 9000); break;
+    case 'taiko': if ([0, 3, 8, 11].includes(st)) mDrop(T, 95, 55, .55, .8); if (st % 2 === 0) mDrop(T, 420, 300, .08, .18, 'triangle'); if (st === 4 || st === 12) mClap(T, .3); break;
+    case 'ska': if (st === 0 || st === 8) mKick(T); if (st === 4 || st === 12) mSnare(T, .45); if (st % 4 === 2) mHat(T, .12, true); break;
+    case 'synthwave': if (st === 0 || st === 8 || st === 7) mKick(T); if (st === 4 || st === 12) { mSnare(T, .6); mNoise(T, .5, .1, 'bandpass', 1200); } if (st % 2 === 0) mHat(T, .07); break;
+    case 'polka': if (st === 0 || st === 8) mKick(T, .6); if (st === 4 || st === 12) mSnare(T, .3); mNoise(T, .04, st % 2 ? .04 : .08, 'bandpass', 8000); break;
+    case 'afro': if ([0, 6, 10].includes(st)) mKick(T, .8); mNoise(T, .05, st % 2 ? .05 : .09, 'bandpass', 6000); if ([3, 7, 11, 14, 15].includes(st)) mDrop(T, st > 13 ? 260 : 190, 150, .2, .35); if ([0, 3, 6, 10, 12].includes(st)) mOsc(T, 2400, 'sine', .05, .08, { pluck: .05 }); break;
+    case 'swing': if (st === 0 || st === 8) mKick(T, .5); if (st === 4 || st === 12) mNoise(T, .1, .14, 'bandpass', 3000); if ([0, 6, 8, 14].includes(st) || st % 4 === 2) mNoise(T, .12, .06, 'highpass', 6000); break;
+  }
+  if (fill) mSnare(T, .2 + (st - 12) * .1);
+  // bass
+  switch (S.bass) {
+    case 'octave': if (st % 2 === 0) mOsc(T, mtof(root + (st % 4 === 2 ? 12 : 0)), 'sawtooth', sp * 1.6, .15, { cut: 900 }); break;
+    case 'pump': if (st % 2 === 0) mOsc(T, mtof(root), 'sawtooth', sp * 1.7, .15, { cut: 700 }); break;
+    case 'funk': { const P = { 0: 0, 3: 12, 6: 0, 8: 7, 10: 12, 11: 10, 14: 0 }; if (P[st] != null) mOsc(T, mtof(root + P[st]), 'square', sp * 1.3, .12, { cut: 850 }); break; }
+    case 'polka': if (st === 0) mOsc(T, mtof(root), 'triangle', sp * 3, .3); if (st === 8) mOsc(T, mtof(root - 5), 'triangle', sp * 3, .3); break;
+    case 'walk': if (st % 4 === 0) mOsc(T, mtof([root, ch[1] - 24, ch[2] - 24, nx[0] - 25][st / 4]), 'triangle', sp * 3.5, .3, { pluck: sp * 4 }); break;
+    case 'sub': if ([0, 6, 10].includes(st)) mOsc(T, mtof(root), 'sine', sp * 3, .35); break;
+  }
+  if (!live) return;   // the countdown: just drums and bass
+  // chords
+  switch (S.chords) {
+    case 'stabs': if (st % 4 === 2) ch.forEach(m => mOsc(T, mtof(m), 'sawtooth', sp * 1.1, .04, { cut: 2600 })); break;
+    case 'arp16': mOsc(T, mtof([ch[0], ch[1], ch[2], ch[0] + 12][st % 4] + 12), 'square', sp * .9, .035, { cut: 3200, send: st % 8 === 0 }); break;
+    case 'pad': if (st === 0) ch.forEach(m => mOsc(T, mtof(m), 'sawtooth', sp * 16, .03, { a: .35, cut: 1300 })); if (st % 2 === 0) mOsc(T, mtof([ch[0], ch[1], ch[2], ch[1]][(st / 2) % 4] + 24), 'triangle', sp, .03, { pluck: sp * 1.5, send: 1 }); break;
+    case 'skank': if (st % 4 === 2) ch.forEach(m => mOsc(T, mtof(m + 12), 'square', sp * .7, .03, { cut: 2200 })); break;
+    case 'koto': if (st % 2 === 0) mOsc(T, mtof(ch[[0, 1, 2, 1, 0, 2, 1, 2][(st / 2) % 8]] + 12), 'triangle', sp * 2, .07, { pluck: .45 }); break;
+    case 'marimba': { const P = [0, 3, 6, 8, 10, 13], i = P.indexOf(st); if (i >= 0) { const m = ch[[0, 2, 1, 0, 2, 1][i]] + 12; mOsc(T, mtof(m), 'sine', sp, .1, { pluck: .35 }); mOsc(T, mtof(m) * 4, 'sine', sp, .015, { pluck: .07 }); } break; }
+    case 'pompe': if (st === 4 || st === 12) ch.forEach(m => mOsc(T, mtof(m), 'triangle', sp, .06, { pluck: .22 })); break;
+    case 'oompah': if (st === 4 || st === 12) ch.forEach(m => mOsc(T, mtof(m), 'square', sp * 1.6, .025, { cut: 1800, det: 5 })); break;
+    case 'power': if (st % 2 === 0) [ch[0], ch[0] + 7].forEach(m => mOsc(T, mtof(m - 12), 'sawtooth', sp * 1.7, .05, { cut: 2600, to: music.dist })); break;
+  }
+  // the tune (and a harmony every second time round)
+  const n = S.at[bar * 16 + st]; if (!n) return;
+  const dur = n.len * sp * (S.swing ? 1.1 : 1), lead = LEADS[S.lead] || LEADS.square;
+  lead(T, mtof(n.m), dur, .16);
+  if (loop % 2) { const h = third(n.m, S.key); if (h) lead(T, mtof(h), dur, .07); }
+}
+function raceSong() {   // which song is on: the race you are in, and whether it has started (live) or is still counting down
+  if (race) return race.state === 'finished' ? null : { id: race.boss ? 'champion' : crazyMode ? 'candykart' : TRACK_SONG[race.T?.id] || 'sunshine', live: race.state !== 'countdown' };
+  if (typeof cRace !== 'undefined' && cRace) return { id: COUNTRY_SONG[cRace.C.id] || 'sunshine', live: cRace.state !== 'count' };
+  if (typeof worldRace !== 'undefined' && worldRace) return { id: 'world', live: worldRace.state !== 'count' };
+  if (drag) return drag.state === 'done' ? null : { id: 'nitro', live: drag.state !== 'tree' };
+  if (meet && meet.T) return { id: 'neon', live: meet.state !== 'count' };
+  if (lantern) return { id: 'matsuri', live: lantern.t >= 0 };
+  if (rally?.state === 'run') return { id: 'desert', live: true };
+  if (build.mode === 'drive' && build.run) return { id: 'pixel', live: true };
+  return null;
+}
+function updateMusic() {
+  const ctx = audio.ctx; if (!ctx) return;
+  const R = music.on && state === 'drive' ? raceSong() : null;
+  if (!R) { if (music.id) { music.id = null; music.out?.gain.setTargetAtTime(.0001, ctx.currentTime, .3); updateRadioHud(); } return; }
+  if (ctx.state !== 'running' || !musicInit()) return;
+  const S = prepSong(SONGS[R.id]), sp = 60 / S.bpm / 4;
+  if (music.id !== R.id) {
+    music.id = R.id; music.step = 0; music.live = R.live; music.next = ctx.currentTime + .05; music.out.gain.setTargetAtTime(.2, ctx.currentTime, .3);
+    const h = $('radiohud'); if (h) h.textContent = `🎵 ${S.n}`;
+  }
+  if (R.live && !music.live) { music.live = true; music.step = 0; music.next = ctx.currentTime + .02; }   // GO!
+  if (music.next < ctx.currentTime) music.next = ctx.currentTime + .05;
+  while (music.next < ctx.currentTime + .2) { musicStep(S, music.next, sp, music.step, music.live); music.next += sp; music.step++; }
+}
+function musicFanfare(won) {   // a happy fanfare when you win
+  const ctx = audio.ctx; if (!won || !ctx || !music.on || ctx.state !== 'running' || !musicInit()) return; const t = ctx.currentTime + .05;
+  music.dest = music.fan;
+  [72, 76, 79, 84].forEach((m, k) => LEADS.brass(t + k * .11, mtof(m), .12, 1));
+  [72, 76, 79, 84].forEach(m => LEADS.brass(t + .5, mtof(m), 1.4, .5)); mCrash(t + .5, 1.5); mKick(t + .5, 3);
+  music.dest = music.out;
 }
 
 /* =====================================================================
@@ -10761,7 +10973,7 @@ function endLantern(won, quit) {
   if (quit) return;
   if (!won) { banner('🏮 OUT OF TIME', 'TRY AGAIN!', 'Cut the corners and use your nitro'); return; }
   const best = +(localStorage.getItem('amboola.lantern') || 0), rec = !best || L.t < best; if (rec) localStorage.setItem('amboola.lantern', L.t.toFixed(2));
-  earn(50000); bump('lanternWins'); for (let k = 0; k < 6; k++) setTimeout(() => fireworkBoom(player.x + rr(-80, 80), 70 + rr(0, 40), player.z + rr(-80, 80)), k * 300);
+  earn(50000); bump('lanternWins'); musicFanfare(true); for (let k = 0; k < 6; k++) setTimeout(() => fireworkBoom(player.x + rr(-80, 80), 70 + rr(0, 40), player.z + rr(-80, 80)), k * 300);
   banner('🏮 FESTIVAL CHAMPION!', '+$50,000', `${L.t.toFixed(2)} s${rec ? ' · NEW RECORD!' : ` · record ${best.toFixed(2)} s`}`);
 }
 /* =====================================================================
@@ -11552,6 +11764,8 @@ $('bSeason').onclick = () => cycleSeason();
 $('bPhoto').onclick = () => startPhoto();
 $('bBadges').onclick = () => openBadges();
 $('bRadio').onclick = () => { cycleRadio(); $('bRadio').textContent = '📻 ' + (RADIO[radio.st]?.n || 'RADIO OFF'); };
+const musicBtn = () => { $('bMusic').textContent = `🎵 RACE MUSIC: ${music.on ? 'ON' : 'OFF'}`; };
+$('bMusic').onclick = () => { music.on = !music.on; localStorage.setItem('amboola.racemusic', music.on ? '1' : '0'); musicBtn(); }; musicBtn();
 $('phSave').onclick = () => savePhoto(); $('phFilter').onclick = () => photoFilter((photo.f + 1) % PHOTO_FILTERS.length); $('phExit').onclick = () => endPhoto();
 canvas.addEventListener('pointerdown', e => { if (photo) photo.drag = [e.clientX, e.clientY]; });
 addEventListener('pointermove', e => { if (photo?.drag) { photo.yaw -= (e.clientX - photo.drag[0]) * .006; photo.pitch = clamp(photo.pitch + (e.clientY - photo.drag[1]) * .005, -.05, 1.45); photo.drag = [e.clientX, e.clientY]; } });
@@ -11690,7 +11904,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

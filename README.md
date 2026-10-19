@@ -667,6 +667,32 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 ## Sound
 
 There are no audio files; all sound is generated live with the Web Audio API.
+- **🎵 Race music:** every race has its own happy song, written for the game and played live, with drums, bass, chords and a tune. While the lights count down you only hear the drums and bass; at GO the whole song starts with a crash. Every second time round, a harmony joins the tune. Win, and a fanfare plays! The song's name shows where the radio station usually is. The radio rests during races. Turn it off with **P → 🎵 RACE MUSIC**.
+  - **Circuits:**
+    - Amboola Grand Prix: *Sunshine Grand Prix* (happy rock)
+    - Fujimi Speedway: *Fuji Speed Star* (eurobeat)
+    - Bayside Oval: *Bayside Boogie* (disco)
+    - Akagi Mountain Pass: *Akagi Eurobeat*
+    - Kanto Short Circuit: *Pixel Power* (8-bit)
+    - Sakura Ring: *Sakura Festival* (flute and taiko drums)
+  - **Specials:**
+    - The Shadow King: *Champion's Charge*
+    - Crazy karts: *Candy Kart Party*
+    - The World Race: *Around the World*
+    - Drag races: *Nitro Countdown*
+    - Night meets: *Neon Night Drive* (synthwave)
+    - The Lantern Race: *Lantern Matsuri*
+    - The desert rally: *Desert Dash*
+    - Your own tracks: *Pixel Power*
+  - **Countries:**
+    - Cyprus: *Island Breeze* (steel drums)
+    - Italy: *Ciao Velocità* (mandolin)
+    - Dubai and Egypt: *Desert Dash*
+    - Paris: *Café Turbo* (swing accordion)
+    - New York: *Bayside Boogie*
+    - Swiss Alps: *Snowy Polka*
+    - London: *Double-Decker Pop*
+    - South Africa: *Jungle Drums* (marimba and whistle)
 - **Combustion engines** are built from individual cylinder firing pulses passed through exhaust resonances. The pulse layers are cross-faded by RPM, so the engines each sound different: Porsche flat-six, V8, the 918's high-revving V8, the Lamborghini and Ferrari V12 shriek, the raspy Huracán V10, flat-plane twin-turbo V8s, the Ferrari 296's and McLaren Artura's twin-turbo V6, Bugatti's deep quad-turbo W16, and the Tourbillon's 9,000 rpm V16. The hybrids (Revuelto, Temerario, SF90, LaFerrari, 296, W1, P1, Artura, Tourbillon) also have an electric-motor whine.
 - On top of that: throttle-dependent tone, a rev-limiter stutter, crackles when you lift off, shift cuts, and turbo whistle with blow-off valve on the turbo cars.
 - **Porsche electric cars** have motor and inverter whine plus a low synthesized drive sound.
