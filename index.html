@@ -2088,7 +2088,7 @@ const MODELS = {};
 // a time, traffic first. Until a car's model is in, it shows its simple built-in body (swapped as soon as it arrives).
 const TRAFFIC_MODELS = ['tr_kei', 'tr_taxi', 'tr_sedan', 'tr_van', 'tr_truck', 'tr_police'];   // the city's traffic (see buildTrafficCar)
 const INTERIORS = { Porsche: 'porsche', Tesla: 'tesla', Lamborghini: 'lambo', Ferrari: 'ferrari', McLaren: 'mclaren', Bugatti: 'bugatti', Koenigsegg: 'koenigsegg', Toyota: 'toyota', BMW: 'bmw', Audi: 'audi',
-  Devel: 'devel', 'Mercedes-AMG': 'amg', 'Rolls-Royce': 'rolls', Ford: 'ford', Chevrolet: 'chevy', Honda: 'honda', Pagani: 'pagani' };   // brand -> models/int_<key>.glb (only loaded when you sit inside)
+  Devel: 'devel', 'Mercedes-AMG': 'amg', 'Rolls-Royce': 'rolls', Ford: 'ford', Chevrolet: 'chevy', Honda: 'honda', Pagani: 'pagani', Nissan: 'nissan', Amboola: 'amboola' };   // brand -> models/int_<key>.glb (only loaded when you sit inside)
 const INTERIOR_MODELS = Object.values(INTERIORS).map(k => 'int_' + k);
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
 const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
@@ -3570,11 +3570,12 @@ const DIALS = {   // [layout, accent, dial face]
   mclaren: ['bar', '#ff8000', '#08090b'], bugatti: ['watch', '#c8a879', '#0d0e10'], koenigsegg: ['bar', '#ff6a13', '#07080a'], toyota: ['round', '#ff2a2a', '#0b0c10'],
   bmw: ['bar', '#d2141c', '#06080c'], audi: ['twin', '#ff2a2a', '#08090c'], devel: ['jet', '#3dff6a', '#020604'], amg: ['twin', '#ff2a2a', '#0a0a0c'],
   rolls: ['twin', '#e8e4dc', '#14161c'], ford: ['round', '#3a6bff', '#05070c'], chevy: ['round', '#ff3a2a', '#06070a'], honda: ['round', '#ff2a2a', '#08090c'],
-  pagani: ['analog', '#c8141b', '#efe6d6'], amboola: ['bar', '#2fe0ff', '#05070b'] };
+  pagani: ['analog', '#c8141b', '#efe6d6'], nissan: ['round', '#e0141c', '#0b0c10'], amboola: ['holo', '#2fe0ff', '#000000'] };
+const PLAIN_DIALS = ['bar', '#2fe0ff', '#05070b'];   // the plain cockpit (while a brand's cockpit loads)
 const BRAND_SCREEN = { porsche: ['PORSCHE', '#c89a2a'], tesla: ['TESLA', '#e82127'], lambo: ['LAMBORGHINI', '#d4a72c'], ferrari: ['FERRARI', '#f6c600'], mclaren: ['McLAREN', '#ff8000'],
   bugatti: ['BUGATTI', '#2a5bd7'], koenigsegg: ['KOENIGSEGG', '#ff6a13'], toyota: ['GR', '#eb0a1e'], bmw: ['BMW M', '#1c69d4'], audi: ['AUDI SPORT', '#bb0a30'],
   devel: ['DEVEL', '#c9a033'], amg: ['MERCEDES-AMG', '#cfd4da'], rolls: ['ROLLS-ROYCE', '#d5dae0'], ford: ['MUSTANG', '#3a6bff'], chevy: ['CORVETTE', '#ff3a2a'],
-  honda: ['NSX', '#ff2a2a'], pagani: ['PAGANI', '#e9dcc4'] };
+  honda: ['NSX', '#ff2a2a'], pagani: ['PAGANI', '#e9dcc4'], nissan: ['GT-R', '#e0141c'], amboola: ['AMBOOLA', '#2fe0ff'] };
 const interiorOf = spec => spec && !spec.jet ? INTERIORS[spec.brand || 'Porsche'] || null : null;
 // a canvas that a Gauge/Screen plane from the model shows; its size follows the plane's shape (from its UVs)
 function planeCanvas(mesh, base = 512) {
@@ -3592,7 +3593,10 @@ function buildInterior(car, spec, G, zr, key, IM, hide) {
   if (wheel) wheel.scale.x = 1 / sx;   // the wheel stays round when the cabin is stretched
   if (spec.id === 'cybercab' && wheel) { wheel.visible = false; if (gm) gm.visible = false; }   // the Cybercab has no steering wheel at all
   const gauge = gm ? planeCanvas(gm) : null;
+  if (gauge && DIALS[key][0] === 'holo') Object.assign(gm.material, { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });   // AMBOOLA: a see-through hologram
   if (sm) { const S = planeCanvas(sm, 384); drawScreen(S, key, spec); }
+  const paint = car.paint?.userData.base || car.paint?.color;   // AMBOOLA's accent parts (seats, gear knob) in the car's own colour
+  if (paint) g.traverse(o => { if (o.isMesh && o.material?.name === 'AmbAccent') { o.material = o.material.clone(); o.material.color.copy(paint); } });
   g.visible = false; car.group.add(g);
   return { g, E, spin: wheel, q0: wheel?.quaternion.clone(), ang: 0, gauge, style: DIALS[key], hide, on: false };
 }
@@ -3620,9 +3624,9 @@ function dial(x, cx, cy, r, frac, acc, face, label, sub, red = .8) {
   if (sub) { x.font = `700 ${Math.round(r * .15)}px Arial`; x.fillText(sub, cx, cy - r * .32); }
 }
 function drawDials(D, p, style) {
-  const [lay, acc, face] = style || DIALS.amboola, x = D.x, W = D.c.width, H = D.c.height, kmh = Math.round(p.speed * 3.6), sp = p.spec;
+  const [lay, acc, face] = style || PLAIN_DIALS, x = D.x, W = D.c.width, H = D.c.height, kmh = Math.round(p.speed * 3.6), sp = p.spec;
   const rpm = clamp(p.rpm / (sp.redline || 8000), 0, 1), gear = p.reverse ? 'R' : String(p.gear || 'N'), spd = clamp(kmh / Math.max(300, sp.vmax || 300), 0, 1);
-  x.fillStyle = lay === 'jet' ? '#010402' : '#040507'; x.fillRect(0, 0, W, H); x.textAlign = 'center';
+  if (lay === 'holo') x.clearRect(0, 0, W, H); else { x.fillStyle = lay === 'jet' ? '#010402' : '#040507'; x.fillRect(0, 0, W, H); } x.textAlign = 'center';
   const big = (t, cx, cy, s, c = '#fff') => { x.fillStyle = c; x.font = `900 ${Math.round(s)}px Orbitron, Arial`; x.fillText(t, cx, cy); };
   if (lay === 'five') {   // Porsche: five round dials, the rev counter in the middle
     const us = [.109, .304, .5, .696, .891], rs = [.267, .267, .333, .267, .267];
@@ -3649,6 +3653,12 @@ function drawDials(D, p, style) {
     big(String(kmh), W * .3, H * .62, H * .55); x.fillStyle = '#8fa0b0'; x.font = `700 ${Math.round(H * .12)}px Arial`; x.fillText('km/h', W * .3, H * .86);
     const on = p.reverse ? 'R' : p.speed > .5 ? 'D' : 'P'; ['P', 'R', 'N', 'D'].forEach((g, k) => big(g, W * (.62 + k * .09), H * .45, H * .2, g === on ? '#fff' : '#3a4250'));
     x.fillStyle = '#d8dde4'; x.fillRect(W * .7, H * .62, W * .14, H * .2);
+  } else if (lay === 'holo') {   // AMBOOLA: a hologram of light floating over the dash
+    x.strokeStyle = acc; x.lineWidth = Math.max(2, H * .025); x.globalAlpha = .9;
+    x.beginPath(); x.arc(W * .5, H * .62, H * .5, Math.PI * 1.1, Math.PI * 1.9); x.globalAlpha = .25; x.stroke();
+    x.globalAlpha = .95; x.lineWidth = H * .06; x.beginPath(); x.arc(W * .5, H * .62, H * .5, Math.PI * 1.1, Math.PI * (1.1 + .8 * rpm)); x.strokeStyle = rpm > .85 ? '#ff4a6a' : acc; x.stroke();
+    big(String(kmh), W * .5, H * .7, H * .42, acc); x.fillStyle = acc; x.font = `700 ${Math.round(H * .1)}px Arial`; x.fillText('km/h', W * .5, H * .9);
+    big(gear, W * .84, H * .62, H * .3, '#ffc21f'); big('AMBOOLA', W * .16, H * .62, H * .1, acc); x.globalAlpha = 1;
   } else if (lay === 'jet') {   // Devel: green fighter-jet displays
     x.strokeStyle = acc; x.fillStyle = acc; x.lineWidth = 2; x.strokeRect(W * .04, H * .1, W * .14, H * .8); x.strokeRect(W * .82, H * .1, W * .14, H * .8);
     x.fillRect(W * .04, H * (.9 - .8 * spd), W * .14, H * .8 * spd); x.fillRect(W * .82, H * (.9 - .8 * rpm), W * .14, H * .8 * rpm);
@@ -3728,7 +3738,7 @@ function buildCockpit(car, spec) {
   const seat = box(.52, .66, .13, K.seat, -ex, belt + .05, ez - .2, -.16); box(.07, .6, .135, K.red, -ex, belt + .05, ez - .199, -.16);
   box(.52, .12, .5, K.seat, -ex, belt - .3, ez + .05);
   g.visible = false; car.group.add(g);
-  return { g, E, spin, gauge: { c: gc, x: gc.getContext('2d'), t: gt, key: '', T: 0 }, hide, on: false, seat, proc: true, style: DIALS.amboola };
+  return { g, E, spin, gauge: { c: gc, x: gc.getContext('2d'), t: gt, key: '', T: 0 }, hide, on: false, seat, proc: true, style: PLAIN_DIALS };
 }
 function cockpitView(p, on) {
   const car = p?.car; if (!car) return;

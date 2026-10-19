@@ -420,7 +420,11 @@ Crash into something fast enough and it breaks!
   - **Chevrolet Corvette:** the squared-off wheel and the wall of buttons.
   - **Honda NSX:** the big round mode dial.
   - **Pagani:** cream analogue dials, round vents and the open metal gear gate.
-  - Nissan and AMBOOLA cars keep the AMBOOLA cockpit.
+
+  ![Inside the Nissan GT-R NISMO and the AMBOOLA Tora](media/nissan-amboola-interiors.jpg)
+
+  - **Nissan GT-R NISMO:** red NISMO stitching, the three R-mode switches, a red ENGINE START button and big paddles behind the wheel.
+  - **AMBOOLA:** neon light lines, a see-through hologram speed display floating over the dash, a gold tiger start button and the AMBOOLA name in lights. The seats and gear knob are in your car's colour.
 - **🗜 Junkyard:** by the harbour (east). The car crusher squashes the car you drive into a cube and pays you for the parts.
 - **🏠 Your own mansion:** Amboola Hills (north-west of the city), $1,000,000. Pool, palm trees, a helipad and your best cars on the drive; at home your butler fills the tank and washes the car.
 

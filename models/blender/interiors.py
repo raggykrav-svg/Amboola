@@ -23,6 +23,10 @@
 #   chevy       Corvette C8: the squared-off wheel and the tall "wall of buttons" between the seats
 #   honda       NSX: the big round Dynamic Mode dial on a floating console and P/R/N/D push buttons, red seats
 #   pagani      Utopia: the open metal gear gate with its rods, round aluminium dials and porthole vents, tan leather
+#   nissan      GT-R NISMO: round vents at both ends, the screen high in the middle, three R-mode switches, a red
+#               ENGINE START button, big paddles behind the wheel, red NISMO stitching
+#   amboola     the game's own cars: neon light lines, a see-through hologram speed display over the dash, a gold
+#               tiger start button, the AMBOOLA name in light; the accent parts take the car's paint colour (AmbAccent)
 #
 #   blender -b --factory-startup --python models/blender/interiors.py -- [--brand NAME|all] [--render DIR]
 #
@@ -121,6 +125,13 @@ def plane_to(name, c, target, w, h, m, parent=None):
     for lp, (u, v) in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): lp[uv].uv = (u, v)
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); o = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(o)
     return link(o, parent, m)
+
+
+def text(body, c, size, m, rot=(math.radians(90), 0, math.pi)):
+    """letters in light or metal; the default rotation makes them readable from the driver's seat"""
+    bpy.ops.object.text_add(location=c, rotation=rot); o = bpy.context.active_object; o.data.body = body; o.data.size = size
+    o.data.align_x = 'CENTER'; o.data.extrude = .002; bpy.ops.object.convert(target='MESH'); o = bpy.context.active_object
+    return link(o, None, m)
 
 
 def beam(a, b, t, m, parent=None):
@@ -561,8 +572,58 @@ def pagani():
     wheel(c, 'round', R=.17)
 
 
+def nissan():
+    L, A, T = mat('Alcantara', '#141416', .85), mat('NismoRed', '#d0101a', .45), mat('Alu', '#aab0b8', .3, 1.)
+    carbon = mat('Carbon', '#111214', .22, .25)
+    c = dict(leather=L, accent=A, trim=T, roofmat=mat('Headliner', '#1e1f22', 1), badge=mat('NissanBadge', '#cfd4da', .25, 1.), marker_mat=A,
+             dashmat=mat('DashLeather', '#17181b', .7), seat_stripe=A, consolemat=carbon, glove=mat('Glove', '#1a1a1c', .8))
+    dt = cabin(c)
+    for s in (-1, 1): vent_round((s * 0.8, -0.7, dt - .08), .06, T, mat('VentIn', '#0a0a0b', .5), (0, 1, 0.1))   # round vents at both ends
+    gauge(c, w=.4, h=.15, hood_w=.5)
+    # the touchscreen high in the middle with tall vents either side, and red stitching along the dash
+    screen(c, (0.05, -0.68, -0.3), .22, .13)
+    for x in (-0.11, 0.21): box((x, -0.69, -0.32), (.04, .02, .12), mat('Vent', '#0a0a0b', .5), bevel=.006)
+    box((0, -0.706, dt - .05), (1.8, .006, .006), A)
+    # the three R-mode switches on carbon, the big red ENGINE START button and the short gear lever
+    box((0, -0.58, on_stack(-0.58, .008)), (.2, .12, .012), carbon, rot=(-SLOPE, 0, 0))
+    for k in range(3):
+        x = -.06 + k * .06; box((x, -0.58, on_stack(-0.58, .03)), (.014, .02, .035), T, rot=(-SLOPE, 0, 0)); box((x, -0.62, on_stack(-0.62, .016)), (.03, .006, .006), A, rot=(-SLOPE, 0, 0))
+    cyl((0.09, -0.47, on_stack(-0.47, .02)), .022, .02, mat('StartRed', '#e0101a', .3, emit=.5), (-SLOPE, 0, 0), 20)
+    cyl((0, -0.42, on_stack(-0.42, .06)), .02, .1, L, (-SLOPE, 0, 0)); sph((0, -0.42, on_stack(-0.42, .12)), .026, T)
+    def ex(W):   # the big magnesium paddles behind the wheel
+        for s in (-1, 1): box((s * .2, -.04, .03), (.06, .008, .11), mat('Magnesium', '#9aa0a8', .35, .8), parent=W)
+    wheel(c, 'round', extra=ex)
+
+
+def amboola():
+    L, T = mat('Black', '#0d0e12', .6), mat('Chrome', '#cfd6de', .2, 1.)
+    acc, neon, gold = mat('AmbAccent', '#c8141b', .45), mat('AmbNeon', '#2fe0ff', .3, emit=2.), mat('TigerGold', '#ffc21f', .3, .8)
+    c = dict(leather=L, accent=acc, trim=T, roofmat=mat('AmbRoof', '#101218', .9), badge=gold, marker_mat=neon, dashmat=mat('Dash', '#14161c', .55), seat=acc,
+             seat_stripe=neon, consolemat=mat('Gloss', '#0a0b0e', .15, .2, coat=1.), spokes=[0, math.pi], rim=mat('RimBlack', '#121318', .5),
+             glove=mat('Glove', '#1a1a1c', .8), dash_line=False)
+    dt = cabin(c)
+    # neon light lines along the dash and both doors
+    box((0, -0.706, dt - .04), (1.86, .008, .01), neon)
+    for s in (-1, 1): box((s * 0.875, 0.1, BELT - .03), (.008, 1.7, .01), neon)
+    # the hologram speed display floating over the dash (the game draws it see-through) and the projector under it
+    gauge(c, (EX, -0.7, -0.18), .34, .13, hood=False)
+    box((EX, -0.75, -0.255), (.3, .1, .02), mat('Projector', '#0a0b0e', .3)); box((EX, -0.75, -0.244), (.26, .07, .003), neon)
+    # a wide screen in the middle and the AMBOOLA name in light on the passenger's side
+    screen(c, (0.06, -0.69, -0.33), .3, .13)
+    text('AMBOOLA', (0.36, -0.7, dt - .12), .055, neon)
+    # the console: a gold tiger start button, a light strip and a little joystick in the car's colour
+    cyl((0, -0.6, on_stack(-0.6, .02)), .03, .02, gold, (-SLOPE, 0, 0), 24); cyl((0, -0.6, on_stack(-0.6, .032)), .02, .006, mat('StartRed', '#e0101a', .3, emit=1.), (-SLOPE, 0, 0), 24)
+    box((0, -0.5, on_stack(-0.5, .01)), (.2, .1, .006), neon, rot=(-SLOPE, 0, 0))
+    cyl((0, -0.42, on_stack(-0.42, .05)), .012, .08, T, (-SLOPE, 0, 0)); sph((0, -0.42, on_stack(-0.42, .1)), .028, acc)
+    box((0, 0.1, TOP - .035), (.9, .8, .01), mat('GlassRoof', '#0a1420', .1))   # a glass panel in the roof
+    for s in (-1, 1): box((s * .46, 0.1, TOP - .04), (.008, .8, .008), neon)
+    def ex(W):   # a light strip across the flat top of the wheel
+        box((0, 0, .13), (.16, .03, .012), neon, parent=W)
+    wheel(c, 'flat2', extra=ex)
+
+
 BRANDS = dict(porsche=porsche, tesla=tesla, lambo=lambo, ferrari=ferrari, mclaren=mclaren, bugatti=bugatti, koenigsegg=koenigsegg, toyota=toyota,
-              bmw=bmw, audi=audi, devel=devel, amg=amg, rolls=rolls, ford=ford, chevy=chevy, honda=honda, pagani=pagani)
+              bmw=bmw, audi=audi, devel=devel, amg=amg, rolls=rolls, ford=ford, chevy=chevy, honda=honda, pagani=pagani, nissan=nissan, amboola=amboola)
 
 
 def export(key):
