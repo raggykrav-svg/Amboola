@@ -399,6 +399,28 @@ Crash into something fast enough and it breaks!
 ![The inside view: dashboard, dials, steering wheel and mirror](media/inside-view.jpg)
 
 - **🎥 Inside the car:** press **C** (or 🎥 on a phone) until it says INSIDE. You sit in the driver's seat and look out over the bonnet. There is a dashboard with live dials (speed, gear and a rev light bar), a steering wheel with your red gloves that turns when you steer, a middle screen, a rear-view mirror, the windscreen pillars, the roof and the doors. Every car gets a cockpit that fits its shape. Mud on the screen splats right in front of you.
+
+![Inside a Porsche, Ferrari, Bugatti, Pagani, Mercedes-AMG and Rolls-Royce](media/brand-interiors.jpg)
+
+- **🏎 Real brand interiors:** each brand has its own cockpit, made in Blender from photos of the real cars (`models/blender/interiors.py`). The dials are drawn live in that brand's style.
+  - **Porsche:** five round dials and a yellow stripe on the wheel.
+  - **Tesla:** a yoke and one big screen (the Cybercab has no steering wheel at all!).
+  - **Lamborghini:** a hexagon of light for the revs and a red flip cover over the start switch.
+  - **Ferrari:** shift lights on the wheel, a red start button and a yellow rev counter.
+  - **McLaren:** the dial pod on the steering column and a floating screen.
+  - **Bugatti:** the silver C-line and watch-like dials up to 500 km/h.
+  - **Koenigsegg:** a little screen on the wheel that turns with you.
+  - **Toyota GR:** big round vents and red stitching.
+  - **BMW M:** red M1/M2 buttons and the blue-purple-red M stripe.
+  - **Audi Sport:** a wide Virtual Cockpit and a red start button.
+  - **Devel Sixteen:** fighter-jet switches and green displays.
+  - **Mercedes-AMG:** four round turbine vents.
+  - **Rolls-Royce:** hundreds of stars in the roof.
+  - **Ford Mustang:** one glass panel for both screens and a cue-ball gear knob.
+  - **Chevrolet Corvette:** the squared-off wheel and the wall of buttons.
+  - **Honda NSX:** the big round mode dial.
+  - **Pagani:** cream analogue dials, round vents and the open metal gear gate.
+  - Nissan and AMBOOLA cars keep the AMBOOLA cockpit.
 - **🗜 Junkyard:** by the harbour (east). The car crusher squashes the car you drive into a cube and pays you for the parts.
 - **🏠 Your own mansion:** Amboola Hills (north-west of the city), $1,000,000. Pool, palm trees, a helipad and your best cars on the drive; at home your butler fills the tank and washes the car.
 

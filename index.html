@@ -2087,8 +2087,11 @@ const MODELS = {};
 // the camel and (not on phones) the traffic cars load before the game starts; the rest follow in the background, one at
 // a time, traffic first. Until a car's model is in, it shows its simple built-in body (swapped as soon as it arrives).
 const TRAFFIC_MODELS = ['tr_kei', 'tr_taxi', 'tr_sedan', 'tr_van', 'tr_truck', 'tr_police'];   // the city's traffic (see buildTrafficCar)
+const INTERIORS = { Porsche: 'porsche', Tesla: 'tesla', Lamborghini: 'lambo', Ferrari: 'ferrari', McLaren: 'mclaren', Bugatti: 'bugatti', Koenigsegg: 'koenigsegg', Toyota: 'toyota', BMW: 'bmw', Audi: 'audi',
+  Devel: 'devel', 'Mercedes-AMG': 'amg', 'Rolls-Royce': 'rolls', Ford: 'ford', Chevrolet: 'chevy', Honda: 'honda', Pagani: 'pagani' };   // brand -> models/int_<key>.glb (only loaded when you sit inside)
+const INTERIOR_MODELS = Object.values(INTERIORS).map(k => 'int_' + k);
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -2113,7 +2116,7 @@ function loadModel(id) {
 }
 // after start-up: your own cars first, then everything else, gently (phones get more breathing room)
 function loadAllModels() {
-  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, 'city_tokyo', ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id));   // towns load when you get near
+  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, 'city_tokyo', ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id) && !INTERIOR_MODELS.includes(id));   // towns load when you get near, cockpits when you sit inside
   (async () => { for (const id of order) { await loadModel(id); await new Promise(r => setTimeout(r, isTouch ? 150 : 15)); } modelsDone = true; })();
 }
 const glossBlackMat = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: .16, clearcoat: 1, clearcoatRoughness: .05 });
@@ -3558,6 +3561,107 @@ const cockpitMats = () => ckMats ??= {
   glove: new THREE.MeshStandardMaterial({ color: 0xd8261c, roughness: .8 }), alu: new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: .3, metalness: .9 }),
   mirror: new THREE.MeshStandardMaterial({ color: 0xa8b2be, roughness: .04, metalness: 1 }),
 };
+/* ---- brand cockpits (models/blender/interiors.py): every brand has its own interior, modelled from photos of the
+   real cars. It loads the first time you sit inside one of that brand's cars (the plain cockpit shows until then),
+   is stretched to the car's width at the driver's eye, and has three named parts: Wheel (turned with your steering),
+   Gauge and Screen (painted live with the brand's own style of dials and its middle screen). */
+const DIALS = {   // [layout, accent, dial face]
+  porsche: ['five', '#f2c200', '#0b0c0e'], tesla: ['tesla', '#3e9bff', '#0b0d12'], lambo: ['hex', '#7fd321', '#07090a'], ferrari: ['round', '#ff2a1a', '#f2c500'],
+  mclaren: ['bar', '#ff8000', '#08090b'], bugatti: ['watch', '#c8a879', '#0d0e10'], koenigsegg: ['bar', '#ff6a13', '#07080a'], toyota: ['round', '#ff2a2a', '#0b0c10'],
+  bmw: ['bar', '#d2141c', '#06080c'], audi: ['twin', '#ff2a2a', '#08090c'], devel: ['jet', '#3dff6a', '#020604'], amg: ['twin', '#ff2a2a', '#0a0a0c'],
+  rolls: ['twin', '#e8e4dc', '#14161c'], ford: ['round', '#3a6bff', '#05070c'], chevy: ['round', '#ff3a2a', '#06070a'], honda: ['round', '#ff2a2a', '#08090c'],
+  pagani: ['analog', '#c8141b', '#efe6d6'], amboola: ['bar', '#2fe0ff', '#05070b'] };
+const BRAND_SCREEN = { porsche: ['PORSCHE', '#c89a2a'], tesla: ['TESLA', '#e82127'], lambo: ['LAMBORGHINI', '#d4a72c'], ferrari: ['FERRARI', '#f6c600'], mclaren: ['McLAREN', '#ff8000'],
+  bugatti: ['BUGATTI', '#2a5bd7'], koenigsegg: ['KOENIGSEGG', '#ff6a13'], toyota: ['GR', '#eb0a1e'], bmw: ['BMW M', '#1c69d4'], audi: ['AUDI SPORT', '#bb0a30'],
+  devel: ['DEVEL', '#c9a033'], amg: ['MERCEDES-AMG', '#cfd4da'], rolls: ['ROLLS-ROYCE', '#d5dae0'], ford: ['MUSTANG', '#3a6bff'], chevy: ['CORVETTE', '#ff3a2a'],
+  honda: ['NSX', '#ff2a2a'], pagani: ['PAGANI', '#e9dcc4'] };
+const interiorOf = spec => spec && !spec.jet ? INTERIORS[spec.brand || 'Porsche'] || null : null;
+// a canvas that a Gauge/Screen plane from the model shows; its size follows the plane's shape (from its UVs)
+function planeCanvas(mesh, base = 512) {
+  const P = mesh.geometry.attributes.position, U = mesh.geometry.attributes.uv, pick = (fu, fv) => { for (let i = 0; i < U.count; i++) if ((U.getX(i) > .5) === fu && (U.getY(i) > .5) === fv) return new THREE.Vector3().fromBufferAttribute(P, i); return new THREE.Vector3(); };
+  const o = pick(false, false), w = o.distanceTo(pick(true, false)), h = o.distanceTo(pick(false, true)) || w / 3;
+  const c = document.createElement('canvas'); c.width = base; c.height = clamp(Math.round(base * h / w), 64, 900);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;   // glTF UVs start at the top
+  mesh.material = new THREE.MeshBasicMaterial({ map: t, toneMapped: false }); return { c, x: c.getContext('2d'), t, key: '', T: 0 };
+}
+function buildInterior(car, spec, G, zr, key, IM, hide) {
+  const sx = clamp(G.xh, .85, 1.15), ey = Math.max(G.y0 + .72, G.y1 - .3), ez = zr - .1, E = new THREE.Vector3(-.4 * sx, ey, ez);
+  const g = IM.clone(true); g.scale.set(sx, 1, 1); g.position.set(0, ey, ez);
+  let wheel = null, gm = null, sm = null;
+  g.traverse(o => { if (o.name === 'Wheel') wheel = o; if (o.isMesh) { o.receiveShadow = true; o.castShadow = false; if (o.name === 'Gauge') gm = o; else if (o.name === 'Screen') sm = o; } });
+  if (wheel) wheel.scale.x = 1 / sx;   // the wheel stays round when the cabin is stretched
+  if (spec.id === 'cybercab' && wheel) { wheel.visible = false; if (gm) gm.visible = false; }   // the Cybercab has no steering wheel at all
+  const gauge = gm ? planeCanvas(gm) : null;
+  if (sm) { const S = planeCanvas(sm, 384); drawScreen(S, key, spec); }
+  g.visible = false; car.group.add(g);
+  return { g, E, spin: wheel, q0: wheel?.quaternion.clone(), ang: 0, gauge, style: DIALS[key], hide, on: false };
+}
+function drawScreen(S, key, spec) {
+  const x = S.x, W = S.c.width, H = S.c.height, [name, col] = BRAND_SCREEN[key] || ['AMBOOLA', '#2fe0ff'], f = Math.min(W, H * 1.6);
+  const gr = x.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#0d1420'); gr.addColorStop(1, '#04060a'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  if (key === 'tesla') {   // a map with your car on it
+    x.strokeStyle = '#2a3442'; x.lineWidth = f * .03; for (let k = 1; k < 6; k++) { x.beginPath(); x.moveTo(0, H * k / 6); x.lineTo(W, H * k / 6 + 30); x.stroke(); x.beginPath(); x.moveTo(W * k / 6, 0); x.lineTo(W * k / 6 - 20, H); x.stroke(); }
+    x.fillStyle = '#3e9bff'; x.beginPath(); x.arc(W * .5, H * .55, f * .04, 0, 7); x.fill();
+  }
+  x.textAlign = 'center'; x.fillStyle = col; x.font = `900 ${Math.round(f * .12)}px Orbitron, Arial`; x.fillText(name, W / 2, H * .36);
+  x.fillStyle = '#ffffff'; x.font = `600 ${Math.round(f * .07)}px Arial`; x.fillText((spec.name || '').slice(0, 30), W / 2, H * .56);
+  x.fillStyle = '#ffc21f'; x.fillText('♪ AMBOOLA FM', W / 2, H * .76); S.t.needsUpdate = true;
+}
+// the dial drawing kit
+function dial(x, cx, cy, r, frac, acc, face, label, sub, red = .8) {
+  const light = parseInt(face.slice(1, 3), 16) > 128, ink = light ? '#1a1410' : '#e8edf2', a0 = Math.PI * .75, a1 = Math.PI * 2.25;
+  x.fillStyle = face; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+  x.strokeStyle = ink; for (let k = 0; k <= 10; k++) { const a = a0 + (a1 - a0) * k / 10; x.lineWidth = k % 2 ? 1.5 : 3; x.beginPath(); x.moveTo(cx + Math.cos(a) * r * .76, cy + Math.sin(a) * r * .76); x.lineTo(cx + Math.cos(a) * r * .92, cy + Math.sin(a) * r * .92); x.stroke(); }
+  if (red < 1) { x.strokeStyle = '#e0141c'; x.lineWidth = r * .08; x.beginPath(); x.arc(cx, cy, r * .84, a0 + (a1 - a0) * red, a1); x.stroke(); }
+  const a = a0 + (a1 - a0) * clamp(frac, 0, 1); x.strokeStyle = acc; x.lineWidth = Math.max(2, r * .055); x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + Math.cos(a) * r * .82, cy + Math.sin(a) * r * .82); x.stroke();
+  x.fillStyle = light ? '#111' : '#333a42'; x.beginPath(); x.arc(cx, cy, r * .1, 0, 7); x.fill();
+  x.textAlign = 'center'; x.fillStyle = ink;
+  if (label) { x.font = `900 ${Math.round(r * .34)}px Orbitron, Arial`; x.fillText(label, cx, cy + r * .58); }
+  if (sub) { x.font = `700 ${Math.round(r * .15)}px Arial`; x.fillText(sub, cx, cy - r * .32); }
+}
+function drawDials(D, p, style) {
+  const [lay, acc, face] = style || DIALS.amboola, x = D.x, W = D.c.width, H = D.c.height, kmh = Math.round(p.speed * 3.6), sp = p.spec;
+  const rpm = clamp(p.rpm / (sp.redline || 8000), 0, 1), gear = p.reverse ? 'R' : String(p.gear || 'N'), spd = clamp(kmh / Math.max(300, sp.vmax || 300), 0, 1);
+  x.fillStyle = lay === 'jet' ? '#010402' : '#040507'; x.fillRect(0, 0, W, H); x.textAlign = 'center';
+  const big = (t, cx, cy, s, c = '#fff') => { x.fillStyle = c; x.font = `900 ${Math.round(s)}px Orbitron, Arial`; x.fillText(t, cx, cy); };
+  if (lay === 'five') {   // Porsche: five round dials, the rev counter in the middle
+    const us = [.109, .304, .5, .696, .891], rs = [.267, .267, .333, .267, .267];
+    dial(x, W * us[0], H * .5, H * rs[0], .7, acc, face, '', 'FUEL', 1); dial(x, W * us[1], H * .5, H * rs[1], spd, acc, face, String(kmh), 'km/h', 1);
+    dial(x, W * us[2], H * .5, H * rs[2], rpm, acc, face, gear, 'RPM'); dial(x, W * us[3], H * .5, H * rs[3], .55, acc, face, '', 'OIL', 1); dial(x, W * us[4], H * .5, H * rs[4], .45, acc, face, '', 'TEMP', 1);
+  } else if (lay === 'round') {   // one big rev counter with the speed in it (Ferrari's is yellow)
+    dial(x, W * .5, H * .52, H * .46, rpm, acc, face, String(kmh), 'km/h');
+    big(gear, W * .82, H * .62, H * .42, acc); big(gear === 'R' ? 'REV' : 'GEAR', W * .82, H * .2, H * .11, '#8fa0b0');
+    x.fillStyle = '#8fa0b0'; x.font = `700 ${Math.round(H * .1)}px Arial`; x.fillText(`${Math.round(p.rpm)} rpm`, W * .18, H * .55);
+  } else if (lay === 'twin') {   // two round dials (Rolls-Royce: the right one is the power reserve)
+    dial(x, W * .27, H * .52, H * .44, spd, acc, face, String(kmh), 'km/h', 1);
+    const rr = style === DIALS.rolls; dial(x, W * .73, H * .52, H * .44, rr ? 1 - (p.throttle || 0) * .9 : rpm, acc, face, rr ? '' : gear, rr ? 'POWER RESERVE' : 'RPM', rr ? 1 : .8);
+    if (rr) big(gear, W * .5, H * .62, H * .3, acc);
+  } else if (lay === 'hex') {   // Lamborghini: a hexagon of light that fills up with the revs
+    const cx = W * .5, cy = H * .52, R = H * .44, pts = [...Array(7)].map((_, k) => [cx + Math.cos(Math.PI / 6 + k * Math.PI / 3) * R * 1.5, cy + Math.sin(Math.PI / 6 + k * Math.PI / 3) * R]);
+    x.lineWidth = H * .07; x.strokeStyle = '#18200f'; x.beginPath(); pts.forEach(([a, b], k) => k ? x.lineTo(a, b) : x.moveTo(a, b)); x.stroke();
+    x.strokeStyle = rpm > .85 ? '#ff2a1a' : acc; x.beginPath(); const n = rpm * 6; pts.slice(0, Math.ceil(n) + 1).forEach(([a, b], k) => { if (k > n) { const [pa, pb] = pts[k - 1], f = n - (k - 1); a = pa + (a - pa) * f; b = pb + (b - pb) * f; } k ? x.lineTo(a, b) : x.moveTo(a, b); }); x.stroke();
+    big(String(kmh), cx, cy + H * .1, H * .34); big(gear, cx, cy - H * .2, H * .2, acc);
+  } else if (lay === 'watch') {   // Bugatti: watch-like dials, the speedometer to 500 in the middle
+    dial(x, W * .2, H * .5, H * .35, rpm, acc, face, '', 'RPM'); dial(x, W * .5, H * .5, H * .46, clamp(kmh / 500, 0, 1), acc, face, String(kmh), '500 km/h', 1); dial(x, W * .8, H * .5, H * .35, (p.throttle || 0), acc, face, gear, 'POWER', 1);
+  } else if (lay === 'analog') {   // Pagani: cream analogue dials with red needles
+    dial(x, W * .225, H * .5, H * .4, rpm, acc, face, '', 'GIRI'); dial(x, W * .5, H * .5, H * .46, spd, acc, face, String(kmh), 'km/h', 1); dial(x, W * .775, H * .5, H * .4, .75, acc, face, gear, 'BENZINA', 1);
+  } else if (lay === 'tesla') {   // speed, P R N D and your car
+    big(String(kmh), W * .3, H * .62, H * .55); x.fillStyle = '#8fa0b0'; x.font = `700 ${Math.round(H * .12)}px Arial`; x.fillText('km/h', W * .3, H * .86);
+    const on = p.reverse ? 'R' : p.speed > .5 ? 'D' : 'P'; ['P', 'R', 'N', 'D'].forEach((g, k) => big(g, W * (.62 + k * .09), H * .45, H * .2, g === on ? '#fff' : '#3a4250'));
+    x.fillStyle = '#d8dde4'; x.fillRect(W * .7, H * .62, W * .14, H * .2);
+  } else if (lay === 'jet') {   // Devel: green fighter-jet displays
+    x.strokeStyle = acc; x.fillStyle = acc; x.lineWidth = 2; x.strokeRect(W * .04, H * .1, W * .14, H * .8); x.strokeRect(W * .82, H * .1, W * .14, H * .8);
+    x.fillRect(W * .04, H * (.9 - .8 * spd), W * .14, H * .8 * spd); x.fillRect(W * .82, H * (.9 - .8 * rpm), W * .14, H * .8 * rpm);
+    x.beginPath(); x.moveTo(W * .25, H * .5); x.lineTo(W * .75, H * .5); x.stroke(); x.beginPath(); x.arc(W * .5, H * .5, H * .12, 0, 7); x.stroke();
+    big(String(kmh), W * .5, H * .3, H * .22, acc); big(gear, W * .5, H * .86, H * .2, acc);
+  } else {   // a rev light bar with the speed under it (McLaren, BMW M, Koenigsegg, AMBOOLA)
+    for (let k = 0; k < 30; k++) { const on = k / 30 < rpm; x.fillStyle = on ? (k > 25 ? '#ff2a2a' : k > 20 ? '#ffc21f' : acc) : '#16202a'; x.fillRect(W * (.03 + k * .0315), H * .08, W * .024, H * .14); }
+    big(String(kmh), W * .45, H * .72, H * .45); x.fillStyle = '#8fa0b0'; x.font = `700 ${Math.round(H * .11)}px Arial`; x.fillText('km/h', W * .45, H * .9);
+    big(gear, W * .84, H * .7, H * .34, acc);
+  }
+  if (dirt > .5) { x.fillStyle = '#c8913c'; x.font = `700 ${Math.round(H * .09)}px Arial`; x.textAlign = 'left'; x.fillText('🟤 DIRTY', W * .02, H * .97); }
+  D.t.needsUpdate = true;
+}
 function buildCockpit(car, spec) {
   const G = carGeom(car); if (!G) return null;
   // the highest part of the body is the roof over the seats: the driver's head goes just under it
@@ -3567,6 +3671,13 @@ function buildCockpit(car, spec) {
     for (let i = 0; i < P.count; i += 2) { v.fromBufferAttribute(P, i).applyMatrix4(M); if (v.y > G.y1 - .08 && Math.abs(v.x) < G.xh * .6) { zs += v.z; n++; } }
   });
   const zr = n ? zs / n : G.mid, W = G.xh * 2, ey = Math.max(G.y0 + .72, G.y1 - .3), ez = zr - .1, ex = -Math.min(.4, G.xh * .4), top = G.y1 - .04, belt = ey - .3;
+  // from in here only the faces that point inwards show: the model's own little black cabin and every two-sided part (stripes, trim, wheels)
+  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (o.material === modelMats.black || o.material.side !== THREE.FrontSide)) hide.push(o); });
+  const key = interiorOf(spec), IM = key && MODELS['int_' + key];
+  if (key && !IM) loadModel('int_' + key).then(m => {   // the brand's own cockpit swaps in as soon as it has loaded
+    const ck = car.cockpit; if (!m || !ck?.proc || player?.car !== car) return; const on = ck.on; cockpitView(player, false); car.group.remove(ck.g); car.cockpit = null; if (on) cockpitView(player, true);
+  });
+  if (IM) return buildInterior(car, spec, G, zr, key, IM, hide);
   const K = cockpitMats(), g = new THREE.Group(), E = new THREE.Vector3(ex, ey, ez);
   const box = (w, h, d, m, x, y, z, rx = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.x = rx; o.receiveShadow = true; g.add(o); return o; };
   const face = (o, tx, ty, tz) => { const dx = tx - o.position.x, dy = ty - o.position.y, dz = tz - o.position.z; o.rotation.order = 'YXZ'; o.rotation.y = Math.atan2(dx, dz); o.rotation.x = -Math.atan2(dy, Math.hypot(dx, dz)); return o; };
@@ -3617,9 +3728,7 @@ function buildCockpit(car, spec) {
   const seat = box(.52, .66, .13, K.seat, -ex, belt + .05, ez - .2, -.16); box(.07, .6, .135, K.red, -ex, belt + .05, ez - .199, -.16);
   box(.52, .12, .5, K.seat, -ex, belt - .3, ez + .05);
   g.visible = false; car.group.add(g);
-  // from in here only the faces that point inwards show: the model's own little black cabin and every two-sided part (stripes, trim, wheels)
-  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (o.material === modelMats.black || o.material.side !== THREE.FrontSide)) hide.push(o); });
-  return { g, E, spin, gauge: { c: gc, x: gc.getContext('2d'), t: gt, key: '', T: 0 }, hide, on: false, seat };
+  return { g, E, spin, gauge: { c: gc, x: gc.getContext('2d'), t: gt, key: '', T: 0 }, hide, on: false, seat, proc: true, style: DIALS.amboola };
 }
 function cockpitView(p, on) {
   const car = p?.car; if (!car) return;
@@ -3629,18 +3738,13 @@ function cockpitView(p, on) {
 }
 function updateCockpit(dt, p) {
   const ck = p.car.cockpit; if (!ck?.on) return;
-  ck.spin.rotation.z = damp(ck.spin.rotation.z, -(p.steer || 0) * 2.3, 14, dt);   // turn right: the wheel turns clockwise (its axis points at you)
-  const G = ck.gauge, kmh = Math.round(p.speed * 3.6), red = p.spec.redline || 8000, key = `${kmh}|${p.gear}|${Math.round(p.rpm / 150)}`;
+  if (ck.q0) { ck.ang = damp(ck.ang, (p.steer || 0) * 2.3, 14, dt); ck.spin.quaternion.copy(ck.q0).multiply(CK_Q.setFromAxisAngle(CK_Z, ck.ang)); }   // the model's wheel turns about its own axis
+  else if (ck.spin) ck.spin.rotation.z = damp(ck.spin.rotation.z, -(p.steer || 0) * 2.3, 14, dt);   // turn right: the wheel turns clockwise (its axis points at you)
+  const G = ck.gauge; if (!G) return; const key = `${Math.round(p.speed * 3.6)}|${p.gear}|${Math.round(p.rpm / 150)}|${p.reverse}`;
   G.T -= dt; if (key === G.key || G.T > 0) return; G.key = key; G.T = .07;
-  const x = G.x, w = 512, h = 192, r = clamp(p.rpm / red, 0, 1);
-  x.fillStyle = '#05070b'; x.fillRect(0, 0, w, h);
-  for (let k = 0; k < 30; k++) { const on = k / 30 < r; x.fillStyle = on ? (k > 25 ? '#ff2a2a' : k > 20 ? '#ffc21f' : '#2fe0ff') : '#16202a'; x.fillRect(16 + k * 16.2, 14, 12, 26); }
-  x.textAlign = 'center'; x.fillStyle = '#ffffff'; x.font = '900 86px Orbitron, Arial'; x.fillText(String(kmh), 230, 136);
-  x.fillStyle = '#8fa0b0'; x.font = '700 22px Arial'; x.fillText('km/h', 230, 172);
-  x.fillStyle = '#ffc21f'; x.font = '900 64px Orbitron, Arial'; x.fillText(p.reverse ? 'R' : String(p.gear || 'N'), 430, 132);
-  x.fillStyle = dirt > .5 ? '#c8913c' : '#2a3a48'; x.font = '700 18px Arial'; x.fillText(dirt > .5 ? '🟤 DIRTY' : 'AMBOOLA', 70, 172);
-  G.t.needsUpdate = true;
+  drawDials(G, p, ck.style);
 }
+const CK_Q = new THREE.Quaternion(), CK_Z = new THREE.Vector3(0, 0, 1);
 let ckLook = 0;
 function updateCamera(dt, p) {
   if (window.__camHook && window.__camHook(camera, dt)) return; // cinematic cameras (video recording)
@@ -3670,7 +3774,7 @@ function updateCamera(dt, p) {
   } else if (camMode === CAM_INSIDE && p.car.cockpit && !p.car.cockpit.none) {   // in the driver's seat, looking a little into the turns
     const ck = p.car.cockpit, Mw = p.car.group.matrixWorld; p.car.group.updateMatrixWorld();
     ckLook = damp(ckLook, -(p.steer || 0) * 1.6, 3, dt);
-    camera.position.copy(ck.E).applyMatrix4(Mw); camLook.set(ck.E.x + ckLook, ck.E.y - 1.1, ck.E.z + 10).applyMatrix4(Mw);
+    camera.position.copy(ck.E).applyMatrix4(Mw); camLook.set(ck.E.x + ckLook, ck.E.y - 1.6, ck.E.z + 10).applyMatrix4(Mw);
     camPos.copy(camera.position);
   } else {
     const off = camMode === 3 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
@@ -11576,7 +11680,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
