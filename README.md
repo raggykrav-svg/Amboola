@@ -4,13 +4,29 @@ A browser driving game: take 59 cars (Porsche GT cars and SUVs, the whole Tesla 
 
 ## 🎮 [PLAY NOW → raggykrav-svg.github.io/Amboola](https://raggykrav-svg.github.io/Amboola/)
 
-Free, in your browser: no download, no install, no account. It works on computers (keyboard or gamepad) and on phones and tablets (touch controls). A fast computer gives the best graphics; pick **Low** graphics in the garage on older laptops and phones.
+Free, in your browser: no download, no install, no account. It works on computers (keyboard or gamepad) and on phones and tablets (touch controls). A fast computer gives the best graphics; pick **Low** graphics (title screen → ⚙ Settings, or in the garage) on older laptops and phones.
 
 **▶ Watch the trailer:** [media/amboola-trailer.mp4](media/amboola-trailer.mp4) (66 s with sound, recorded from the real game: drag races, all the Blender cars, buying and upgrading, races, drift, outlaw and police)
 
 [![Amboola trailer](media/amboola-trailer-poster.jpg)](media/amboola-trailer.mp4)
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
+
+## The title screen 🏁
+
+![The title screen, Settings and Challenges](media/title-screen.jpg)
+
+The game opens on a night-time Tokyo stage made in Blender: a big chrome-and-orange 3D **AMBOOLA** logo, a striped sunset sun, the city with lit windows and Tokyo Tower, a neon grid floor, two checkered flags and two searchlights sweeping the sky. Your own car (the one you picked last time, in its paint) spins on the podium. Three buttons:
+
+- **▶ PLAY**: go to your garage (press Enter too).
+- **⚙ SETTINGS**:
+  - **Graphics:** Low, High or Ultra.
+  - **Game mode:** 😊 Easy, 🙂 Medium or 😈 Hard. On Easy, race rivals drive slower, drag racers start late and the jungle lions and monkeys run slower. On Hard, everyone is quicker.
+  - **Sound:** on or off.
+  - **Race music:** the AMBOOLA songs, your Spotify playlist, or off.
+- **🏆 CHALLENGES**: every challenge in the game and whether you did it yet: 39 missions, 9 story chapters, 19 badges and 7 secret cars. Done ones are green with a ✅, and the bar shows how many you did in all.
+
+To come back to the title screen: in the garage press **💾 SAVE & QUIT → 🏠 TITLE SCREEN**.
 
 ## How to play
 
@@ -667,7 +683,8 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 ## Sound
 
 There are no audio files; all sound is generated live with the Web Audio API.
-- **🎵 Race music:** every race has its own happy song, written for the game and played live, with drums, bass, chords and a tune. While the lights count down you only hear the drums and bass; at GO the whole song starts with a crash. Every second time round, a harmony joins the tune. Win, and a fanfare plays! The song's name shows where the radio station usually is. The radio rests during races. Turn it off with **P → 🎵 RACE MUSIC**.
+- **🎵 Race music:** every race has its own happy song, written for the game and played live, with drums, bass, chords and a tune. While the lights count down you only hear the drums and bass; at GO the whole song starts with a crash. Every second time round, a harmony joins the tune. Win, and a fanfare plays! The song's name shows where the radio station usually is. The radio rests during races. Switch between the AMBOOLA songs, your Spotify and off with **P → 🎵 MUSIC** (or on the title screen in ⚙ Settings).
+- **🎸 Your own Spotify music in races:** press **P → 🎸 MY SPOTIFY PLAYLIST**, then paste a link to your playlist (in Spotify: open the playlist → **Share → Copy link**). Until you paste one, it plays the Scorpions' top songs. In every race, Spotify's own player shows above the map and plays your songs; it pauses when the race ends or you pause the game. When you are logged in to Spotify in the same browser you hear whole songs; when you are not, Spotify plays 30-second bits. If Spotify can't load (no internet), the AMBOOLA songs play instead.
   - **Circuits:**
     - Amboola Grand Prix: *Sunshine Grand Prix* (happy rock)
     - Fujimi Speedway: *Fuji Speed Star* (eurobeat)

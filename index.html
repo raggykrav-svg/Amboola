@@ -189,6 +189,41 @@
   #camBody tr.me td { background:rgba(47,224,255,.18); color:#fff; font-weight:700; } #camBody tr.mine td { color:#9fe9ff; }
   #camClose { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.14em; padding:10px 26px; color:#111; background:#2fe0ff; border:none; cursor:pointer; }
   @media (max-width: 760px) { #camBtn { left:auto; right:12px; top:80px; font-size:11px; padding:6px 10px; } #camShot { width:180px; bottom:auto; top:120px; } }
+  #title { position:fixed; inset:0; z-index:25; pointer-events:none; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:12px; padding:0 16px 6vh; }
+  #title.hidden, .tiPanel.hidden { display:none; }
+  #tiLogo { position:absolute; top:14vh; left:0; right:0; text-align:center; font-family:'Orbitron',sans-serif; font-weight:900; font-size:clamp(42px,10vw,120px); letter-spacing:.14em;
+    background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #tiBtns { display:flex; gap:18px; align-items:center; justify-content:center; flex-wrap:wrap; pointer-events:auto; }
+  #tiBtns button { min-width:230px; padding:15px 24px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:17px; letter-spacing:.14em; color:#fff; cursor:pointer;
+    background:rgba(8,10,20,.72); border:2px solid #2fe0ff; border-radius:12px; backdrop-filter:blur(6px); box-shadow:0 0 18px rgba(47,224,255,.35); transition:transform .12s; }
+  #tiBtns button:hover, #tiBtns button:focus-visible { transform:scale(1.07); outline:none; box-shadow:0 0 26px rgba(47,224,255,.7); }
+  #tiBtns #tiPlay { min-width:260px; padding:19px 34px; font-size:26px; color:#111; background:linear-gradient(90deg,#ff5a1f,#ffb300); border-color:#ffd02d; box-shadow:0 0 30px rgba(255,120,30,.75); animation:tiGlow 1.6s ease-in-out infinite; }
+  @keyframes tiGlow { 50% { box-shadow:0 0 46px rgba(255,170,40,.95); } }
+  #tiHint { font-size:13px; letter-spacing:.3em; color:#cfd6ff; text-shadow:0 2px 6px #000; }
+  @media (max-width: 760px) { #tiBtns { flex-direction:column; gap:12px; } #tiPlay { order:-1; } #tiHint { display:none; } #tiBtns button { min-width:240px; } }
+  .tiPanel { position:fixed; inset:0; z-index:39; background:rgba(4,5,12,.9); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:safe center; gap:14px; padding:18px 12px; overflow-y:auto; text-align:center; }
+  .tiPanel h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:clamp(22px,4vw,32px); letter-spacing:.14em; margin:0; color:#2fe0ff; }
+  .tiRow { width:min(640px, 94vw); padding:12px; background:rgba(255,255,255,.04); border:1px solid #2a2f3a; border-radius:10px; display:flex; flex-direction:column; gap:8px; align-items:center; }
+  .tiRow > b { font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.24em; color:#ffd02d; } .tiRow small { font-size:15px; color:#cfd3dc; letter-spacing:.04em; }
+  .tiOpts { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .tiOpts button, #tiTabs button { min-width:130px; padding:10px 14px; font-family:'Orbitron',sans-serif; font-weight:700; font-size:14px; letter-spacing:.1em; color:#fff; background:#1a1e28; border:2px solid #3a3f4b; border-radius:8px; cursor:pointer; }
+  .tiOpts button.sel, #tiTabs button.sel { background:linear-gradient(90deg,#ff5a1f,#ffb300); color:#111; border-color:#ffd02d; }
+  .tiBack { padding:12px 34px; font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.16em; font-size:15px; color:#111; background:#2fe0ff; border:none; border-radius:8px; cursor:pointer; }
+  #tiTabs { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; } #tiTabs button { min-width:0; font-size:13px; }
+  #tiSum { width:min(760px, 94vw); font-family:'Orbitron',sans-serif; font-size:15px; letter-spacing:.12em; color:#fff; }
+  #tiSum i { display:block; height:10px; margin-top:6px; border-radius:5px; background:linear-gradient(90deg,#5cd67a var(--p),#2a2f3a var(--p)); }
+  #tiList { width:min(760px, 94vw); max-height:52vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; text-align:left; }
+  .tiItem { display:flex; align-items:center; gap:12px; padding:9px 12px; background:rgba(255,255,255,.04); border:1px solid #262b36; border-radius:8px; }
+  .tiItem.done { background:rgba(92,214,122,.12); border-color:#2f7a45; } .tiItem > i { font-style:normal; font-size:22px; }
+  .tiItem div { flex:1; } .tiItem b { display:block; font-size:16px; letter-spacing:.04em; } .tiItem small { font-size:13px; color:#aab1be; }
+  .tiItem span { font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.08em; color:#ffd02d; white-space:nowrap; } .tiItem.done span { color:#5cd67a; }
+  #spotPanel { position:fixed; inset:0; z-index:38; background:rgba(4,5,9,.9); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; gap:14px; text-align:center; }
+  #spotPanel h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:26px; letter-spacing:.14em; margin:0; color:#1ed760; }
+  #spotPanel p { max-width:540px; margin:0; font-size:17px; line-height:1.45; color:#dfe3ea; } #spotPanel p small { font-size:14px; color:#9aa3b2; }
+  #spotLink { width:min(540px, 90vw); box-sizing:border-box; padding:12px; font-size:15px; background:#11141b; color:#fff; border:2px solid #1ed760; border-radius:8px; }
+  #spotBtns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  #spotPanel button { font-family:'Orbitron',sans-serif; font-weight:900; font-size:13px; letter-spacing:.1em; padding:11px 20px; color:#111; background:#1ed760; border:none; cursor:pointer; }
+  #spotPanel button.alt { background:#2a2f3a; color:#fff; } #spotNow { font-size:15px; color:#9fe9b8; letter-spacing:.06em; }
   #misPanel, #dailyScreen { position:fixed; inset:0; z-index:38; background:rgba(4,5,9,.88); backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; }
   #misPanel.hidden, #dailyScreen.hidden { display:none; }
   #misPanel h2, #dailyScreen h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:30px; letter-spacing:.2em; margin:0; color:#ffd02d; }
@@ -203,7 +238,7 @@
   #misClose { background:var(--panel); color:#fff; border:1px solid #3a3f4b; font-weight:400; font-size:14px; }
   #dailyInfo { text-align:center; margin-top:16px; font-family:'Orbitron',sans-serif; } #dailyInfo > b { display:block; font-size:72px; color:#5cd67a; text-shadow:0 0 30px rgba(92,214,122,.5); }
   #dailyInfo small { display:block; font-size:18px; letter-spacing:.25em; margin:6px 0 14px; color:#ffb01f; } #dailyInfo span { font-family:'Rajdhani',sans-serif; font-size:17px; color:var(--dim); } #dailyInfo span b { color:#fff; }
-  #achv { position:fixed; left:50%; top:16px; z-index:45; transform:translate(-50%,-140%); transition:transform .35s cubic-bezier(.2,1.4,.4,1); pointer-events:none;
+  #achv { position:fixed; left:50%; top:16px; z-index:45; transform:translate(-50%,calc(-100% - 30px)); transition:transform .35s cubic-bezier(.2,1.4,.4,1); pointer-events:none;
     background:linear-gradient(90deg,#1a1405,#2a2108); border:2px solid #ffd02d; padding:10px 26px; text-align:center; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.2em; color:#ffd02d; box-shadow:0 10px 40px rgba(0,0,0,.6); }
   #achv.show { transform:translate(-50%,0); } #achv b { display:block; font-size:22px; color:#fff; margin:4px 0; letter-spacing:.12em; } #achv small { display:block; font-family:'Rajdhani',sans-serif; font-size:14px; letter-spacing:.08em; color:#cfd2d8; }
   @media (max-width: 760px) { #misBtn { left:auto; right:12px; top:46px; font-size:11px; padding:6px 10px; } #misList { grid-template-columns:1fr; } }
@@ -310,6 +345,9 @@
   #dailyhud { position:absolute; left:22px; top:108px; max-width:min(520px, 60vw); font-size:12px; letter-spacing:.06em; color:#ffe9a8; text-shadow:0 1px 4px #000; }
   #dailyhud b { color:#ffc21f; letter-spacing:.12em; } #dailyhud i { font-style:normal; color:#2fe0ff; }
   #radiohud { position:absolute; right:48px; bottom:318px; font-size:12px; letter-spacing:.14em; color:#2fe0ff; text-shadow:0 1px 4px #000; }
+  #spotBox { position:absolute; left:18px; bottom:256px; width:320px; height:152px; pointer-events:auto; border-radius:12px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,.6); background:#121212; }
+  #spotBox iframe { display:block; border:0; width:100%; height:100%; }
+  @media (max-width: 760px), (max-height: 560px) { #spotBox { left:50%; bottom:auto; top:66px; transform:translateX(-50%); width:260px; height:80px; } }
   #fuelBar { position:absolute; right:48px; bottom:300px; width:200px; height:10px; background:rgba(0,0,0,.5); border:1px solid #ff8a1f; }
   #fuelBar small { position:absolute; left:-26px; top:-5px; font-size:13px; } #fuelBar i { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#ff5a1f,#ffc21f); }
   #fuelBar.low { border-color:#ff2a2a; animation:pulse 1s infinite; } #fuelBar.low i { background:#ff2a2a; }
@@ -324,9 +362,11 @@
   #help kbd { font-family:'Orbitron',sans-serif; font-size:11px; background:#222733; padding:2px 6px; border-radius:3px; margin-right:6px; color:#fff; }
 
   /* ---------- pause ---------- */
-  #pause { position:fixed; inset:0; z-index:30; background:rgba(4,5,9,.6); backdrop-filter:blur(6px); display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:12px; }
-  #pause h2 { font-family:'Orbitron',sans-serif; font-weight:900; font-size:44px; letter-spacing:.3em; margin:0 0 10px; }
+  #pause { position:fixed; inset:0; z-index:30; background:rgba(4,5,9,.6); backdrop-filter:blur(6px); display:grid; grid-template-columns:repeat(2, 280px);
+    justify-content:center; align-content:safe center; gap:8px 12px; padding:14px 0; overflow-y:auto; }
+  #pause h2 { grid-column:1/-1; text-align:center; font-family:'Orbitron',sans-serif; font-weight:900; font-size:44px; letter-spacing:.3em; margin:0 0 4px; }
+  #pause #bResume { grid-column:1/-1; justify-self:center; }
+  @media (max-width: 620px) { #pause { grid-template-columns:280px; } }
   #pause button { width:280px; padding:13px; font-family:'Orbitron',sans-serif; font-size:15px; letter-spacing:.2em; background:var(--panel); color:#fff;
     border:1px solid #3a3f4b; cursor:pointer; }
   #pause button:hover { border-color:var(--accent); background:rgba(255,90,31,.2); }
@@ -484,6 +524,7 @@
   <div id="storyhud"></div>
   <div id="dailyhud"></div>
   <div id="radiohud"></div>
+  <div id="spotBox" class="hidden"><div id="spotEmbed"></div></div>
   <div id="fuelBar"><small>⛽</small><i></i></div>
   <div id="help" class="hidden">
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
@@ -528,10 +569,29 @@
 <div id="achv"></div>
 <div id="camFlash"></div>
 <div id="camShot" class="hidden"><img alt=""><div></div></div>
+<div id="title" class="hidden">
+  <div id="tiLogo" class="hidden">AMBOOLA</div>
+  <div id="tiBtns"><button id="tiSet">⚙ SETTINGS</button><button id="tiPlay">▶ PLAY</button><button id="tiChal">🏆 CHALLENGES</button></div>
+  <div id="tiHint">PRESS ENTER TO PLAY · エンターでスタート</div>
+</div>
+<div id="tiSettings" class="tiPanel hidden"><h2>⚙ SETTINGS · 設定</h2>
+  <div class="tiRow"><b>GRAPHICS</b><div class="tiOpts" id="tiGfx"><button data-v="low">LOW</button><button data-v="high">HIGH</button><button data-v="ultra">ULTRA</button></div><small id="tiGfxInfo"></small></div>
+  <div class="tiRow"><b>GAME MODE</b><div class="tiOpts" id="tiDiff"><button data-v="easy">😊 EASY</button><button data-v="medium">🙂 MEDIUM</button><button data-v="hard">😈 HARD</button></div><small id="tiDiffInfo"></small></div>
+  <div class="tiRow"><b>SOUND</b><div class="tiOpts" id="tiSound"><button data-v="on">🔊 ON</button><button data-v="off">🔇 OFF</button></div></div>
+  <div class="tiRow"><b>RACE MUSIC</b><div class="tiOpts" id="tiMusic"><button data-v="songs">🎵 AMBOOLA</button><button data-v="spotify">🎸 SPOTIFY</button><button data-v="off">🔇 OFF</button></div></div>
+  <button class="tiBack">◀ BACK</button></div>
+<div id="tiChallenges" class="tiPanel hidden"><h2>🏆 CHALLENGES · チャレンジ</h2><div id="tiTabs"></div><div id="tiSum"></div><div id="tiList"></div><button class="tiBack">◀ BACK</button></div>
+<div id="spotPanel" class="hidden"><h2>🎸 MY SPOTIFY · マイ音楽</h2>
+  <p>Play your own Spotify songs in races! In Spotify, open your playlist, press <b>Share → Copy link</b>, then paste it here.</p>
+  <input id="spotLink" type="text" placeholder="https://open.spotify.com/playlist/..." autocomplete="off" spellcheck="false">
+  <div id="spotBtns"><button id="spotSave">✔ USE MY PLAYLIST</button><button id="spotScorp" class="alt">🦂 SCORPIONS TOP SONGS</button></div>
+  <div id="spotNow"></div>
+  <p><small>Logged in to Spotify in this browser = whole songs. Not logged in = short 30-second bits.<br>The player shows above the map in races. Tap it to skip a song.</small></p>
+  <button id="spotClose" class="alt">BACK</button></div>
 <div id="camPanel" class="hidden"><h2>📸 SPEED CAMERAS · オービス</h2><div id="camTabs"></div><div id="camBody"></div><button id="camClose">BACK</button></div>
 <div id="savedScreen" class="hidden"><h2>GAME SAVED · 保存しました</h2><div id="savedInfo"></div>
   <p>Everything is saved in this browser. You can close this tab now; next time you open Amboola you carry on from here.</p>
-  <div class="rbtns"><button id="savedBack">▶ KEEP PLAYING</button><button id="savedQuit">QUIT</button></div></div>
+  <div class="rbtns"><button id="savedBack">▶ KEEP PLAYING</button><button id="savedTitle">🏠 TITLE SCREEN</button><button id="savedQuit">QUIT</button></div></div>
 <div id="flyhud" class="hidden">
   <div id="flyTop"><div><b id="flySpd">0</b><small>KM/H · <span id="flyMach">MACH 0</span></small></div><div><b id="flyAlt">0 m</b><small>ALTITUDE</small></div><div id="flyThrBox"><small>THROTTLE · W / S</small><i><u id="flyThr"></u></i></div></div>
   <div id="flyDest"></div>
@@ -568,7 +628,8 @@
   <button id="bWeather">WEATHER</button>
   <button id="bPhoto">📷 PHOTO MODE</button>
   <button id="bRadio">📻 RADIO</button>
-  <button id="bMusic">🎵 RACE MUSIC: ON</button>
+  <button id="bMusic">🎵 MUSIC: AMBOOLA</button>
+  <button id="bSpot">🎸 MY SPOTIFY PLAYLIST</button>
   <button id="bBadges">⭐ LEVEL &amp; BADGES</button>
   <button id="bSeason">SEASON</button>
   <button id="bRaces">RACES</button>
@@ -2092,7 +2153,7 @@ const INTERIORS = { Porsche: 'porsche', Tesla: 'tesla', Lamborghini: 'lambo', Fe
   Devel: 'devel', 'Mercedes-AMG': 'amg', 'Rolls-Royce': 'rolls', Ford: 'ford', Chevrolet: 'chevy', Honda: 'honda', Pagani: 'pagani', Nissan: 'nissan', Amboola: 'amboola' };   // brand -> models/int_<key>.glb (only loaded when you sit inside)
 const INTERIOR_MODELS = Object.values(INTERIORS).map(k => 'int_' + k);
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', 'title', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -3813,6 +3874,7 @@ addEventListener('keydown', e => {
   if (state === 'heli' && !keys[e.code]) { if (e.code === 'Enter') heliGetOut(); if (e.code === 'Escape') { endHeli(); enterGarage(); } }
   if (state === 'fly' && !keys[e.code]) { if (e.code === 'KeyL') landJet(); if (e.code === 'Escape') { endFlight(); enterGarage(); } }
   if (e.target && e.target.tagName === 'INPUT') return; // typing in the map search box
+  if (state === 'title') { if (e.code === 'Enter' && document.activeElement?.tagName !== 'BUTTON' && !document.querySelector('.tiPanel:not(.hidden)')) titlePlay(); if (e.code === 'Escape') titleClose(); return; }
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
   if (keys[e.code]) return; keys[e.code] = true;
   if (state === 'drive') {
@@ -3922,7 +3984,7 @@ function buildMenu() {
   PAINTS.forEach((p, i) => { const s = document.createElement('div'); s.className = 'sw'; s.style.background = `radial-gradient(circle at 35% 30%, #fff8, ${p.c} 45%, #000 120%)`; s.title = p.n + (p.lvl ? ` · LEVEL ${p.lvl}` : ''); if (lockedFor(p)) { s.textContent = '🔒'; s.style.cssText += ';display:flex;align-items:center;justify-content:center;font-size:12px;filter:grayscale(.6)'; } s.onclick = () => { if (lockedFor(p)) { toast('🔒 ' + p.n.toUpperCase(), `UNLOCKS AT LEVEL ${p.lvl}`); return; } paintIdx = i; localStorage.setItem('amboola.paint.' + CARS[carIdx].id, i); updateMenu(); showGarageCar(); }; pw.appendChild(s); });
   document.querySelectorAll('#optTime .opt').forEach(o => o.onclick = () => { applyTime(o.dataset.v); updateMenu(); });
   document.querySelectorAll('#optWx .opt').forEach(o => o.onclick = () => { setWeather(o.dataset.v); updateMenu(); });
-  document.querySelectorAll('#optQ .opt').forEach(o => o.onclick = () => { quality = o.dataset.v; localStorage.setItem('amboola.q', quality); setupComposer(); applyTime(timeName); updateMenu(); });
+  document.querySelectorAll('#optQ .opt').forEach(o => o.onclick = () => setQuality(o.dataset.v));
   $('drive').onclick = garageGo;
   updateMenu();
 }
@@ -4334,7 +4396,7 @@ class RaceAI {
       allow = Math.min(allow, Math.sqrt(vc * vc + 2 * dec * k * T.step));
     }
     const band = clamp(1 + (race.p.prog - this.prog) / 2500, .95, 1.05);
-    const target = race.state === 'countdown' ? 0 : allow * this.skill * band;
+    const target = race.state === 'countdown' ? 0 : allow * this.skill * band * DIFF().ai;
     const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(this.v, 4))) - sp.drag * this.v * this.v / sp.mass;
     if (this.v < target) this.v = Math.min(target, this.v + Math.max(acc, .5) * band * dt); else this.v = Math.max(target, this.v - dec * dt);
     // racing line: lean to the inside of the next corner, dodge cars ahead
@@ -4700,7 +4762,7 @@ function startDrag(ev, rivalSpec) {
   const car = buildCar(rs, p.c, p.m, p.r); scene.add(car.group);
   drag = { ev, t: -4.2, state: 'tree', foul: null,
     p: { react: null, total: null, trap: null, d: 0 },
-    r: { spec: rs, ghost, car, react: ev.boss ? .09 + Math.random() * .06 : .13 + Math.random() * .17, total: null, trap: null, d: 0 } };
+    r: { spec: rs, ghost, car, react: Math.max(.06, (ev.boss ? .09 + Math.random() * .06 : .13 + Math.random() * .17) + DIFF().react), total: null, trap: null, d: 0 } };
   dragHold();
   car.group.position.set(DRAG.x0 - rs.L / 2, 0, DRAG.z + DRAG.lane); car.group.rotation.y = Math.PI / 2;
   camPos.set(player.x - 9, 3, player.z);
@@ -7200,7 +7262,7 @@ function animalThink(a, dt, p, d) {
   } else if (a.st === 'flee') { want = K.run * .75; if (a.t <= 0) { a.st = 'home'; } }
   else if (a.st === 'rest') { if (a.t <= 0) a.st = 'home'; }
   else if (a.st === 'chase') {
-    const lead = clamp(d / 30, 0, .6); th = to(p.x + p.vx * lead, p.z + p.vz * lead); want = K.run;
+    const lead = clamp(d / 30, 0, .6); th = to(p.x + p.vx * lead, p.z + p.vz * lead); want = K.run * DIFF().animal;
     if (a.kind === 'lion' && d < 10 && a.pounceT <= 0 && a.y <= 0) { a.pounceT = 2.5; a.vy = 5; a.v = 27; a.roarK = 1; }   // the pounce
     if (d > 230 || p.z < JG.camp + 25) a.st = 'home';   // too far behind, or you reached the safe camp
   }
@@ -7840,7 +7902,7 @@ class StreetRacer {
       const kk = Math.abs(T.k[Math.min(T.n - 1, i0 + k)]); if (kk < 2e-3) continue;
       allow = Math.min(allow, Math.sqrt(lat / kk + 2 * dec * k * 2));
     }
-    const target = hold ? 0 : allow * this.r.skill * band;
+    const target = hold ? 0 : allow * this.r.skill * band * DIFF().ai;
     const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(this.v, 4))) - sp.drag * this.v * this.v / sp.mass;
     this.braking = this.v > target + .5;
     this.v = this.v < target ? Math.min(target, this.v + Math.max(acc, .4) * dt) : Math.max(target, this.v - dec * dt);
@@ -9485,7 +9547,7 @@ function rNoise(t, dur, vol, type, freq) {
 function rKick(t, v = .9) { const ctx = audio.ctx, o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .3); o.connect(g).connect(radio.out); o.start(t); o.stop(t + .35); }
 function updateRadio() {
   const R = RADIO[radio.st], ctx = audio.ctx;
-  if (!R || !ctx || ctx.state !== 'running' || state !== 'drive' || music.id) return;   // the radio rests while a race song plays
+  if (!R || !ctx || ctx.state !== 'running' || state !== 'drive' || music.id || spot.shown) return;   // the radio rests while a race song plays
   if (!radioInit()) return;
   const sp = 60 / R.bpm / 4; if (radio.next < ctx.currentTime) radio.next = ctx.currentTime + .05;
   const prog = R.s === 'rock' ? [52, 48, 55, 50] : R.s === 'lofi' ? [50, 55, 48, 57] : [57, 53, 48, 55];
@@ -9583,7 +9645,7 @@ function prepSong(S) {
   }
   S.ch = S.prog.split(' ').map(t => chordOf(t, S.key)); return S;
 }
-const music = { id: null, step: 0, next: 0, out: null, on: localStorage.getItem('amboola.racemusic') !== '0', live: false };
+const music = { id: null, step: 0, next: 0, out: null, mode: { 0: 'off', spotify: 'spotify' }[localStorage.getItem('amboola.racemusic')] || 'songs', live: false };
 function musicInit() {
   const ctx = audio.ctx; if (!ctx || music.out) return !!music.out;
   const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3; comp.connect(audio.master);
@@ -9702,7 +9764,7 @@ function raceSong() {   // which song is on: the race you are in, and whether it
 }
 function updateMusic() {
   const ctx = audio.ctx; if (!ctx) return;
-  const R = music.on && state === 'drive' ? raceSong() : null;
+  const R = (music.mode === 'songs' || music.mode === 'spotify' && spot.failed) && state === 'drive' ? raceSong() : null;
   if (!R) { if (music.id) { music.id = null; music.out?.gain.setTargetAtTime(.0001, ctx.currentTime, .3); updateRadioHud(); } return; }
   if (ctx.state !== 'running' || !musicInit()) return;
   const S = prepSong(SONGS[R.id]), sp = 60 / S.bpm / 4;
@@ -9715,12 +9777,53 @@ function updateMusic() {
   while (music.next < ctx.currentTime + .2) { musicStep(S, music.next, sp, music.step, music.live); music.next += sp; music.step++; }
 }
 function musicFanfare(won) {   // a happy fanfare when you win
-  const ctx = audio.ctx; if (!won || !ctx || !music.on || ctx.state !== 'running' || !musicInit()) return; const t = ctx.currentTime + .05;
+  const ctx = audio.ctx; if (!won || !ctx || music.mode === 'off' || ctx.state !== 'running' || !musicInit()) return; const t = ctx.currentTime + .05;
   music.dest = music.fan;
   [72, 76, 79, 84].forEach((m, k) => LEADS.brass(t + k * .11, mtof(m), .12, 1));
   [72, 76, 79, 84].forEach(m => LEADS.brass(t + .5, mtof(m), 1.4, .5)); mCrash(t + .5, 1.5); mKick(t + .5, 3);
   music.dest = music.out;
 }
+
+/* My Spotify: your own Spotify playlist plays in races instead of the AMBOOLA songs. Paste a playlist link in
+   Pause → 🎸 My Spotify playlist (until then it plays the Scorpions' top songs). Spotify's own player shows above the
+   minimap while you race: whole songs when you're logged in to Spotify, 30-second bits when you're not. If Spotify
+   can't load (no internet), the AMBOOLA songs play instead. */
+const SCORPIONS = 'spotify:artist:27T030eWyCQRmDyuvr1kxY';
+const spot = { uri: localStorage.getItem('amboola.spotify') || SCORPIONS, ctl: null, loading: false, failed: false, ready: false, shown: false, go: false, played: false, pos: 0, dur: 0 };
+function spotUri(text) {   // a Spotify link (or spotify: uri) → 'spotify:playlist:<id>'
+  const m = /(playlist|album|track|artist)[/:]([A-Za-z0-9]{22})/.exec(text || ''); return m ? `spotify:${m[1]}:${m[2]}` : null;
+}
+function spotFail() {   // no Spotify (offline or blocked): back to the AMBOOLA songs
+  if (spot.ctl || spot.failed) return; spot.failed = true; spot.loading = false; spot.shown = false;
+  $('spotBox').classList.add('hidden'); toast('🎸 SPOTIFY DIDN\'T LOAD', 'PLAYING THE AMBOOLA SONGS');
+}
+function spotLoad() {   // fetch Spotify's player the first time a race wants it
+  if (spot.ctl || spot.loading || spot.failed) return; spot.loading = true;
+  window.onSpotifyIframeApiReady = api => api.createController($('spotEmbed'), { uri: spot.uri, width: '100%', height: '100%' }, ctl => {
+    spot.ctl = ctl; spot.loading = false; setTimeout(() => { spot.ready = true; }, 4000);
+    ctl.addListener('ready', () => { spot.ready = true; });
+    ctl.addListener('playback_update', e => { spot.ready = true; spot.pos = e.data.position; spot.dur = e.data.duration; });
+  });
+  const s = document.createElement('script'); s.src = 'https://open.spotify.com/embed/iframe-api/v1'; s.async = true; s.onerror = spotFail;
+  document.head.appendChild(s); setTimeout(() => { if (!spot.ctl) spotFail(); }, 15000);
+}
+function updateSpotify() {   // every frame: show and play the player in races, hide and pause it otherwise
+  const want = music.mode === 'spotify' && !spot.failed && state === 'drive' && !!raceSong();
+  if (want) spotLoad();
+  if (want !== spot.shown) {
+    spot.shown = want; spot.go = want; $('spotBox').classList.toggle('hidden', !want);
+    if (!want) spot.ctl?.pause();
+    const h = $('radiohud'); if (want && h) h.textContent = spot.uri === SCORPIONS ? '🦂 SCORPIONS · SPOTIFY' : '🎸 MY SPOTIFY'; else updateRadioHud();
+  }
+  if (spot.go && spot.ctl && spot.ready) {   // carry on with the song from last time, or start the playlist
+    spot.go = false; if (spot.played && spot.dur && spot.pos < spot.dur - 2000) spot.ctl.resume(); else spot.ctl.play(); spot.played = true;
+  }
+}
+function setSpotify(uri) {
+  spot.uri = uri; spot.played = false; spot.pos = spot.dur = 0; localStorage.setItem('amboola.spotify', uri);
+  spot.ctl?.loadUri(uri); music.mode = 'spotify'; localStorage.setItem('amboola.racemusic', 'spotify'); musicBtn(); spotNow();
+}
+const spotNow = () => { $('spotNow').textContent = spot.uri === SCORPIONS ? 'NOW SET: 🦂 Scorpions top songs' : `NOW SET: 🎸 your ${spot.uri.split(':')[1]} ✔`; };
 
 /* =====================================================================
    FUEL, GAS STATIONS AND THE CAR WASH — driving uses fuel (electric cars use battery): a full tank lasts about 90 km.
@@ -11764,8 +11867,14 @@ $('bSeason').onclick = () => cycleSeason();
 $('bPhoto').onclick = () => startPhoto();
 $('bBadges').onclick = () => openBadges();
 $('bRadio').onclick = () => { cycleRadio(); $('bRadio').textContent = '📻 ' + (RADIO[radio.st]?.n || 'RADIO OFF'); };
-const musicBtn = () => { $('bMusic').textContent = `🎵 RACE MUSIC: ${music.on ? 'ON' : 'OFF'}`; };
-$('bMusic').onclick = () => { music.on = !music.on; localStorage.setItem('amboola.racemusic', music.on ? '1' : '0'); musicBtn(); }; musicBtn();
+const MUSIC_MODES = { songs: '🎵 MUSIC: AMBOOLA', spotify: '🎸 MUSIC: SPOTIFY', off: '🔇 MUSIC: OFF' };
+const musicBtn = () => { $('bMusic').textContent = MUSIC_MODES[music.mode]; };
+$('bMusic').onclick = () => { music.mode = { songs: 'spotify', spotify: 'off', off: 'songs' }[music.mode]; localStorage.setItem('amboola.racemusic', { songs: '1', spotify: 'spotify', off: '0' }[music.mode]); musicBtn(); }; musicBtn();
+$('bSpot').onclick = () => { $('spotLink').value = ''; spotNow(); $('spotPanel').classList.remove('hidden'); $('spotLink').focus(); };
+$('spotSave').onclick = () => { const u = spotUri($('spotLink').value); if (!u) { $('spotNow').textContent = '🤔 That isn\'t a Spotify link. It starts with https://open.spotify.com/'; return; } setSpotify(u); };
+$('spotScorp').onclick = () => setSpotify(SCORPIONS);
+$('spotClose').onclick = () => $('spotPanel').classList.add('hidden');
+$('spotLink').addEventListener('keydown', e => { if (e.key === 'Enter') $('spotSave').click(); if (e.key === 'Escape') $('spotClose').click(); e.stopPropagation(); });
 $('phSave').onclick = () => savePhoto(); $('phFilter').onclick = () => photoFilter((photo.f + 1) % PHOTO_FILTERS.length); $('phExit').onclick = () => endPhoto();
 canvas.addEventListener('pointerdown', e => { if (photo) photo.drag = [e.clientX, e.clientY]; });
 addEventListener('pointermove', e => { if (photo?.drag) { photo.yaw -= (e.clientX - photo.drag[0]) * .006; photo.pitch = clamp(photo.pitch + (e.clientY - photo.drag[1]) * .005, -.05, 1.45); photo.drag = [e.clientX, e.clientY]; } });
@@ -11785,6 +11894,131 @@ function enterGarage() {
   renderPass.scene = gScene; renderPass.camera = gCamera; bloomPass.threshold = .9; bloomPass.strength = .35; renderer.toneMappingExposure = .9;
   updateMenu(); showGarageCar();
 }
+
+/* =====================================================================
+   TITLE SCREEN — the first thing you see after loading: the Blender stage (models/blender/title_screen.py) at night,
+   your car spinning on the podium and two searchlights sweeping the sky. ▶ PLAY goes to the garage (the car
+   commercial plays first, once), ⚙ SETTINGS has graphics, the game mode (Easy / Medium / Hard), sound and race music,
+   🏆 CHALLENGES lists every mission, story chapter, badge and secret car, done or still to do. Garage → Save & Quit
+   → 🏠 Title screen comes back here.
+   ===================================================================== */
+const DIFFS = {   // ai: how fast race rivals drive, react: drag rivals' launch delay (s), animal: how fast jungle animals chase
+  easy: { n: '😊 EASY', d: 'Rivals drive slower and drag racers start late. Lions and monkeys are slower too. Great for learning!', ai: .9, react: .15, animal: .8 },
+  medium: { n: '🙂 MEDIUM', d: 'The normal game.', ai: 1, react: 0, animal: 1 },
+  hard: { n: '😈 HARD', d: 'Rivals drive right at the limit and launch fast, and the animals are quicker. Can you still win?', ai: 1.04, react: -.04, animal: 1.15 },
+};
+let diff = DIFFS[localStorage.getItem('amboola.diff')] ? localStorage.getItem('amboola.diff') : 'medium';
+const DIFF = () => DIFFS[diff];
+const TITLE = { scene: null, cam: null, car: null, carKey: '', tt: null, beams: [], flags: [], t: 0, played: false, tab: 'missions' };
+function buildTitle() {
+  const S = TITLE.scene = new THREE.Scene(); TITLE.cam = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, .1, 600);
+  // night sky: a dome with a pink glow at the horizon, and stars
+  const dome = new THREE.SphereGeometry(400, 32, 24), col = [], c = new THREE.Color(), pos = dome.attributes.position;
+  const sky = [[-1, '#2a0f48'], [0, '#d8507a'], [.06, '#7a2468'], [.2, '#22104a'], [.5, '#070818'], [1, '#02030a']];
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i) / 400; let k = 1; while (k < sky.length - 1 && sky[k][0] < y) k++;
+    const [y0, a] = sky[k - 1], [y1, b] = sky[k]; c.set(a).lerp(new THREE.Color(b), clamp((y - y0) / (y1 - y0), 0, 1)); col.push(c.r, c.g, c.b);
+  }
+  dome.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  S.add(new THREE.Mesh(dome, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })));
+  const st = []; for (let i = 0; i < 700; i++) { const a = Math.random() * Math.PI * 2, e = .15 + Math.random() * 1.3; st.push(Math.cos(a) * Math.cos(e) * 380, Math.sin(e) * 380, Math.sin(a) * Math.cos(e) * 380); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(st, 3));
+  S.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, fog: false, transparent: true, opacity: .8 })));
+  S.fog = new THREE.Fog(0x2a1048, 70, 200);
+  S.environment = gScene.environment; S.environmentIntensity = .3;
+  S.add(new THREE.HemisphereLight(0x8a7cff, 0x220a2a, .45));
+  const key = new THREE.SpotLight(0xffffff, 80, 40, .5, .6, 1.4); key.position.set(5, 10, 9); key.castShadow = true; key.shadow.mapSize.setScalar(1024); S.add(key, key.target);
+  const rim = new THREE.SpotLight(0xff6a2a, 60, 30, .7, .5, 1.4); rim.position.set(-7, 5, -6); S.add(rim, rim.target);
+  const fill = new THREE.PointLight(0x2fe0ff, 25, 14, 1.6); fill.position.set(5, 1.8, -2); S.add(fill);
+  const M = MODELS.title; $('tiLogo').classList.toggle('hidden', !!M);   // no Blender stage (file missing): a plain podium and the logo in letters
+  if (!M) { const d = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.3, .36, 64), new THREE.MeshStandardMaterial({ color: 0x16181f, metalness: .6, roughness: .3 })); d.position.y = .18; S.add(d); return; }
+  S.add(M);
+  const beamT = canvasTex(4, 128, (g, w, h) => { const G = g.createLinearGradient(0, 0, 0, h); G.addColorStop(0, '#000'); G.addColorStop(.6, '#2a2a2a'); G.addColorStop(1, '#fff'); g.fillStyle = G; g.fillRect(0, 0, w, h); }, { linear: true });
+  const seen = new Set();
+  M.traverse(o => {
+    if (!o.isMesh) return;
+    if (!seen.has(o.material)) { seen.add(o.material); o.material.emissiveIntensity *= .25; }   // Blender's glow strengths are for Cycles; the bloom here does the rest
+    o.receiveShadow = /Floor|Podium|Turntable|Grid/.test(o.name);
+    if (/^Sun/.test(o.material.name)) o.material.fog = false;
+    if (o.material.name === 'Floor') o.material.roughness = .55;   // no hard light spots on the stage floor   // the sunset stays bright through the haze
+    if (o.material.name === 'Beam') {   // soft searchlight: brightest at the lamp, fading out into the sky
+      o.geometry = new THREE.CylinderGeometry(4.2, .45, 44, 24, 1, true).translate(0, 22, 0);
+      o.material = new THREE.MeshBasicMaterial({ color: 0xfff0c8, alphaMap: beamT, transparent: true, opacity: .09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+    }
+  });
+  TITLE.tt = M.getObjectByName('Turntable');
+  TITLE.beams = ['BeamL', 'BeamR'].map((n, k) => M.getObjectByName(n)).filter(Boolean).map((o, k) => ({ o, rx: o.rotation.x, rz: o.rotation.z, ph: k * 2.1 }));
+  TITLE.flags = ['FlagL', 'FlagR'].map(n => M.getObjectByName(n)).filter(Boolean).map(o => ({ o, ry: o.rotation.y }));
+}
+function titleCar() {   // your car (the one picked in the garage, in its paint) on the turntable
+  const c = CARS[carIdx], key = `${c.id}:${paintIdx}:${!!MODELS[c.id]}`;
+  if (TITLE.carKey === key) return; TITLE.carKey = key;
+  if (!MODELS[c.id]) loadModel(c.id).then(() => { if (state === 'title') titleCar(); });
+  if (TITLE.car) TITLE.scene.remove(TITLE.car.group);
+  const p = PAINTS[paintIdx], car = TITLE.car = applyCustom(buildCar(c, p.c, p.m, p.r), c.id);
+  dentCar(car, dentsOf(c.id)); car.headMat.emissiveIntensity = 3; car.tailMat.emissiveIntensity = 2.5;
+  car.group.scale.setScalar(c.jet ? .3 : c.heli ? .55 : Math.min(1, 5.8 / (BODIES[c.body]?.L || 4.6)));   // the bus and the trucks shrink to fit the podium
+  car.group.position.y = .36 + (c.jet ? .7 : 0); car.group.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  TITLE.scene.add(car.group);
+}
+function titleView() { renderPass.scene = TITLE.scene; renderPass.camera = TITLE.cam; bloomPass.threshold = .9; bloomPass.strength = .3; renderer.toneMappingExposure = .85; }
+function enterTitle() {
+  carEnvRelease(); state = 'title';
+  ['menu', 'hud', 'touch', 'pause'].forEach(id => $(id).classList.add('hidden')); $('title').classList.remove('hidden');
+  titleView(); titleCar(); setTimeout(() => $('tiPlay').focus({ preventScroll: true }), 50);
+}
+function titlePlay() {
+  titleClose(); $('title').classList.add('hidden'); audio.init?.(); enterGarage();
+  if (!TITLE.played) { TITLE.played = true; bootAd(() => { checkDaily(); checkMissions(); }); }
+}
+function titleClose() { document.querySelectorAll('.tiPanel').forEach(p => p.classList.add('hidden')); }
+function updateTitle(dt) {
+  const T = TITLE, t = T.t += dt, cam = T.cam, a = innerWidth / innerHeight;
+  if (cam.aspect !== a) { cam.aspect = a; cam.updateProjectionMatrix(); }
+  const d = Math.max(20, 9.4 / (Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * a)), far = d - 20;   // step back on narrow screens until the whole logo fits
+  cam.position.set(Math.sin(t * .23) * 1.4, 2.9 + Math.sin(t * .31) * .2 + far * .08, -8.5 + d);
+  cam.lookAt(0, 2.2 + far * .03, -8);   // aimed low: the logo sits high, the car in the middle, the buttons under it
+  if (T.tt) T.tt.rotation.y = t * .35;
+  if (T.car) T.car.group.rotation.y = t * .35 + .7;
+  for (const b of T.beams) { b.o.rotation.z = b.rz + Math.sin(t * .45 + b.ph) * .32; b.o.rotation.x = b.rx + Math.sin(t * .31 + b.ph) * .12; }
+  T.flags.forEach((f, i) => { f.o.rotation.y = f.ry + Math.sin(t * 1.8 + i * 1.3) * .09; });
+}
+function setQuality(v) {
+  quality = v; localStorage.setItem('amboola.q', quality); setupComposer(); applyTime(timeName); updateMenu();
+  if (state === 'title') titleView();
+}
+function titleSettings() {
+  const mark = (id, v) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('sel', b.dataset.v === v));
+  mark('tiGfx', quality); mark('tiDiff', diff); mark('tiSound', audio.muted ? 'off' : 'on'); mark('tiMusic', music.mode);
+  $('tiGfxInfo').textContent = { low: 'Fastest. Best for phones and older computers.', high: 'Sharp, with shadows and shiny car reflections.', ultra: 'The prettiest. Needs a strong computer.' }[quality];
+  $('tiDiffInfo').textContent = DIFFS[diff].d;
+}
+function challengeLists() {
+  const v = f => { try { return f(); } catch (e) { return 0; } }, ch = ST.story || 0;
+  return {
+    missions: { n: '🏁 MISSIONS', items: MISSIONS.map(m => { const done = ST.done.includes(m.id), x = Math.min(v(m.v), m.goal), f = m.money ? fmtUSD : n => Math.floor(n).toLocaleString();
+      return { done, n: m.n, d: m.d, p: done ? 'DONE' : `${f(x)} / ${f(m.goal)}` }; }) },
+    story: { n: '📖 STORY', items: STORY.map((C, i) => ({ done: i < ch, n: `${i + 1}. ${C.n}`, d: C.goal, p: i < ch ? 'DONE' : i === ch ? 'NOW' : '🔒' })) },
+    badges: { n: '⭐ BADGES', items: BADGES.map(b => ({ done: LVL.badges.includes(b.id), n: b.n, d: b.d, p: LVL.badges.includes(b.id) ? 'GOT IT' : '' })) },
+    secrets: { n: '🔑 SECRET CARS', items: SECRETS.map(S => { const got = secretFound(S), c = CARS.find(x => x.id === S.car); return { done: got, n: got ? c?.name || S.car : '??? Secret car', d: S.hint, p: got ? 'FOUND' : '' }; }) },
+  };
+}
+function renderChallenges() {
+  const L = challengeLists(), all = Object.values(L).flatMap(x => x.items), n = all.filter(x => x.done).length;
+  $('tiTabs').innerHTML = Object.entries(L).map(([k, x]) => `<button data-k="${k}" class="${k === TITLE.tab ? 'sel' : ''}">${x.n} ${x.items.filter(i => i.done).length}/${x.items.length}</button>`).join('');
+  $('tiTabs').querySelectorAll('button').forEach(b => b.onclick = () => { TITLE.tab = b.dataset.k; renderChallenges(); });
+  $('tiSum').innerHTML = `YOU DID ${n} OF ${all.length} CHALLENGES${n ? ' 🎉' : ''}<i style="--p:${(n / all.length * 100).toFixed(1)}%"></i>`;
+  $('tiList').innerHTML = L[TITLE.tab].items.map(x => `<div class="tiItem${x.done ? ' done' : ''}"><i>${x.done ? '✅' : '⬜'}</i><div><b>${x.n}</b><small>${x.d}</small></div><span>${x.p}</span></div>`).join('');
+}
+$('tiPlay').onclick = titlePlay;
+$('tiSet').onclick = () => { titleSettings(); $('tiSettings').classList.remove('hidden'); };
+$('tiChal').onclick = () => { renderChallenges(); $('tiChallenges').classList.remove('hidden'); $('tiList').scrollTop = 0; };
+document.querySelectorAll('.tiBack').forEach(b => b.onclick = titleClose);
+document.querySelectorAll('#tiGfx button').forEach(b => b.onclick = () => { setQuality(b.dataset.v); titleSettings(); });
+document.querySelectorAll('#tiDiff button').forEach(b => b.onclick = () => { diff = b.dataset.v; localStorage.setItem('amboola.diff', diff); titleSettings(); });
+document.querySelectorAll('#tiSound button').forEach(b => b.onclick = () => { audio.setMuted(b.dataset.v === 'off'); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); titleSettings(); });
+document.querySelectorAll('#tiMusic button').forEach(b => b.onclick = () => { music.mode = b.dataset.v; localStorage.setItem('amboola.racemusic', { songs: '1', spotify: 'spotify', off: '0' }[music.mode]); musicBtn(); titleSettings(); });
+$('savedTitle').onclick = () => { $('savedScreen').classList.add('hidden'); if (audio.ctx) audio.ctx.resume(); enterTitle(); };
 
 /* =====================================================================
    MAIN LOOP
@@ -11821,12 +12055,14 @@ function frame() {
 }
 function tick(dt) {
   if (player?.car?.cockpit?.on && !['drive', 'pause', 'overlay', 'map'].includes(state)) cockpitView(player, false);
+  updateSpotify();
   if (state === 'ad') { updateAd(dt); return; }
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
   if (state === 'build') { buildCam(dt); composer.render(dt); return; }
   if (state === 'heli') { updateHeli(dt); if (state === 'heli') { updateCountryCulling(dt); composer.render(dt); } return; }   // (the flying Roadster can reach the countries)
   if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
+  if (state === 'title') { updateTitle(dt); composer.render(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
     const gc = CARS[carIdx], gk = gc?.jet ? 1 : Math.max(1, (BODIES[gc?.body]?.L || 4.6) / 5.4);   // step back for the bus and the trucks
@@ -11881,7 +12117,7 @@ async function boot() {
   setLoad(.05, 'Loading fonts…');
   try { await Promise.race([Promise.all([document.fonts.load(`900 40px Orbitron`), document.fonts.load(`900 40px "Noto Sans JP"`, '東京ラーメンカラオケ寿司居酒屋焼肉ホテル薬局ゲーム喫茶店酒場電気街バーサーキットのために生まれた純粋なパワー魂電動化中のスポーツカーミッドシップ頂点新しい時代へ馬力衝撃伝説は続く道終わりから始まる走れ首都高速ボード計測'), document.fonts.load('700 20px Rajdhani')]), new Promise(r => setTimeout(r, 3500))]); } catch (e) { }
   setupComposer();
-  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel', ...(isTouch ? [] : [...TRAFFIC_MODELS, 'city_tokyo'])].map(loadModel));
+  setLoad(.1, 'Loading your car…'); await Promise.all([CARS[carIdx]?.id, adSeen() ? null : nextAdCar(false)?.id, 'camel', 'title', ...(isTouch ? [] : [...TRAFFIC_MODELS, 'city_tokyo'])].map(loadModel));
   setLoad(.15, 'Paving roads…'); await nextFrame();
   await buildWorld();
   TOKYO.built = true; upgradeTokyo();   // the Blender Tokyo, if its model is already in
@@ -11899,12 +12135,11 @@ async function boot() {
   setLoad(1, 'Ready');
   await new Promise(r => setTimeout(r, 250));
   $('loading').classList.add('hidden');
-  enterGarage(); frame();
-  bootAd(() => { checkDaily(); checkMissions(); });
+  buildTitle(); enterTitle(); frame();
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

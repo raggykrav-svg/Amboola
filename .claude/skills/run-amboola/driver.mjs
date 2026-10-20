@@ -31,10 +31,13 @@ if (!fs.existsSync(path.join(THREE_DIR, 'build/three.module.js'))) {
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.png': 'image/png', '.json': 'application/json' };
 async function open(viewport = { width: 1280, height: 720 }) {
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
-  const page = await (await browser.newContext({ viewport, deviceScaleFactor: +(process.env.AMBOOLA_DPR || 1) })).newPage();
+  const page = await (await browser.newContext({ viewport, deviceScaleFactor: +(process.env.AMBOOLA_DPR || 1), ...(process.env.AMBOOLA_NET ? { locale: 'en-US' } : {}) })).newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message + (process.env.AMBOOLA_STACK ? '\n' + e.stack : '')));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console.error: ' + m.text()); });
+  // AMBOOLA_NET=1: let the page reach the internet (e.g. the Spotify player). This container's Chromium can't check
+  // TLS certificates itself, so Node fetches each https request and hands it back to the page.
+  if (process.env.AMBOOLA_NET) await page.route(/^https:/, async r => { try { r.fulfill({ response: await r.fetch() }); } catch { r.abort(); } });
   await page.route(`https://cdn.jsdelivr.net/npm/three@${THREE_VER}/**`, r => {
     const p = new URL(r.request().url()).pathname.replace(`/npm/three@${THREE_VER}/`, '');
     r.fulfill({ path: path.join(THREE_DIR, p), contentType: 'application/javascript' });
@@ -49,6 +52,8 @@ async function open(viewport = { width: 1280, height: 720 }) {
   await page.goto('http://amboola.test/index.html');
   await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden') || /Error/.test(document.getElementById('loadmsg').textContent), null, { timeout: 180000 })
     .catch(e => { throw new Error('game never finished loading (a script error stops the module from running at all):\n' + errors.join('\n')); });
+  // the game opens on the title screen; press PLAY so every flow starts in the garage (AMBOOLA_TITLE=1 stays on the title)
+  if (!process.env.AMBOOLA_TITLE) await page.evaluate(() => window.amboola?.titlePlay?.());
   const msg = await page.textContent('#loadmsg');
   if (msg !== 'Ready') throw new Error('load failed: ' + msg + '\n' + errors.join('\n'));
   // the Blender models stream in after start-up; tests want them all (AMBOOLA_FAST=1 skips the wait)
