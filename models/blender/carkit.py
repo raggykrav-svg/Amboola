@@ -900,12 +900,14 @@ class Car:
         for v, d in moves.items(): v.co += d
         return ring
     @staticmethod
-    def block(bm, out=0.03, depth=0.26):
-        """thicken an open patch into a closed block: lifted `out` along its normals, `depth` deep"""
+    def block(bm, out=0.03, depth=0.26, reach=None):
+        """thicken an open patch into a closed block: lifted `out` along its normals, `depth` deep. reach(p, n) gives how
+        far in from p along -n the shell's other side is; the block stops short of it, so it never cuts that side too"""
         bm.normal_update(); nrm = {v: v.normal.copy() for v in bm.verts}
         rim = [e for e in bm.edges if e.is_boundary]
+        deep = {v: depth - out if reach is None else max(0.02, min(depth - out, reach(v.co, n) - 0.025)) for v, n in nrm.items()}
         for v, n in nrm.items(): v.co += n * out
-        inn = {v: bm.verts.new(v.co - n * depth) for v, n in nrm.items()}
+        inn = {v: bm.verts.new(v.co - n * (out + deep[v])) for v, n in nrm.items()}
         for f in list(bm.faces): bm.faces.new([inn[v] for v in reversed(f.verts)])
         for e in rim:
             a, b = e.verts; bm.faces.new((a, b, inn[b], inn[a]))
@@ -959,6 +961,9 @@ class Car:
             # 5 cm of the other window stay black: a gloss-black pillar instead of a see-through corner
             others = [t for q, t in trees.items() if q is not o]
             pillar = {f.index for f in bm.faces if any(t.find_nearest(o.matrix_world @ f.calc_center_median(), 0.05)[0] is not None for t in others)}
+            # glass that wraps round a corner (a windscreen swept back over the A-pillars) stays black there too
+            bm.normal_update(); nm = sum((f.normal * f.calc_area() for f in bm.faces), Vector()).normalized()
+            pillar |= {f.index for f in bm.faces if f.normal.dot(nm) < 0.72}
             ck = bm.copy(); ck.faces.index_update(); ring = self.frame_ring(bm, frit) | {f for f in bm.faces if f.index in pillar}
             if sum(f.calc_area() for f in bm.faces if f not in ring) < 0.02: bm.free(); ck.free(); continue
             for f in bm.faces: f.material_index = 1 if f in ring else 0
@@ -993,12 +998,15 @@ class Car:
         def skin():
             me = self.body.data; ci = {i for i, m in enumerate(me.materials) if m == self.M['Cutter']}
             return sum(p.area for p in me.polygons if p.material_index not in ci)
+        def reach(p, n):     # from a point on the glass, in along -n: how far to the shell's far side
+            q = self.hit(p - n * 0.02, -n)[0]
+            return (q - p).length if q is not None else 1.0
         for o, ck in cut:
             hole = sum(f.calc_area() for f in ck.faces); a0 = skin(); keep = self.body.data.copy()
             # a shallower cutter when a deep one folds over itself, then the boolean's slower, more forgiving modes
             for depth, solver, flags in ((0.26, 'EXACT', {}), (0.1, 'EXACT', {}), (0.1, 'EXACT', {'use_self': True}),
                                          (0.1, 'EXACT', {'use_hole_tolerant': True}), (0.1, 'FAST', {})):
-                self.subtract(self.block(ck.copy(), depth=depth), solver, 'Cutter', **flags)
+                self.subtract(self.block(ck.copy(), depth=depth, reach=reach), solver, 'Cutter', **flags)
                 lost = a0 - skin()
                 if hole * 0.3 < lost < hole * 1.5 + 0.03: break
                 print(f'open_cabin: cutting {o.name} ({depth:.2f} m, {solver} {list(flags)}) took {lost:.2f} m2 for a {hole:.2f} m2 window', flush=True)
@@ -1008,9 +1016,19 @@ class Car:
                 for p in o.data.polygons: p.material_index = 0
                 print(f'open_cabin: {o.name} stays dark', flush=True)
             bpy.data.meshes.remove(keep); ck.free()
+        # the cutters' walls go, and so does any skin still lying right under clear glass (a shell folded over on
+        # itself keeps a second layer the boolean doesn't see as inside)
+        vs, fs = [], []
+        for o in [o for o, _ in cut if o.data.materials[0] == self.M['GlassClear']]:
+            n0 = len(vs); vs += [o.matrix_world @ v.co for v in o.data.vertices]
+            fs += [[n0 + i for i in p.vertices] for p in o.data.polygons if p.material_index == 0]
+        clear = BVHTree.FromPolygons(vs, fs) if fs else None
+        def under(f):
+            c = f.calc_center_median()
+            return clear is not None and any(clear.ray_cast(c, d, 0.03)[0] is not None for d in (f.normal, -f.normal))
         me = self.body.data; ci = [i for i, m in enumerate(me.materials) if m == self.M['Cutter']]
-        bm = bmesh.new(); bm.from_mesh(me)
-        bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in ci], context='FACES')
+        bm = bmesh.new(); bm.from_mesh(me); bm.normal_update()
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in ci or under(f)], context='FACES')
         bm.to_mesh(me); bm.free()
         # ---- the black trims round the glass become thin rings that tuck under the frit
         for o in [o for o in self.parts if 'grow' in o]:
@@ -1050,7 +1068,7 @@ class Car:
         has_screen = any(o.name.split('.')[0] == 'screen' for o in self.parts)
         wx = xh + 0.48; xd0, xd1 = wx + 0.10, max(x_base - 0.03, wx + 0.22)
         zt = z_base - 0.03; zd = max(hip + 0.18, zt - 0.32)
-        dh = half((xd0 + xd1) / 2, zt - 0.08)
+        dh = min(half(x, z) for x in (xd0, (xd0 + xd1) / 2, xd1 - 0.02) for z in (zt - 0.02, zd + 0.03))   # the body narrows ahead
         self.box('dash', 'Dash', ((xd0 + xd1) / 2, 0, (zt + zd) / 2), (xd1 - xd0, dh * 2, zt - zd), bevel=0.03)
         wz = min(hip + 0.36, zt - 0.05); axis = Vector((math.cos(math.radians(24)), 0, -math.sin(math.radians(24))))
         gap = ray(xd0 + 0.06, -sy, zt, (0, 0, 1)); gap = gap.z - zt if gap else 1
