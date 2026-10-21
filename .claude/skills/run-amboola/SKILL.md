@@ -356,7 +356,23 @@ Model gotchas:
 ## Smashable things
 
 - `regBreak(x, y, z, r, kind, refs)` puts a breakable into `BRK.grid` (24 m cells); `refs` are `[instancedMesh, index, falls]`. Registered: Tokyo street trees and sakura, lamps (pole/head fall, light pool just hides), vending machines, every `palmTrees`/`roundTrees`/`cypressTrees` list (they return their entries), and the countries' Blender trees in `upgradeCity` (the old entries collected by `countryTrees` via `BRK.collect` are marked `dead`).
-- `smashCheck(player)` (in `simStep`, not in races or the boat) breaks anything touching the car's footprint above 4.5 m/s: `smash()` zero-scales the instances, drops a tipping copy (`BRK.live`, instance colour kept), throws bits, keeps `BRK_KIND[kind].keep` of the speed. `updateBreak(dt)` animates and restores them 40 s later when the player is 200 m away.
+- `smashCheck(player)` (in `simStep`, not in races or the boat) breaks anything touching the car's footprint faster than its kind's `min` speed. `smash()` handles refs in two ways:
+  - Instanced refs are zero-scaled.
+  - Plain `Mesh` refs (`[mesh, null, falls]`, e.g. phone boxes and poles) are hidden, and a clone flies instead.
+
+  Each `BRK_KIND` has:
+  - `keep`: the share of speed kept;
+  - `min`: the slowest speed that breaks it;
+  - `fly`: 0 tips over round the foot like a tree, more than 0 is thrown along the car's velocity, tumbling and bouncing (`L.air`), then settles on its side;
+  - `snd` (`smashSound`): `wood`, `metal`, `glass` or `rubber`;
+  - bit colours and the shout.
+
+  `updateBreak(dt)` (drive tick) animates them, sinks them after 10 s and restores them 40 s later when the player is 200 m away.
+- **Colliders that break:** `addCol` and `Pad.addCol` return their box. In `collideWorld` and `Pad.collide`, `brkHit(b, p)` links a small box (at most 3.4 m) to the breakable standing in it on first touch (`brkFor`, which prefers live entries and re-links when its entry dies, e.g. procedural trees or phone boxes swapped for Blender ones). Broken: the car passes. Faster than `min`: `smash()` and the car passes without bouncing. Slower: a normal bump.
+  - Registered in `buildLamps` (every area's lamps), beach palms and umbrellas, volleyball poles, London phone boxes (and the Blender `P_phone` / `P_cafe` props via `PROP_BRK`), Paris café umbrellas, stunt park tyres, night meet poles, snow village lanterns, Fuji cedars and sakura, and the Alps' procedural firs.
+  - Still solid on purpose: buildings, expressway pillars, arches, gas pumps, ferry bollards, desert rocks, Cyprus columns and camels.
+- `crashFx(p, hit, vx, vz)` runs on every hard hit (`hit > 3` in `simStep`): glowing spark bits (`b.spark`, 0.7 s), dust, and shake.
+- **Audit:** loop over `colGrid` and every `AREAS[].pads[].grid` box at most 3.4 m and call `brkFor(b)`; the unlinked ones are the solid things above.
 - Traffic: `Traffic.collide` calls `wreckTraffic` above 9 m/s closing speed; `stepWreck` flies/tumbles the mesh (bouncing off `colGrid` buildings), settles it on the nearest quarter turn and returns true to respawn after 14 s and 70 m away.
 - **Test:** `window.amboola.BRK`, `smash`, `smashCheck`; aim the player at an entry and run `simStep` until `e.broken`.
 - Particles (`Smoke`) dim with the time of day (`Smoke.light`); damage smoke is `dmgSmoke` (dark, only below dmgK .92 and above 4 m/s).

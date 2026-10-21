@@ -1241,6 +1241,7 @@ function addCol(x0, z0, x1, z1) {
   const b = { x0, z0, x1, z1 };
   const i0 = Math.floor((x0 + HALF) / CELL), i1 = Math.floor((x1 + HALF) / CELL), j0 = Math.floor((z0 + HALF) / CELL), j1 = Math.floor((z1 + HALF) / CELL);
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const k = gkey(i, j); if (!colGrid.has(k)) colGrid.set(k, []); colGrid.get(k).push(b); }
+  return b;
 }
 const parks = [], landmarks = [];
 const TOKYO = { b: [], meshes: [], lm: {} };   // Tokyo's plain buildings (records + their meshes) and landmarks, for the Blender upgrade (upgradeTokyo)
@@ -3051,7 +3052,7 @@ function collideWorld(p) {
       for (const b of list) {
         const qx = clamp(cx, b.x0, b.x1), qz = clamp(cz, b.z0, b.z1);
         let dx = cx - qx, dz = cz - qz, d2 = dx * dx + dz * dz;
-        if (d2 >= r * r) continue;
+        if (d2 >= r * r || brkHit(b, p)) continue;
         let nx, nz, pen;
         if (d2 < 1e-8) { const opts = [[cx - b.x0, -1, 0], [b.x1 - cx, 1, 0], [cz - b.z0, 0, -1], [b.z1 - cz, 0, 1]].sort((u, v) => u[0] - v[0])[0]; nx = opts[1]; nz = opts[2]; pen = opts[0] + r; }
         else { const d = Math.sqrt(d2); nx = dx / d; nz = dz / d; pen = r - d; }
@@ -5475,6 +5476,7 @@ class Pad {
   addCol(x0, z0, x1, z1) {
     const b = { x0, z0, x1, z1 };
     for (let i = Math.floor(x0 / 40); i <= Math.floor(x1 / 40); i++) for (let j = Math.floor(z0 / 40); j <= Math.floor(z1 / 40); j++) { const k = i * 100000 + j; if (!this.grid.has(k)) this.grid.set(k, []); this.grid.get(k).push(b); }
+    return b;
   }
   yAt(x, z) { return typeof this.y === 'function' ? this.y(x, z) : this.y; }
   shoreAt(x, z) {   // ground height round an island: the beach (flat[i] metres wide) and then the slope down to the sea floor
@@ -5494,7 +5496,7 @@ class Pad {
         for (const b of l) {
           if (seen.has(b)) continue; seen.add(b);
           const qx = clamp(cx, b.x0, b.x1), qz = clamp(cz, b.z0, b.z1), dx = cx - qx, dz = cz - qz, d2 = dx * dx + dz * dz;
-          if (d2 >= r * r) continue;
+          if (d2 >= r * r || brkHit(b, p)) continue;
           let nx, nz, pen;
           if (d2 < 1e-8) { const o = [[cx - b.x0, -1, 0], [b.x1 - cx, 1, 0], [cz - b.z0, 0, -1], [b.z1 - cz, 0, 1]].sort((u, v) => u[0] - v[0])[0]; nx = o[1]; nz = o[2]; pen = o[0] + r; }
           else { const d = Math.sqrt(d2); nx = dx / d; nz = dz / d; pen = r - d; }
@@ -5573,10 +5575,11 @@ function buildLamps(list, pools, h = 8.5, col = 0xffd9a0) {
   const poleGeo = new THREE.CylinderGeometry(.09, .14, h, 6); poleGeo.translate(0, h / 2, 0);
   const armGeo = new THREE.BoxGeometry(.12, .12, 2.6); armGeo.translate(0, h - .1, 1.2);
   const headGeo = new THREE.BoxGeometry(.5, .14, .9); headGeo.translate(0, h - .17, 2.3);
-  instanced(mergeGeometries([poleGeo, armGeo]), new THREE.MeshStandardMaterial({ color: 0x6b6e73, roughness: .5, metalness: .6 }), list);
-  const lampMat = new THREE.MeshBasicMaterial({ color: col }); dynMats.lamps.push(lampMat); instanced(headGeo, lampMat, list, false);
+  const pole = instanced(mergeGeometries([poleGeo, armGeo]), new THREE.MeshStandardMaterial({ color: 0x6b6e73, roughness: .5, metalness: .6 }), list);
+  const lampMat = new THREE.MeshBasicMaterial({ color: col }); dynMats.lamps.push(lampMat); const head = instanced(headGeo, lampMat, list, false);
   const poolMat = new THREE.MeshBasicMaterial({ map: GLOW_TEX(), color: col, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
-  dynMats.pools.push(poolMat); const pg = new THREE.PlaneGeometry(1, 1); pg.rotateX(-Math.PI / 2); instanced(pg, poolMat, pools, false);
+  dynMats.pools.push(poolMat); const pg = new THREE.PlaneGeometry(1, 1); pg.rotateX(-Math.PI / 2); const pool = instanced(pg, poolMat, pools, false);
+  list.forEach(([x, y, z], k) => regBreak(x, y, z, .25, 'lamp', [[pole, k, true], [head, k, true], [pool, k, false]]));
 }
 function buildWangan() {
   const R = WANGAN, conc = new THREE.MeshStandardMaterial({ color: 0xb9b7b0, roughness: .85, side: THREE.DoubleSide });
@@ -5807,14 +5810,16 @@ function buildBeachTown() {
   { const p = trunkG.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setX(i, p.getX(i) + (y / 9) ** 2 * 1.4); } trunkG.computeVertexNormals(); }
   const leaves = []; for (let k = 0; k < 8; k++) { const l = new THREE.ConeGeometry(.6, 4.2, 4); l.rotateX(Math.PI / 2); l.scale(1, .18, 1); l.translate(0, 0, 2.1); l.rotateX(.45); l.rotateY(k / 8 * Math.PI * 2); l.translate(1.4, 9, 0); leaves.push(l); }
   const pl = palms.map(([x, z]) => [x, P.yAt(x, z) - .1, z, rr(0, 6), rr(.85, 1.15)]);
-  instanced(trunkG, new THREE.MeshStandardMaterial({ color: 0x7a5c3e, roughness: .9 }), pl);
-  instanced(mergeGeometries(leaves), new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, flatShading: true, side: THREE.DoubleSide }), pl);
+  const trI = instanced(trunkG, new THREE.MeshStandardMaterial({ color: 0x7a5c3e, roughness: .9 }), pl);
+  const lvI = instanced(mergeGeometries(leaves), new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, flatShading: true, side: THREE.DoubleSide }), pl);
+  regBreakList(pl, [trI, lvI], 'palm', .45);
   for (const [x, , z] of pl) P.addCol(x - .45, z - .45, x + .45, z + .45);
   // beach umbrellas, towels, a lifeguard tower and a volleyball net
   const umb = [], towels = [];
   for (let k = 0; k < 46; k++) { const x = rr(B.x0 + 20, B.x1 - 20), z = rr(B.sand + 22, 2245); if (Math.abs(x - B.pierX) < 20 || pl.some(p => Math.hypot(p[0] - x, p[2] - z) < 4)) continue; umb.push([x, P.yAt(x, z), z, rr(0, 6)]); towels.push([x + 1.6, P.yAt(x, z) + .03, z + .5, rr(-.3, .3)]); P.addCol(x - .3, z - .3, x + .3, z + .3); }
-  instanced(new THREE.CylinderGeometry(.04, .04, 2.6, 5).translate(0, 1.3, 0), new THREE.MeshStandardMaterial({ color: 0xeeeeee }), umb);
+  const umbPole = instanced(new THREE.CylinderGeometry(.04, .04, 2.6, 5).translate(0, 1.3, 0), new THREE.MeshStandardMaterial({ color: 0xeeeeee }), umb);
   const canopyIM = instanced(new THREE.ConeGeometry(1.7, .7, 10, 1, true).translate(0, 2.55, 0), new THREE.MeshStandardMaterial({ roughness: .7, side: THREE.DoubleSide }), umb);
+  regBreakList(umb, [umbPole, canopyIM], 'umbrella', .3);
   const ucol = new THREE.Color(); umb.forEach((u, k) => canopyIM.setColorAt(k, ucol.set(['#e5484d', '#2f7fd1', '#f2b632', '#ffffff', '#2a9d8f', '#ff6fa3'][k % 6])));
   const towelIM = instanced(new THREE.PlaneGeometry(1, 2).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ roughness: .9 }), towels, false);
   towels.forEach((u, k) => towelIM.setColorAt(k, ucol.set(['#ff6fa3', '#2fe0ff', '#ffd02d', '#7ee04c'][k % 4])));
@@ -5825,7 +5830,7 @@ function buildBeachTown() {
   const hutRoof = new THREE.Mesh(new THREE.ConeGeometry(2.4, 1.2, 4), wood); hutRoof.position.y = 5.6; hutRoof.rotation.y = Math.PI / 4; lg.add(hutRoof);
   P.addCol(2078.5, 2203.5, 2081.5, 2206.5);
   const net = new THREE.Mesh(new THREE.PlaneGeometry(9, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: .55, side: THREE.DoubleSide })); net.position.set(1880, 2.1, 2210); scene.add(net);
-  for (const s of [-1, 1]) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 2.6), wood); pole.position.set(1880 + s * 4.6, 1.3, 2210); scene.add(pole); P.addCol(1880 + s * 4.6 - .2, 2209.8, 1880 + s * 4.6 + .2, 2210.2); }
+  for (const s of [-1, 1]) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 2.6), wood); pole.position.set(1880 + s * 4.6, 1.3, 2210); scene.add(pole); regBreak(1880 + s * 4.6, P.yAt(1880 + s * 4.6, 2210), 2210, .2, 'pole', [[pole, null, true]]); P.addCol(1880 + s * 4.6 - .2, 2209.8, 1880 + s * 4.6 + .2, 2210.2); }
   // the pier with a Ferris wheel at the end
   const deck = new GB(), px = B.pierX;
   const deckY = z => clamp((z - B.sand + 15) * .011, 0, .55);
@@ -6000,7 +6005,7 @@ function buildSkiVillage() {
   C.steam = [C.vx + bx * 50 + sx * 44, y + 6, C.vz + bz * 50 + sz * 44];
   // lamps and a big Christmas-style tree in the square
   const lampM = new THREE.MeshBasicMaterial({ color: 0xffd9a0 }); dynMats.lamps.push(lampM);
-  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, x = Math.cos(a) * 62, z = Math.sin(a) * 62; if (Math.hypot(x - Math.cos(C.face) * 62, z - Math.sin(C.face) * 62) < 20) continue; const p = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, 4, 6), wood); p.position.set(x, 2, z); g.add(p); const l = new THREE.Mesh(new THREE.SphereGeometry(.3, 8, 6), lampM); l.position.set(x, 4.1, z); g.add(l); P.addCol(C.vx + x - .25, C.vz + z - .25, C.vx + x + .25, C.vz + z + .25); }
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, x = Math.cos(a) * 62, z = Math.sin(a) * 62; if (Math.hypot(x - Math.cos(C.face) * 62, z - Math.sin(C.face) * 62) < 20) continue; const p = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, 4, 6), wood); p.position.set(x, 2, z); g.add(p); const l = new THREE.Mesh(new THREE.SphereGeometry(.3, 8, 6), lampM); l.position.set(x, 4.1, z); g.add(l); P.addCol(C.vx + x - .25, C.vz + z - .25, C.vx + x + .25, C.vz + z + .25); regBreak(C.vx + x, P.yAt(C.vx + x, C.vz + z), C.vz + z, .25, 'lamp', [[p, null, true], [l, null, true]]); }
   const tb = 24; const tree = new THREE.Mesh(new THREE.ConeGeometry(4, 12, 10), new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .8, flatShading: true })); tree.position.set(bx * tb, 6.5, bz * tb); tree.castShadow = true; g.add(tree);
   const star = new THREE.Mesh(new THREE.OctahedronGeometry(.8), lampM); star.position.set(bx * tb, 13, bz * tb); g.add(star);
   const tl = new THREE.InstancedMesh(new THREE.SphereGeometry(.16, 5, 4), lampM, 60); for (let k = 0; k < 60; k++) { const t = k / 60, a = t * 30, r = 4 * (1 - t) + .3; tl.setMatrixAt(k, amat(bx * tb + Math.cos(a) * r, 1 + t * 11, bz * tb + Math.sin(a) * r)); } g.add(tl);
@@ -6219,10 +6224,12 @@ function buildFujiArea() {
     if (Math.hypot(x - MTN.cx, z - MTN.cz) < MTN.R + 150 || Math.hypot(x + 1640, z + 2210) < 600 || SNOW_ROUTE.near(x, z, 40)) continue;
     const s = rn(.8, 1.5); cedar.push([x, 0, z, rnd() * 6, s, s * rn(.9, 1.3), s]);
   }
-  g.add(instanced(new THREE.ConeGeometry(2.6, 13, 7).translate(0, 7.5, 0), new THREE.MeshStandardMaterial({ color: 0x24432c, roughness: .9, flatShading: true }), cedar));
-  g.add(instanced(new THREE.CylinderGeometry(.3, .4, 2, 5).translate(0, 1, 0), new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), cedar, false));
+  const cedC = instanced(new THREE.ConeGeometry(2.6, 13, 7).translate(0, 7.5, 0), new THREE.MeshStandardMaterial({ color: 0x24432c, roughness: .9, flatShading: true }), cedar);
+  const cedT = instanced(new THREE.CylinderGeometry(.3, .4, 2, 5).translate(0, 1, 0), new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), cedar, false);
+  g.add(cedC, cedT); regBreakList(cedar, [cedC, cedT], 'cypress', .5);
   F.sakura = instanced(new THREE.IcosahedronGeometry(2.4, 1).translate(0, 4.4, 0), new THREE.MeshStandardMaterial({ color: 0xffb7cf, roughness: .85, flatShading: true }), sak); g.add(F.sakura);
-  g.add(instanced(new THREE.CylinderGeometry(.16, .26, 3.2, 6).translate(0, 1.6, 0), new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), sak, false));
+  const sakT = instanced(new THREE.CylinderGeometry(.16, .26, 3.2, 6).translate(0, 1.6, 0), new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), sak, false); g.add(sakT);
+  regBreakList(sak, [F.sakura, sakT], 'sakura', .4);
   // the welcome arch at the village entrance, and the sign at the Tokyo gate
   { const t = new THREE.Group(); t.position.set(-3480, 0, F.z1 - 20); g.add(t);
     for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.5, .6, 10, 10), red); p.position.set(s * 9, 5, 0); t.add(p); P.addCol(-3480 + s * 9 - .7, F.z1 - 20.7, -3480 + s * 9 + .7, F.z1 - 19.3); }
@@ -6537,18 +6544,46 @@ const _stdTrunk = () => { const g = new THREE.CylinderGeometry(.2, .32, 9, 7, 6)
    through the air, land smoking and are towed away later. Broken things are back the next time you come by
    (40 s later, once you are 200 m away).
    ===================================================================== */
-const BRK = { grid: new Map(), live: [], down: [], bits: [], ZERO: new THREE.Matrix4().makeScale(0, 0, 0), m4: new THREE.Matrix4(), bitMats: new Map(), bitGeo: new THREE.BoxGeometry(.28, .14, .38) };
+const BRK = { grid: new Map(), live: [], down: [], bits: [], ZERO: new THREE.Matrix4().makeScale(0, 0, 0), m4: new THREE.Matrix4(), bitMats: new Map(), bitGeo: new THREE.BoxGeometry(.28, .14, .38),
+  q: new THREE.Quaternion(), up: new THREE.Vector3(0, 1, 0), sparkGeo: new THREE.BoxGeometry(.05, .05, .3), sparkMats: ['#fff3b0', '#ffc23a', '#ff7a1f'].map(c => new THREE.MeshBasicMaterial({ color: c })) };
 const brkKey = (x, z) => Math.floor(x / 24) + ',' + Math.floor(z / 24);
 function regBreak(x, y, z, r, kind, refs) {   // refs: [[instancedMesh, index, falls], ...]
   const e = { x, y, z, r, kind, refs, broken: false }, k = brkKey(x, z);
   if (!BRK.grid.has(k)) BRK.grid.set(k, []); BRK.grid.get(k).push(e); BRK.collect?.push(e); return e;
 }
 const regBreakList = (list, ims, kind, r) => list.map(([x, y, z], k) => regBreak(x, y, z, r, kind, ims.map(im => [im, k, true])));
-const BRK_KIND = {   // speed kept after the hit, bits colours, the shout
-  tree: { keep: .8, cols: ['#3f7a35', '#5a4632'], say: '🌳 TIMBER!' }, sakura: { keep: .8, cols: ['#f4b6cc', '#4a3627'], say: '🌸 TIMBER!' },
-  palm: { keep: .82, cols: ['#2f7a35', '#7a5c3e'], say: '🌴 TIMBER!' }, cypress: { keep: .8, cols: ['#1f4a2c', '#1f4a2c'], say: '🌲 TIMBER!' },
-  lamp: { keep: .9, cols: ['#5b5e63', '#ffd9a0'], say: '💡 LAMP DOWN' }, vending: { keep: .72, cols: ['#d42a2a', '#e8f4ff', '#ffd23a'], say: '🥤 VENDING SMASH' },
+const BRK_KIND = {   // keep: speed kept after the hit, min: slowest speed that breaks it (slower: you just bump it), fly: how far it is thrown, snd, bits colours, the shout
+  tree: { keep: .86, min: 5, fly: 0, snd: 'wood', cols: ['#3f7a35', '#5a4632'], say: '🌳 TIMBER!' }, sakura: { keep: .86, min: 5, fly: 0, snd: 'wood', cols: ['#f4b6cc', '#4a3627'], say: '🌸 TIMBER!' },
+  palm: { keep: .88, min: 4.5, fly: 0, snd: 'wood', cols: ['#2f7a35', '#7a5c3e'], say: '🌴 TIMBER!' }, cypress: { keep: .86, min: 5, fly: 0, snd: 'wood', cols: ['#1f4a2c', '#1f4a2c'], say: '🌲 TIMBER!' },
+  lamp: { keep: .94, min: 3, fly: .6, snd: 'metal', cols: ['#5b5e63', '#ffd9a0'], say: '💡 LAMP DOWN' }, vending: { keep: .84, min: 3.5, fly: .45, snd: 'glass', cols: ['#d42a2a', '#e8f4ff', '#ffd23a'], say: '🥤 VENDING SMASH' },
+  phone: { keep: .9, min: 3, fly: .55, snd: 'glass', cols: ['#c8141b', '#e8f4ff', '#222428'], say: '☎️ PHONE BOX SMASH' }, pole: { keep: .95, min: 2.5, fly: .7, snd: 'metal', cols: ['#222428', '#ff2bd6', '#2fe0ff'], say: '🚧 POLE DOWN' },
+  tyres: { keep: .96, min: 2, fly: 1, snd: 'rubber', cols: ['#151517', '#2a2a2e'], say: '🛞 TYRE WALL' }, umbrella: { keep: .97, min: 2, fly: 1.1, snd: 'wood', cols: ['#e5484d', '#ffffff', '#2f7fd1'], say: '⛱️ UMBRELLA SMASH' },
 };
+const PROP_BRK = { phone: { kind: 'phone', r: .6 }, cafe: { kind: 'umbrella', r: .3 } };   // Blender country props that break
+// a collider box that belongs to something breakable: true lets the car through (it is broken already, or it breaks now);
+// slower than the thing's min speed you just bump into it
+function brkHit(b, p) {
+  if (b.brk === undefined || b.brk?.dead) b.brk = brkFor(b);
+  const e = b.brk; if (!e) return false;
+  if (e.broken || e.dead) return true;
+  if (p !== player || p.loop || Math.hypot(p.vx, p.vz) < (BRK_KIND[e.kind]?.min ?? 4.5)) return false;
+  smash(e, p); return true;
+}
+function brkFor(b) {   // the breakable standing in a small collider box (buildings are too big to have one)
+  const w = b.x1 - b.x0, d = b.z1 - b.z0; if (w > 3.4 || d > 3.4) return null;
+  const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, lim = Math.max(w, d) / 2 + .9; let best = null, bs = 1e9;
+  for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const e of BRK.grid.get((Math.floor(cx / 24) + di) + ',' + (Math.floor(cz / 24) + dj)) || []) {
+    const dd = Math.hypot(e.x - cx, e.z - cz), sc = dd + (e.dead ? 100 : 0); if (dd < lim && sc < bs) { bs = sc; best = e; }
+  }
+  return best;
+}
+function smashSound(kind, sp) {   // a crack and a thud for wood, a clang for metal, crunch and tinkle for glass, a thump for tyres
+  const v = clamp(sp / 20, .3, 1.2);
+  if (kind === 'wood') { audio.burst({ type: 'lowpass', freq: 700, q: .6, gain: .9 * v, dur: .45, thump: 70 }); audio.burst({ type: 'bandpass', freq: 1700, q: 3, gain: .55 * v, dur: .12 }); }
+  else if (kind === 'metal') { audio.burst({ type: 'bandpass', freq: 2600, q: 14, gain: 1.1 * v, dur: .8 }); audio.burst({ type: 'bandpass', freq: 1150, q: 10, gain: .8 * v, dur: .55, thump: 120 }); }
+  else if (kind === 'glass') { audio.burst({ type: 'highpass', freq: 4200, q: .7, gain: .7 * v, dur: .7 }); audio.burst({ type: 'lowpass', freq: 600, q: .6, gain: .6 * v, dur: .25, thump: 80 }); }
+  else audio.burst({ type: 'lowpass', freq: 380, q: .8, gain: .9 * v, dur: .3, thump: 50 });
+}
 function brkBits(x, y, z, vx, vz, cols, n) {
   for (let i = 0; i < n; i++) {
     const col = cols[i % cols.length]; if (!BRK.bitMats.has(col)) BRK.bitMats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: .7 }));
@@ -6564,6 +6599,10 @@ function smash(e, p) {
   const pivot = new THREE.Group(), holder = new THREE.Group(); pivot.position.set(e.x, e.y, e.z); holder.position.set(-e.x, -e.y, -e.z); pivot.add(holder); scene.add(pivot);
   const mats = [];
   e.saved = e.refs.map(([im, k, falls]) => {
+    if (!im.isInstancedMesh) {   // a plain mesh: hide it, a copy of it goes
+      if (falls) { im.updateMatrixWorld(); const c = im.clone(); c.matrixAutoUpdate = false; c.matrix.copy(im.matrixWorld); c.castShadow = true; holder.add(c); }
+      im.visible = false; return null;
+    }
     const M = new THREE.Matrix4(); im.getMatrixAt(k, M);
     if (falls) {
       let mat = im.material; if (im.instanceColor) { mat = mat.clone(); im.getColorAt(k, mat.color); mats.push(mat); }
@@ -6571,21 +6610,25 @@ function smash(e, p) {
     }
     im.setMatrixAt(k, BRK.ZERO); im.instanceMatrix.needsUpdate = true; return M;
   });
-  BRK.live.push({ pivot, mats, axis: new THREE.Vector3(dz, 0, -dx), th: 0, w: .8 + sp * .05, t: 0 });
-  while (BRK.live.length > 24) brkDrop(BRK.live.shift());
-  brkBits(e.x, e.y, e.z, p.vx, p.vz, K.cols, 8);
-  p.vx *= K.keep; p.vz *= K.keep; audio.crash?.(Math.min(sp * .35, 9)); shakeT += .6;
+  // heavy things (trees) tip over the way you hit them; lighter ones are thrown ahead of the car, tumbling (Forza style)
+  const fly = K.fly * rr(.8, 1.15), side = Math.random() < .5 ? -1 : 1;
+  BRK.live.push({ pivot, mats, axis: new THREE.Vector3(dz, 0, -dx), th: 0, w: fly ? 2.5 + sp * .22 : .8 + sp * .05, t: 0, y0: e.y, air: fly > 0,
+    vx: (p.vx + side * dz * rr(1, 4)) * fly, vy: fly ? 2 + sp * .2 * fly : 0, vz: (p.vz - side * dx * rr(1, 4)) * fly, yaw: rr(-4, 4) * fly, spin: 0 });
+  while (BRK.live.length > 30) brkDrop(BRK.live.shift());
+  brkBits(e.x, e.y, e.z, p.vx, p.vz, K.cols, fly ? 12 : 9);
+  for (let k = 0; k < 3; k++) dust.emit(e.x + rr(-1, 1), e.z + rr(-1, 1), p.vx * .15, p.vz * .15, .45, e.y);
+  p.vx *= K.keep; p.vz *= K.keep; smashSound(K.snd, sp); shakeT += .3 + (1 - K.keep) * 2;
   skillAdd(150, K.say);
 }
 function brkDrop(L) { scene.remove(L.pivot); L.mats.forEach(m => m.dispose()); }
 function smashCheck(p) {   // anything breakable touching the car's footprint?
-  if (p.speed < 4.5 || p.loop) return;
+  if (p.speed < 2 || p.loop) return;
   const B = BODIES[p.spec.body], half = B.L / 2, hw = B.W / 2 * .9, fx = Math.sin(p.heading), fz = Math.cos(p.heading), py = p.y || 0;
   const ci = Math.floor(p.x / 24), cj = Math.floor(p.z / 24);
   for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
     const list = BRK.grid.get((ci + di) + ',' + (cj + dj)); if (!list) continue;
     for (const e of list) {
-      if (e.broken || e.dead || Math.abs(py - e.y) > 3) continue;
+      if (e.broken || e.dead || Math.abs(py - e.y) > 3 || p.speed < (BRK_KIND[e.kind]?.min ?? 4.5)) continue;
       const dx = e.x - p.x, dz = e.z - p.z, a = clamp(dx * fx + dz * fz, -half, half);
       if (Math.hypot(dx - fx * a, dz - fz * a) < hw + e.r) smash(e, p);
     }
@@ -6593,23 +6636,38 @@ function smashCheck(p) {   // anything breakable touching the car's footprint?
 }
 function updateBreak(dt) {
   for (let i = BRK.live.length - 1; i >= 0; i--) {   // falling: speeds up as it leans, a little bounce at the bottom
-    const L = BRK.live[i]; L.t += dt;
-    if (L.th < 1.45) { L.w += (2 + 9 * Math.sin(L.th)) * dt; L.th = Math.min(1.45, L.th + L.w * dt); } 
-    L.pivot.quaternion.setFromAxisAngle(L.axis, L.th);
-    if (L.t > 6) L.pivot.position.y -= dt * 1.2;
-    if (L.t > 8) { brkDrop(L); BRK.live.splice(i, 1); }
+    const L = BRK.live[i]; L.t += dt; const P = L.pivot.position;
+    if (L.air) {   // thrown: flies, tumbles, bounces, then lies down on its side
+      L.vy -= 9.8 * dt; P.x += L.vx * dt; P.y += L.vy * dt; P.z += L.vz * dt; L.th += L.w * dt; L.spin += L.yaw * dt;
+      if (P.y <= L.y0 && L.vy < 0) { P.y = L.y0; if (L.vy < -3) { L.vy *= -.3; L.vx *= .55; L.vz *= .55; L.w *= .5; L.yaw *= .5; } else { L.air = false; L.land = Math.round((L.th - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2; } }
+    } else if (L.land !== undefined) L.th = damp(L.th, L.land, 8, dt);
+    else if (L.th < 1.45) { L.w += (2 + 9 * Math.sin(L.th)) * dt; L.th = Math.min(1.45, L.th + L.w * dt); }
+    L.pivot.quaternion.setFromAxisAngle(L.axis, L.th); if (L.spin) L.pivot.quaternion.premultiply(BRK.q.setFromAxisAngle(BRK.up, L.spin));
+    if (L.t > 10) P.y -= dt * 1.2;
+    if (L.t > 12) { brkDrop(L); BRK.live.splice(i, 1); }
   }
   for (let i = BRK.bits.length - 1; i >= 0; i--) {
     const b = BRK.bits[i]; b.t += dt; b.vy -= 14 * dt; b.m.position.x += b.vx * dt; b.m.position.y += b.vy * dt; b.m.position.z += b.vz * dt; b.m.rotation.x += 6 * dt; b.m.rotation.z += 4 * dt;
     if (b.m.position.y < b.g + .07) { b.m.position.y = b.g + .07; b.vy *= -.3; b.vx *= .6; b.vz *= .6; }
-    if (b.t > 3) { scene.remove(b.m); BRK.bits.splice(i, 1); }
+    if (b.t > (b.spark ? .7 : 3)) { scene.remove(b.m); BRK.bits.splice(i, 1); }
   }
   // grow back: 40 s later and out of sight
   const now = performance.now(), p = player;
   for (let i = BRK.down.length - 1; i >= 0; i--) {
     const e = BRK.down[i]; if (now - e.t < 40000 || (p && Math.hypot(e.x - p.x, e.z - p.z) < 200)) continue;
-    e.refs.forEach(([im, k], j) => { im.setMatrixAt(k, e.saved[j]); im.instanceMatrix.needsUpdate = true; }); e.broken = false; BRK.down.splice(i, 1);
+    e.refs.forEach(([im, k], j) => { if (!im.isInstancedMesh) { im.visible = true; return; } im.setMatrixAt(k, e.saved[j]); im.instanceMatrix.needsUpdate = true; }); e.broken = false; BRK.down.splice(i, 1);
   }
+}
+// a hard hit on something that doesn't break (a building, a wall): sparks fly, dust, a bigger shake
+function crashFx(p, hit, vx, vz) {
+  const v = Math.hypot(vx, vz) || 1, fx = vx / v, fz = vz / v, L = BODIES[p.spec.body].L * .48, x = p.x + fx * L, z = p.z + fz * L, y = (p.y || 0) + .4;
+  for (let k = 0, n = Math.min(28, Math.round(hit * 1.8)); k < n; k++) {
+    const m = new THREE.Mesh(BRK.sparkGeo, BRK.sparkMats[k % 3]); m.position.set(x + rr(-.6, .6), y + rr(0, .6), z + rr(-.6, .6)); m.rotation.set(rr(0, 6), rr(0, 6), rr(0, 6)); scene.add(m);
+    BRK.bits.push({ m, vx: -fx * rr(2, 6) + rr(-5, 5), vy: rr(1.5, 6), vz: -fz * rr(2, 6) + rr(-5, 5), g: y - .4, t: rr(0, .3), spark: true });
+  }
+  while (BRK.bits.length > 120) scene.remove(BRK.bits.shift().m);
+  for (let k = 0; k < Math.min(8, hit * .5); k++) dust.emit(x + rr(-1, 1), z + rr(-1, 1), -vx * .1, -vz * .1, .9, y - .4);
+  shakeT += clamp(hit / 10, 0, 1.5);
 }
 // a city car rammed hard: it flies, tumbles, lands and smokes, then is towed away
 function wreckTraffic(c, p, nx, nz, impact) {
@@ -6786,7 +6844,7 @@ function buildParis(C, g) {
   // a café square with red parasols
   const [cx, cz] = cafe, red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .7 }), pole = new THREE.MeshStandardMaterial({ color: 0x333333 });
   const K = lmGroup(C, g, 'cafe', cx, cz); (C.props ??= {}).cafe = [];
-  for (let k = 0; k < 9; k++) { const x = cx - 18 + (k % 3) * 18, z = cz - 14 + Math.floor(k / 3) * 14, um = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.4, 10), red), pm = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, 2.6, 6), pole); um.position.set(x, 3, z); pm.position.set(x, 1.3, z); K.add(um, pm); C.props.cafe.push([x, z, k * 1.3]); C.P.addCol(x - .3, z - .3, x + .3, z + .3); }
+  for (let k = 0; k < 9; k++) { const x = cx - 18 + (k % 3) * 18, z = cz - 14 + Math.floor(k / 3) * 14, um = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.4, 10), red), pm = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, 2.6, 6), pole); um.position.set(x, 3, z); pm.position.set(x, 1.3, z); K.add(um, pm); C.props.cafe.push([x, z, k * 1.3]); ((C.propBrk ??= {}).cafe ??= []).push(regBreak(x, 0, z, .3, 'umbrella', [[um, null, true], [pm, null, true]])); C.P.addCol(x - .3, z - .3, x + .3, z + .3); }
   return [[ex, ez, 'Eiffel Tower'], [ax, az, 'Arc de Triomphe'], [cx, cz, 'Café Square']];
 }
 /* ---- New York: glass skyscrapers, the Empire State Building, Central Park, and the Statue of Liberty offshore */
@@ -6822,7 +6880,7 @@ function buildNewYork(C, g) {
 function buildAlps(C, g) {
   const ox = C.cx, oz = C.cz, church = [ox - 85, oz + 35], fondue = [ox + 255, oz - 115];
   countryTown(C, { count: 140, w: [12, 20], h: r => 6 + Math.floor(r() * 2) * 3, walls: ['#8a5a34', '#9b6a40', '#7a4e2c', '#a8784c'], roof: 'gable', roofs: ['#f6f9fc', '#eef3f8'], keep: [[...church, 25], [...fondue, 30]],
-    wallMat: townMat('#ffffff', '#4a3020'), trees: list => instanced(new THREE.ConeGeometry(2.2, 9, 8).translate(0, 4.5, 0), new THREE.MeshStandardMaterial({ color: 0x23472f, roughness: .9, flatShading: true }), list) }, g);
+    wallMat: townMat('#ffffff', '#4a3020'), trees: list => regBreakList(list, [instanced(new THREE.ConeGeometry(2.2, 9, 8).translate(0, 4.5, 0), new THREE.MeshStandardMaterial({ color: 0x23472f, roughness: .9, flatShading: true }), list)], 'cypress', .5) }, g);
   const white = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: .8 });
   const CH = lmGroup(C, g, 'church', church[0], church[1]), CH0 = scene.children.length;
   const [cx, cz] = church, tower = new THREE.Mesh(new THREE.BoxGeometry(8, 30, 8), white); tower.position.set(cx, 15, cz); CH.add(tower);
@@ -6877,7 +6935,7 @@ function buildLondon(C, g) {
   // red phone boxes and double-decker buses parked by the streets
   const { xs, zs } = cStreets(C);
   const PH = lmGroup(C, g, 'phone', 0, 0), BS = lmGroup(C, g, 'bus', 0, 0); C.props ??= {}; C.props.phone = []; C.props.bus = [];
-  for (let k = 0; k < 6; k++) { const x = xs[k % xs.length] + 10.5, z = zs[0] + 40 + k * 63, pb = new THREE.Mesh(new THREE.BoxGeometry(1, 2.5, 1), red); pb.position.set(x, 1.25, z); PH.add(pb); C.props.phone.push([x, z, 0]); C.P.addCol(x - .6, z - .6, x + .6, z + .6); }
+  for (let k = 0; k < 6; k++) { const x = xs[k % xs.length] + 10.5, z = zs[0] + 40 + k * 63, pb = new THREE.Mesh(new THREE.BoxGeometry(1, 2.5, 1), red); pb.position.set(x, 1.25, z); PH.add(pb); C.props.phone.push([x, z, 0]); ((C.propBrk ??= {}).phone ??= []).push(regBreak(x, 0, z, .6, 'phone', [[pb, null, true]])); C.P.addCol(x - .6, z - .6, x + .6, z + .6); }
   for (let k = 0; k < 4; k++) { const x = xs[(k + 1) % xs.length] - 10, z = zs[1] + 30 + k * 70, bus = new THREE.Group(); bus.position.set(x, 0, z); BS.add(bus); C.props.bus.push([x, z, 0]);
     const lo = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.2, 10), red); lo.position.y = 1.5; bus.add(lo); const up = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.9, 10), red); up.position.y = 3.6; bus.add(up);
     for (const y of [1.9, 3.8]) { const w = new THREE.Mesh(new THREE.BoxGeometry(2.56, .7, 9.2), glassMat); w.position.y = y; bus.add(w); } C.P.addCol(x - 1.3, z - 5, x + 1.3, z + 5); }
@@ -7102,7 +7160,10 @@ function upgradeCity(C) {
       C.group.add(wg); C.eye = wg;
     }
     const pos = C.props?.[key], prop = nodes['P_' + key];
-    if (pos && prop) { cityInstances(cityParts(prop), pos.map(([x, z, ry, sc = 1]) => [M4(x, 0, z, ry, sc)]), C.group); done = true; }
+    if (pos && prop) {
+      const n0 = C.group.children.length; cityInstances(cityParts(prop), pos.map(([x, z, ry, sc = 1]) => [M4(x, 0, z, ry, sc)]), C.group); done = true;
+      const B = PROP_BRK[key]; if (B) { const ims = C.group.children.slice(n0); C.propBrk?.[key]?.forEach(e => e.dead = true); pos.forEach(([x, z], j) => regBreak(x, 0, z, B.r, B.kind, ims.map(im => [im, j, true]))); }   // the Blender props break instead
+    }
     if (done) L.visible = false;
   }
 }
@@ -7840,6 +7901,7 @@ function buildMeetLot() {   // the harbour car park (block 12,19): tarmac, bay l
   [[x0 + 3, z0 + 3], [x1 - 3, z0 + 3], [x0 + 3, z1 - 3], [x1 - 3, z1 - 3]].forEach(([x, z], k) => {
     const p = new THREE.Mesh(new THREE.CylinderGeometry(.12, .15, 7, 8), blackMat); p.position.set(x, 3.5, z); scene.add(p); addCol(x - .3, z - .3, x + .3, z + .3);
     const mm = new THREE.MeshBasicMaterial({ color: cols[k] }); dynMats.neon.push(mm); const tube = new THREE.Mesh(new THREE.CylinderGeometry(.09, .09, 5, 8), mm); tube.position.set(x, 3.8, z + (z < (z0 + z1) / 2 ? .25 : -.25)); scene.add(tube);
+    regBreak(x, 0, z, .3, 'pole', [[p, null, true], [tube, null, true]]);
   });
   const st = signTex(1024, 256, '#120a1e', [['AMBOOLA NIGHT MEET', .42, .32, OR, '#ff2bd6'], ['STREET RACES FOR PINK SLIPS · ナイト', .78, .17, OR, '#2fe0ff']], '#ff2bd6');
   const sm = new THREE.MeshBasicMaterial({ map: st }); dynMats.neon.push(sm);
@@ -8274,7 +8336,7 @@ function buildStuntPark() {
   // tyre stacks on the plaza corners
   const tyres = []; for (const [x0, x1] of [[ax0, ax1], [wx0, wx1]]) for (const [x, z] of [[x0 + 2, z0 + 2], [x1 - 2, z0 + 2], [x0 + 2, z1 - 2], [x1 - 2, z1 - 2]]) { tyres.push([x, 0, z, 0]); addCol(x - 1.1, z - 1.1, x + 1.1, z + 1.1); }
   const tg = mergeGeometries([0, .55, 1.1].map(y => new THREE.TorusGeometry(.7, .28, 8, 16).rotateX(Math.PI / 2).translate(0, y + .28, 0)));
-  instanced(tg, new THREE.MeshStandardMaterial({ color: 0x151517, roughness: .9 }), tyres);
+  regBreakList(tyres, [instanced(tg, new THREE.MeshStandardMaterial({ color: 0x151517, roughness: .9 }), tyres)], 'tyres', 1);
   // the big sign at the entrance, facing the road where you start
   const t = signTex(1024, 320, '#0d1b2a', [['AMBOOLA STUNT PARK', .38, .26, OR, '#fff'], ['JUMPS · FLIPS · LOOP  ←  スタントパーク', .74, .15, OR, '#ffd21f']], '#ff6a1a');
   const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
@@ -12331,7 +12393,7 @@ function simStep(dt, inp) {
     player.update(h, inp);
     const bvx = player.vx, bvz = player.vz;
     const hit = Math.max(collideWorld(player), stuntStep(player, h, px, pz, py, inp));
-    if (hit > 3) { audio.crash(hit); skillCrash(); taxiCrash(); busCrash(hit); shakeT += 1; if (!soccer) carHit(player, player.vx - bvx, player.vz - bvz, hit); }
+    if (hit > 3) { audio.crash(hit); skillCrash(); taxiCrash(); busCrash(hit); shakeT += 1; crashFx(player, hit, bvx, bvz); if (!soccer) carHit(player, player.vx - bvx, player.vz - bvz, hit); }
   }
   if (!isFinite(player.x) || !isFinite(player.z) || !isFinite(player.y || 0) || !isFinite(player.vx) || !isFinite(player.vz)) { Object.assign(player, { x: -LANES[1], z: 150, heading: Math.PI, vx: 0, vz: 0, y: 0, vy: 0 }); player.resetToRoad(); }
   if (race && race.state === 'countdown') raceHold();
@@ -12438,7 +12500,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

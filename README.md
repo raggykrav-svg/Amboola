@@ -322,12 +322,18 @@ The new **Tesla Roadster** has rocket thrusters! While you drive it, press **V**
 - Top speed in the air: **500 km/h**. Fly over the skyscrapers, out to sea or all the way to the countries.
 - Land on a street and you drive on at the speed you touched down. Land on a roof to park up there.
 
-## 💥 Smash things
+## 💥 Smash things (like Forza Horizon 5)
 
-Crash into something fast enough and it breaks!
-- **Trees, palm trees, cherry trees, street lamps and vending machines** fall over in the direction you hit them, bits fly everywhere, and your car loses a bit of speed. They grow back when you come back later.
+![A lamp flying, a London phone box smashed, sparks off a wall](media/smash.jpg)
+
+Crash into almost anything except a building and it breaks!
+- **What breaks:** trees, palm trees, cherry trees and the pines in the Swiss Alps and round Mt. Fuji. Also street lamps (in every country), vending machines, London's red phone boxes, beach umbrellas, Paris café umbrellas, the snow village lanterns, the neon poles at the night meet, and the tyre stacks in the Stunt Park.
+- **How things break:** heavy things like trees snap and topple over the way you hit them. Lighter things (lamps, phone boxes, umbrellas, tyres) are thrown ahead of the car, tumbling through the air, bouncing and landing on their side. Pieces and dust fly everywhere, and each thing has its own sound: crack-thud for wood, a metal clang, glass crunch, a rubber thump.
+- **Fast or slow:** smash things at speed and you blast straight through, only losing a little speed (more for a tree than for an umbrella). Creep into them slowly and you just bump them.
+- **Buildings, walls and big rocks don't break:** hit one hard and sparks fly, dust puffs up, the camera shakes and the car stops.
+- Broken things grow back the next time you come by.
 - **City cars** you ram hard (about 30 km/h faster than them) get **WRECKED**: they fly up, tumble and land on their wheels, their side or their roof, smoking. A tow truck takes them away after a while.
-- Every smash gives you skill points: 🌴 TIMBER!, 💡 LAMP DOWN, 🥤 VENDING SMASH, 💥 WRECKED!
+- Every smash gives you skill points: 🌴 TIMBER!, 💡 LAMP DOWN, 🥤 VENDING SMASH, ☎️ PHONE BOX SMASH, ⛱️ UMBRELLA SMASH, 🛞 TYRE WALL, 🚧 POLE DOWN, 💥 WRECKED!
 
 ## 🏎 More driving fun
 
