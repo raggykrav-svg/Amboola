@@ -160,10 +160,11 @@ class Car:
         self.apply(body); self.body = body
         return body
 
-    def subtract(self, bm, solver='EXACT', mat='Black'):
+    def subtract(self, bm, solver='EXACT', mat='Black', **flags):
         """boolean-cut a closed bmesh from the body; the cut walls get the cutter's material (black)"""
         cut = self.mesh('cut', bm, mat, smooth=False)
         mod = self.body.modifiers.new('cut', 'BOOLEAN'); mod.operation = 'DIFFERENCE'; mod.object = cut; mod.solver = solver; mod.material_mode = 'TRANSFER'
+        for k, v in flags.items(): setattr(mod, k, v)
         self.apply(self.body); bpy.data.objects.remove(cut)
 
     def sculpt(self, wheels):
@@ -908,7 +909,9 @@ class Car:
         for f in list(bm.faces): bm.faces.new([inn[v] for v in reversed(f.verts)])
         for e in rim:
             a, b = e.verts; bm.faces.new((a, b, inn[b], inn[a]))
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.normal_update()
+        if sum(f.calc_center_median().dot(f.normal) * f.calc_area() for f in bm.faces) < 0:   # inside out (negative volume)
+            bmesh.ops.reverse_faces(bm, faces=bm.faces)
         return bm
     def torus(self, name, mat, c, axis, R, r, nu=28, nv=8):
         axis = Vector(axis).normalized(); e1 = axis.orthogonal().normalized(); e2 = axis.cross(e1); c = Vector(c)
@@ -992,11 +995,13 @@ class Car:
             return sum(p.area for p in me.polygons if p.material_index not in ci)
         for o, ck in cut:
             hole = sum(f.calc_area() for f in ck.faces); a0 = skin(); keep = self.body.data.copy()
-            for depth in (0.26, 0.1, 0.04):        # a shallower cutter when a deep one folds over itself
-                self.subtract(self.block(ck.copy(), depth=depth), mat='Cutter')
+            # a shallower cutter when a deep one folds over itself, then the boolean's slower, more forgiving modes
+            for depth, solver, flags in ((0.26, 'EXACT', {}), (0.1, 'EXACT', {}), (0.1, 'EXACT', {'use_self': True}),
+                                         (0.1, 'EXACT', {'use_hole_tolerant': True}), (0.1, 'FAST', {})):
+                self.subtract(self.block(ck.copy(), depth=depth), solver, 'Cutter', **flags)
                 lost = a0 - skin()
                 if hole * 0.3 < lost < hole * 1.5 + 0.03: break
-                print(f'open_cabin: cutting {o.name} {depth:.2f} m deep took {lost:.2f} m2 for a {hole:.2f} m2 window', flush=True)
+                print(f'open_cabin: cutting {o.name} ({depth:.2f} m, {solver} {list(flags)}) took {lost:.2f} m2 for a {hole:.2f} m2 window', flush=True)
                 bad = self.body.data; self.body.data = keep.copy(); bpy.data.meshes.remove(bad)
             else:
                 o.data.materials.clear(); o.data.materials.append(G)
