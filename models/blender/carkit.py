@@ -984,8 +984,25 @@ class Car:
         p = ray(ex, 0.3, z_base, (0, 0, -1)); zf = (p.z if p else z_base - 0.6) + 0.06
         hip = max(zf + 0.10, min(zr - 0.91, zf + 0.45)); eye = min(hip + 0.74, zr - 0.15); xh = ex + 0.25
         hw = half(xh, hip + 0.3); sy = max(0.26, min(0.42, hw * 0.5)); sw = max(0.36, min(0.52, hw - 0.12))
-        # ---- cut the windows out of the skin
-        for o, ck in cut: self.subtract(self.block(ck), mat='Cutter')
+        # ---- cut the windows out of the skin. A boolean can go wrong on an awkward shell (it once ate most of a
+        # body): if the skin loses far more, or far less, than the window's area, the skin is put back and that
+        # window stays dark glass
+        def skin():
+            me = self.body.data; ci = {i for i, m in enumerate(me.materials) if m == self.M['Cutter']}
+            return sum(p.area for p in me.polygons if p.material_index not in ci)
+        for o, ck in cut:
+            hole = sum(f.calc_area() for f in ck.faces); a0 = skin(); keep = self.body.data.copy()
+            for depth in (0.26, 0.1, 0.04):        # a shallower cutter when a deep one folds over itself
+                self.subtract(self.block(ck.copy(), depth=depth), mat='Cutter')
+                lost = a0 - skin()
+                if hole * 0.3 < lost < hole * 1.5 + 0.03: break
+                print(f'open_cabin: cutting {o.name} {depth:.2f} m deep took {lost:.2f} m2 for a {hole:.2f} m2 window', flush=True)
+                bad = self.body.data; self.body.data = keep.copy(); bpy.data.meshes.remove(bad)
+            else:
+                o.data.materials.clear(); o.data.materials.append(G)
+                for p in o.data.polygons: p.material_index = 0
+                print(f'open_cabin: {o.name} stays dark', flush=True)
+            bpy.data.meshes.remove(keep); ck.free()
         me = self.body.data; ci = [i for i, m in enumerate(me.materials) if m == self.M['Cutter']]
         bm = bmesh.new(); bm.from_mesh(me)
         bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in ci], context='FACES')
