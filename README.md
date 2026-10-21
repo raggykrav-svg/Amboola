@@ -154,6 +154,16 @@ The Lamborghinis have sharp, angular wedge bodies. The Ferraris come in three sh
 
 The McLarens have a low mid-engine body with a teardrop cabin. The Bugattis have a wide, rounded body with the horseshoe grille, and the Bolide is a very low track car. The new paints are Papaya Orange, Volcano Blue, Bugatti Blue and Argent Silver. The Bugatti Tourbillon (2.0 s to 100 km/h, 445 km/h) and the track-only Bolide (500 km/h) are the fastest cars in the game.
 
+### See-through windows, seats and number plates (like Forza Horizon 5) 🪟
+
+Every Blender car you can drive now has:
+- **Real windows you can see through.** They have a dark tint and a black band round the edge, like real car glass. The window tint in Customize still works: *Limo black* hides the inside, *Light* shows it all.
+- **A cabin inside:** seats with headrests and side bolsters, a dashboard with glowing screens, a steering wheel on the right (like Japanese cars), a centre console and a gear lever. Long cars like the bus get rows of seats.
+- **Wing mirrors** with a rounded housing, chrome mirror glass and a slim arm to the door.
+- **Japanese number plates** on the front and the back: a white plate with green letters showing the town (品川, 横浜, 富士山…), a class number, a hiragana and a number like `50-43`. Each car always keeps its own number.
+
+When you sit inside the car (C), you see the brand's own cockpit instead.
+
 ### The Blender Porsches
 
 ![All 14 Porsches built in Blender](media/porsches-blender.jpg)
@@ -189,6 +199,7 @@ In the game you can still change the paint, the brake lights and headlights stil
   - **Cut-outs:** wheel wells and cockpits cut out of the body.
   - **Details:** glass, vents and lights projected onto the body surface.
   - **Parts:** wings, swan necks, mirrors, exhausts and wheels.
+  - **Finishing:** see-through windows with a cabin behind them (`open_cabin`) and number plates (`number_plates`), added to every car automatically.
 - [`models/blender/porsches.py`](models/blender/porsches.py) describes each car using those blocks.
 
 To change a car, edit its section and rebuild it ([Blender 4.2](https://www.blender.org/download/) or newer):

@@ -80,12 +80,22 @@ class Car:
             'Accent': mat('Accent', (0.8, 0.02, 0.02), rough=0.35, coat=0.5),     # tow hooks, badges (red)
             'TireLetter': mat('TireLetter', (0.2, 0.2, 0.21), rough=0.8),       # raised sidewall lettering
             'Logo': mat('Logo', (0.85, 0.85, 0.86), rough=0.3),                  # caliper logo
+            # the see-through cabin (open_cabin): clear tinted glass, the lining, seats, dashboard and its screens
+            'GlassClear': mat('GlassClear', (0.012, 0.016, 0.02), rough=0.03, coat=1.0, alpha=0.4),
+            'Cabin': mat('Cabin', (0.03, 0.031, 0.034), rough=0.9),
+            'Leather': mat('Leather', (0.016, 0.016, 0.018), rough=0.45, coat=0.3),
+            'Alcantara': mat('Alcantara', (0.05, 0.05, 0.055), rough=0.95),
+            'Dash': mat('Dash', (0.012, 0.012, 0.014), rough=0.6),
+            'Screen': mat('Screen', (0.01, 0.04, 0.1), rough=0.1, emit=(0.15, 0.55, 1.0), strength=0.5),
+            'Plate': mat('Plate', (0.86, 0.87, 0.84), rough=0.4),                 # Japanese number plates (the game paints the number on)
+            'Cutter': mat('Cutter', (1, 0, 1)),                                   # window cutters' walls, deleted again
         }
 
     # ------------------------------------------------------------ plumbing
-    def material(self, name, color, metal=0.0, rough=0.5, coat=0.0, emit=None, strength=0.0):
+    def material(self, name, color, metal=0.0, rough=0.5, coat=0.0, emit=None, strength=0.0, alpha=1.0):
         m = bpy.data.materials.new(name); m.use_nodes = True
         b = m.node_tree.nodes['Principled BSDF']
+        if alpha < 1: b.inputs['Alpha'].default_value = alpha
         b.inputs['Base Color'].default_value = (*color, 1)
         b.inputs['Metallic'].default_value = metal
         b.inputs['Roughness'].default_value = rough
@@ -150,9 +160,9 @@ class Car:
         self.apply(body); self.body = body
         return body
 
-    def subtract(self, bm, solver='EXACT'):
-        """boolean-cut a closed bmesh from the body; the cut walls get the cutter's black material"""
-        cut = self.mesh('cut', bm, 'Black', smooth=False)
+    def subtract(self, bm, solver='EXACT', mat='Black'):
+        """boolean-cut a closed bmesh from the body; the cut walls get the cutter's material (black)"""
+        cut = self.mesh('cut', bm, mat, smooth=False)
         mod = self.body.modifiers.new('cut', 'BOOLEAN'); mod.operation = 'DIFFERENCE'; mod.object = cut; mod.solver = solver; mod.material_mode = 'TRANSFER'
         self.apply(self.body); bpy.data.objects.remove(cut)
 
@@ -301,7 +311,7 @@ class Car:
             y = lerp(-1, 1, u) * lerp(hw_base + grow, hw_top + grow, v)
             x = lerp(base_x + grow * .6, top_x - grow * .6, v) - sweep * (y / hw_base) ** 2 * (1 - v * .6)
             return V(x, y, base_z + (base_x - x) * slope) + N * 2, -N
-        if trim: self.project('ws_trim', 'Gloss', lambda u, v: ws(u, v, trim), *n, off=.003)
+        if trim: self.project('ws_trim', 'Gloss', lambda u, v: ws(u, v, trim), *n, off=.003)['grow'] = trim
         self.project('windscreen', 'Glass', ws, *n, off=.005)
     def rear_window(self, x_bot, x_top, z_bot, slope, hw_bot, hw_top, bulge=0.06, trim=0.03, n=(16, 8)):
         N = V(-slope, 0, 1).normalized()
@@ -309,7 +319,7 @@ class Car:
             y = lerp(-1, 1, u) * lerp(hw_bot + grow, hw_top + grow, v)
             x = lerp(x_bot - grow * .5, x_top + grow * .5, v) + bulge * (y / max(hw_bot, hw_top)) ** 2
             return V(x, y, z_bot + (x - x_bot) * slope) + N * 2, -N
-        if trim: self.project('rw_trim', 'Gloss', lambda u, v: rw(u, v, trim), *n, off=.003)
+        if trim: self.project('rw_trim', 'Gloss', lambda u, v: rw(u, v, trim), *n, off=.003)['grow'] = trim
         self.project('rearwindow', 'Glass', rw, *n, off=.005)
     def side_glass(self, top, bot, pillars=(), trim=0.022, pillar_w=0.025, frame='Gloss', nu=40):
         """side windows between a top and bottom outline [(x, z), ...]; `pillars` are x positions of black dividers"""
@@ -321,7 +331,7 @@ class Car:
                 return self.VIEW[side(s)](x, lerp(zb, max(zt, zb + .012), v))
             return fn
         for s in (1, -1):
-            if trim: self.project('dlo_trim', frame, dlo(s, trim), nu, 8, off=.003)
+            if trim: self.project('dlo_trim', frame, dlo(s, trim), nu, 8, off=.003)['grow'] = trim
             self.project('sideglass', 'Glass', dlo(s), nu, 8, off=.005)
             for px in pillars:
                 self.decal('pillar', frame, side(s), px - pillar_w / 2, px + pillar_w / 2, pl(bot, px) - .01, pl(top, px) + .01, 1, 8, off=.007)
@@ -404,15 +414,34 @@ class Car:
         bmesh.ops.translate(bm, verts=bm.verts, vec=center)
         return self.mesh(name, bm, mat, part=True)
     def mirrors(self, x, y, z, size=(0.15, 0.20, 0.095), stalk=0.11, mat='Paint'):
+        """door mirrors: a housing of rounded-rectangle sections (flat at the back where the chrome glass sits, a smooth
+        dome in front) on a slim black arm that reaches in and down to a base on the door"""
+        d, w, h = size; segs = 24
+        def rr(a, sw, sh):   # a point on a rounded rectangle (superellipse) of half sizes sw, sh
+            ca, sa = math.cos(a), math.sin(a)
+            return math.copysign(abs(ca) ** 0.55, ca) * sw, math.copysign(abs(sa) ** 0.55, sa) * sh
         for s in (1, -1):
-            bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
-            bmesh.ops.scale(bm, verts=bm.verts, vec=size); bmesh.ops.translate(bm, verts=bm.verts, vec=(x, s * y, z))
-            mir = self.mesh('mirror', bm, mat); mir.data.materials.append(self.M['Gloss'])
-            m = mir.modifiers.new('sub', 'SUBSURF'); m.levels = 2; self.apply(mir)
-            for p in mir.data.polygons:
-                if p.normal.x < -0.6: p.material_index = 1          # mirror glass faces backwards
-            self.parts.append(mir)
-            self.box('mirrorstalk', 'Gloss', (x, s * (y - size[1] / 2 - stalk / 2 + .02), z - .04), (0.05, stalk, 0.025))
+            bm = bmesh.new(); rings = []; xb = x - d / 2
+            for t, kw, kh in ((0, 1, 1), (0.015, 1, 1), (0.3, .98, .97), (0.6, .9, .86), (0.85, .68, .64), (1, .3, .3)):
+                rings.append([bm.verts.new((xb + t * d, s * y + dy, z + dz)) for dy, dz in [rr(2 * math.pi * i / segs, w / 2 * kw, h / 2 * kh) for i in range(segs)]])
+            for a_, b_ in zip(rings, rings[1:]):
+                for i in range(segs): bm.faces.new((a_[i], a_[(i + 1) % segs], b_[(i + 1) % segs], b_[i]))
+            bm.faces.new(list(reversed(rings[0]))); bm.faces.new(rings[-1])
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            o = self.mesh('mirror', bm, mat); m = o.modifiers.new('sub', 'SUBSURF'); m.levels = 2; self.apply(o); self.parts.append(o)
+            g = bmesh.new()
+            f = g.faces.new([g.verts.new((xb - 0.004, s * y + dy, z + dz)) for dy, dz in [rr(2 * math.pi * i / segs, w / 2 * .84, h / 2 * .78) for i in range(segs)]])
+            f.normal_update()
+            if f.normal.x > 0: f.normal_flip()
+            self.mesh('mirrorglass', g, 'Chrome', part=True)
+            # the arm, from under the housing to the door just below the window line
+            a = Vector((x + d * 0.1, s * (y - w * 0.3), z - h * 0.2))
+            hp, hn = self.hit((x + d * 0.1, s * y, z - h / 2 - 0.035), (0, -s, 0))
+            if hp is None or abs(hp.y - a.y) > 0.4:
+                self.box('mirrorstalk', 'Gloss', (x, s * (y - w / 2 - stalk / 2 + .02), z - .04), (0.05, stalk, 0.025)); continue
+            b = hp + hn * 0.006
+            self.slab('mirrorarm', 'Gloss', (a + b) / 2, b - a, (1, 0, 0), (b - a).length / 2 + 0.01, 0.022, 0.011, bevel=0.005)
+            self.slab('mirrorbase', 'Gloss', hp + hn * 0.007, (1, 0, 0), hn, 0.055, 0.032, 0.007, bevel=0.004)
     def exhaust(self, y, z, r=0.048, shape='round', w=None, h=None, depth=0.16, mat='Titanium', mirror=True):
         """tailpipe pushed through the rear bumper: round tube or a rounded rectangle (w x h)"""
         for s in ((1, -1) if mirror and y else (1,)):
@@ -825,10 +854,208 @@ class Car:
                         self.pod('antenna', 'Black', [(xf + .07, 0, z + .004, .006, .006), (xf + .02, 0, z + .018, .02, .024), (xf - .05, 0, z + .03, .026, .045),
                                                       (xf - .1, 0, z + .02, .026, .03), (xf - .13, 0, z + .004, .01, .008)], segs=10, sub=1, mirror=False, flat=.7)
 
+    def number_plates(self):
+        """Japanese number plates (330 x 165 mm) on the nose and the tail: each goes on the flattest upright patch of
+        bumper near the usual height that no lamp, badge or tailpipe covers. The game paints the number on."""
+        if getattr(self, 'lite', False) or 'plate' in {o.name.split('.')[0] for o in self.parts}: return
+        F, R = self.wheel_spec['F'], self.wheel_spec['R']; xm = (F['x'] + R['x']) / 2
+        p, _ = self.hit((xm, 0, -3), (0, 0, 1)); zb = p.z if p else 0.2
+        busy = [o.matrix_world @ v.co for o in self.parts if o.name.split('.')[0] in ('badge', 'exhaust', 'tailpipe', 'hitch', 'towhook')
+                or (o.data.materials and o.data.materials[0].name in ('Headlight', 'Taillight', 'Titanium')) for v in o.data.vertices]
+        for sx, z0, z1, zp in ((1, 0.12, 0.6, 0.30), (-1, 0.2, 0.8, 0.42)):
+            best = None
+            for i in range(int((z1 - z0) / 0.02) + 1):
+                z = zb + z0 + i * 0.02
+                hits = [self.hit((sx * 9, y, z + dz), (-sx, 0, 0)) for y in (-0.165, 0, 0.165) for dz in (-0.0825, 0.0825)]
+                if any(h[0] is None or h[1].x * sx < 0.6 for h in hits): continue
+                xs = [h[0].x for h in hits]
+                if max(xs) - min(xs) > 0.06: continue
+                c = sum((h[0] for h in hits), Vector()) / 6; n = sum((h[1] for h in hits), Vector()); n.y = 0; n.normalize()
+                c = Vector((max(xs) if sx > 0 else min(xs), 0, c.z)) + n * 0.008
+                up = n.cross(Vector((0, 1, 0)))
+                if any(abs((v - c).y) < 0.2 and abs((v - c).dot(up)) < 0.11 and abs((v - c).dot(n)) < 0.1 for v in busy): continue
+                if best is None or abs(z - zb - zp) < abs(best[0] - zb - zp): best = (z, c, n)
+            if best is None: continue
+            _, c, n = best
+            self.slab('plateframe', 'Gloss', c - n * 0.004, (0, 1, 0), n, 0.176, 0.093, 0.004)
+            self.slab('plate', 'Plate', c, (0, 1, 0), n, 0.165, 0.0825, 0.003)
+
+    # ------------------------------------------------------------ see-through cabin
+    FRIT = {'windscreen': 0.045, 'rearwindow': 0.04, 'rearwin': 0.04, 'roof': 0.03, 'roofglass': 0.03}
+    @staticmethod
+    def frame_ring(bm, width):
+        """a projected patch is a grid; its outer ring of cells becomes a band `width` wide: every vertex one edge in
+        from the outline slides out along that edge (a corner along both). Returns the ring's faces."""
+        bnd = {v for v in bm.verts if v.is_boundary}
+        ring = {f for v in bnd for f in v.link_faces}
+        moves = {}
+        for v in bm.verts:
+            if v in bnd: continue
+            d = Vector()
+            for e in v.link_edges:
+                w = e.other_vert(v); L = (w.co - v.co).length
+                if w in bnd and L > width: d += (w.co - v.co) * (1 - width / L)
+            if d.length: moves[v] = d
+        for v, d in moves.items(): v.co += d
+        return ring
+    @staticmethod
+    def block(bm, out=0.03, depth=0.26):
+        """thicken an open patch into a closed block: lifted `out` along its normals, `depth` deep"""
+        bm.normal_update(); nrm = {v: v.normal.copy() for v in bm.verts}
+        rim = [e for e in bm.edges if e.is_boundary]
+        for v, n in nrm.items(): v.co += n * out
+        inn = {v: bm.verts.new(v.co - n * depth) for v, n in nrm.items()}
+        for f in list(bm.faces): bm.faces.new([inn[v] for v in reversed(f.verts)])
+        for e in rim:
+            a, b = e.verts; bm.faces.new((a, b, inn[b], inn[a]))
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        return bm
+    def torus(self, name, mat, c, axis, R, r, nu=28, nv=8):
+        axis = Vector(axis).normalized(); e1 = axis.orthogonal().normalized(); e2 = axis.cross(e1); c = Vector(c)
+        bm = bmesh.new(); rows = []
+        for i in range(nu):
+            d = e1 * math.cos(2 * math.pi * i / nu) + e2 * math.sin(2 * math.pi * i / nu)
+            rows.append([bm.verts.new(c + d * (R + r * math.cos(b)) + axis * r * math.sin(b)) for b in [2 * math.pi * j / nv for j in range(nv)]])
+        for i in range(nu):
+            a, b = rows[i], rows[(i + 1) % nu]
+            for j in range(nv): bm.faces.new((a[j], b[j], b[(j + 1) % nv], a[(j + 1) % nv]))
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        return self.mesh(name, bm, mat, part=True)
+    def seat(self, xh, y, zh, w, top, rake=18, bench=False):
+        """a seat whose hip point is (xh, y, zh): cushion, raked backrest up to z=top, side bolsters, a suede
+        centre panel and a headrest (one per sitter; a bench is two seats wide)"""
+        a = math.radians(rake); up = Vector((-math.sin(a), 0, math.cos(a))); fwd = Vector((math.cos(a), 0, math.sin(a)))
+        rot = (0, -a, 0); base = Vector((xh - 0.12, y, zh - 0.05))
+        L = max(0.3, (top - 0.16 - base.z) / math.cos(a))
+        self.box('cushion', 'Leather', (xh + 0.15, y, zh - 0.07), (0.50, w, 0.11), rot=(0, math.radians(-6), 0), bevel=0.025)
+        self.box('seat', 'Leather', base + up * L / 2, (0.11, w, L), rot=rot, bevel=0.03)
+        heads = (-w / 4, w / 4) if bench else (0,)
+        for dy in heads:
+            hp = base + up * (L + 0.1) + Vector((0, dy, 0))
+            self.box('headrest', 'Leather', hp, (0.10, min(0.28, w * 0.55), 0.16), rot=rot, bevel=0.03)
+            self.box('seatinsert', 'Alcantara', base + up * L * 0.48 + fwd * 0.06 + Vector((0, dy, 0)), (0.02, min(0.22, w * 0.42), L * 0.7), rot=rot)
+        if not bench:
+            for s in (1, -1):
+                self.box('bolster', 'Leather', base + up * L * 0.36 + fwd * 0.05 + Vector((0, s * (w / 2 - 0.045), 0)), (0.13, 0.08, L * 0.62), rot=rot, bevel=0.025)
+                self.box('bolster', 'Leather', (xh + 0.15, y + s * (w / 2 - 0.045), zh - 0.02), (0.44, 0.08, 0.07), bevel=0.025)
+
+    def open_cabin(self):
+        """Forza-style glass: every window becomes clear tinted glass with a black frit band round its edge, the body
+        skin behind it is cut away, the inside of the shell gets a dark lining and the cabin gets seats, a dashboard
+        with screens, a steering wheel (the driver sits on the right, -Y) and a centre console. Traffic (lite) and
+        open-top cars keep their dark glass."""
+        if getattr(self, 'lite', False) or getattr(self, 'open_top', False): return
+        G = self.M['Glass']; cut = []
+        glass = [o for o in self.parts if o.data.materials and o.data.materials[0] == G]
+        trees = {o: BVHTree.FromPolygons([o.matrix_world @ v.co for v in o.data.vertices], [p.vertices[:] for p in o.data.polygons]) for o in glass}
+        for o in glass:
+            bm = bmesh.new(); bm.from_mesh(o.data)
+            if not any(v.is_boundary for v in bm.verts): bm.free(); continue        # a closed glass pod stays dark
+            frit = self.FRIT.get(o.name.split('.')[0], 0.02); bm.faces.index_update()
+            # where two windows meet with no body between (windscreen and door glass at the A-pillar), the cells within
+            # 5 cm of the other window stay black: a gloss-black pillar instead of a see-through corner
+            others = [t for q, t in trees.items() if q is not o]
+            pillar = {f.index for f in bm.faces if any(t.find_nearest(o.matrix_world @ f.calc_center_median(), 0.05)[0] is not None for t in others)}
+            ck = bm.copy(); ck.faces.index_update(); ring = self.frame_ring(bm, frit) | {f for f in bm.faces if f.index in pillar}
+            if sum(f.calc_area() for f in bm.faces if f not in ring) < 0.02: bm.free(); ck.free(); continue
+            for f in bm.faces: f.material_index = 1 if f in ring else 0
+            bm.to_mesh(o.data); bm.free()
+            o.data.materials.clear(); o.data.materials.append(self.M['GlassClear']); o.data.materials.append(self.M['Gloss'])
+            ring = self.frame_ring(ck, max(0.006, frit - 0.012)) | {f for f in ck.faces if f.index in pillar}   # the hole reaches a centimetre under the frit
+            bmesh.ops.delete(ck, geom=list(ring), context='FACES')
+            bmesh.ops.delete(ck, geom=[v for v in ck.verts if not v.link_faces], context='VERTS')
+            cut.append((o, ck))
+        if not cut: return
+        # ---- measure the cabin from the glass and from rays fired inside the shell (they hit the skin from behind)
+        F, Rw = self.wheel_spec['F'], self.wheel_spec['R']; xm = (F['x'] + Rw['x']) / 2
+        gv = [o.matrix_world @ v.co for o, _ in cut for v in o.data.vertices]
+        ws = next((o for o, _ in cut if o.name.startswith('windscreen')), None)
+        wv = [ws.matrix_world @ v.co for v in ws.data.vertices] if ws else [v for v in gv if v.x > xm] or gv
+        x_base, z_base, top_x = max(v.x for v in wv), min(v.z for v in wv), min(v.x for v in wv)
+        sv = [o.matrix_world @ v.co for o, _ in cut if not o.name.startswith(('windscreen', 'rear', 'roof')) for v in o.data.vertices]
+        x_back = min(v.x for v in (sv or gv))
+        def ray(x, y, z, d):
+            p = self.hit((x, y, z), d)[0]; return p
+        def half(x, z):
+            ps = [ray(x, 0, z, (0, s, 0)) for s in (1, -1)]
+            return min(abs(p.y) for p in ps) - 0.03 if all(ps) else 0.6
+        ex = min(top_x - 0.28, x_base - 1.0)
+        p = ray(ex, 0, z_base, (0, 0, 1)); zr = p.z if p else max(v.z for v in gv)
+        p = ray(ex, 0.3, z_base, (0, 0, -1)); zf = (p.z if p else z_base - 0.6) + 0.06
+        hip = max(zf + 0.10, min(zr - 0.91, zf + 0.45)); eye = min(hip + 0.74, zr - 0.15); xh = ex + 0.25
+        hw = half(xh, hip + 0.3); sy = max(0.26, min(0.42, hw * 0.5)); sw = max(0.36, min(0.52, hw - 0.12))
+        # ---- cut the windows out of the skin
+        for o, ck in cut: self.subtract(self.block(ck), mat='Cutter')
+        me = self.body.data; ci = [i for i, m in enumerate(me.materials) if m == self.M['Cutter']]
+        bm = bmesh.new(); bm.from_mesh(me)
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in ci], context='FACES')
+        bm.to_mesh(me); bm.free()
+        # ---- the black trims round the glass become thin rings that tuck under the frit
+        for o in [o for o in self.parts if 'grow' in o]:
+            bm = bmesh.new(); bm.from_mesh(o.data); ring = self.frame_ring(bm, o['grow'] + 0.012)
+            bmesh.ops.delete(bm, geom=[f for f in bm.faces if f not in ring], context='FACES')
+            bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+            bm.to_mesh(o.data); bm.free()
+        # ---- a dark lining: the shell round the cabin copied 2 cm inwards and turned inside out (from outside it is
+        # back-facing, so it never shows; through the glass it is the headlining, door cards and floor)
+        gx0, gx1 = min(v.x for v in gv) - 0.45, max(v.x for v in gv) + 0.45
+        p = ray(xm, 0, -3, (0, 0, 1)); zb = p.z if p else 0.2
+        bm = bmesh.new(); bm.from_mesh(me)
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if not (gx0 < f.calc_center_median().x < gx1 and f.calc_center_median().z > zb + 0.02)], context='FACES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+        bm.normal_update()
+        for v in bm.verts: v.co -= v.normal * 0.02
+        bmesh.ops.reverse_faces(bm, faces=bm.faces)
+        for f in bm.faces: f.material_index = 0; f.smooth = True
+        lining = self.mesh('lining', bm, 'Cabin')
+        m = lining.modifiers.new('dec', 'DECIMATE'); m.ratio = 0.3; self.apply(lining); self.parts.append(lining)
+        # ---- the old closed black tub goes; seats, dash, wheel and console are built to fit the measured cabin
+        for o in [o for o in self.parts if o.name.split('.')[0] in ('cabin', 'seat', 'cushion')]:
+            self.parts.remove(o); bpy.data.objects.remove(o)
+        top = min(eye + 0.08, zr - 0.06)
+        for s in (1, -1): self.seat(xh, s * sy, hip, sw, top)
+        rx, n = xh - 0.85, 0
+        while rx - 0.3 > x_back + 0.05 and n < 10:         # back seats while the side glass goes on (rows of them in a bus)
+            p = ray(rx, 0, hip, (0, 0, 1)); zr2 = p.z if p else zr
+            rh = half(rx, hip + 0.3)
+            if zr2 - hip < 0.7 or rh < 0.45: break
+            top2 = min(hip + 0.03 + 0.74, zr2 - 0.08)
+            if rh > 1.05:      # a bus: a pair of seats each side of the aisle
+                for s in (1, -1): self.seat(rx, s * (rh - 0.5), hip + 0.03, 0.9, top2, rake=14, bench=True)
+            else: self.seat(rx, 0, hip + 0.03, min(rh * 2 - 0.08, 1.4), top2, rake=14, bench=True)
+            rx -= 0.85; n += 1
+        # the dashboard runs from just ahead of the wheel to under the windscreen
+        has_screen = any(o.name.split('.')[0] == 'screen' for o in self.parts)
+        wx = xh + 0.48; xd0, xd1 = wx + 0.10, max(x_base - 0.03, wx + 0.22)
+        zt = z_base - 0.03; zd = max(hip + 0.18, zt - 0.32)
+        dh = half((xd0 + xd1) / 2, zt - 0.08)
+        self.box('dash', 'Dash', ((xd0 + xd1) / 2, 0, (zt + zd) / 2), (xd1 - xd0, dh * 2, zt - zd), bevel=0.03)
+        wz = min(hip + 0.36, zt - 0.05); axis = Vector((math.cos(math.radians(24)), 0, -math.sin(math.radians(24))))
+        gap = ray(xd0 + 0.06, -sy, zt, (0, 0, 1)); gap = gap.z - zt if gap else 1
+        if gap > 0.08:     # the dials' hood in front of the driver, when the glass leaves room for it
+            self.box('binnacle', 'Dash', (xd0 + 0.07, -sy, zt + 0.03), (0.15, 0.36, 0.07), bevel=0.02)
+            self.slab('screen', 'Screen', (xd0 - 0.004, -sy, zt + 0.01), (0, 1, 0), (-1, 0, 0.25), 0.14, 0.04, 0.003)
+        else:
+            self.slab('screen', 'Screen', (xd0 - 0.004, -sy, zt - 0.06), (0, 1, 0), (-1, 0, 0.25), 0.14, 0.04, 0.003)
+        if not has_screen:
+            self.slab('screen', 'Screen', (xd0 - 0.01, 0, zt - 0.07), (0, 1, 0), (-1, 0, 0.3), 0.12, 0.07, 0.004)
+        for s in (1, -1): self.slab('vent', 'Gloss', (xd0 - 0.004, s * dh * 0.72, zt - 0.08), (0, 1, 0), (-1, 0, 0), 0.06, 0.025, 0.006)
+        # the wheel, raked towards the driver, on its column
+        if not getattr(self, 'no_wheel', False):
+            c = Vector((wx, -sy, wz)); upw = (Vector((0, 0, 1)) - axis * axis.z).normalized(); acr = axis.cross(upw)
+            self.torus('steering', 'Leather', c, axis, 0.175, 0.017)
+            for d in (acr, -acr, -upw): self.slab('spoke', 'Dash', c + d * 0.09, d, axis, 0.085, 0.022, 0.008)
+            self.slab('hub', 'Dash', c + axis * 0.012, acr, axis, 0.05, 0.05, 0.025, bevel=0.01)
+            self.box('column', 'Dash', c + axis * 0.16, (0.24, 0.06, 0.06), rot=(0, math.radians(24), 0))
+        # centre console and gear selector between the seats
+        self.box('console', 'Dash', ((xh - 0.1 + xd0) / 2, 0, (zf + hip + 0.08) / 2), (xd0 - xh + 0.1, 0.2, hip + 0.08 - zf), bevel=0.02)
+        self.box('lever', 'Chrome', (xh + 0.32, 0, hip + 0.13), (0.03, 0.03, 0.1), bevel=0.01)
+
     # ------------------------------------------------------------ finish
     def join(self, lift=0.0):
         """merge every part into the Body object; `lift` raises the whole body (Dakar) - wheels are placed after"""
         if self.bvh is not None and getattr(self, 'wheel_spec', None) and not getattr(self, 'no_details', False): self.details()
+        if self.bvh is not None and getattr(self, 'wheel_spec', None): self.number_plates(); self.open_cabin()
         self.activate(self.body)
         for o in self.parts: o.select_set(True)
         bpy.ops.object.join()

@@ -243,6 +243,7 @@ def cybercab(k):
     k.light_bar(-1.0, 0.905, 0.93, 0.55, bg=0.012, frac=0.8)
     k.fan('diffuser', 'Gloss', -1.0, 0.30, 0.44, -0.60, 0.60, 30, 3)
     k.interior(-0.30, 1.40, 0.76, l=2.0, h=0.38, seats_x=-0.30, seat_z=0.86)    # two seats, a screen, no wheel
+    k.no_wheel = True
     k.box('screen', 'Gloss', (0.55, 0, 1.00), (0.06, 0.70, 0.22), rot=(0, math.radians(-25), 0), bevel=.01)
     k.join(); k.wheels(spokes=16, nut='bolts', spoke_w=(0.016, 0.06))    # near-closed aero covers
 

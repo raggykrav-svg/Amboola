@@ -18,9 +18,6 @@ from porsches import TTAY, TCAY_SUV
 from teslas import glass, TAY_WS, TAY_RW, TAY_TOP, TAY_BOT
 from toyota import CAY_WS, SUV_RW, SUV_TOP, SUV_BOT
 
-def extras(k):
-    k.M['Plate'] = k.material('Plate', (0.86, 0.87, 0.84), rough=0.4)      # white Japanese number plates
-
 def plates(k, front, rear):
     """number plates: front/rear = (x, z) on the nose and tail"""
     k.rect('plate', 'Plate', (front[0], 0, front[1]), (1, 0, 0), 0.33, 0.165, .008, 4, 2)
@@ -45,7 +42,6 @@ def saloon(k, police=False):
     xs = [(-2.50, -2.40), (-1.40, -1.40), (1.50, 1.45), (2.48, 2.40)]; ys = 0.915
     zf = lambda z: z * 0.93 + 0.08 + max(0.0, z - 0.90) * 0.15
     X = lambda x: pl(xs, x)
-    extras(k)
     k.loft(stations(remap(TTAY, xs, ys, zf)), levels=2, **SOFT)
     k.arches(dict(F=dict(x=1.45, r=0.32, w=0.21, y=0.77, rim=0.229), R=dict(x=-1.40, r=0.32, w=0.21, y=0.77, rim=0.229))); k.surface()
     if police: two_tone(k, 0.70, 1.2, 0.22)
@@ -75,7 +71,6 @@ def taxi(k):
     xs = [(-2.48, -2.35), (-1.40, -1.40), (1.50, 1.45), (2.46, 2.35)]; ys = 0.865
     zf = lambda z: z * 0.92 + 0.06
     X = lambda x: pl(xs, x)
-    extras(k)
     k.loft(stations(remap(TCAY_SUV, xs, ys, zf)), levels=2, **SOFT)
     k.arches(dict(F=dict(x=1.45, r=0.31, w=0.20, y=0.74, rim=0.20), R=dict(x=-1.40, r=0.31, w=0.20, y=0.74, rim=0.20))); k.surface()
     glass(k, X, zf, CAY_WS, SUV_RW, SUV_TOP, SUV_BOT, pillars=[-0.15, -1.25])
@@ -117,7 +112,6 @@ def boxy_face(k, nose_x, lamp, grille, bumper, lamp_w=0.26, lamp_h=0.12):
     k.fan('bumperF', 'Black', nose_x - 0.6, bumper[0], bumper[1], -0.95, 0.95, 30, 2, rear=False)
 
 def kei(k):
-    extras(k)
     k.loft(stations(KEI), levels=2, crease_lines=0.6, crisp_front=-9, crisp=0.5)
     k.arches(dict(F=dict(x=1.15, r=0.29, w=0.17, y=0.62, rim=0.18), R=dict(x=-1.15, r=0.29, w=0.17, y=0.62, rim=0.18))); k.surface()
     k.windscreen(1.27, 1.09, 1.04, 2.5, 0.56, 0.50, sweep=0.04, trim=0.025)
@@ -144,7 +138,6 @@ VAN = [(2.35, .34, .76, .48, .76, .66, .74, .80, .64, .92, .94),
        (-2.35, .30, .80, .52, .80, .80, .79, 1.04, .76, 1.90, 1.92)]
 
 def van(k):
-    extras(k)
     k.loft(stations(VAN), levels=2, crease_lines=0.7, crisp_front=-9, crisp=0.6)
     k.arches(dict(F=dict(x=1.55, r=0.31, w=0.19, y=0.73, rim=0.19), R=dict(x=-1.45, r=0.31, w=0.21, y=0.73, rim=0.19))); k.surface()
     k.windscreen(2.13, 1.74, 1.12, 1.75, 0.66, 0.60, sweep=0.05, trim=0.025)
@@ -170,7 +163,6 @@ TRUCK = [(3.25, .40, 1.02, .58, 1.02, .90, 1.00, 1.15, .96, 2.30, 2.32),
          (-3.25, .40, .96, .58, .96, .80, .95, .90, .92, .94, .95)]
 
 def truck(k):
-    extras(k)
     k.flare_amt = 0.0
     k.loft(stations(TRUCK), levels=2, crease_all=0.85)
     k.arches(dict(F=dict(x=2.40, r=0.38, w=0.24, y=0.86, rim=0.24), R=dict(x=-1.70, r=0.38, w=0.28, y=0.86, rim=0.24))); k.surface()
