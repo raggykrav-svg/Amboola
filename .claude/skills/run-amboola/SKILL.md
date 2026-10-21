@@ -415,3 +415,25 @@ Model gotchas:
 - Settings: `setQuality(v)` (also used by the garage's graphics buttons; it re-points the render pass at the title scene), `diff` in `amboola.diff` (`DIFFS.easy/medium/hard`: `ai` multiplies `RaceAI` and `StreetRacer` target speeds, `react` is added to drag rivals' launch delay, `animal` multiplies the chase speed of lions and monkeys). With the same seeded rivals on the GP circuit, rivals cover about 6% less ground on Easy and 2.5% more on Hard than on Medium.
 - Challenges: `challengeLists()` gathers `MISSIONS` (`ST.done`), `STORY` (`ST.story`), `BADGES` (`LVL.badges`) and `SECRETS` (`secretFound`), and `renderChallenges()` draws the tab in `TITLE.tab`.
 - Rebuild the stage: `blender -b --factory-startup --python models/blender/title_screen.py -- [--render FILE]` (about 1.5 minutes with a Cycles render).
+
+## The sea
+
+- `SEA` holds the numbers: water `-1.2`, floor `-12`, `time` 50 s, `maxV` 12 m/s underwater, `quay` (Tokyo's harbour edge, `HALF + 40`), `shore` 160 m. `swim` is the dive in progress (`t` seconds left, `y`, `fall`/`float` phases, `leap`, `area`), or `null`.
+- **Ocean:** `buildOcean()` is one round grid (`r = 1.5 · 1.05^i` out to 30 km) moved to the drawing camera in `onBeforeRender`. The vertex shader adds 4 Gerstner `WAVES` (fading out 250–900 m from the camera), and the fragment shader discards north of `uSeaQuay` (that is land). Near the camera it is see-through, there is foam on the crests, and far away the roughness rises so the distance doesn't sparkle. `seaY(x, z)` is the same height in JS (boat and buoys ride it; the underwater test uses it). `buildSeaFloor()` adds the sand at `SEA.floor` with an animated caustics emissive map, plus the quay face.
+- **Getting in:**
+  - Tokyo: the south harbour edge has no wall now. `areaAt` treats the quay strip between the bridges as city, and `collideWorld` calls `seaEnter(p, null)` past `SEA.quay`.
+  - Islands: every country pad is `P.sea` with a beach `P.flat[i]` metres wide (40 round towns, 0 round the Dubai desert). Outside the rects `Pad.collide` follows `P.shoreAt()` (the same `shoreDrop()` profile that `countryGround` and `buildDesert` use for the ground meshes) and calls `seaEnter(p, P)` once the ground is 0.6 m under the water.
+  - `areaCollide` picks the sea pad for beach points that aren't on the bridge, and country area boxes are widened by 220 m round their rects.
+- **In the sea:** `collideWorld` hands over to `seaCollide()` first:
+  - teleport detection (more than 30 m in one step ends the dive);
+  - the Tokyo quay leap (drive north at it within ±(HALF−4));
+  - a wall elsewhere, plus walls round `ISLAND` and `VOLC`;
+  - `seaFloorAt()` (island beach slopes, else the floor);
+  - out when the floor is within 0.45 m of the surface;
+  - the 12 m/s speed cap.
+
+  Terrain `'sea'` gives sand-like grip and drag.
+- **Each step:** `updateSea(dt, p)` runs from `simStep`. It handles the fall, float and sink, the timer (beeps from 10 s, `seaRescue` at 0), the exit arrow (`seaExit`), bubbles (`SEA.bub`, a small `Smoke`), and seaweed and rocks (`seaLifePlace`, hashed 10 m cells around a 40 m snapped centre). Fish are 3 schools of instanced fish. When you're not in the sea it runs `seaDrip` instead, which places wet patches for 25 s after a dive.
+- **Each frame:** `seaView()` runs after the camera moves. It keeps the camera under the surface while the car is under, and toggles `SEA.under`: `#seaFx` overlay, blue fog, muffled audio, no sun flare.
+- `seaRescue(p)` puts you on the country's bridge road inside its town (`A.R.place(p, n - 12)`), or on the Tokyo harbour road. `resetToRoad()` (R) does the same while you're in the sea. `bump('seaDives')` gives the `diver` badge.
+- **Test:** drive `simStep` with throttle off the quay at `x: -400, z: 812, heading: 0` (between the boat ramp and the Paris bridge); within about 4 s `swim` is set. Then it sinks to -12 in about 9 s, and heading north at full throttle leaps out at `z ≈ 841`. Dubai's beach: start at `x: 16440, z: 14520, heading: π/2`. Set `swim.t = .4` to see the rescue.

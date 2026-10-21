@@ -24,7 +24,7 @@ The game opens on a night-time Tokyo stage made in Blender: a big chrome-and-ora
   - **Game mode:** 😊 Easy, 🙂 Medium or 😈 Hard. On Easy, race rivals drive slower, drag racers start late and the jungle lions and monkeys run slower. On Hard, everyone is quicker.
   - **Sound:** on or off.
   - **Race music:** the AMBOOLA songs, 🦂 Scorpions songs on Spotify (or your own playlist), or off.
-- **🏆 CHALLENGES**: every challenge in the game and whether you did it yet: 39 missions, 9 story chapters, 19 badges and 7 secret cars. Done ones are green with a ✅, and the bar shows how many you did in all.
+- **🏆 CHALLENGES**: every challenge in the game and whether you did it yet: 39 missions, 9 story chapters, 20 badges and 7 secret cars. Done ones are green with a ✅, and the bar shows how many you did in all.
 
 To come back to the title screen: in the garage press **💾 SAVE & QUIT → 🏠 TITLE SCREEN**.
 
@@ -467,6 +467,24 @@ Crash into something fast enough and it breaks!
   - **Monkeys** jump onto your roof, slow you down and throw a 🍌 at your window. Shake them off by steering left, right, left, right.
   - The camp clearing is safe: the animals never come in there.
   - Find both pieces and the **AMBOOLA Taiyō** is yours. You swap straight into it, and it is in your garage too. You can only win it this way. Play again at the **🧩 Taiyō Hunt** ring in the camp; once you own the Taiyō, finishing the hunt pays $100,000.
+
+### The sea 🌊
+
+![Waves, under the sea, and coming out wet](media/sea.jpg)
+
+- **The sea moves like a real sea:** waves roll across it with white foam on the tops. Boats bob up and down on them.
+- **Drive right in.** You can drive into the sea off the Tokyo harbour quay, or down the beach of any country island (the Dubai desert too). The car splashes in, floats for a moment and then sinks to the sandy sea floor, 11 m down.
+- **Under the water:**
+  - The screen turns blue, bubbles rise and light ripples across the sand.
+  - Seaweed sways and little fish swim round your car.
+  - The car can still drive along the bottom, slowly.
+  - Up from below you can see the waves moving on the surface.
+- **50 seconds to get out!** A big timer counts down, and an arrow shows the nearest way out.
+  - Drive back up a beach.
+  - Or drive at the Tokyo quay: the car jumps out of the water like a dolphin 🐬.
+- **Too slow?** The coastguard rescues you 🛟 and brings you back to the town of the country you are in. Press **R** to be rescued straight away.
+- **Wet car:** the sea washes your car clean. For a while after, it drips water and leaves dark wet patches on the ground behind it. They show up best on the Dubai desert sand.
+- Your first dive earns the **🐠 Deep diver** badge.
 
 ### Faster loading on phones
 - Only your own car's model loads at the start; the others load quietly in the background while you drive.

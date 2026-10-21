@@ -345,6 +345,19 @@
   #dailyhud { position:absolute; left:22px; top:108px; max-width:min(520px, 60vw); font-size:12px; letter-spacing:.06em; color:#ffe9a8; text-shadow:0 1px 4px #000; }
   #dailyhud b { color:#ffc21f; letter-spacing:.12em; } #dailyhud i { font-style:normal; color:#2fe0ff; }
   #radiohud { position:absolute; right:48px; bottom:318px; font-size:12px; letter-spacing:.14em; color:#2fe0ff; text-shadow:0 1px 4px #000; }
+  #seaFx { position:fixed; inset:0; z-index:9; pointer-events:none; overflow:hidden;
+    background:linear-gradient(180deg, rgba(130,225,255,.26) 0%, rgba(20,125,175,.34) 45%, rgba(3,40,80,.58) 100%); }
+  #seaFx::before { content:''; position:absolute; inset:-30% -60%; background:repeating-linear-gradient(104deg, rgba(220,250,255,.09) 0 26px, transparent 26px 120px); animation:seaRays 11s linear infinite; }
+  @keyframes seaRays { to { transform:translateX(240px); } }
+  #seaFx i { position:absolute; bottom:-40px; border-radius:50%; border:2px solid rgba(255,255,255,.6); background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.75), rgba(255,255,255,.06) 62%); animation:seaBub linear infinite; }
+  @keyframes seaBub { 0% { transform:translate(0,0); opacity:0; } 8% { opacity:.9; } 100% { transform:translate(var(--dx),-118vh); opacity:.15; } }
+  #seaHud { position:absolute; left:50%; top:64px; transform:translateX(-50%); text-align:center; text-shadow:0 2px 8px #002; pointer-events:none; }
+  #seaHud b { display:inline-block; vertical-align:middle; margin-right:14px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:52px; line-height:1; color:#fff; text-shadow:0 0 18px #2fe0ff, 0 3px 0 #0a4a6a; }
+  #seaHud > div { display:inline-block; vertical-align:middle; }
+  #seaHud span { display:block; margin:2px 0 0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:15px; letter-spacing:.16em; color:#bff3ff; }
+  #seaHud em { display:inline-block; font-style:normal; font-size:30px; color:#ffd02d; transition:transform .15s; } #seaHud small { margin-left:8px; font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.12em; color:#ffd02d; vertical-align:8px; }
+  #seaHud.warn b { color:#ff4a4a; text-shadow:0 0 22px #ff2a2a, 0 3px 0 #600; animation:pulse .5s infinite; }
+  @media (max-width: 760px) { #seaHud { top:118px; } #seaHud b { font-size:40px; } #seaHud span { font-size:11px; } }
   #spotBox { position:absolute; left:18px; bottom:256px; width:320px; height:152px; pointer-events:auto; border-radius:12px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,.6); background:#121212; }
   #spotBox iframe { display:block; border:0; width:100%; height:100%; }
   @media (max-width: 760px), (max-height: 560px) { #spotBox { left:50%; bottom:auto; top:66px; transform:translateX(-50%); width:260px; height:80px; } }
@@ -518,6 +531,7 @@
   <div id="disclaimer">Fan-made game · not affiliated with or endorsed by any car maker · model names used for reference only</div>
 </div>
 
+<div id="seaFx" class="hidden"></div>
 <div id="hud" class="hidden">
   <div id="carname"></div>
   <div id="helpbtn">[H] CONTROLS</div>
@@ -525,6 +539,7 @@
   <div id="dailyhud"></div>
   <div id="radiohud"></div>
   <div id="spotBox" class="hidden"><div id="spotEmbed"></div></div>
+  <div id="seaHud" class="hidden"><b id="seaT">50</b><div><em id="seaArrow">⬆</em><small id="seaDist"></small></div><span>GET OUT OF THE WATER! · 水から出て!</span></div>
   <div id="fuelBar"><small>⛽</small><i></i></div>
   <div id="help" class="hidden">
     <div><kbd>W / ↑</kbd>Throttle</div><div><kbd>S / ↓</kbd>Brake / Reverse</div><div><kbd>A D / ← →</kbd>Steer</div>
@@ -940,7 +955,7 @@ function hzUniforms() {
   U.sharp.value = low ? 0 : .22; U.blur.value = low || state !== 'drive' ? 0 : HZ.blur;
   // where is the sun on screen? (only in the open world, and only when it is in front of us)
   let on = 0;
-  if (cam === camera && state !== 'garage' && HZ.flare + HZ.rays > 0) {
+  if (cam === camera && state !== 'garage' && !SEA.under && HZ.flare + HZ.rays > 0) {
     const v = HZ.v.copy(camera.position).addScaledVector(sunDir, 3000).project(camera);
     if (v.z < 1) { U.sunUV.value.set(v.x * .5 + .5, v.y * .5 + .5); on = clamp(1.6 - Math.max(Math.abs(v.x), Math.abs(v.y)), 0, 1); }
   }
@@ -1516,14 +1531,13 @@ async function buildWorld() {
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground); seasonLook.ground = ground.material;
   const land = new THREE.Mesh(new THREE.PlaneGeometry(26000, 26000), new THREE.MeshStandardMaterial({ color: 0x3b4336, roughness: 1 }));
   land.rotation.x = -Math.PI / 2; land.position.set(0, -.2, -13000 + HALF + 40); scene.add(land); seasonLook.land = land.material;
-  ocean = new THREE.Mesh(new THREE.PlaneGeometry(80000, 40000), new THREE.MeshStandardMaterial({ color: 0x1d4f73, roughness: .08, metalness: .6 }));
-  ocean.rotation.x = -Math.PI / 2; ocean.position.set(0, -1.2, HALF + 40 + 20000); scene.add(ocean);
+  ocean = buildOcean(); scene.add(ocean); buildSeaFloor();
   // seawall
   const sea = new GB(); sea.box(0, -1.5, HALF + 41, HALF * 2 + 80, 1.8, 2, 16, 32, 0, [.6, .6, .6]);
   scene.add(new THREE.Mesh(sea.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9 })));
   const edgeWall = (z, gaps) => { let x = -HALF - 50; for (const g of [...gaps].sort((a, b) => a - b)) { addCol(x, z - 1, g - 9, z + 1); x = g + 9; } addCol(x, z - 1, HALF + 50, z + 1); };
   edgeWall(-HALF - 6, [rc(1)]);                              // north: the Snow Pass gate
-  edgeWall(HALF + 6, [...COUNTRY_DEFS.map(d => d.gx), BOAT.x]);   // …and the boat ramp           // south harbour: the three country bridges
+  // (no wall on the south harbour edge: drive off the quay and you splash into the sea)
 
   // ---- roads
   const rg = new GB(), ig = new GB(), xg = new GB();
@@ -2398,6 +2412,7 @@ const BADGES = [
   { id: 'world', n: '🌍 Explorer', d: 'Visit 5 countries', v: () => COUNTRY_DEFS.filter(c => ST.visited?.includes(c.id)).length >= 5 }, { id: 'lv10', n: '⭐ Superstar', d: 'Reach level 10', v: () => myLevel() >= 10 },
   { id: 'festival', n: '🏮 Festival winner', d: 'Win the lantern race', v: () => (ST.lanternWins || 0) >= 1 }, { id: 'builder', n: '🏗 Track builder', d: 'Race your own track', v: () => (ST.buildRaces || 0) >= 1 },
   { id: 'king', n: '👑 Champion', d: 'Beat the Shadow King', v: () => (ST.bossKing || 0) >= 1 },
+  { id: 'diver', n: '🐠 Deep diver', d: 'Drive into the sea', v: () => (ST.seaDives || 0) >= 1 },
 ];
 function checkBadges() {
   if (!LVL) return;
@@ -2856,6 +2871,7 @@ class Player {
   dispose() { scene.remove(this.car.group); }
   resetToRoad() {
     if (soccer) return soccerReset(this);
+    if (swim) return seaRescue(this);
     if (boat) { boatExit(this); Object.assign(this, { x: BOAT.x - 4, z: HALF - 14, heading: Math.PI, vx: 0, vz: 0, y: 0, yawRate: 0 }); return; }
     if (skids) { skids.lift(0); skids.lift(1); }
     Object.assign(this, { air: false, loop: null, vy: 0, ap: 0, ar: 0, pitchG: 0, rollG: 0, wreckT: 0, airS: null });
@@ -2871,7 +2887,7 @@ class Player {
     if (this.air) return this.airUpdate(dt, inp);
     if (this.wreckT > 0) { this.wreckT -= dt; inp = { throttle: 0, brake: 0, steer: 0, handbrake: 1, nitro: 0 }; }   // a crash landing: skid to a stop, then flip back
     const s = this.spec;
-    const off = this.terrain === 'sand' ? offroadOf(s) : this.terrain === 'water' ? .1 : -1;   // sand: rally cars keep their grip, low supercars slither and bog down
+    const off = this.terrain === 'sand' ? offroadOf(s) : this.terrain === 'water' || this.terrain === 'sea' ? .1 : -1;   // sand: rally cars keep their grip, low supercars slither and bog down
     const gripK = s.grip * surfGrip * (off >= 0 ? lerp(.56, .96, off) : 1);
     const fx = Math.sin(this.heading), fz = Math.cos(this.heading), rx = -fz, rz = fx;
     let vf = this.vx * fx + this.vz * fz, vr = this.vx * rx + this.vz * rz;
@@ -3047,6 +3063,7 @@ function collideWorld(p) {
   }
   p.gx = p.gz = 0; p.terrain = null;
   if (soccer) { p.y = 0; p.slope = 0; p.surf = 'track'; return Math.max(hit, soccerCollide(p)); }
+  if (swim) { const h = seaCollide(p); if (h !== null) return Math.max(hit, h); }
   if (boat || (p.z > HALF + 5 && Math.abs(p.x - BOAT.x) < 7.2 && p.z < BOAT.z1)) { const h = boatCollide(p); if (h !== null) return Math.max(hit, h); }
   if (race) { p.y = 0; p.slope = 0; p.surf = 'track'; return Math.max(hit, trackCollide(p)); }
   if (drag) { p.y = 0; p.slope = 0; p.surf = 'drag'; return Math.max(hit, dragCollide(p)); }
@@ -3056,7 +3073,8 @@ function collideWorld(p) {
   const lim = HALF + 7;
   const toMountain = p.x < 0 && Math.abs(p.z - MTN.gateZ) < 6.5; // the west gate: the road out to Mt. Amboola
   if (Math.abs(p.x) > lim && !toMountain && !atGate(p)) { p.x = Math.sign(p.x) * lim; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.3; }
-  if (Math.abs(p.z) > lim && !atGate(p) && !(p.z > 0 && Math.abs(p.x - BOAT.x) < 7.2)) { p.z = Math.sign(p.z) * lim; hit = Math.max(hit, Math.abs(p.vz)); p.vz *= -.3; }
+  if (p.z > SEA.quay - .3) { if (seaOK(p)) { seaEnter(p, null); return Math.max(hit, seaCollide(p) ?? 0); } if (!p.air) p.z = SEA.quay - .3; }   // off the quay edge: splash!
+  if (p.z < -lim && !atGate(p)) { p.z = -lim; hit = Math.max(hit, Math.abs(p.vz)); p.vz *= -.3; }
   return hit;
 }
 
@@ -5459,6 +5477,11 @@ class Pad {
     for (let i = Math.floor(x0 / 40); i <= Math.floor(x1 / 40); i++) for (let j = Math.floor(z0 / 40); j <= Math.floor(z1 / 40); j++) { const k = i * 100000 + j; if (!this.grid.has(k)) this.grid.set(k, []); this.grid.get(k).push(b); }
   }
   yAt(x, z) { return typeof this.y === 'function' ? this.y(x, z) : this.y; }
+  shoreAt(x, z) {   // ground height round an island: the beach (flat[i] metres wide) and then the slope down to the sea floor
+    let y = SEA.floor;
+    this.rects.forEach(([x0, z0, x1, z1], i) => { const f = this.flat?.[i] ?? 0, d = Math.hypot(Math.max(x0 - f - x, 0, x - x1 - f), Math.max(z0 - f - z, 0, z - z1 - f)); y = Math.max(y, d > 0 ? shoreDrop(d) : 0); });
+    return y;
+  }
   collide(p) {
     p.y = this.yAt(p.x, p.z); let hit = 0;
     const gr = this.grad ? this.grad(p.x, p.z) : null; p.gx = gr ? gr[0] : 0; p.gz = gr ? gr[1] : 0;   // ground slope (dunes)
@@ -5482,6 +5505,12 @@ class Pad {
     }
     // edges: stay inside the union of rectangles unless driving out through a route mouth
     if (!this.inside(p.x, p.z, -1.1) && !this.mouths.some(m => Math.hypot(p.x - m.x, p.z - m.z) < m.r)) {
+      if (this.sea) {   // an island: the beach goes on past the edge and slopes down into the sea
+        const e = .6, g = this.shoreAt(p.x, p.z), gx = (this.shoreAt(p.x + e, p.z) - this.shoreAt(p.x - e, p.z)) / (2 * e), gz = (this.shoreAt(p.x, p.z + e) - this.shoreAt(p.x, p.z - e)) / (2 * e);
+        p.y = g; p.gx = gx; p.gz = gz; p.slope = gx * Math.sin(p.heading) + gz * Math.cos(p.heading); p.terrain = 'sand';
+        if (g < SEA.water - .6 && seaOK(p)) seaEnter(p, this);
+        return hit;
+      }
       let best = null;
       for (const [x0, z0, x1, z1] of this.rects) { const qx = clamp(p.x, x0 + 1.1, x1 - 1.1), qz = clamp(p.z, z0 + 1.1, z1 - 1.1), d = Math.hypot(p.x - qx, p.z - qz); if (!best || d < best.d) best = { qx, qz, d }; }
       if (best && best.d > 0) {
@@ -6021,10 +6050,11 @@ const AREAS = [
 ];
 function areaAt(x, z) {
   if (Math.abs(x) < HALF + 9 && Math.abs(z) < HALF + 9) return null;
+  if (Math.abs(x) < HALF + 9 && z > 0 && z < SEA.quay + 2 && !COUNTRY_DEFS.some(d => Math.abs(x - d.gx) < 13.5)) return null;   // the harbour quay between the bridges
   let best = null, bd = Infinity;
   for (const A of AREAS) {
     const [x0, z0, x1, z1] = A.box; if (x < x0 || x > x1 || z < z0 || z > z1) continue;
-    const d = A.pads.some(P => P.inside(x, z, 4)) ? 0 : (A.R.near(x, z, 60)?.d ?? 1e6);
+    const d = A.pads.some(P => P.inside(x, z, P.sea ? SEA.shore : 4)) ? 0 : (A.R.near(x, z, 60)?.d ?? 1e6);
     if (d < bd) { bd = d; best = A; }
   }
   return best;
@@ -6036,6 +6066,7 @@ function areaCollide(p) {
   const A = areaAt(p.x, p.z); if (!A) return null;
   if (areaNow !== A) { areaNow = A; A.R.hint = -1; }
   let pad = A.pads.find(P => P.inside(p.x, p.z, 1.5));
+  if (!pad) { const nr = A.R.near(p.x, p.z, 80); if (!(nr && nr.d < A.R.w / 2 + 2)) pad = A.pads.find(P => P.sea && P.inside(p.x, p.z, SEA.shore)); }   // on an island's beach
   if (!pad) {   // off the road and off the pads (only after a teleport or a big shove): go back to whichever is nearer
     const nr = A.R.near(p.x, p.z, 80); let best = nr ? nr.d : 1e9;
     for (const P of A.pads) for (const [rx0, rz0, rx1, rz1] of P.rects) { const d = Math.hypot(p.x - clamp(p.x, rx0, rx1), p.z - clamp(p.z, rz0, rz1)); if (d < best) { best = d; pad = P; } }
@@ -6246,7 +6277,7 @@ function buildDesert(C) {
   const base = new THREE.Color('#ecc98c'), dark = new THREE.Color('#c99a5a'), lite = new THREE.Color('#f7e2b3'), c = new THREE.Color();
   for (let j = 0, k = 0; j <= nz; j++) for (let i = 0; i <= nx; i++, k++) {
     const x = x0 + i * S, z = z0 + j * S, out = Math.hypot(Math.max(0, x - D.x1), Math.max(D.z0 - z, 0, z - D.z1));
-    const y = x < D.x0 ? -.04 : out > 0 ? -Math.min(4, out * .06) - .1 : duneH(x, z);
+    const y = x < D.x0 ? -.04 : out > 0 ? shoreDrop(out) : duneH(x, z);
     pos.set([x, y, z], k * 3); uv.set([x / 9, z / 9], k * 2);
     const [gx, gz] = x < D.x0 || out > 0 ? [0, 0] : duneGrad(x, z), lee = clamp(-(gx * .939 + gz * .343) * 3, 0, 1);
     c.copy(base).lerp(lite, clamp(y / 10, 0, .6)).lerp(dark, lee * .55 + (out > 0 ? clamp(out / 40, 0, .5) : 0)); c.multiplyScalar(.95 + .05 * Math.sin(x * .7) * Math.sin(z * .6));
@@ -6396,6 +6427,7 @@ for (const C of COUNTRIES) C.P.air = true;   // free roam: cars can fly off the 
   C.P.rects.push([D.x0 - 2, D.z0, D.x1, D.z1]); C.P.y = duneH; C.P.grad = (x, z) => x > D.x0 ? duneGrad(x, z) : null;
   C.P.terrain = (x, z) => x < D.x0 + 4 ? null : Math.hypot(x - o[0], z - o[1]) < o[2] - 4 ? 'water' : 'sand';
 }
+for (const C of COUNTRIES) { C.P.sea = true; C.P.flat = C.P.rects.map((r, i) => i ? 0 : 40); }   // islands in the sea: a 40 m beach round each town (the desert slopes straight in)
 function buildBridgeRoad(R, P, label) {
   const conc = new THREE.MeshStandardMaterial({ color: 0xb9b7b0, roughness: .85, side: THREE.DoubleSide });
   const roadMat = new THREE.MeshStandardMaterial({ map: HWY_TEX(), roughness: .75, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
@@ -6444,7 +6476,7 @@ function countryGround(C, sandCol, groundCol) {
   const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), sand = new THREE.Color(sandCol), gr = new THREE.Color(groundCol), c = new THREE.Color();
   for (let v = 0; v < pos.count; v++) {
     const x = pos.getX(v), z = pos.getZ(v), out = Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1)), inner = Math.min(x - C.x0, C.x1 - x, z - C.z0, C.z1 - z);
-    pos.setY(v, out > 0 ? Math.max(-4, -out * .06 - .1) : 0);
+    pos.setY(v, out > 0 ? shoreDrop(out) : 0);
     c.copy(inner < 12 ? sand : gr).multiplyScalar(.92 + Math.sin(x * .3) * Math.sin(z * .27) * .05); cols.set([c.r, c.g, c.b], v * 3);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(cols, 3)); geo.computeVertexNormals();
@@ -7515,6 +7547,7 @@ for (const C of COUNTRIES) {
   const xs = [...C.R.x, C.x0, C.x1, ...(C.desert ? [C.desert.x1] : [])], zs = [...C.R.z, C.z0, C.z1, ...(C.desert ? [C.desert.z0, C.desert.z1] : [])];
   AREAS.push({ id: C.id, name: C.name, R: C.R, pads: [C.P], gate: [C.gx, HALF], col: C.col, country: C,
     box: [Math.min(...xs) - 200, Math.max(HALF + 9, Math.min(...zs) - 200), Math.max(...xs) + 200, Math.max(...zs) + 400], visit: { n: C.name.toUpperCase(), jp: C.local, pad: C.P } });
+  { const B = AREAS[AREAS.length - 1].box; for (const [x0, z0, x1, z1] of C.P.rects) { B[0] = Math.min(B[0], x0 - 220); B[1] = Math.min(B[1], z0 - 220); B[2] = Math.max(B[2], x1 + 220); B[3] = Math.max(B[3], z1 + 220); } }   // the beaches all round count too
 }
 // hide bridge chunks and towns that are far from the camera
 let cullT = 0;
@@ -10431,13 +10464,13 @@ function boatCollide(p) {
   if (onRamp(p)) {   // the ramp itself: a slope between two yellow walls
     const u = clamp((p.z - BOAT.z0) / (BOAT.z1 - BOAT.z0), 0, 1); p.y = -1.4 * u; p.slope = 0; p.surf = 'ramp'; p.terrain = null;
     const lx = p.x - BOAT.x; if (Math.abs(lx) > 6.1) { p.x = BOAT.x + Math.sign(lx) * 6.1; hit = Math.abs(p.vx); p.vx *= -.3; }
-    if (u > .75 && !boat) boatEnter(p);
+    if (u > .75 && !boat && !(SEA.noBoat > performance.now())) boatEnter(p);
     if (u < .6 && boat) boatExit(p);
     return hit;
   }
   if (!boat) return null;
   if (p.z < HALF) { boatExit(p); return null; }   // teleported away (map, garage…)
-  p.y = BOAT.water + .35 + Math.sin(performance.now() / 400) * .06; p.slope = 0; p.surf = 'boat'; p.terrain = 'water'; p.gx = p.gz = 0;
+  p.y = seaY(p.x, p.z) + .35; p.slope = 0; p.surf = 'boat'; p.terrain = 'water'; p.gx = p.gz = 0;
   const v = Math.hypot(p.vx, p.vz); if (v > BOAT.cap) { p.vx *= BOAT.cap / v; p.vz *= BOAT.cap / v; }
   // the sea: the harbour wall (except the ramp), the beach island, Volcano Island and the edge of the map
   const box = (x0, z0, x1, z1) => { if (p.x < x0 || p.x > x1 || p.z < z0 || p.z > z1) return; const o = [[p.x - x0, -1, 0], [x1 - p.x, 1, 0], [p.z - z0, 0, -1], [z1 - p.z, 0, 1]].sort((a, b) => a[0] - b[0])[0];
@@ -10448,6 +10481,233 @@ function boatCollide(p) {
   if (v > 4 && Math.random() < .9) { const fx = Math.sin(p.heading), fz = Math.cos(p.heading); spray.spray(p.x - fx * 2.8, p.z - fz * 2.8, -p.vx * .3, -p.vz * .3, 1, BOAT.water + .6); }
   return hit;
 }
+/* =====================================================================
+   THE SEA — real moving waves, and you can drive right in. Off the Tokyo harbour quay, or down the beach of any
+   island country (the Dubai desert too), the car splashes in, floats for a moment, then sinks to the sandy sea
+   floor 11 m down. Underwater the screen turns blue, bubbles rise, seaweed sways and fish swim round you, and the
+   car crawls along the bottom. You have 50 seconds to get out: drive back up a beach, or drive at the Tokyo quay
+   and the car jumps out like a dolphin. Too slow, and the coastguard rescues you to the town of the country you are
+   in (R does that straight away). Out of the sea the car is washed clean and drips for a while, leaving wet patches
+   behind it (dark spots on the desert sand).
+   The ocean is one round grid that follows the camera: the waves are 4 Gerstner waves moved in the shader (with a
+   scrolling ripple normal map on top), flattening out far away, and seaY() works out the same wave height in JS.
+   ===================================================================== */
+const SEA = { water: -1.2, floor: -12, time: 50, maxV: 12, quay: HALF + 40, shore: 160, sink: 1.5, under: false, wetT: 0, noBoat: 0,
+  U: { uSeaT: { value: 0 }, uSeaCam: { value: new THREE.Vector3() }, uSeaQuay: { value: HALF + 40 } } };
+const WAVES = [[.6, .8, .26, 46], [-.7, .71, .15, 25], [.96, -.28, .09, 14], [.2, .98, .05, 8]];   // direction, height (m), wavelength (m)
+let swim = null;
+const shoreDrop = o => Math.max(SEA.floor, -o * .06 - .1 - Math.max(0, o - 35) * .25);   // o metres past the beach: gentle into the water, then steeply down
+const seaOK = p => !race && !drag && !soccer && !boat && !p.air && !swim && state === 'drive';
+function seaY(x, z) {   // the water surface height here (the same waves as the shader)
+  const t = performance.now() / 1000, c = camera.position, f = 1 - smooth01(clamp((Math.hypot(x - c.x, z - c.z) - 250) / 650, 0, 1)); let y = SEA.water;
+  if (f > 0) for (const [dx, dz, a, L] of WAVES) { const l = Math.hypot(dx, dz), k = Math.PI * 2 / L; y += a * f * Math.sin(k * ((dx * x + dz * z) / l - Math.sqrt(9.8 / k) * t)); }
+  return y;
+}
+function seaFloorAt(x, z) {   // the bottom: the beach slopes round the islands, else the flat sea floor
+  let y = SEA.floor;
+  for (const C of COUNTRIES) { const P = C.P, b = P.sb ??= [Math.min(...P.rects.map(r => r[0])) - 140, Math.min(...P.rects.map(r => r[1])) - 140, Math.max(...P.rects.map(r => r[2])) + 140, Math.max(...P.rects.map(r => r[3])) + 140];
+    if (x > b[0] && x < b[2] && z > b[1] && z < b[3]) y = Math.max(y, P.shoreAt(x, z)); }
+  return y;
+}
+function buildOcean() {
+  const pos = [0, 0, 0], idx = [], SEG = 128, rings = []; for (let r = 1.5; r < 30000; r *= 1.05) rings.push(r);
+  for (const r of rings) for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2; pos.push(Math.cos(a) * r, 0, Math.sin(a) * r); }
+  for (let k = 0; k < SEG; k++) idx.push(0, 1 + (k + 1) % SEG, 1 + k);
+  for (let i = 0; i < rings.length - 1; i++) for (let k = 0; k < SEG; k++) { const a = 1 + i * SEG + k, b = 1 + i * SEG + (k + 1) % SEG, c = a + SEG, d = b + SEG; idx.push(a, b, c, b, d, c); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(pos.length / 3 * 2), 2)); g.setIndex(idx);
+  const rip = canvasTex(256, 256, (c, w, h) => {   // a tiling ripple normal map: sines with whole-number frequencies
+    const img = c.createImageData(w, h), H = (x, y) => Math.sin((x * 3 + y * 2) / w * 6.2832) * .5 + Math.sin((x * -5 + y * 7) / w * 6.2832 + 1.3) * .3 + Math.sin((x * 11 + y * 4) / w * 6.2832 + 2.1) * .2 + Math.sin((x * 2 - y * 13) / w * 6.2832 + .4) * .15;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const nx = (H(x - 1, y) - H(x + 1, y)) * 4, ny = (H(x, y - 1) - H(x, y + 1)) * 4, l = Math.hypot(nx, ny, 1), o = (y * w + x) * 4;
+      img.data[o] = (nx / l * .5 + .5) * 255; img.data[o + 1] = (ny / l * .5 + .5) * 255; img.data[o + 2] = (1 / l * .5 + .5) * 255; img.data[o + 3] = 255; }
+    c.putImageData(img, 0, 0);
+  }, { linear: true, repeat: true });
+  const m = new THREE.MeshStandardMaterial({ color: 0x1d4f73, roughness: .12, metalness: .55, normalMap: rip, normalScale: new THREE.Vector2(.22, .22), transparent: true, side: THREE.DoubleSide });
+  const W = WAVES.map(([dx, dz, a, L]) => { const l = Math.hypot(dx, dz), k = Math.PI * 2 / L; return `w(p, f, vec2(${(dx / l).toFixed(4)}, ${(dz / l).toFixed(4)}), ${a.toFixed(3)}, ${k.toFixed(5)}, ${Math.sqrt(9.8 / k).toFixed(4)}, d, nn);`; }).join('\n    ');
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, SEA.U);
+    sh.vertexShader = `uniform float uSeaT; uniform vec3 uSeaCam; varying vec3 vSeaW; varying float vSeaH;
+void w(vec2 p, float f, vec2 dir, float a, float k, float c, inout vec3 d, inout vec3 nn) {
+  float ph = k * (dot(dir, p) - c * uSeaT), A = a * f, Q = .8;
+  d += vec3(Q * A * dir.x * cos(ph), A * sin(ph), Q * A * dir.y * cos(ph));
+  nn += vec3(-dir.x * k * A * cos(ph), -Q * k * A * sin(ph), -dir.y * k * A * cos(ph));
+}
+` + sh.vertexShader
+      .replace('#include <beginnormal_vertex>', `vec3 seaWp = (modelMatrix * vec4(position, 1.)).xyz, d = vec3(0.), nn = vec3(0., 1., 0.); vec2 p = seaWp.xz;
+    float f = 1. - smoothstep(250., 900., distance(p, uSeaCam.xz));
+    ${W}
+    vec3 objectNormal = normalize(nn);`)
+      .replace('#include <begin_vertex>', 'vec3 transformed = position + d;')
+      .replace('#include <fog_vertex>', `#include <fog_vertex>
+  vSeaW = seaWp + d; vSeaH = d.y;
+  #ifdef USE_NORMALMAP
+  vNormalMapUv = (normalMapTransform * vec3(vSeaW.xz * .045, 1.)).xy;
+  #endif`);
+    sh.fragmentShader = 'uniform float uSeaQuay; uniform vec3 uSeaCam; varying vec3 vSeaW; varying float vSeaH;\n' + sh.fragmentShader
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n  if (vSeaW.z < uSeaQuay) discard;   // north of the harbour is land')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  float seaD = distance(vSeaW.xz, uSeaCam.xz);
+  diffuseColor.a *= mix(.6, 1., smoothstep(15., 260., seaD));   // see into the water close by
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.82, .9, .95), smoothstep(.2, .42, vSeaH) * .55);   // white foam on the wave tops`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(roughnessFactor, .42, smoothstep(40., 500., seaD));   // far away: a smooth sheen, no sparkle noise');
+  };
+  const o = new THREE.Mesh(g, m); o.frustumCulled = false; o.position.y = SEA.water;
+  o.onBeforeRender = (r, sc, cam) => {   // follow whichever camera is drawing; the waves stay put in the world
+    const c = SEA.U.uSeaCam.value.setFromMatrixPosition(cam.matrixWorld);   // (the car-reflection cube cameras sit inside a parent)
+    o.position.set(c.x, SEA.water, c.z); o.updateMatrixWorld();
+    const t = performance.now() / 1000; SEA.U.uSeaT.value = t; rip.offset.set(t * .011, t * .007);
+  };
+  return o;
+}
+function buildSeaFloor() {   // sand 11 m down (with shimmering light patterns) and the quay wall going down to it
+  const sand = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#b9a47a'; g.fillRect(0, 0, w, h); for (let k = 0; k < 900; k++) { g.fillStyle = `rgba(${Math.random() < .5 ? '255,240,200' : '90,70,40'},${.05 + Math.random() * .12})`; g.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 4, 1 + Math.random() * 2); } }, { repeat: true });
+  const caus = canvasTex(256, 256, (g, w, h) => {   // a tiling net of bright wavy lines
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 3; g.filter = 'blur(1.5px)';
+    for (let k = 0; k < 26; k++) { const x = Math.random() * w, y = Math.random() * h, r = 20 + Math.random() * 30;
+      for (const [ox, oy] of [[0, 0], [w, 0], [-w, 0], [0, h], [0, -h]]) { g.beginPath(); g.ellipse(x + ox, y + oy, r, r * (.6 + Math.random() * .4), Math.random() * 3, 0, Math.PI * 2); g.stroke(); } }
+  }, { repeat: true });
+  sand.repeat.set(80000 / 10, 40000 / 10); caus.repeat.set(80000 / 14, 40000 / 14); SEA.caus = caus;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(80000, 40000), new THREE.MeshStandardMaterial({ map: sand, roughness: 1, color: 0x9fb4b0, emissive: 0x6fd4f0, emissiveMap: caus, emissiveIntensity: .22 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, SEA.floor - .05, SEA.quay + 20000); scene.add(floor);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(HALF * 2 + 80, -SEA.floor + .2), new THREE.MeshStandardMaterial({ color: 0x6f7378, roughness: .95 }));
+  wall.position.set(0, SEA.floor / 2, SEA.quay + .05); scene.add(wall);
+}
+function buildSeaLife() {   // seaweed, rocks and fish round you while you are in the sea; bubbles from the car
+  const L = SEA.life = new THREE.Group(); L.visible = false; scene.add(L);
+  const wm = new THREE.MeshStandardMaterial({ color: 0x2f9a45, roughness: .8, side: THREE.DoubleSide });
+  wm.onBeforeCompile = sh => { Object.assign(sh.uniforms, SEA.U); sh.vertexShader = 'uniform float uSeaT;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+    float ph = instanceMatrix[3].x * .37 + instanceMatrix[3].z * .23;
+    transformed.x += sin(uSeaT * 1.4 + ph + position.y * .8) * .14 * position.y; transformed.z += cos(uSeaT * 1.1 + ph) * .08 * position.y;`); };
+  SEA.weed = new THREE.InstancedMesh(new THREE.PlaneGeometry(.4, 2.8, 1, 6).translate(0, 1.4, 0), wm, 900);
+  SEA.rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: 0x626a70, roughness: .95, flatShading: true }), 160);
+  const body = new THREE.SphereGeometry(1, 10, 6).scale(.07, .13, .24), tail = new THREE.ConeGeometry(.11, .16, 4).rotateX(-Math.PI / 2).scale(.35, 1, 1).translate(0, 0, -.3);
+  const fg = mergeGeometries([body.toNonIndexed(), tail.toNonIndexed()]);
+  SEA.fish = new THREE.InstancedMesh(fg, new THREE.MeshStandardMaterial({ roughness: .35, metalness: .25 }), 40);
+  const fc = ['#ff8a1f', '#ffd02d', '#2fb8ff', '#ff5fa2', '#7dff3a', '#ffffff'], c = new THREE.Color();
+  for (let k = 0; k < 40; k++) SEA.fish.setColorAt(k, c.set(fc[k % fc.length]));
+  for (const m of [SEA.weed, SEA.rocks, SEA.fish]) { m.frustumCulled = false; L.add(m); }
+  SEA.bub = new Smoke(160); SEA.bub.mat.uniforms.tint.value.setRGB(.85, .97, 1); SEA.bub.grow = .04;
+  for (let k = 0; k < 16; k++) { const i = document.createElement('i'), s = 6 + Math.random() * 16; i.style.cssText = `left:${Math.random() * 100}%;width:${s}px;height:${s}px;--dx:${(Math.random() - .5) * 120}px;animation-duration:${3 + Math.random() * 4}s;animation-delay:${-Math.random() * 6}s`; $('seaFx').appendChild(i); }
+  const dm = new THREE.MeshBasicMaterial({ color: 0x140c04, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  SEA.drops = Array.from({ length: 70 }, () => { const m = new THREE.Mesh(new THREE.CircleGeometry(1, 14), dm.clone()); m.visible = false; m.life = 0; scene.add(m); return m; }); SEA.dropK = 0;
+}
+const seaHash = (i, j, k) => { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(k, 1013904223); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+function seaLifePlace(cx, cz) {   // the same seaweed and rocks always grow in the same 10 m cells
+  const M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s = new THREE.Vector3(); let nw = 0, nr = 0;
+  for (let i = -12; i < 12; i++) for (let j = -12; j < 12; j++) {
+    const gi = Math.floor(cx / 10) + i, gj = Math.floor(cz / 10) + j;
+    for (let k = 0; k < 3; k++) {
+      const r = seaHash(gi, gj, k); if (r > .5) continue;
+      const x = gi * 10 + seaHash(gi, gj, k + 7) * 10, z = gj * 10 + seaHash(gi, gj, k + 13) * 10, y = seaFloorAt(x, z);
+      if (z < SEA.quay + 3 || y > SEA.water - 1.6) continue;
+      if (r < .07 && nr < 160) { const sc = .4 + seaHash(gi, gj, k + 21) * 1.3; M.compose(v.set(x, y, z), q.setFromEuler(e.set(r * 40, r * 90, 0)), s.set(sc * 1.3, sc * .7, sc)); SEA.rocks.setMatrixAt(nr++, M); }
+      else if (nw < 900) { const sc = .6 + seaHash(gi, gj, k + 31) * .9; M.compose(v.set(x, y, z), q.setFromEuler(e.set(0, r * 60, 0)), s.set(1, sc, 1)); SEA.weed.setMatrixAt(nw++, M); }
+    }
+  }
+  SEA.weed.count = nw; SEA.rocks.count = nr; SEA.weed.instanceMatrix.needsUpdate = SEA.rocks.instanceMatrix.needsUpdate = true;
+}
+function seaEnter(p, pad) {
+  if (!SEA.life) buildSeaLife();
+  const surf = SEA.water - .3;
+  swim = { t: SEA.time, y: Math.max(p.y, surf), fall: p.y > surf + .2, vy: 0, float: 1.6, area: pad ? AREAS.find(A => A.pads.includes(pad)) : null, lx: p.x, lz: p.z, leap: null, beep: 11, cell: null };
+  SEA.life.visible = true; $('seaHud').classList.remove('hidden', 'warn'); bump('seaDives');
+  toast('🌊 SPLASH! INTO THE SEA', 'GET OUT IN 50 SECONDS · UP A BEACH, OR JUMP OUT AT THE QUAY');
+  audio.burst?.({ type: 'lowpass', freq: 900, q: .6, gain: .9, dur: 1.4, thump: 34 });
+  for (let k = 0; k < 40; k++) spray.spray(p.x + rr(-2, 2), p.z + rr(-2, 2), p.vx * .3 + rr(-3, 3), p.vz * .3 + rr(-3, 3), 1, SEA.water + .3);
+}
+function seaCollide(p) {
+  const S = swim;
+  if (Math.hypot(p.x - S.lx, p.z - S.lz) > 30) { endSwim(p, false); return null; }   // moved by a teleport (map, races, reset)
+  S.lx = p.x; S.lz = p.z; p.slope = 0; p.gx = p.gz = 0; p.surf = 'sea'; p.terrain = 'sea'; p.air = false; p.vy = 0;
+  if (S.leap) { const u = Math.min(1, S.leap.t / .9); p.z = lerp(S.leap.z0, SEA.quay - 7, u); p.y = lerp(S.leap.y0, 0, u) + Math.sin(u * Math.PI) * 2.6; p.vz = Math.min(p.vz, -7); return 0; }
+  let hit = 0;
+  if (p.z < SEA.quay + 1.4) {   // the quay: in Tokyo, drive at it and the car jumps out; anywhere else it is a wall
+    if (Math.abs(p.x) < HALF - 4 && p.vz < -1.5) { S.leap = { t: 0, z0: p.z, y0: p.y }; SEA.noBoat = performance.now() + 4000; toast('🐬 JUMP!', 'OUT OF THE WATER'); return 0; }
+    p.z = SEA.quay + 1.4; if (p.vz < 0) { hit = -p.vz; p.vz *= -.3; }
+  }
+  const box = (x0, z0, x1, z1) => { if (p.x < x0 || p.x > x1 || p.z < z0 || p.z > z1) return; const o = [[p.x - x0, -1, 0], [x1 - p.x, 1, 0], [p.z - z0, 0, -1], [z1 - p.z, 0, 1]].sort((a, b) => a[0] - b[0])[0];
+    p.x += o[1] * o[0]; p.z += o[2] * o[0]; const vn = p.vx * o[1] + p.vz * o[2]; if (vn < 0) { p.vx -= 1.4 * vn * o[1]; p.vz -= 1.4 * vn * o[2]; hit = Math.max(hit, -vn); } };
+  box(ISLAND.x0, ISLAND.z0, ISLAND.x1, ISLAND.z1); box(VOLC.x0, VOLC.z0, VOLC.x1, VOLC.z1);   // the beach island and Volcano Island are rocky all round
+  const floor = seaFloorAt(p.x, p.z);
+  if (floor > SEA.water - .45) { endSwim(p, true); toast('🏖 OUT OF THE SEA!', 'YOUR CAR IS SPARKLING CLEAN'); return null; }   // up the beach and out
+  if (floor > S.y) S.y = floor;   // the bottom rises under you: ride up it
+  p.y = S.y;
+  const v = Math.hypot(p.vx, p.vz); if (v > SEA.maxV) { p.vx *= SEA.maxV / v; p.vz *= SEA.maxV / v; }
+  return hit;
+}
+function updateSea(dt, p) {
+  if (BOAT.buoys) for (const b of BOAT.buoys) b.position.y = seaY(b.position.x, b.position.z);
+  SEA.bub?.update(dt);
+  if (!swim) { seaDrip(dt, p); return; }
+  const S = swim, surf = SEA.water - .3, floor = seaFloorAt(p.x, p.z);
+  if (S.leap) {
+    S.leap.t += dt;
+    if (S.leap.t >= .9) { endSwim(p, true); Object.assign(p, { y: 0, z: SEA.quay - 7 }); camPos.y = Math.max(camPos.y, 2.6); return; }
+  } else if (S.fall) { S.vy -= 9.8 * dt; S.y += S.vy * dt; if (S.y <= surf) { S.y = surf; S.fall = false; S.vy = 0; } }   // off the quay: drop into the water
+  else if (S.float > 0) { S.float -= dt; S.y = Math.max(floor, surf + Math.sin(S.float * 6) * .08); }   // bob on the surface for a moment…
+  else S.y = Math.max(floor, S.y - SEA.sink * dt);   // …then sink
+  // the clock
+  S.t -= dt; const sec = Math.max(0, Math.ceil(S.t)); $('seaT').textContent = sec; $('seaHud').classList.toggle('warn', S.t <= 10);
+  if (S.t <= 10 && sec < S.beep) { S.beep = sec; audio.beep(sec ? 880 : 1320, .12); }
+  if (S.t <= 0) return seaRescue(p);
+  // which way is out
+  const ex = seaExit(p), cy = Math.atan2(camLook.x - camera.position.x, camLook.z - camera.position.z);
+  if (ex) { $('seaArrow').style.transform = `rotate(${cy - Math.atan2(ex.x - p.x, ex.z - p.z)}rad)`; $('seaDist').textContent = `${ex.n} ${Math.max(0, Math.round(ex.d))} m`; }
+  // bubbles, seaweed and fish
+  const B = SEA.bub; if (Math.random() < dt * (S.y < surf - .5 ? 14 : 4)) { B.emit(p.x + rr(-1, 1), p.z + rr(-1, 1), 0, 0, 1, S.y + .4); const q = B.p[B.k]; q.vy = rr(1.6, 2.8); q.vx = rr(-.3, .3); q.vz = rr(-.3, .3); q.s = rr(.06, .16); q.max = rr(2, 3.5); q.a = 1.6; }
+  const cell = `${Math.round(p.x / 40)},${Math.round(p.z / 40)}`; if (cell !== S.cell) { S.cell = cell; seaLifePlace(Math.round(p.x / 40) * 40, Math.round(p.z / 40) * 40); }
+  const t = performance.now() / 1000, M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1);
+  for (let k = 0; k < 40; k++) {   // three little schools circling the car
+    const sch = k % 3, a = t * (.35 + sch * .12) * (sch === 1 ? -1 : 1) + k * .16 + sch * 2.1, r = 6 + sch * 3 + Math.sin(k * 1.7) * 1.2, fy = Math.max(floor + .6, Math.min(surf - .5, p.y + 1 + sch * .9 + Math.sin(t * 1.3 + k) * .4));
+    v.set(p.x + Math.cos(a) * r, fy, p.z + Math.sin(a) * r); q.setFromAxisAngle(up, (sch === 1 ? Math.PI : 0) - a + Math.sin(t * 8 + k) * .15);
+    SEA.fish.setMatrixAt(k, M.compose(v, q, s));
+  }
+  SEA.fish.instanceMatrix.needsUpdate = true;
+}
+function seaExit(p) {   // the nearest way out: a beach, or the Tokyo quay to jump out at
+  let best = null; const tryPt = (x, z, n, d0) => { const d = Math.hypot(x - p.x, z - p.z) - d0; if (!best || d < best.d) best = { x, z, d, n }; };
+  if (Math.abs(p.x) < HALF + 400) tryPt(clamp(p.x, -HALF + 10, HALF - 10), SEA.quay, 'QUAY ·', 0);
+  for (const C of COUNTRIES) C.P.rects.forEach(([x0, z0, x1, z1], i) => tryPt(clamp(p.x, x0, x1), clamp(p.z, z0, z1), 'BEACH ·', (C.P.flat?.[i] ?? 0) + 10));
+  return best;
+}
+function seaRescue(p) {
+  const A = swim?.area; endSwim(p, true);
+  Object.assign(p, { vx: 0, vz: 0, yawRate: 0, air: false, vy: 0 });
+  if (A) { A.R.hint = -1; A.R.place(p, Math.max(0, A.R.n - 12), -1); }
+  else { p.x = clamp(p.x, -HALF + 30, HALF - 30); p.z = HALF - 12; p.y = 0; p.resetToRoad(); }
+  camPos.set(p.x - Math.sin(p.heading) * 8, (p.y || 0) + 3, p.z - Math.cos(p.heading) * 8);
+  toast('🛟 RESCUED!', `THE COASTGUARD BROUGHT YOU BACK TO ${A ? A.name.toUpperCase() : 'TOKYO'}`);
+}
+function endSwim(p, wet) {
+  if (!swim) return; swim = null;
+  $('seaHud').classList.add('hidden'); if (SEA.life) SEA.life.visible = false; seaUnder(false);
+  if (wet && p) { SEA.wetT = 25; dirt = 0; applyDirt(p.car); }   // the sea washed the car clean: now it drips
+}
+function seaUnder(on) {   // the camera is under the water: blue fog, blue screen, the waves seen from below
+  if (on === SEA.under) return; SEA.under = on;
+  $('seaFx').classList.toggle('hidden', !on);
+  if (on) SEA.fog0 = scene.fog.color.clone(); else if (SEA.fog0) scene.fog.color.copy(SEA.fog0);
+}
+function seaView() {   // after the camera has moved: is it under the water?
+  if (!swim) return seaUnder(false);
+  if (player.y < SEA.water - .9 && !swim.leap && camera.position.y > SEA.water - .7) { camPos.y = camera.position.y = SEA.water - .7; camera.lookAt(camLook); }   // follow the car down
+  const c = camera.position, on = c.y < seaY(c.x, c.z) - .05; seaUnder(on);
+  if (on) { scene.fog.color.set(timeName === 'night' ? 0x02121c : timeName === 'sunset' ? 0x0b3a52 : 0x0d5f7c); scene.fog.density = .045; if (SEA.caus) SEA.caus.offset.set(performance.now() / 9000, performance.now() / 13000); }
+}
+function seaDrip(dt, p) {   // out of the sea: the car drips and leaves wet patches on the ground
+  if (!SEA.drops) return;
+  if (SEA.wetT > 0 && p) {
+    SEA.wetT -= dt; SEA.dripT = (SEA.dripT || 0) - dt;
+    if (SEA.dripT <= 0 && (p.y || 0) > SEA.water + .2 && !p.air) {
+      SEA.dripT = .18 + (1 - SEA.wetT / 25) * .4; const m = SEA.drops[SEA.dropK = (SEA.dropK + 1) % SEA.drops.length], fx = Math.sin(p.heading), fz = Math.cos(p.heading), o = rr(-1.6, 1.6), sd = rr(-.7, .7);
+      m.position.set(p.x + fx * o - fz * sd, (p.y || 0) + .03, p.z + fz * o + fx * sd);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-(p.gx || 0), 1, -(p.gz || 0)).normalize());
+      m.scale.setScalar(rr(.5, 1.3) * (.6 + SEA.wetT / 50)); m.life = 1; m.visible = true;
+      if (Math.random() < .6) spray.spray(p.x - fx * 1.8, p.z - fz * 1.8, p.vx * .1, p.vz * .1, .35, (p.y || 0) + .1);
+    }
+  }
+  for (const m of SEA.drops) if (m.life > 0) { m.life -= dt / 30; m.material.opacity = Math.min(1, m.life * 1.6) * .6; if (m.life <= 0) m.visible = false; }
+}
+
 /* =====================================================================
    BUILD YOUR OWN TRACK — the AMBOOLA Builder Yard (🏗 ring in Tokyo). A 300 m square seen from above on a 10 m grid:
    pick a piece in the toolbar and click (or tap) to put it down; ↻ turns it; the eraser takes pieces away.
@@ -11924,7 +12184,7 @@ $('bGarage').onclick = () => { endActs(); endChase(null, player); endMeetRace(fa
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
-  carEnvRelease();
+  carEnvRelease(); if (swim) endSwim(player, false);
   if (build.mode) { build.mode = null; build.run = null; buildBar(); camera.fov = 62; camera.updateProjectionMatrix(); }
   state = 'garage'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   renderPass.scene = gScene; renderPass.camera = gCamera; bloomPass.threshold = .9; bloomPass.strength = .35; renderer.toneMappingExposure = .9;
@@ -12077,6 +12337,7 @@ function simStep(dt, inp) {
   if (race && race.state === 'countdown') raceHold();
   if (drag && drag.state === 'tree') dragHold();
   if (!race && !boat) smashCheck(player);
+  updateSea(dt, player);
   player.sync(dt);
   if (race) updateRace(dt); else if (drag) updateDrag(dt); else if (soccer) updateSoccer(dt); else { traffic.update(dt, player); checkMarkers(); if (meet) updateMeetRace(dt); if (taxi) updateTaxi(dt); else if (crime) updateCrime(dt); else updateNav(dt); }
   updateBoards(dt, player); updateTraps(dt, player); updateSkill(dt, player);
@@ -12128,10 +12389,11 @@ function tick(dt) {
     // shadows follow player
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
+    seaView();
     sky.position.copy(camera.position);
     updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player);
-    audio.weather(WX.wet, player.speed, camMode >= 2);
-    audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2, air: player.air });
+    audio.weather(WX.wet, player.speed, camMode >= 2 || SEA.under);
+    audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 || SEA.under, air: player.air });
     // big screens cycle
     screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
     // HUD
@@ -12176,7 +12438,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
