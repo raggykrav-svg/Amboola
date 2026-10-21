@@ -23,7 +23,7 @@ The game opens on a night-time Tokyo stage made in Blender: a big chrome-and-ora
   - **Graphics:** Low, High or Ultra.
   - **Game mode:** 😊 Easy, 🙂 Medium or 😈 Hard. On Easy, race rivals drive slower, drag racers start late and the jungle lions and monkeys run slower. On Hard, everyone is quicker.
   - **Sound:** on or off.
-  - **Race music:** the AMBOOLA songs, your Spotify playlist, or off.
+  - **Race music:** the AMBOOLA songs, 🦂 Scorpions songs on Spotify (or your own playlist), or off.
 - **🏆 CHALLENGES**: every challenge in the game and whether you did it yet: 39 missions, 9 story chapters, 19 badges and 7 secret cars. Done ones are green with a ✅, and the bar shows how many you did in all.
 
 To come back to the title screen: in the garage press **💾 SAVE & QUIT → 🏠 TITLE SCREEN**.
@@ -684,7 +684,11 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 
 There are no audio files; all sound is generated live with the Web Audio API.
 - **🎵 Race music:** every race has its own happy song, written for the game and played live, with drums, bass, chords and a tune. While the lights count down you only hear the drums and bass; at GO the whole song starts with a crash. Every second time round, a harmony joins the tune. Win, and a fanfare plays! The song's name shows where the radio station usually is. The radio rests during races. Switch between the AMBOOLA songs, your Spotify and off with **P → 🎵 MUSIC** (or on the title screen in ⚙ Settings).
-- **🎸 Your own Spotify music in races:** press **P → 🎸 MY SPOTIFY PLAYLIST**, then paste a link to your playlist (in Spotify: open the playlist → **Share → Copy link**). Until you paste one, it plays the Scorpions' top songs. In every race, Spotify's own player shows above the map and plays your songs; it pauses when the race ends or you pause the game. When you are logged in to Spotify in the same browser you hear whole songs; when you are not, Spotify plays 30-second bits. If Spotify can't load (no internet), the AMBOOLA songs play instead.
+- **🦂 Scorpions in races (Spotify):** pick **🦂 SCORPIONS** under Race music (title screen → ⚙ Settings, or **P → 🎵 MUSIC**). Every race then plays its own Scorpions song in Spotify's player above the map. If a race lasts longer than its song, the next song from the mix starts. The music pauses when the race ends or you pause the game. When you are logged in to Spotify in the same browser you hear whole songs; when you are not, Spotify plays 30-second bits. If Spotify can't load (no internet), the AMBOOLA songs play instead.
+  - **Circuits:** Amboola Grand Prix *Rock You Like a Hurricane* · Fujimi Speedway *Speedy's Coming* · Bayside Oval *The Same Thrill* · Akagi Pass *Blackout* · Kanto Short Circuit and your own tracks *Now!* · Sakura Ring *No One Like You*
+  - **Specials:** drag races *Dynamite* · night meets *Big City Nights* · the Shadow King *Bad Boys Running Wild* · crazy karts *Crazy World* · the World Race ($1,000,000 prize) *Money and Fame* · the Lantern Race *Wind of Change* · the desert rally *Arizona*
+  - **Countries:** Cyprus *Coming Home* · Italy *Kicks After Six* · Dubai and Egypt *Arizona* · Paris *Make It Real* · New York *The Same Thrill* · Swiss Alps *Can't Live Without You* · London *Twentieth Century Man* · South Africa *The Zoo* (with the lions and monkeys!)
+  - **Your own playlist instead:** press **P → 🎸 MY SPOTIFY PLAYLIST** and paste a link (in Spotify: open the playlist → **Share → Copy link**). **🦂 SCORPIONS RACE MIX** in the same box brings the Scorpions back.
   - **Circuits:**
     - Amboola Grand Prix: *Sunshine Grand Prix* (happy rock)
     - Fujimi Speedway: *Fuji Speed Star* (eurobeat)
