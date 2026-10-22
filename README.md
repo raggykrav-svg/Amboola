@@ -156,6 +156,8 @@ The McLarens have a low mid-engine body with a teardrop cabin. The Bugattis have
 
 ### See-through windows, seats and number plates (like Forza Horizon 5) 🪟
 
+![Before and after: see-through windows, the cabin inside, and a Japanese number plate](media/forza-cars.jpg)
+
 Every Blender car you can drive now has:
 - **Real windows you can see through.** They have a dark tint and a black band round the edge, like real car glass. The window tint in Customize still works: *Limo black* hides the inside, *Light* shows it all.
 - **A cabin inside:** seats with headrests and side bolsters, a dashboard with glowing screens, a steering wheel on the right (like Japanese cars), a centre console and a gear lever. Long cars like the bus get rows of seats. The Tesla Cybercab drives itself, so it has just two seats and one big screen: no steering wheel, no dials and no gear lever, inside and out.
