@@ -2114,8 +2114,8 @@ const plateMat = new THREE.MeshStandardMaterial({ color: 0xe6e8e2, roughness: .4
 function plateNumber(id) {
   let h = 7; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const n = 1 + h % 9999, d = String(n);
-  return { town: ['品川', '練馬', '足立', '横浜', '湘南', '多摩', '富士山', '世田谷'][h % 8], cls: ['300', '330', '500', '531'][(h >> 4) % 4],
-    kana: 'さすせそたちつてとなにぬねのはひふほまみむめもやゆよらりるれろ'[(h >> 8) % 31],
+  return { town: ['品川', '練馬', '足立', '横浜', '湘南', '多摩', '富士山', '世田谷'][h % 8], cls: ['300', '330', '500', '531'][(h >>> 4) % 4],
+    kana: 'さすせそたちつてとなにぬねのはひふほまみむめもやゆよらりるれろ'[(h >>> 8) % 31],
     num: d.length === 4 ? d.slice(0, 2) + '-' + d.slice(2) : '・'.repeat(4 - d.length) + d };
 }
 function plateTexture(id) {
@@ -3858,7 +3858,8 @@ function buildCockpit(car, spec) {
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, .05, 20), K.wheel); hub.rotation.x = Math.PI / 2; spin.add(hub);
   const badge = new THREE.Mesh(new THREE.CircleGeometry(.03, 20), K.red); badge.position.z = .027; spin.add(badge);
   for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.SphereGeometry(.036, 12, 10), K.glove); h.scale.set(1, 1.3, .8); h.position.set(s * .175, .01, .012); spin.add(h); }
-  box(.06, .06, .24, K.wheel, ex, ey - .52, ez + .63, -.5);   // the column
+  const column = box(.06, .06, .24, K.wheel, ex, ey - .52, ez + .63, -.5);   // the column
+  if (spec?.robotaxi) { tilt.visible = column.visible = gauge.visible = false; scr.scale.set(1.9, 1.5, 1); }   // the Cybercab: no wheel, no dials, one big screen
   // windscreen pillars, the bar over the windscreen, the roof lining and the rear-view mirror
   const hz = ez + .55;   // where the windscreen meets the roof
   for (const s of [-1, 1]) beam(new THREE.Vector3(s * W * .43, dt, ez + 1.08), new THREE.Vector3(s * W * .4, top - .03, hz), .08, K.dash);

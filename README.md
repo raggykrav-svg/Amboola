@@ -158,7 +158,7 @@ The McLarens have a low mid-engine body with a teardrop cabin. The Bugattis have
 
 Every Blender car you can drive now has:
 - **Real windows you can see through.** They have a dark tint and a black band round the edge, like real car glass. The window tint in Customize still works: *Limo black* hides the inside, *Light* shows it all.
-- **A cabin inside:** seats with headrests and side bolsters, a dashboard with glowing screens, a steering wheel on the right (like Japanese cars), a centre console and a gear lever. Long cars like the bus get rows of seats.
+- **A cabin inside:** seats with headrests and side bolsters, a dashboard with glowing screens, a steering wheel on the right (like Japanese cars), a centre console and a gear lever. Long cars like the bus get rows of seats. The Tesla Cybercab drives itself, so it has just two seats and one big screen: no steering wheel, no dials and no gear lever, inside and out.
 - **Wing mirrors** with a rounded housing, chrome mirror glass and a slim arm to the door.
 - **Japanese number plates** on the front and the back: a white plate with green letters showing the town (品川, 横浜, 富士山…), a class number, a hiragana and a number like `50-43`. Each car always keeps its own number.
 

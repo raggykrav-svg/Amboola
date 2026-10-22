@@ -1055,7 +1055,8 @@ class Car:
         top = min(eye + 0.08, zr - 0.06)
         for s in (1, -1): self.seat(xh, s * sy, hip, sw, top)
         rx, n = xh - 0.85, 0
-        while rx - 0.3 > x_back + 0.05 and n < 10:         # back seats while the side glass goes on (rows of them in a bus)
+        driverless = getattr(self, 'no_wheel', False)        # a robotaxi: no wheel, no dials, no gear lever
+        while not getattr(self, 'two_seats', False) and rx - 0.3 > x_back + 0.05 and n < 10:   # back seats while the side glass goes on (rows of them in a bus)
             p = ray(rx, 0, hip, (0, 0, 1)); zr2 = p.z if p else zr
             rh = half(rx, hip + 0.3)
             if zr2 - hip < 0.7 or rh < 0.45: break
@@ -1072,16 +1073,17 @@ class Car:
         self.box('dash', 'Dash', ((xd0 + xd1) / 2, 0, (zt + zd) / 2), (xd1 - xd0, dh * 2, zt - zd), bevel=0.03)
         wz = min(hip + 0.36, zt - 0.05); axis = Vector((math.cos(math.radians(24)), 0, -math.sin(math.radians(24))))
         gap = ray(xd0 + 0.06, -sy, zt, (0, 0, 1)); gap = gap.z - zt if gap else 1
-        if gap > 0.08:     # the dials' hood in front of the driver, when the glass leaves room for it
+        if driverless: pass
+        elif gap > 0.08:   # the dials' hood in front of the driver, when the glass leaves room for it
             self.box('binnacle', 'Dash', (xd0 + 0.07, -sy, zt + 0.03), (0.15, 0.36, 0.07), bevel=0.02)
             self.slab('screen', 'Screen', (xd0 - 0.004, -sy, zt + 0.01), (0, 1, 0), (-1, 0, 0.25), 0.14, 0.04, 0.003)
         else:
             self.slab('screen', 'Screen', (xd0 - 0.004, -sy, zt - 0.06), (0, 1, 0), (-1, 0, 0.25), 0.14, 0.04, 0.003)
-        if not has_screen:
-            self.slab('screen', 'Screen', (xd0 - 0.01, 0, zt - 0.07), (0, 1, 0), (-1, 0, 0.3), 0.12, 0.07, 0.004)
+        if not has_screen:   # the middle screen (one big one in a robotaxi)
+            self.slab('screen', 'Screen', (xd0 - 0.01, 0, zt - 0.07), (0, 1, 0), (-1, 0, 0.3), *((0.24, 0.1, 0.004) if driverless else (0.12, 0.07, 0.004)))
         for s in (1, -1): self.slab('vent', 'Gloss', (xd0 - 0.004, s * dh * 0.72, zt - 0.08), (0, 1, 0), (-1, 0, 0), 0.06, 0.025, 0.006)
         # the wheel, raked towards the driver, on its column
-        if not getattr(self, 'no_wheel', False):
+        if not driverless:
             c = Vector((wx, -sy, wz)); upw = (Vector((0, 0, 1)) - axis * axis.z).normalized(); acr = axis.cross(upw)
             self.torus('steering', 'Leather', c, axis, 0.175, 0.017)
             for d in (acr, -acr, -upw): self.slab('spoke', 'Dash', c + d * 0.09, d, axis, 0.085, 0.022, 0.008)
@@ -1089,7 +1091,7 @@ class Car:
             self.box('column', 'Dash', c + axis * 0.16, (0.24, 0.06, 0.06), rot=(0, math.radians(24), 0))
         # centre console and gear selector between the seats
         self.box('console', 'Dash', ((xh - 0.1 + xd0) / 2, 0, (zf + hip + 0.08) / 2), (xd0 - xh + 0.1, 0.2, hip + 0.08 - zf), bevel=0.02)
-        self.box('lever', 'Chrome', (xh + 0.32, 0, hip + 0.13), (0.03, 0.03, 0.1), bevel=0.01)
+        if not driverless: self.box('lever', 'Chrome', (xh + 0.32, 0, hip + 0.13), (0.03, 0.03, 0.1), bevel=0.01)
 
     # ------------------------------------------------------------ finish
     def join(self, lift=0.0):
