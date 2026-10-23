@@ -662,7 +662,7 @@ The map (**N**) lists all of it: Amboola Beach, Beach Pier, Wangan Highway, Ambo
 
 There's a big forested mountain on the bay, south-west of the city. You can see it from the streets.
 
-- **Getting there:** drive west to the red torii gate at the end of the west-edge road; the minimap shows it. Through the gate, a 2.8 km road winds twice around the mountain as it climbs, with guardrails and pine forest on both sides.
+- **Getting there:** drive west to the red torii gate at the end of the west-edge road; the minimap shows it. Through the gate, a 2.8 km road winds twice around the mountain as it climbs, through pine forest on both sides. The road is 22 m wide (twice the old one), with concrete crash walls and a steel rail on both edges, so you can't drop off it even when you hit the wall flat out.
 - **Driving it:** hills feel real. Climbing slows the car and going downhill speeds it up, and the car tilts with the road.
 - **The top:** a viewpoint plaza at 208 m with railings, telescopes, a Japanese shelter, a torii gate and lamps. The haze clears as you climb, so the whole city and the sea are in view. You get +2,000 skill points the first time you reach the summit.
 - **The scenic view:** stop on the plaza and wait about 2 seconds. The camera glides out over the railing and slowly pans across Tokyo. It's especially good at sunset and at night. Press any drive key to carry on.

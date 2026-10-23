@@ -3133,7 +3133,7 @@ function collideWorld(p) {
   { const h = areaCollide(p); if (h !== null) return Math.max(hit, h); }
   p.y = 0; p.slope = 0; mtnHint = -1; areaNow = null; p.surf = 'city';
   const lim = HALF + 7;
-  const toMountain = p.x < 0 && Math.abs(p.z - MTN.gateZ) < 6.5; // the west gate: the road out to Mt. Amboola
+  const toMountain = p.x < 0 && Math.abs(p.z - MTN.gateZ) < MTN.w / 2 + 1; // the west gate: the road out to Mt. Amboola
   if (Math.abs(p.x) > lim && !toMountain && !atGate(p)) { p.x = Math.sign(p.x) * lim; hit = Math.max(hit, Math.abs(p.vx)); p.vx *= -.3; }
   if (p.z > SEA.quay - .3) { if (seaOK(p)) { seaEnter(p, null); return Math.max(hit, seaCollide(p) ?? 0); } if (!p.air) p.z = SEA.quay - .3; }   // off the quay edge: splash!
   if (p.z < -lim && !atGate(p)) { p.z = -lim; hit = Math.max(hit, Math.abs(p.vz)); p.vz *= -.3; }
@@ -5273,7 +5273,7 @@ $('bTaxi').onclick = () => { if (taxi) endTaxi(); else { if (race) endRace(true)
    The only place in the game with height: the car follows the road's
    elevation (slope pulls on the car), everything else stays at y = 0.
    ===================================================================== */
-const MTN = { cx: -1500, cz: 600, R: 380, H: 260, w: 11, rail: .8, gateZ: rc(17), plazaR: 44 };
+const MTN = { cx: -1500, cz: 600, R: 380, H: 260, w: 22, rail: .8, gateZ: rc(17), plazaR: 44 };
 const mtnCone = r => r >= MTN.R ? 0 : MTN.H * Math.pow(1 - r / MTN.R, 1.25);
 MTN.plazaY = mtnCone(62);
 function prepMountain() {
@@ -5323,9 +5323,10 @@ function buildMountain() {
     const x = pos.getX(v), z = pos.getZ(v), rC = Math.hypot(x - M.cx, z - M.cz);
     let h = mtnNatural(x, z), carve = 0;
     if (rC < M.R + 20) {
+      // the plaza first, then the road bench, so the hill round the summit never spills over the road
+      if (rC < M.plazaR + 30) { const t = 1 - clamp((rC - M.plazaR - 2) / 28, 0, 1), s = t * t * (3 - 2 * t); h = lerp(h, M.plazaY - .6, s); carve = s; }
       const nr = M.near(x, z, 40);
-      if (nr) { const ry = M.y[nr.i] - .35, t = 1 - clamp((nr.d - (M.w / 2 + 2.5)) / 26, 0, 1), s = t * t * (3 - 2 * t); if (s > 0) { h = lerp(h, ry, s); carve = s; } }
-      if (rC < M.plazaR + 30) { const t = 1 - clamp((rC - M.plazaR - 2) / 28, 0, 1), s = t * t * (3 - 2 * t); h = lerp(h, M.plazaY - .6, s); carve = Math.max(carve, s); }
+      if (nr) { const ry = M.y[nr.i] - .35, t = 1 - clamp((nr.d - (M.w / 2 + 2.5)) / 26, 0, 1), s = t * t * (3 - 2 * t); if (s > 0) { h = lerp(h, ry, s); carve = Math.max(carve, s); } }
     }
     pos.setY(v, h); mtnHeights[v] = h;
     const steep = clamp((mtnCone(Math.max(0, rC - 4)) - mtnCone(rC + 4)) / 8 - .45, 0, 1);
@@ -5336,21 +5337,26 @@ function buildMountain() {
   const terr = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, flatShading: false }));
   terr.receiveShadow = true; terr.castShadow = true; scene.add(terr);
   // road ribbon + guard rails
-  const road = new GB(), rail = new GB(), posts = [];
+  const road = new GB(), rail = new GB(), wall = new GB(), posts = [];
   const pt = (i, off, dy) => [M.x[i] - M.tz[i] * off, M.y[i] + dy, M.z[i] + M.tx[i] * off];
   for (let i = 0; i < M.n - 1; i++) {
     const j = i + 1, s0 = i * M.step, s1 = j * M.step;
-    road.quad(pt(i, -M.w / 2, .06), pt(i, M.w / 2, .06), pt(j, M.w / 2, .06), pt(j, -M.w / 2, .06), [0, s0 / 12, 1, s1 / 12]);
+    road.quad(pt(i, -M.w / 2, .06), pt(i, M.w / 2, .06), pt(j, M.w / 2, .06), pt(j, -M.w / 2, .06), [0, s0 / M.w, 1, s1 / M.w]);
     const inPlaza = Math.hypot(M.x[i] - M.cx, M.z[i] - M.cz) < M.plazaR + 2, onConnector = M.x[i] > -HALF - 14;
     if (!inPlaza && !onConnector) for (const sd of [-1, 1]) {
-      rail.quad(pt(i, sd * (M.w / 2 + M.rail), .45), pt(j, sd * (M.w / 2 + M.rail), .45), pt(j, sd * (M.w / 2 + M.rail), .8), pt(i, sd * (M.w / 2 + M.rail), .8), [0, 0, 1, 1]);
-      if (i % 5 === 0) posts.push(pt(i, sd * (M.w / 2 + M.rail + .05), 0));
+      const o = sd * (M.w / 2 + M.rail), o2 = sd * (M.w / 2 + M.rail + .5);
+      wall.quad(pt(i, o, 0), pt(j, o, 0), pt(j, o, 1.1), pt(i, o, 1.1), [0, 0, 1, 1]);   // road side of the crash wall
+      wall.quad(pt(i, o, 1.1), pt(j, o, 1.1), pt(j, o2, 1.1), pt(i, o2, 1.1), [0, 0, 1, 1]);   // its top
+      wall.quad(pt(i, o2, -1.5), pt(j, o2, -1.5), pt(j, o2, 1.1), pt(i, o2, 1.1), [0, 0, 1, 1]);   // valley side, down into the slope
+      rail.quad(pt(i, o, 1.35), pt(j, o, 1.35), pt(j, o, 1.7), pt(i, o, 1.7), [0, 0, 1, 1]);
+      if (i % 5 === 0) posts.push(pt(i, sd * (M.w / 2 + M.rail + .2), 1.1));
     }
   }
   const roadMat = new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
   const rm = new THREE.Mesh(road.build(), roadMat); rm.receiveShadow = true; scene.add(rm);
   const railM = new THREE.Mesh(rail.build(), new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: .8, roughness: .35, side: THREE.DoubleSide })); railM.castShadow = true; scene.add(railM);
-  const postGeo = new THREE.BoxGeometry(.12, .85, .12); postGeo.translate(0, .42, 0);
+  const wallM = new THREE.Mesh(wall.build(), new THREE.MeshStandardMaterial({ color: 0xb9b6ae, roughness: .9, side: THREE.DoubleSide })); wallM.castShadow = wallM.receiveShadow = true; scene.add(wallM);
+  const postGeo = new THREE.BoxGeometry(.12, .6, .12); postGeo.translate(0, .3, 0);
   const pim = new THREE.InstancedMesh(postGeo, new THREE.MeshStandardMaterial({ color: 0x8a8d92, metalness: .6, roughness: .5 }), posts.length);
   const Mx = new THREE.Matrix4(); posts.forEach(([x, y, z], k) => { Mx.makeTranslation(x, y, z); pim.setMatrixAt(k, Mx); }); scene.add(pim);
   // pine forest
@@ -5389,7 +5395,7 @@ function buildSummit() {
   const postG = new THREE.CylinderGeometry(.05, .05, 1.05, 6); postG.translate(0, .52, 0);
   const posts = new THREE.InstancedMesh(postG, rail.material, 90), Mx = new THREE.Matrix4();
   const aIn = Math.atan2(M.z[M.n - 30] - M.cz, M.x[M.n - 30] - M.cx); // leave a gap where the road comes in
-  let k = 0; for (let i = 0; i < 90; i++) { const a = i / 90 * Math.PI * 2; if (Math.abs(Math.atan2(Math.sin(a - aIn), Math.cos(a - aIn))) < .2) continue; Mx.makeTranslation(Math.cos(a) * (M.plazaR - .4), y, Math.sin(a) * (M.plazaR - .4)); posts.setMatrixAt(k++, Mx); }
+  let k = 0; for (let i = 0; i < 90; i++) { const a = i / 90 * Math.PI * 2; if (Math.abs(Math.atan2(Math.sin(a - aIn), Math.cos(a - aIn))) < .34) continue; Mx.makeTranslation(Math.cos(a) * (M.plazaR - .4), y, Math.sin(a) * (M.plazaR - .4)); posts.setMatrixAt(k++, Mx); }
   posts.count = k; g.add(posts);
   // telescopes facing the city
   const toCity = Math.atan2(0 - M.cz, 0 - M.cx), tMat = new THREE.MeshStandardMaterial({ color: 0x2f6fd0, metalness: .5, roughness: .4 });
@@ -5411,9 +5417,9 @@ function buildSummit() {
   const sign2 = sign.clone(); sign2.rotation.y = Math.PI; sign2.position.z = -4.21; shelter.add(sign2);
   const red = new THREE.MeshStandardMaterial({ color: 0xc8301c, roughness: .5 }), dark = new THREE.MeshStandardMaterial({ color: 0x1c1c1e });
   const torii = new THREE.Group(); torii.position.set(Math.cos(aIn) * (M.plazaR - 2), y, Math.sin(aIn) * (M.plazaR - 2)); torii.rotation.y = -aIn + Math.PI / 2; g.add(torii);
-  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.3, .35, 7, 12), red); p.position.set(s * 6.5, 3.5, 0); torii.add(p); }
-  const kasagi = new THREE.Mesh(new THREE.BoxGeometry(16, .7, 1), dark); kasagi.position.y = 7.2; torii.add(kasagi);
-  const nuki = new THREE.Mesh(new THREE.BoxGeometry(14, .45, .5), red); nuki.position.y = 5.8; torii.add(nuki);
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.4, .46, 8, 12), red); p.position.set(s * 12.5, 4, 0); torii.add(p); }
+  const kasagi = new THREE.Mesh(new THREE.BoxGeometry(29, .8, 1.1), dark); kasagi.position.y = 8.2; torii.add(kasagi);
+  const nuki = new THREE.Mesh(new THREE.BoxGeometry(26.5, .5, .55), red); nuki.position.y = 6.7; torii.add(nuki);
   // lamps round the plaza for sunset/night
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xffd9a0 }); dynMats.lamps.push(lampMat);
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + .13, l = new THREE.Mesh(new THREE.SphereGeometry(.25, 10, 8), lampMat); l.position.set(Math.cos(a) * (M.plazaR - 1.5), y + 3, Math.sin(a) * (M.plazaR - 1.5)); g.add(l); const p = new THREE.Mesh(new THREE.CylinderGeometry(.06, .08, 3, 6), dark); p.position.set(l.position.x, y + 1.5, l.position.z); g.add(p); }
@@ -5421,13 +5427,13 @@ function buildSummit() {
 function buildMountainGate() {
   const M = MTN, x = -HALF - 14, z = M.gateZ, g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = Math.PI / 2; scene.add(g);
   const red = new THREE.MeshStandardMaterial({ color: 0xc8301c, roughness: .5 }), dark = new THREE.MeshStandardMaterial({ color: 0x1c1c1e });
-  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.35, .42, 8.5, 12), red); p.position.set(s * 8.2, 4.25, 0); p.castShadow = true; g.add(p); }
-  const top = new THREE.Mesh(new THREE.BoxGeometry(20, .8, 1.2), dark); top.position.y = 8.6; g.add(top);
-  const nuki = new THREE.Mesh(new THREE.BoxGeometry(17.5, .5, .6), red); nuki.position.y = 7.2; g.add(nuki);
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.45, .52, 9.5, 12), red); p.position.set(s * 13.5, 4.75, 0); p.castShadow = true; g.add(p); }
+  const top = new THREE.Mesh(new THREE.BoxGeometry(31, .9, 1.3), dark); top.position.y = 9.6; g.add(top);
+  const nuki = new THREE.Mesh(new THREE.BoxGeometry(28.5, .55, .65), red); nuki.position.y = 8.1; g.add(nuki);
   const t = canvasTex(1024, 256, (c, W, H) => { c.fillStyle = '#10140f'; c.fillRect(0, 0, W, H); c.strokeStyle = '#7ee04c'; c.lineWidth = 10; c.strokeRect(8, 8, W - 16, H - 16); c.textAlign = 'center'; c.fillStyle = '#fff'; c.font = `900 80px ${JP}`; c.fillText('アンブーラ山 展望台', W / 2, 105); c.fillStyle = '#7ee04c'; c.font = `700 46px ${OR}`; c.fillText(`MOUNTAIN ROAD · VIEWPOINT ${(M.L / 1000).toFixed(1)} KM`, W / 2, 195); });
   const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);
-  for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), sm); p.position.set(0, 10.6, s * .02); p.rotation.y = s > 0 ? 0 : Math.PI; g.add(p); }
-  const board = new THREE.Mesh(new THREE.BoxGeometry(12.4, 3.4, .1), dark); board.position.y = 10.6; g.add(board);
+  for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), sm); p.position.set(0, 11.9, s * .06); p.rotation.y = s > 0 ? 0 : Math.PI; g.add(p); }
+  const board = new THREE.Mesh(new THREE.BoxGeometry(12.4, 3.4, .1), dark); board.position.y = 11.9; g.add(board);
 }
 // physics: keep the car on the mountain road (or plaza) and give it the road's height and slope
 const inMountain = p => p.x < -HALF - 9 && p.z > MTN.cz - MTN.R - 80 && p.z < MTN.cz + MTN.R + 80 && !(Math.abs(p.z - MTN.gateZ) > 40 && p.x > -HALF - 60);
