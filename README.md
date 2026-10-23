@@ -491,6 +491,19 @@ Crash into almost anything except a building and it breaks!
   - The camp clearing is safe: the animals never come in there.
   - Find both pieces and the **AMBOOLA Taiyō** is yours. You swap straight into it, and it is in your garage too. You can only win it this way. Play again at the **🧩 Taiyō Hunt** ring in the camp; once you own the Taiyō, finishing the hunt pays $100,000.
 
+### Cyprus 🇨🇾: the Troodos Mountains ⛰️
+
+![Racing up the Troodos trail with the rival trucks, climbing a rocky wall, and the start panel](media/troodos.jpg)
+
+- **A giant mountain:** at the west edge of the Cyprus town stands **Troodos**, **520 m high: twice as big as Mt. Amboola** in Tokyo. It is covered in a pine forest, with rocks and boulders everywhere and **Olympos**, the summit, on top (with its two white radar domes, a mast and the Cyprus flag).
+- **The trail:** a 2.1 km dirt road winds up through the forest to the summit, with **three rocky walls 40° steep**. Find it on the map: *Troodos Mountains* (the foot of the trail) or *Olympos Summit*.
+- **🚙 The AMBOOLA Troodos 4×4:** a special lifted off-road truck made in Blender (`models/blender/troodos.py`): big mud tyres, a bull bar with a winch, a snorkel, a roof basket with spot lights and a spare wheel on the back. It climbs the walls easily. Low sports cars spin their wheels and slide back down!
+- **Stop in the orange ring at the start** and pick:
+  - **🏁 RACE TO THE TOP:** you and 5 Cypriot drivers (Andreas, Eleni, Nikos, Maria and Yiannis), all in Troodos 4×4 trucks. Drive through the 6 gates to the finish arch on the summit. Win **$50,000**, and the first time you win, **the truck is yours!** The rivals are faster on the walls, you are faster on the flat parts.
+  - **🚙 TAKE THE TRUCK:** borrow the truck and hike up the mountain your way, no race. It goes back (and you get your own car back) when you drive into town.
+  - **🚗 MY CAR:** try the trail in your own car.
+- **Bumpy dirt:** nobody goes much faster than 80 km/h on the rocky trail.
+
 ### The sea 🌊
 
 ![Waves, under the sea, and coming out wet](media/sea.jpg)

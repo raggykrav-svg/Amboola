@@ -838,6 +838,8 @@ const CARS = [
   { id: 'amboolaheli', name: 'AMBOOLA Helicopter', brand: 'Amboola', cat: 'AMBOOLA', jet: true, heli: true, body: 'amb_jet', wing: 'none', kw: 650, redline: 6000, mass: 2200, vmax: 250, drive: 'AWD', engine: 'ev', gears: 1, zero: 6, grip: 1, aero: 0, paint: 4, rim: '#1b1b1d', caliper: '#1b1b1d', usd: 150000, desc: 'Lands on any roof · rescues pay $15,000', jp: 'ヘリ' },
   // the golden coin hunt prize: hidden in the garage until you have found all 100 coins
   { id: 'goldtora', name: 'AMBOOLA Golden Tora', brand: 'Amboola', cat: 'AMBOOLA', body: 'amb_torazero', hidden: true, wing: 'none', kw: 2600, redline: 22000, mass: 1150, vmax: 560, drive: 'AWD', engine: 'ev', gears: 1, zero: 1.4, grip: 2.3, aero: 2.6, paint: 38, rim: '#ffd23a', caliper: '#ffd23a', usd: 99000000, desc: 'SECRET · find all 100 golden coins', jp: '金の虎' },
+  // the Troodos Hill Climb prize: an off-road truck you race up the Troodos mountains in Cyprus, and win
+  { id: 'troodos', name: 'AMBOOLA Troodos 4×4', brand: 'Amboola', cat: 'AMBOOLA', body: 'troodos', crawler: true, wing: 'none', kw: 380, redline: 6500, mass: 2350, vmax: 185, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 5.9, grip: 1.1, aero: .05, paint: 3, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto · low range', usd: 260000, prize: '⛰️ WIN THE TROODOS HILL CLIMB IN CYPRUS', prizeTag: '⛰️ TROODOS HILL CLIMB PRIZE', desc: 'Rock crawler · 35-inch tyres · climbs 40° slopes', jp: 'トロードス' },
 ];
 
 /* =====================================================================
@@ -2092,9 +2094,10 @@ Object.assign(BODIES, {
   amboolabus: { ...BODIES.urus, L: 10.5, W: 2.5, cabW: 2.4, wr: .5, fX: 3.30, rX: -2.60, yb: .34, roofY: 3.15 },
   towtruck: { ...BODIES.urus, L: 6.3, W: 2.24, cabW: 2.1, wr: .45, fX: 2.20, rX: -1.70, yb: .44 },
   firetruck: { ...BODIES.urus, L: 8.6, W: 2.5, cabW: 2.4, wr: .52, fX: 3.10, rX: -2.30, yb: .48 },
+  troodos: { ...BODIES.urus, L: 5.25, W: 2.16, cabW: 1.9, wr: .465, tw: [.33, .33], fX: 1.50, rX: -1.40, yb: .56 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
-BODIES.amboolabus.roofY = 3.15; BODIES.towtruck.roofY = 2.6; BODIES.firetruck.roofY = 3.3; BODIES.mb_g63.roofY = 1.95; BODIES.rr_cullinan.roofY = 1.85; BODIES.rr_phantom.roofY = 1.65;   // the bus borrows the Urus outline; its real roof is much higher
+BODIES.amboolabus.roofY = 3.15; BODIES.towtruck.roofY = 2.6; BODIES.firetruck.roofY = 3.3; BODIES.mb_g63.roofY = 1.95; BODIES.troodos.roofY = 2.0; BODIES.rr_cullinan.roofY = 1.85; BODIES.rr_phantom.roofY = 1.65;   // the bus borrows the Urus outline; its real roof is much higher
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 // the Blender cars' see-through windows (GlassClear) and the cabin behind them. The glass draws both faces (the far
 // window tints the view too) and writes no depth, so a window seen through another window still shows; everything in
@@ -2221,7 +2224,7 @@ const INTERIORS = { Porsche: 'porsche', Tesla: 'tesla', Lamborghini: 'lambo', Fe
   Devel: 'devel', 'Mercedes-AMG': 'amg', 'Rolls-Royce': 'rolls', Ford: 'ford', Chevrolet: 'chevy', Honda: 'honda', Pagani: 'pagani', Nissan: 'nissan', Amboola: 'amboola' };   // brand -> models/int_<key>.glb (only loaded when you sit inside)
 const INTERIOR_MODELS = Object.values(INTERIORS).map(k => 'int_' + k);
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
-const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', 'title', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
+const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'troodos', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', 'title', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
@@ -2949,7 +2952,7 @@ class Player {
     if (this.air) return this.airUpdate(dt, inp);
     if (this.wreckT > 0) { this.wreckT -= dt; inp = { throttle: 0, brake: 0, steer: 0, handbrake: 1, nitro: 0 }; }   // a crash landing: skid to a stop, then flip back
     const s = this.spec;
-    const off = this.terrain === 'sand' ? offroadOf(s) : this.terrain === 'water' || this.terrain === 'sea' ? .1 : -1;   // sand: rally cars keep their grip, low supercars slither and bog down
+    const off = this.terrain === 'sand' || this.terrain === 'dirt' ? offroadOf(s) : this.terrain === 'trail' ? lerp(offroadOf(s), 1, .45) : this.terrain === 'water' || this.terrain === 'sea' ? .1 : -1;   // sand: rally cars keep their grip, low supercars slither and bog down (the Troodos trail is packed dirt: a bit better)
     const gripK = s.grip * surfGrip * (off >= 0 ? lerp(.56, .96, off) : 1);
     const fx = Math.sin(this.heading), fz = Math.cos(this.heading), rx = -fz, rz = fx;
     let vf = this.vx * fx + this.vz * fz, vr = this.vx * rx + this.vz * rz;
@@ -3000,8 +3003,10 @@ class Player {
     if (this.reverse && drive < 0) a = vf > -9 ? drive * 5 : 0;
     // resistances
     a -= s.drag * vf * Math.abs(vf) / s.mass + (Math.abs(vf) > .1 ? Math.sign(vf) * .15 : 0);
-    a -= (this.slope || 0) * 9.81; // gravity along the road (mountain, ramps, dunes)
-    if (off >= 0 && Math.abs(vf) > .5) a -= Math.sign(vf) * ((1 - off) * 1.6 + .2);   // soft sand drags at the tyres
+    const sl = this.slope || 0, earth = this.terrain === 'trail' || this.terrain === 'dirt';
+    a -= (earth ? sl / Math.sqrt(1 + sl * sl) : sl) * 9.81; // gravity along the road (mountain, ramps, dunes; on the Troodos walls the true sine of the slope)
+    if (off >= 0 && Math.abs(vf) > .5) a -= Math.sign(vf) * ((1 - off) * (earth ? .9 : 1.6) + .2);   // soft sand (or loose dirt) drags at the tyres
+    if (earth && Math.abs(vf) > 14) a -= Math.sign(vf) * (Math.abs(vf) - 14) * .4;   // rocks and ruts: nobody goes much over 80 km/h on the Troodos trail
     // brakes
     const brakeDecel = brake * (g * gripK * 1.08 + down);
     let nvf = vf + a * dt;
@@ -4253,7 +4258,7 @@ function updateMenu() {
   $('walletV').textContent = fmtUSD(wallet.usd);
   const own = owns(c), pr = $('price'), dv = $('drive');
   const u = upgOf(c), t = tunedSpec(c);
-  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : c.prize ? '🧩 JUNGLE HUNT PRIZE' : `PRICE ${fmtUSD(c.usd)}`;
+  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : c.prize ? c.prizeTag || '🧩 JUNGLE HUNT PRIZE' : `PRICE ${fmtUSD(c.usd)}`;
   $('upgBtn').classList.toggle('hidden', !own || !!c.jet); $('custBtn').classList.toggle('hidden', !own);
   const rc0 = own ? repairCost(c) : 0, rb = $('repairBtn'); rb.classList.toggle('hidden', !rc0);
   if (rc0) rb.innerHTML = `🔧 REPAIR DENTS · ${fmtUSD(rc0)}<small>${Object.entries(dmgZones(c.id)).filter(([, v]) => v > .02).map(([k, v]) => `${DMG_ZONES[k]} ${Math.round(v * 100)}%`).join(' · ')}</small>`;
@@ -6150,12 +6155,14 @@ const atGate = p => AREAS.some(A => { const [gx, gz] = A.gate; return Math.abs(g
 function areaGround(x, z) {   // terrain height for the camera
   if (x > DESERT.x0 && x < DESERT.x1 && z > DESERT.z0 && z < DESERT.z1) return duneH(x, z);
   if (Math.hypot(x - SNOW.cx, z - SNOW.cz) < SNOW.R + 60) return snowHeight(x, z);
+  if (TRO.T && troIn(x, z)) return troY(x, z);   // the Troodos mountain in Cyprus
   if (x > ISLAND.x0 - 40 && x < ISLAND.x1 + 40 && z > ISLAND.z0 - 40 && z < ISLAND.z1 + 40) return BEACH_PAD.inside(x, z) ? BEACH_PAD.yAt(x, z) : 0;
   return -9;
 }
 function areaReset(p) {
   const A = areaAt(p.x, p.z); if (!A) return false;
   const pad = A.pads.find(P => P.inside(p.x, p.z, 1.5));
+  if (pad && TRO.T && troIn(p.x, p.z)) { const q = troNear(p.x, p.z, 900); if (q) { troPlace(p, clamp(q.i, 8, TRO.T.n - 8), clamp(q.lat, -3, 3)); return true; } }   // the Troodos: back onto the trail, facing up
   if (pad) { Object.assign(p, { y: pad.yAt(p.x, p.z), vx: 0, vz: 0, yawRate: 0 }); return true; }
   const i = A.R.near(p.x, p.z, 400)?.i ?? 0, fwd = Math.sin(p.heading) * A.R.tx[i] + Math.cos(p.heading) * A.R.tz[i] >= 0;
   A.R.place(p, i, fwd ? -1 : 1); return true;
@@ -6172,7 +6179,13 @@ function drawAreasMap(g) {
     const R = A.R; g.strokeStyle = A.id === 'snow' ? '#b8a07a' : '#e0a030'; g.lineWidth = R.w * 1.1; g.lineJoin = 'round';
     const st = Math.max(3, Math.round(R.n / 300)); g.beginPath(); for (let i = 0; i < R.n; i += st) i ? g.lineTo(R.x[i], R.z[i]) : g.moveTo(R.x[i], R.z[i]); g.lineTo(R.x[R.n - 1], R.z[R.n - 1]); g.stroke();
     if (A.country) { g.fillStyle = 'rgba(214,196,150,.95)'; g.fillRect(A.country.x0 - 40, A.country.z0 - 40, A.country.x1 - A.country.x0 + 80, A.country.z1 - A.country.z0 + 80); }
-    for (const P of A.pads) { g.fillStyle = A.id === 'snow' ? '#b9c3cf' : A.country ? '#5c6470' : 'rgba(92,100,112,.0)'; for (const [x0, z0, x1, z1] of P.rects) g.fillRect(x0, z0, x1 - x0, z1 - z0); }
+    for (const P of A.pads) { g.fillStyle = A.id === 'snow' ? '#b9c3cf' : A.country ? '#5c6470' : 'rgba(92,100,112,.0)'; for (const r of P.rects) { if (r === TRO.rect) { g.fillStyle = '#7e8a4c'; } const [x0, z0, x1, z1] = r; g.fillRect(x0, z0, x1 - x0, z1 - z0); } }
+    if (A.country?.troodos) {   // the Troodos: forest green, darker rings going up, the trail and its gates
+      for (const [k, col] of [[1, '#3d5a2c'], [.75, '#36522a'], [.5, '#2f4a26'], [.28, '#2a4322'], [.09, '#b9ad98']]) { g.fillStyle = col; g.beginPath(); g.ellipse(TRO.cx, TRO.cz, TRO.R * TRO.ex * k, TRO.R * TRO.ez * k, 0, 0, 7); g.fill(); }
+      const T = TRO.T; g.strokeStyle = '#c9a26a'; g.lineWidth = 9; g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i < T.n; i += 4) i ? g.lineTo(T.x[i], T.z[i]) : g.moveTo(T.x[i], T.z[i]); g.lineTo(T.x[T.n - 1], T.z[T.n - 1]); g.stroke();
+      TRO.gates.forEach((i, k) => { const nx = tro?.ais && k === tro.gate; g.fillStyle = nx ? '#ffc21f' : '#ff8a1f'; g.beginPath(); g.arc(T.x[i], T.z[i], nx ? 20 : 11, 0, 7); g.fill(); });
+      g.fillStyle = '#ff8a1f'; g.beginPath(); g.arc(T.x[6], T.z[6], 16, 0, 7); g.fill();
+    }
     if (A.country?.desert) {   // the sand, the oasis and the rally gates (the next one in gold)
       const D = A.country.desert; g.fillStyle = '#d9b77c'; g.fillRect(D.x0, D.z0, D.x1 - D.x0, D.z1 - D.z0);
       g.fillStyle = '#2aa0b8'; g.beginPath(); g.arc(D.oasis[0], D.oasis[1], D.oasis[2], 0, 7); g.fill();
@@ -6183,7 +6196,7 @@ function drawAreasMap(g) {
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
   if (hwyTraffic) hwyTraffic.update(dt, p);
-  updateFujiArea(dt, p); if (p && state === 'drive') { updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateMusic(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateBuild(dt, p); updateFestival(dt, p); updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
+  updateFujiArea(dt, p); if (p && state === 'drive') { updateTroodos(dt, p); updateDaily(dt, p); updateFuel(dt, p); updateRadio(); updateMusic(); updateExhaust(dt, p); updateDog(dt, p); updateCrush(dt, p); updateMansion(dt, p); updateJobCalls(dt, p); } if (p) { updateBuild(dt, p); updateFestival(dt, p); updateCoins(dt, p.x, p.y || 0, p.z); updatePark(dt, p); updateVolcano(dt, p); updateMoon(p.x, p.z); updateFerryBoat(p); updateHQ(dt, p); updateSecrets(dt, p); updateStory(dt); }
   for (const C of COUNTRIES) if (C.eye && C.group?.visible) C.eye.rotateZ(dt * .03);   // the London Eye turns
   if (WX.wheel) { const { spin, gondolas, Rw } = WX.wheel; spin.rotation.z = t * .06; for (const g of gondolas) { const a = g.userData.a + t * .06; g.position.set(Math.cos(a) * Rw, Math.sin(a) * Rw - 1.6, 0); } }
   if (WX.beam) { WX.beam.rotation.y = t * .8; WX.beam.visible = timeName !== 'day' || weather === 'rain'; }
@@ -6336,7 +6349,7 @@ function duneH(x, z) {
   return h * smooth01(clamp((x - D.x0 - 30) / 130, 0, 1)) * smooth01(clamp((Math.hypot(x - o[0], z - o[1]) - o[2]) / 70, 0, 1)) * smooth01(clamp(edge / 90, 0, 1));
 }
 function duneGrad(x, z) { const e = .35; return [(duneH(x + e, z) - duneH(x - e, z)) / (2 * e), (duneH(x, z + e) - duneH(x, z - e)) / (2 * e)]; }
-const offroadOf = s => s.id === 'yuki' ? 1 : s.dakar ? .85 : /cayenne|macan|urus|purosangue|landcruiser|cybertruck|amboolataxi|bmw_xm|audi_rsq8|rr_cullinan/.test(s.body) ? .62 : s.drive === 'AWD' ? .45 : .28;
+const offroadOf = s => s.id === 'yuki' || s.crawler ? 1 : s.dakar ? .85 : /cayenne|macan|urus|purosangue|landcruiser|cybertruck|amboolataxi|bmw_xm|audi_rsq8|rr_cullinan/.test(s.body) ? .62 : s.drive === 'AWD' ? .45 : .28;
 const RALLY_PTS = [[14790, 14410], [15120, 14290], [15460, 14060], [15840, 13960], [16190, 14110], [16330, 14480], [16170, 14880], [15800, 15080], [15400, 14980], [15100, 14700], [15010, 14430]];
 const RALLY_KEY = 'amboola.rally';
 let rally = null, rallyBest = (() => { try { return JSON.parse(localStorage.getItem(RALLY_KEY)) || null; } catch (e) { return null; } })();
@@ -6455,6 +6468,343 @@ function finishRally(p) {
   stuntPop(['RALLY FINISHED', rec ? 'NEW RECORD' : fmtTime(t)], 0, `${fmtTime(t)} · +${fmtUSD(pay)}${R.yuki ? ' · YUKI BONUS ×2' : ''}`);
 }
 
+/* ---- the Troodos mountains: west of the Cyprus town, a forested massif twice the size of Mt. Amboola (520 m high and
+   1.7 km across, stretched east-west like the real range) with black pines all over it. A dirt trail climbs 2.1 km
+   from the edge of town to the summit, Olympos, with three rocky walls 40 degrees steep. Any car can try it (most
+   slither and slide back on the walls); the AMBOOLA Troodos 4×4 crawls up. The Troodos Hill Climb races it against
+   five rivals. The mountain is part of the Cyprus pad: its height, slope and ground come from troY / troGrad /
+   troTerrain, so it is free roam (and air physics) like the Dubai dunes. */
+const TRO = { cx: -12560, cz: 14450, R: 750, ex: 1.12, ez: .9, plazaR: 46, top: 520, rect: [-13460, 13620, -11700, 15280],
+  wp: [[-.05, 748], [0, 705], [.3, 650], [.7, 600], [1.05, 575], [1.1, 560], [1.12, 430], [1.2, 415], [1.6, 405], [2.05, 392], [2.3, 370], [2.28, 335], [2.0, 318],
+    [1.5, 300], [1.15, 282], [1.02, 262], [1, 240], [.98, 150], [.97, 60], [.95, 18]] };   // trail waypoints: [angle, radius] round the summit
+const TRO_KN = [[0, 520], [46, 520], [240, 372], [520, 108], [675, 26], [750, 0]];   // the massif's height (m) by radius
+const TRO_KS = (() => {   // knot slopes for a monotone cubic through TRO_KN (Fritsch-Carlson): smooth flanks, flat summit
+  const K = TRO_KN, n = K.length, d = [], m = [];
+  for (let i = 0; i < n - 1; i++) d.push((K[i + 1][1] - K[i][1]) / (K[i + 1][0] - K[i][0]));
+  m[n - 1] = d[n - 2]; for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : 2 / (1 / d[i - 1] + 1 / d[i]); m[0] = m[1] = 0; return m;
+})();
+function troProf(r) {
+  const K = TRO_KN; if (r >= K[K.length - 1][0]) return 0;
+  let i = 0; while (r > K[i + 1][0]) i++;
+  const [x0, y0] = K[i], [x1, y1] = K[i + 1], h = x1 - x0, t = (r - x0) / h, t2 = t * t, t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * y0 + (t3 - 2 * t2 + t) * h * TRO_KS[i] + (-2 * t3 + 3 * t2) * y1 + (t3 - t2) * h * TRO_KS[i + 1];
+}
+const troR = (x, z) => Math.hypot((x - TRO.cx) / TRO.ex, (z - TRO.cz) / TRO.ez);
+function troNatural(x, z) {   // the mountain with its ridges and valleys (radial spurs) and a little bumpiness
+  const dx = (x - TRO.cx) / TRO.ex, dz = (z - TRO.cz) / TRO.ez, r = Math.hypot(dx, dz); if (r >= TRO.R) return 0;
+  const a = Math.atan2(dz, dx), amp = 12 * Math.sin(Math.PI * clamp((r - 60) / 640, 0, 1));
+  return troProf(r) + amp * (.6 * Math.sin(a * 7 + r * .012) + .4 * Math.sin(a * 13 - r * .02 + 1.3)) + 1.5 * Math.sin(x * .05) * Math.sin(z * .045) * clamp((TRO.R - r) / 60, 0, 1);
+}
+function prepTroodos() {
+  const P = TRO.wp.map(([t, r]) => [TRO.cx + TRO.ex * r * Math.cos(t), TRO.cz + TRO.ez * r * Math.sin(t)]), pts = [];
+  for (let i = 0; i < P.length - 1; i++) {   // Catmull-Rom through the waypoints, a sample every 2 m
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)], n = Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / 2);
+    for (let k = 0; k < n; k++) { const t = k / n, t2 = t * t, t3 = t2 * t; pts.push([0, 1].map(c => .5 * (2 * p1[c] + (-p0[c] + p2[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t2 + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * t3))); }
+  }
+  pts.push(P[P.length - 1]);
+  const n = pts.length, F = () => new Float32Array(n), T = { n, x: F(), z: F(), y: F(), tx: F(), tz: F(), s: F(), g: F() };
+  pts.forEach(([x, z], i) => { T.x[i] = x; T.z[i] = z; });
+  const raw = pts.map(([x, z]) => troNatural(x, z)), ds = i => Math.hypot(T.x[i] - T.x[i - 1], T.z[i] - T.z[i - 1]);
+  for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let d = -15; d <= 15; d++) { s += raw[clamp(i + d, 0, n - 1)]; c++; } T.y[i] = s / c; }
+  for (let i = 0; i < 12; i++) T.y[i] = 0;   // it leaves the town on the level
+  // never steeper than 40 degrees up or 12 down: a forward pass, then a backward one so it still reaches the summit
+  const up = i => i < 70 ? .08 + .76 * smooth01(clamp((i - 12) / 58, 0, 1)) * .4 : .84;   // the first 140 m ease off the level
+  for (let i = 1; i < n; i++) T.y[i] = clamp(T.y[i], T.y[i - 1] - .21 * ds(i), T.y[i - 1] + up(i) * ds(i));
+  T.y[n - 1] = TRO.top;
+  for (let i = n - 2; i >= 12; i--) T.y[i] = clamp(T.y[i], T.y[i + 1] - .84 * ds(i + 1), T.y[i + 1] + .21 * ds(i + 1));
+  for (let i = 0; i < n; i++) {
+    const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1), dx = T.x[b] - T.x[a], dz = T.z[b] - T.z[a], l = Math.hypot(dx, dz) || 1;
+    T.tx[i] = dx / l; T.tz[i] = dz / l; T.g[i] = (T.y[b] - T.y[a]) / l; if (i) T.s[i] = T.s[i - 1] + ds(i);
+  }
+  T.L = T.s[n - 1];
+  T.hash = new Map(); const key = (a, b) => a * 100000 + b;
+  for (let i = 0; i < n; i++) { const k = key(Math.floor(T.x[i] / 20), Math.floor(T.z[i] / 20)); if (!T.hash.has(k)) T.hash.set(k, []); T.hash.get(k).push(i); }
+  T.key = key; TRO.T = T;
+  // rocks on the trail: humps the tyres climb over, thickest on the steep walls (physics bumps, drawn as boulders)
+  const rnd = mulberry32(1952), rocks = []; TRO.rocks = rocks; TRO.rockHash = new Map();
+  for (let i = 30; i < n - 25; i += 2) {
+    const steep = T.g[i] > .45, p = steep ? .55 : .1;
+    if (rnd() > p) continue;
+    const lat = (rnd() * 2 - 1) * 3.6, r = .8 + rnd() * .8, h = .2 + rnd() * (steep ? .3 : .18);
+    rocks.push({ x: T.x[i] - T.tz[i] * lat, z: T.z[i] + T.tx[i] * lat, r, h, i });
+  }
+  for (const q of rocks) { const k = key(Math.floor(q.x / 10), Math.floor(q.z / 10)); if (!TRO.rockHash.has(k)) TRO.rockHash.set(k, []); TRO.rockHash.get(k).push(q); }
+  // checkpoint gates every 300 m, the last one is the finish on the summit
+  TRO.gates = []; for (let s = 300; s < T.L - 150; s += 300) TRO.gates.push(troIdx(s)); TRO.gates.push(n - 6);   // the finish: under the arch
+}
+const troIdx = s => { const T = TRO.T; let i = Math.round(s / 2); i = clamp(i, 0, T.n - 1); while (i > 0 && T.s[i] > s) i--; while (i < T.n - 1 && T.s[i + 1] <= s) i++; return i; };
+// the nearest point of the trail: index, signed sideways offset (+ = left of the way up), distance, height there
+function troNear(x, z, rad) {
+  const T = TRO.T; let best = 1e18, bi = -1; const cx = Math.floor(x / 20), cz = Math.floor(z / 20), rc2 = Math.ceil(rad / 20);
+  for (let a = -rc2; a <= rc2; a++) for (let b = -rc2; b <= rc2; b++) { const l = T.hash.get(T.key(cx + a, cz + b)); if (!l) continue; for (const i of l) { const d = (T.x[i] - x) ** 2 + (T.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } }
+  if (bi < 0 || best > rad * rad) return null;
+  const i = bi, dx = x - T.x[i], dz = z - T.z[i], u = dx * T.tx[i] + dz * T.tz[i], lat = -dx * T.tz[i] + dz * T.tx[i];
+  const j = clamp(i + Math.sign(u), 0, T.n - 1), f = j === i ? 0 : clamp(Math.abs(u) / (Math.hypot(T.x[j] - T.x[i], T.z[j] - T.z[i]) || 1), 0, 1);
+  return { i, lat, d: Math.abs(lat), y: lerp(T.y[i], T.y[j], f), s: T.s[i] + u };
+}
+function troCarve(x, z) {   // the natural mountain with a level bench cut (or built up) for the trail
+  const nat = troNatural(x, z), q = troNear(x, z, 20); if (!q) return nat;
+  const w = q.d < 6.5 ? 1 : smooth01(clamp(1 - (q.d - 6.5) / 12, 0, 1)); return lerp(nat, q.y, w);
+}
+function troBumps(x, z) {
+  let h = 0; const cx = Math.floor(x / 10), cz = Math.floor(z / 10);
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const q of TRO.rockHash.get(TRO.T.key(cx + a, cz + b)) || []) {
+    const d2 = ((x - q.x) ** 2 + (z - q.z) ** 2) / (q.r * q.r); if (d2 < 1) h = Math.max(h, q.h * (1 - d2) ** 2);
+  }
+  return h;
+}
+const troIn = (x, z) => x < TRO.rect[2] && troR(x, z) < TRO.R + 30;
+function troY(x, z) { return troIn(x, z) ? troCarve(x, z) + troBumps(x, z) : 0; }
+function troGrad(x, z) { const e = .5; return [(troY(x + e, z) - troY(x - e, z)) / (2 * e), (troY(x, z + e) - troY(x, z - e)) / (2 * e)]; }
+function troTerrain(x, z) {
+  if (!troIn(x, z)) return null;
+  const q = troNear(x, z, 8); if (q && q.d < 6) return 'trail';
+  return troR(x, z) < TRO.R - 20 ? 'dirt' : null;
+}
+const TRO_DIRT_TEX = () => canvasTex(256, 256, (g, w, h) => {   // dusty brown dirt with two worn wheel tracks
+  g.fillStyle = '#9a7650'; g.fillRect(0, 0, w, h); noise(g, w, h, 26);
+  g.fillStyle = 'rgba(70,48,28,.28)'; for (const x of [.24, .76]) g.fillRect(x * w - 18, 0, 36, h);
+  g.fillStyle = 'rgba(200,180,150,.25)'; for (let k = 0; k < 90; k++) g.fillRect(Math.random() * w, Math.random() * h, 3 + Math.random() * 5, 2 + Math.random() * 3);
+}, { repeat: true });
+function pineTrees(list) {   // Troodos black pines: a tall bare trunk and a broad, layered crown
+  const parts = [], col = (geo, c) => { const n = geo.attributes.position.count, a = new Float32Array(n * 3), k = new THREE.Color(c); for (let i = 0; i < n; i++) a.set([k.r, k.g, k.b], i * 3); geo.setAttribute('color', new THREE.BufferAttribute(a, 3)); return geo; };
+  parts.push(col(new THREE.CylinderGeometry(.22, .34, 8, 6).translate(0, 4, 0), '#5a4232'));
+  [[2.7, 3.2, 7.2], [2.2, 3, 9.2], [1.4, 2.6, 11.1]].forEach(([r, h, y], k) => parts.push(col(new THREE.ConeGeometry(r, h, 7).translate(0, y, 0).rotateY(k * .7), k === 1 ? '#2c4a2a' : '#26412a')));
+  const im = instanced(mergeGeometries(parts.map(g => g.toNonIndexed())), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, flatShading: true }), list);
+  return regBreakList(list, [im], 'cypress', .45);
+}
+function buildTroodos(C) {
+  const T = TRO.T, g = C.group, [X0, Z0, X1, Z1] = TRO.rect, S = isTouch ? 8 : 6, n0 = scene.children.length;
+  // the ground: a height field over the whole mountain rectangle, coloured by height, steepness and the trail
+  const nx = Math.round((X1 - X0) / S), nz = Math.round((Z1 - Z0) / S), geo = new THREE.PlaneGeometry(X1 - X0, Z1 - Z0, nx, nz);
+  geo.rotateX(-Math.PI / 2); geo.translate((X0 + X1) / 2, 0, (Z0 + Z1) / 2);
+  const pos = geo.attributes.position, hs = new Float32Array(pos.count), cols = new Float32Array(pos.count * 3);
+  for (let v = 0; v < pos.count; v++) { const x = pos.getX(v), z = pos.getZ(v), q = troNear(x, z, 9); hs[v] = troCarve(x, z) - (q && q.d < 7 ? .45 : 0); pos.setY(v, hs[v]); }   // (under the trail ribbon: kept just below it)
+  const forest = new THREE.Color('#4f5530'), needles = new THREE.Color('#6b5a3a'), rock = new THREE.Color('#8e8576'), meadow = new THREE.Color('#8a9450'), gravel = new THREE.Color('#bdb19a'), c = new THREE.Color();
+  for (let j = 0, v = 0; j <= nz; j++) for (let i = 0; i <= nx; i++, v++) {
+    const x = pos.getX(v), z = pos.getZ(v), r = troR(x, z), hl = hs[j * (nx + 1) + Math.max(0, i - 1)], hr = hs[j * (nx + 1) + Math.min(nx, i + 1)], hu = hs[Math.max(0, j - 1) * (nx + 1) + i], hd = hs[Math.min(nz, j + 1) * (nx + 1) + i];
+    const sl = Math.hypot(hr - hl, hd - hu) / (2 * S), q = troNear(x, z, 16);
+    c.copy(r > TRO.R - 10 ? meadow : forest).lerp(needles, .3 + .3 * Math.sin(x * .03) * Math.sin(z * .027));
+    if (r < TRO.R - 10) c.lerp(rock, clamp((sl - .7) / .4, 0, .85));
+    if (q) c.lerp(gravel, clamp(1 - (q.d - 6) / 8, 0, .7) * .7);
+    if (r < TRO.plazaR + 8) c.copy(gravel);
+    c.multiplyScalar(.93 + .07 * Math.sin(x * .41) * Math.sin(z * .37)); cols.set([c.r, c.g, c.b], v * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3)); geo.computeVertexNormals();
+  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .97 })); ground.receiveShadow = true; g.add(ground);
+  // the trail: a dirt ribbon with wheel ruts, on the carved bench, with short skirts down to the ground either side
+  const rb = new GB(); const pt = (i, off, dy) => [T.x[i] - T.tz[i] * off, T.y[i] + dy, T.z[i] + T.tx[i] * off];
+  for (let i = 0; i < T.n - 1; i++) {
+    const v0 = T.s[i] / 10, v1 = T.s[i + 1] / 10;
+    rb.quad(pt(i, -5.5, .02), pt(i, 5.5, .02), pt(i + 1, 5.5, .02), pt(i + 1, -5.5, .02), [0, v0, 1, v1]);
+    for (const s of [-1, 1]) rb.quad(pt(i, s * 5.5, .02), pt(i, s * 7, -.6), pt(i + 1, s * 7, -.6), pt(i + 1, s * 5.5, .02), [0, v0, .1, v1]);
+  }
+  const trail = new THREE.Mesh(rb.build(), new THREE.MeshStandardMaterial({ map: TRO_DIRT_TEX(), roughness: 1, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 })); trail.receiveShadow = true; g.add(trail);
+  // the rocks on the trail (the bumps), and big boulders along the steep parts and out on the slopes
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0x8b8378, roughness: 1, flatShading: true }), dode = new THREE.DodecahedronGeometry(1, 0);
+  instanced(dode, rockMat, TRO.rocks.map(q => [q.x, T.y[q.i] + q.h * .25, q.z, q.x * 7, q.r * .95, q.h * 1.15, q.r * .8]));
+  const rnd = mulberry32(331), bould = [];
+  for (let i = 40; i < T.n - 20; i += 3) {
+    if (T.g[i] < .35 && rnd() > .06) continue;
+    if (rnd() > .45) continue;
+    const s = rnd() < .5 ? -1 : 1, lat = s * (7.6 + rnd() * 5), x = T.x[i] - T.tz[i] * lat, z = T.z[i] + T.tx[i] * lat, sz = 1 + rnd() * 1.8;
+    bould.push([x, troCarve(x, z) - sz * .3, z, rnd() * 6, sz * 1.2, sz, sz * 1.1]); C.P.addCol(x - sz * .9, z - sz * .9, x + sz * .9, z + sz * .9);
+  }
+  for (let k = 0; k < 260; k++) {   // out on the mountain, on the steeper ground
+    const a = rnd() * Math.PI * 2, r = 80 + rnd() * (TRO.R - 120), x = TRO.cx + TRO.ex * r * Math.cos(a), z = TRO.cz + TRO.ez * r * Math.sin(a);
+    if (troNear(x, z, 14)) continue;
+    const sz = 1.2 + rnd() * 2.6; bould.push([x, troNatural(x, z) - sz * .35, z, rnd() * 6, sz * 1.3, sz, sz * 1.2]); C.P.addCol(x - sz, z - sz, x + sz, z + sz);
+  }
+  instanced(dode, rockMat, bould);
+  // the pine forest (smashable: a truck can fell them), clear of the trail, the summit and the start
+  const trees = [], tr = mulberry32(77), cell = isTouch ? 19 : 14;
+  for (let x = X0 + 10; x < X1 - 10; x += cell) for (let z = Z0 + 10; z < Z1 - 10; z += cell) {
+    const px = x + (tr() - .5) * cell * .9, pz = z + (tr() - .5) * cell * .9, r = troR(px, pz);
+    if (r > TRO.R - 15 || r < TRO.plazaR + 30 || tr() > .62 - .25 * clamp((r - 500) / 250, 0, 1)) continue;
+    if (troNear(px, pz, 12) || Math.hypot(px - T.x[0], pz - T.z[0]) < 60) continue;
+    const y = troNatural(px, pz); if (Math.abs(troNatural(px + 2, pz) - y) > 2.6) continue;   // not on the sheerest rock
+    trees.push([px, y - .3, pz, tr() * 6, .75 + tr() * .55]); C.P.addCol(px - .4, pz - .4, px + .4, pz + .4);
+  }
+  pineTrees(trees); TRO.nTrees = trees.length;
+  // the summit, Olympos: a gravel plateau, the two white radar domes, a mast, the Cyprus flag and the finish arch
+  const top = TRO.top, cx = TRO.cx, cz = TRO.cz, white = new THREE.MeshStandardMaterial({ color: 0xf2f4f6, roughness: .5 }), steel = new THREE.MeshStandardMaterial({ color: 0x8c9096, roughness: .5, metalness: .6 });
+  [[-26, -14, 7], [-12, -30, 5.5]].forEach(([ox, oz, r]) => {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(r * .8, r * .85, 4, 18), new THREE.MeshStandardMaterial({ color: 0xd8d6cf, roughness: .8 })); base.position.set(cx + ox, top + 2, cz + oz); g.add(base);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 18), white); dome.position.set(cx + ox, top + 4 + r * .7, cz + oz); dome.castShadow = true; g.add(dome);
+    C.P.addCol(cx + ox - r * .85, cz + oz - r * .85, cx + ox + r * .85, cz + oz + r * .85);
+  });
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(.25, .6, 34, 6), steel); mast.position.set(cx + 16, top + 17, cz - 26); g.add(mast); C.P.addCol(cx + 15, cz - 27, cx + 17, cz - 25);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, 12, 8), steel); pole.position.set(cx + 22, top + 6, cz + 14); g.add(pole); C.P.addCol(cx + 21.7, cz + 13.7, cx + 22.3, cz + 14.3);
+  const flagT = canvasTex(256, 160, (q, w, h) => { q.fillStyle = '#fff'; q.fillRect(0, 0, w, h); q.fillStyle = '#d57800'; q.beginPath(); q.ellipse(w * .5, h * .45, w * .26, h * .2, -.1, 0, 7); q.fill(); q.strokeStyle = '#4e5b31'; q.lineWidth = 6; q.beginPath(); q.arc(w * .5, h * .78, 30, Math.PI * 1.1, Math.PI * 1.9); q.stroke(); });
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.9), new THREE.MeshStandardMaterial({ map: flagT, side: THREE.DoubleSide })); flag.position.set(cx + 23.5, top + 11, cz + 14); g.add(flag); TRO.flag = flag;
+  const sum = signTex(1024, 256, '#21321c', [['ΟΛΥΜΠΟΣ · OLYMPOS', .38, .3, OR, '#fff'], ['TROODOS SUMMIT · トロードス山頂', .76, .17, OR, '#ffd21f']], '#ffd21f');
+  const sb = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.5), new THREE.MeshBasicMaterial({ map: sum })); sb.position.set(cx + 8, top + 2.4, cz + 30); sb.rotation.y = Math.PI * .85; g.add(sb);
+  troArch(g, T.n - 6, ['FINISH · ΤΕΡΜΑΤΙΣΜΟΣ', 'TROODOS HILL CLIMB'], '#0d1b2a', '#ffd21f', C);
+  // the start: a gravel apron at the edge of town, the start arch, and the gates up the mountain
+  troArch(g, 16, ['TROODOS HILL CLIMB ⛰️', 'ΤΡΟΟΔΟΣ · 2.1 KM · 520 M UP · 40° WALLS'], '#3a1d0a', '#ff8a1f', C);
+  const pole2 = new THREE.CylinderGeometry(.12, .14, 6, 8).translate(0, 3, 0), flagG = new THREE.PlaneGeometry(2.2, 1.4).translate(1.1, 5.2, 0);
+  const flagM = [new THREE.MeshStandardMaterial({ color: 0xff6a1a, side: THREE.DoubleSide, emissive: 0xff6a1a, emissiveIntensity: .25 }), new THREE.MeshStandardMaterial({ color: 0x1e5bff, side: THREE.DoubleSide, emissive: 0x1e5bff, emissiveIntensity: .25 })];
+  TRO.beams = TRO.gates.map((i, k) => {
+    const gg = new THREE.Group(); gg.position.set(T.x[i], T.y[i], T.z[i]); gg.rotation.y = Math.atan2(T.tx[i], T.tz[i]); g.add(gg);
+    if (k < TRO.gates.length - 1) for (const s of [-1, 1]) { const p = new THREE.Mesh(pole2, blackMat); p.position.x = s * 7.4; gg.add(p); const f = new THREE.Mesh(flagG, flagM[s > 0 ? 0 : 1]); f.position.x = s * 7.4; f.rotation.y = s > 0 ? Math.PI : 0; gg.add(f); }
+    const num = signTex(256, 256, '#ff8a1f', [[k === TRO.gates.length - 1 ? '🏁' : String(k + 1), .55, .62, OR, '#111']], '#111'), nm = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ map: num, side: THREE.DoubleSide })); nm.position.y = 7.4; gg.add(nm);
+    const bm = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 120, 12, 1, true), bm); beam.position.y = 60; gg.add(beam); return bm;
+  });
+  TRO.ring = makeTaxiMarker('#ff8a1f'); TRO.ring.position.set(T.x[6], 0, T.z[6]);
+  // the instanced meshes (rocks, boulders, pines) were added to the scene: keep them with the country, so they hide with it
+  const added = scene.children.slice(n0); if (added.length) g.add(...added);
+}
+function troArch(g, i, [a, b], bg, col, C) {   // an arch across the trail at sample i, with a sign both ways
+  const T = TRO.T, A = new THREE.Group(); A.position.set(T.x[i], T.y[i], T.z[i]); A.rotation.y = Math.atan2(T.tx[i], T.tz[i]); g.add(A);
+  const t = signTex(1024, 256, bg, [[a, .38, .3, OR, '#fff'], [b, .76, .16, OR, col]], col), m = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(m);
+  for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), m); p.position.set(0, 8.6, s * .32); if (s < 0) p.rotation.y = Math.PI; A.add(p); }
+  const bd = new THREE.Mesh(new THREE.BoxGeometry(14.4, 3.8, .55), new THREE.MeshStandardMaterial({ color: new THREE.Color(bg) })); bd.position.y = 8.6; A.add(bd);
+  for (const s of [-1, 1]) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(.9, 10.5, .9), new THREE.MeshStandardMaterial({ color: new THREE.Color(col), roughness: .5 })); p.position.set(s * 7.2, 5.2, 0); A.add(p);
+    const wx = T.x[i] - T.tz[i] * s * 7.2 * -1, wz = T.z[i] + T.tx[i] * s * 7.2 * -1; C.P.addCol(wx - .6, wz - .6, wx + .6, wz + .6);
+  }
+}
+
+/* ---- the Troodos Hill Climb: stop in the orange ring at the foot of the trail. RACE puts you in the AMBOOLA Troodos
+   4×4 against five Cypriot drivers in the same trucks, up through the gates to the finish on the summit. TAKE THE
+   TRUCK lends it to you for a free climb; or just drive up in your own car. The truck goes back (and your own car
+   comes back) when you drive into town again. Winning the first time gives you the truck. */
+const TRO_ID = 'troodos', TRO_PRIZE = [50000, 20000, 12000, 6000, 3000, 2000], TRO_KEY = 'amboola.troodos';
+const TRO_RIVALS = [['Andreas', 1], ['Eleni', 11], ['Nikos', 8], ['Maria', 2], ['Yiannis', 7]];   // names and paints
+let tro = null, troAsk = false, troBest = (() => { try { return JSON.parse(localStorage.getItem(TRO_KEY)) || null; } catch (e) { return null; } })();
+function troSwap(on) {   // into the loan truck (on) or back into your own car, right where you are
+  const p = player, keep = { x: p.x, z: p.z, h: p.heading, y: p.y };
+  if (on) { tro.loan = { carIdx, paintIdx }; carIdx = CARS.findIndex(c => c.id === TRO_ID); paintIdx = CARS[carIdx].paint; }
+  else { ({ carIdx, paintIdx } = tro.loan); tro.loan = null; }
+  const spec = CARS[carIdx]; player.dispose(); player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); attachDog(player.car);
+  Object.assign(player, { x: keep.x, z: keep.z, heading: keep.h, y: keep.y || 0 }); audio.setCar(spec); loudExhaust(spec);
+  $('carname').innerHTML = `${spec.name}<small>${on ? 'ON LOAN · TROODOS' : PAINTS[paintIdx].n.toUpperCase()}</small>`;
+}
+function troOpen() {
+  state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const won = wallet.owned.has(TRO_ID), row = (k, col, t, a, b, btn) => `<div class="meetRow" style="--glow:${col}"><div class="mGlow"></div><div class="mInfo"><b>${t}</b><span>${a}</span><small>${b}</small></div><button data-k="${k}">${btn}</button></div>`;
+  $('meetTitle').innerHTML = `⛰️ TROODOS HILL CLIMB · ΤΡΟΟΔΟΣ<small>2.1 KM OF ROCKY FOREST TRAIL · 520 M UP · THREE 40° WALLS</small>`;
+  $('meetList').innerHTML = row('race', '#ff8a1f', '🏁 RACE TO THE TOP', `You and 5 rivals in AMBOOLA Troodos 4×4 trucks${troBest ? ' · BEST ' + fmtTime(troBest.t) : ''}`, `WIN ${fmtUSD(TRO_PRIZE[0])}${won ? '' : ' + THE TRUCK IS YOURS!'}`, 'RACE!')
+    + row('truck', '#2fa85a', '🚙 TAKE THE TRUCK', 'Climb the mountain your way, no race', 'IT GOES BACK WHEN YOU DRIVE INTO TOWN', 'DRIVE')
+    + row('own', '#7cc8e8', `🚗 MY ${player.spec.name.toUpperCase()}`, 'Try the trail in your own car', 'LOW CARS SLIDE BACK DOWN THE STEEP WALLS!', 'GO');
+  $('meetList').querySelectorAll('button[data-k]').forEach(bt => bt.onclick = () => { closeMeet(); troGo(bt.dataset.k); });
+  $('meetPanel').classList.remove('hidden');
+}
+function troGo(k) {
+  if (k === 'own') return;
+  if (!MODELS[TRO_ID]) { toast('⛰️ THE TRUCK IS ON ITS WAY', 'ONE MOMENT…'); loadModel(TRO_ID).then(() => troGo(k)); return; }
+  endActs(); endChase(null, player); clearNav(true);
+  if (!tro) { tro = { mode: 'free', loan: null }; if (player.spec.id !== TRO_ID) troSwap(true); }
+  if (k === 'truck') { tro.mode = 'free'; toast('🚙 AMBOOLA TROODOS 4×4', 'ON LOAN · FOLLOW THE TRAIL TO THE TOP'); troPlace(player, 8, 0); return; }
+  // the race: you at the back of a 2-wide grid, the rivals ahead; a 3 s countdown
+  const T = TRO.T, d = DIFF().ai, sp = tunedSpec(CARS.find(c => c.id === TRO_ID));
+  if (tro.ais) troEnd(true);   // last race's trucks
+  tro.mode = 'race'; Object.assign(tro, { state: 'count', t: -3, gate: 0, done: false, finish: null, beeps: 3 });
+  tro.ais = TRO_RIVALS.map(([n, pi], k) => {
+    const car = buildCar(sp, PAINTS[pi].c, PAINTS[pi].m); scene.add(car.group);
+    return { n, car, s: T.s[30] + (4 - k >> 1) * 9 + 4, lat: (k & 1 ? 2.4 : -2.4), want: 0, v: 0, skill: d * ([.57, .6, .63, .66, .69][(k + 2) % 5] + Math.random() * .02), finish: null, bump: 0 };
+  });
+  troPlace(player, 30, -2.4); player.vx = player.vz = 0;
+  toast('⛰️ TROODOS HILL CLIMB', 'GET READY…'); audio.beep(660, .2);
+}
+function troPlace(p, i, lat) {
+  const T = TRO.T; Object.assign(p, { x: T.x[i] - T.tz[i] * lat, z: T.z[i] + T.tx[i] * lat, heading: Math.atan2(T.tx[i], T.tz[i]), vx: 0, vz: 0, yawRate: 0, y: troY(T.x[i], T.z[i]) });
+  camPos.set(p.x - T.tx[i] * 9, p.y + 4, p.z - T.tz[i] * 9);
+}
+function troEnd(quiet) {   // stop the race (the loan truck stays until you drive into town)
+  if (!tro) return; for (const a of tro.ais || []) scene.remove(a.car.group);
+  tro.ais = null; tro.mode = 'free'; tro.state = null; actHud(null); troPaintGates(-1);
+  if (!quiet) toast('🏁 RACE STOPPED', 'THE TRUCK IS STILL YOURS TO DRIVE');
+}
+function troPaintGates(next) { (TRO.beams || []).forEach((m, k) => { m.color.set(k === next ? 0xffc21f : 0xffffff); m.opacity = k === next ? .3 : .06; }); }
+// the rivals drive the trail: as fast as the slope, the bends and their skill allow, steering round each other
+function troAI(a, dt, others) {
+  const T = TRO.T;
+  if (a.park && a.s >= T.L - 1.5) {   // over the line and off the trail: drive to a spot in the row on the summit
+    const gp = a.car.group, e = T.n - 1, dx = a.park[0] - a.x, dz = a.park[1] - a.z, d = Math.hypot(dx, dz);
+    a.v = damp(a.v, Math.min(7, d * .8), 2, dt); if (d > .1) { const m = Math.min(d, a.v * dt); a.x += dx / d * m; a.z += dz / d * m; }
+    gp.rotation.y += wrapA((d > 2 ? Math.atan2(dx, dz) : Math.atan2(T.tx[e], T.tz[e])) - gp.rotation.y) * Math.min(1, dt * 3);
+    const y = troY(a.x, a.z); gp.position.set(a.x, y, a.z); gp.rotation.x = damp(gp.rotation.x, 0, 4, dt); gp.rotation.z = 0;
+    for (const w of a.car.wheels) w.spin.rotation.z -= a.v / w.R * dt;
+    return troBump(a, y, null);
+  }
+  const i = clamp(Math.round(a.s / 2), 0, T.n - 1), ahead = clamp(i + 12, 0, T.n - 1);
+  const grade = Math.max(T.g[i], T.g[ahead] * .7), turn = Math.abs(Math.atan2(T.tx[i] * T.tz[ahead] - T.tz[i] * T.tx[ahead], T.tx[i] * T.tx[ahead] + T.tz[i] * T.tz[ahead])) / Math.max(1, T.s[ahead] - T.s[i]);
+  let vt = (34 - 24 * clamp(grade / .84, 0, 1)) * a.skill; vt = Math.min(vt, Math.sqrt(7 / Math.max(turn, 1e-3)));
+  if (tro.state === 'count') vt = 0;
+  // keep off the truck ahead in the same line, and swing out to pass
+  for (const o of others) if (o !== a && !o.park) { const ds = o.s - a.s; if (ds > 0 && ds < 9 && Math.abs(o.lat - a.lat) < 2.2) { vt = Math.min(vt, o.v * .96); a.want = o.lat > 0 ? -2.6 : 2.6; } }
+  const pq = troNear(player.x, player.z, 12); if (pq) { const ds = pq.s - a.s; if (ds > 0 && ds < 9 && Math.abs(pq.lat - a.lat) < 2.4) { vt = Math.min(vt, player.speed * .95); a.want = pq.lat > 0 ? -2.6 : 2.6; } }
+  if (Math.random() < dt * .3) a.want = (Math.random() * 2 - 1) * 2.2;
+  if (a.park) vt = Math.max(Math.min(vt, 7), 3);   // over the line: roll on to the summit
+  a.v = damp(a.v, vt, vt > a.v ? .9 : 3, dt); a.s = Math.min(a.s + a.v * dt, T.L - 1); a.lat = damp(a.lat, clamp(a.want, -3.2, 3.2), 1.2, dt);
+  const j = clamp(Math.round(a.s / 2), 0, T.n - 1), x = T.x[j] - T.tz[j] * a.lat, z = T.z[j] + T.tx[j] * a.lat, y = troY(x, z), gp = a.car.group;
+  gp.position.set(x, y, z); gp.rotation.order = 'YXZ'; gp.rotation.y = Math.atan2(T.tx[j], T.tz[j]); gp.rotation.x = damp(gp.rotation.x, -Math.atan(T.g[j]), 6, dt);
+  gp.rotation.z = Math.sin(a.s * .7 + a.lat) * .03 * clamp(a.v / 8, 0, 1);   // rocking over the stones
+  for (const w of a.car.wheels) w.spin.rotation.z -= a.v / w.R * dt;
+  a.x = x; a.z = z; troBump(a, y, pq);
+}
+function troBump(a, y, pq) {   // bumping into the player: both get pushed apart
+  const dx = player.x - a.x, dz = player.z - a.z, d = Math.hypot(dx, dz);
+  if (d < 2.6 && d > 1e-3 && Math.abs((player.y || 0) - y) < 2) { const pen = 2.6 - d; player.x += dx / d * pen * .7; player.z += dz / d * pen * .7; if (pq) a.lat -= Math.sign(a.lat - pq.lat) * -pen * .3; a.v *= .9; }
+}
+function updateTroodos(dt, p) {
+  if (!TRO.T) return;
+  const C = COUNTRIES.find(c => c.id === 'cyprus'), T = TRO.T;
+  if (TRO.flag && C.group?.visible) TRO.flag.rotation.y = Math.sin(performance.now() / 700) * .25;
+  const onMtn = p.x < TRO.rect[2] + 2 && p.x > TRO.rect[0] - 300 && Math.abs(p.z - TRO.cz) < 1200;
+  // the start ring: stop in it to choose
+  const ds = Math.hypot(p.x - T.x[6], p.z - T.z[6]);
+  if (!(tro?.ais && tro.state !== 'done') && !race && !taxi && !crime && !bus && ds < 7 && p.speed < 3) { if (!troAsk) { troAsk = true; troOpen(); } }
+  else if (ds > 14) troAsk = false;
+  if (!tro) return;
+  if (!onMtn) {   // back in town: a lent truck goes back
+    if (tro.ais) troEnd(true); if (tro.loan) { troSwap(false); toast('🚙 TRUCK RETURNED', 'THANK YOU! · ΕΥΧΑΡΙΣΤΩ'); } tro = null; return;
+  }
+  if (!tro.ais) return;
+  // the race
+  tro.t += dt;
+  if (tro.state === 'count') {
+    Object.assign(p, { vx: 0, vz: 0 }); const c = Math.ceil(-tro.t);
+    if (c < tro.beeps && c >= 0) { tro.beeps = c; audio.beep(c ? 660 : 1320, c ? .2 : .5); toast(c ? String(c) : 'GO!', c ? 'TROODOS HILL CLIMB' : 'TO THE SUMMIT!'); }
+    if (tro.t >= 0) { tro.state = 'run'; tro.t = 0; troPaintGates(0); }
+  }
+  for (const a of tro.ais) troAI(a, dt, tro.ais);
+  if (tro.state === 'count') { troHud(p); return; }
+  for (const a of tro.ais) if (a.finish == null && a.s >= T.s[TRO.gates[TRO.gates.length - 1]]) {
+    const e = T.n - 1, k = tro.ais.filter(o => o.park).length, f = 8 + (k & 1) * 6, side = (k >> 1) * 5 * (k & 2 ? -1 : 1) + 2.6;   // spots in two rows
+    a.finish = tro.t; a.park = [T.x[e] + T.tx[e] * f - T.tz[e] * side, T.z[e] + T.tz[e] * f + T.tx[e] * side];
+  }
+  if (tro.state === 'done') return;
+  const q = troNear(p.x, p.z, 40), gi = TRO.gates[tro.gate];
+  if (q && q.s >= T.s[gi] - 3 && q.d < 9) {
+    tro.gate++; audio.beep(880, .12);
+    if (tro.gate === TRO.gates.length) return troFinish(p);
+    troPaintGates(tro.gate); toast(`GATE ${tro.gate}/${TRO.gates.length - 1}`, `${fmtTime(tro.t)} · ${troPos(p)}${['ST', 'ND', 'RD'][troPos(p) - 1] || 'TH'}`);
+  }
+  troHud(p);
+}
+const troProg = p => { const q = troNear(p.x, p.z, 60); return q ? q.s : 0; };
+const troPos = p => 1 + tro.ais.filter(a => a.finish != null || a.s > troProg(p)).length;
+function troHud(p) {
+  const T = TRO.T, gi = TRO.gates[Math.min(tro.gate, TRO.gates.length - 1)], q = troNear(p.x, p.z, 60), left = Math.max(0, T.s[gi] - (q?.s ?? 0));
+  actHud([['⛰️ TROODOS', tro.state === 'count' ? 'READY…' : `POS ${troPos(p)}/6`], ['GATE', tro.gate >= TRO.gates.length - 1 ? '🏁 FINISH' : `${tro.gate + 1}/${TRO.gates.length - 1}`], ['TIME', fmtTime(Math.max(0, tro.t))], ['NEXT', left > 1000 ? (left / 1000).toFixed(1) + ' km' : Math.round(left) + ' m'], ['HEIGHT', Math.round(p.y || 0) + ' m']], '#ff8a1f');
+}
+function troFinish(p) {
+  const pos = troPos(p), t = tro.t, rec = !troBest || t < troBest.t, first = pos === 1 && !wallet.owned.has(TRO_ID);
+  if (rec) { troBest = { t, pos }; localStorage.setItem(TRO_KEY, JSON.stringify(troBest)); }
+  const pay = TRO_PRIZE[pos - 1] + (rec ? 5000 : 0); earn(pay); bump('troodos');
+  tro.state = 'done'; actHud(null); troPaintGates(-1); audio.beep(880, .25); setTimeout(() => audio.beep(1320, .5), 250);   // the rivals still finish and park
+  stuntPop([pos === 1 ? '🏆 KING OF TROODOS!' : `FINISHED ${pos}${['ST', 'ND', 'RD'][pos - 1] || 'TH'}`, rec ? 'NEW RECORD' : fmtTime(t)], 0, `${fmtTime(t)} · +${fmtUSD(pay)}`);
+  if (first) {
+    wallet.owned.add(TRO_ID); saveWallet(); buildMenu(); checkMissions();
+    tro.loan.carIdx = carIdx; tro.loan.paintIdx = paintIdx;   // it's yours now: you keep driving it
+    tro.loan = null; localStorage.setItem('amboola.car', carIdx); $('carname').innerHTML = `${CARS[carIdx].name}<small>${PAINTS[paintIdx].n.toUpperCase()}</small>`;
+    setTimeout(() => banner('⛰️ YOU WON THE TROODOS HILL CLIMB!', 'THE AMBOOLA TROODOS 4×4 IS YOURS!', 'Find it in your garage · AMBOOLA'), 1800);
+  }
+}
+
 const COUNTRY_DEFS = [
   { id: 'cyprus', name: 'Cyprus', local: 'ΚΥΠΡΟΣ', hello: 'WELCOME TO CYPRUS · ΚΑΛΩΣ ΗΡΘΑΤΕ', gx: rc(3), col: '#d7832f',
     rect: [-11700, 14000, -10500, 14900],
@@ -6495,6 +6845,10 @@ for (const C of COUNTRIES) C.P.air = true;   // free roam: cars can fly off the 
   const C = COUNTRIES.find(c => c.id === 'dubai'), D = DESERT, o = D.oasis; C.desert = D;
   C.P.rects.push([D.x0 - 2, D.z0, D.x1, D.z1]); C.P.y = duneH; C.P.grad = (x, z) => x > D.x0 ? duneGrad(x, z) : null;
   C.P.terrain = (x, z) => x < D.x0 + 4 ? null : Math.hypot(x - o[0], z - o[1]) < o[2] - 4 ? 'water' : 'sand';
+}
+{ // Cyprus's pad runs on west, up the Troodos mountains
+  const C = COUNTRIES.find(c => c.id === 'cyprus'); C.troodos = TRO; prepTroodos();
+  C.P.rects.push(TRO.rect); C.P.y = troY; C.P.grad = (x, z) => troIn(x, z) ? troGrad(x, z) : null; C.P.terrain = troTerrain;
 }
 for (const C of COUNTRIES) { C.P.sea = true; C.P.flat = C.P.rects.map((r, i) => i ? 0 : 40); }   // islands in the sea: a 40 m beach round each town (the desert slopes straight in)
 function buildBridgeRoad(R, P, label) {
@@ -7648,6 +8002,7 @@ function buildCountries() {
     g.add(countryGround(C, sand, ground));
     C.sights = fn(C, g);
     if (C.desert) buildDesert(C);
+    if (C.troodos) buildTroodos(C);
     buildCountryStunts(C);
     welcomeArch(C, C.hello, C.col);
     // the airport: a runway near the bridge end where the jet lands
@@ -11561,6 +11916,10 @@ function buildPlaces() {
     P.push({ n: `${C.name} Bridge`, jp: '', type: `Sea bridge · ${km} km · 6 lanes`, kind: 'area', zone: C.id, idx: Math.round(C.R.n / 3), x: C.R.x[Math.round(C.R.n / 3)], z: C.R.z[Math.round(C.R.n / 3)], col: C.col });
     P.push({ n: `${C.name} Gate`, jp: '', type: `Harbour gate · bridge to ${C.name}`, kind: 'city', x: C.gx, z: HALF, col: C.col });
   }
+  { const C = COUNTRIES.find(c => c.troodos), T = TRO.T; if (C) {   // the Troodos mountains: the trail's foot (the start ring) and the summit
+    P.push({ n: 'Troodos Mountains', jp: 'ΤΡΟΟΔΟΣ · トロードス山脈', type: 'Mountain forest · Troodos Hill Climb · 4×4 truck', kind: 'area', zone: C.id, idx: C.R.n - 1, end: [T.x[0] + 30, T.z[0]], face: -Math.PI / 2, troPath: 'foot', x: T.x[6], z: T.z[6], col: '#ff8a1f' });
+    P.push({ n: 'Olympos Summit', jp: 'ΟΛΥΜΠΟΣ · オリンポス山頂', type: `Troodos summit · ${TRO.top} m · radar domes`, kind: 'area', zone: C.id, idx: C.R.n - 1, end: [TRO.cx + 20, TRO.cz + 18], face: -Math.PI / 2, troPath: 'top', x: TRO.cx, z: TRO.cz, col: '#ff8a1f' });
+  } }
   { const C = COUNTRIES.find(c => c.desert); if (C) P.push({ n: 'Dubai Desert', jp: '砂漠 · صحراء', type: 'Sand dunes · desert rally · oasis · camels', kind: 'area', zone: C.id, idx: C.R.n - 1, end: [RALLY_PTS[0][0] - 40, RALLY_PTS[0][1]], face: Math.PI / 2, x: (DESERT.x0 + DESERT.x1) / 2, z: (DESERT.z0 + DESERT.z1) / 2, col: '#ecc98c' }); }
   const bc = [1982, BEACH.z0 + 60], wl = WANGAN.L;
   P.push({ n: 'Amboola Beach', jp: 'アンブーラビーチ', type: 'Beach town · pier & Ferris wheel', kind: 'area', zone: 'wangan', idx: WANGAN.n - 1, end: bc, x: bc[0], z: bc[1], col: '#ff5fa2' });
@@ -11612,6 +11971,13 @@ function zIndex(R, x, z) { const nr = R.near(x, z, 80); if (nr) return nr.i; let
 function mtnPath(a, b) { const out = [], s = a <= b ? 1 : -1; for (let i = a; s > 0 ? i < b : i > b; i += 6 * s) out.push([MTN.x[i], MTN.z[i]]); out.push([MTN.x[b], MTN.z[b]]); return out; }
 function mtnIndex(x, z) { const nr = MTN.near(x, z, 60); if (nr) return nr.i; let best = 1e18, bi = 0; for (let i = 0; i < MTN.n; i++) { const d = (MTN.x[i] - x) ** 2 + (MTN.z[i] - z) ** 2; if (d < best) { best = d; bi = i; } } return bi; }
 function navRoute(px, pz, d) {
+  if (d.troPath && TRO.T) {   // the Troodos: through the town streets to the foot of the trail (and up the trail to the summit)
+    const T = TRO.T, C = COUNTRIES.find(c => c.troodos), mx = C.R.x[C.R.n - 1], up = d.troPath === 'top', q = troIn(px, pz) ? troNear(px, pz, 400) : null;
+    const tail = []; if (up) { for (let i = q ? q.i : 0; i < T.n; i += 6) tail.push([T.x[i], T.z[i]]); tail.push(d.end); }
+    if (q) return up ? tail : [[T.x[0] + 20, T.z[0]]];
+    const head = C.P.inside(px, pz) ? [] : navRoute(px, pz, { ...d, troPath: null, end: [mx, C.z0 + 110] });
+    return [...head, [C.x0 + 90, C.z0 + 110], [C.x0 + 90, 14410], [T.x[0] + 20, T.z[0]], ...tail];
+  }
   { const zp = zoneAt(px, pz), zd = d.zone || 'city';   // the moon has no road from here; the volcano is through the tunnel from the beach
     if (zd === 'moon' || zp === 'moon') return [[d.end?.[0] ?? d.x, d.end?.[1] ?? d.z]];
     if (zd === 'volcano' && zp !== 'volcano') return [...navRoute(px, pz, { zone: 'wangan', idx: WANGAN.n - 1, end: [2300, 2215] }), ...zPath(TUNNEL, 0, d.idx), ...(d.end ? [d.end] : [])];
@@ -12309,6 +12675,7 @@ $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textConten
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
   carEnvRelease(); if (swim) endSwim(player, false);
+  if (tro) { if (tro.ais) troEnd(true); if (tro.loan) ({ carIdx, paintIdx } = tro.loan); tro = null; }   // a lent Troodos truck goes back
   if (build.mode) { build.mode = null; build.run = null; buildBar(); camera.fov = 62; camera.updateProjectionMatrix(); }
   state = 'garage'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   renderPass.scene = gScene; renderPass.camera = gCamera; bloomPass.threshold = .9; bloomPass.strength = .35; renderer.toneMappingExposure = .9;
@@ -12562,7 +12929,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
