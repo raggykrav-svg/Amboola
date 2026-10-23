@@ -247,6 +247,8 @@ Forza finish (added by `join()` to every car except `lite` traffic and open-top 
 - In the game `GlassClear` is `clearMat` (transparent .42, `DoubleSide`, no depth write) and window tints become `tintClear(i)`. `cabinMats` (`Cabin`, `Leather`, `Alcantara`, `Dash`, `Screen`) carry `userData.cabin`, so `buildCockpit` hides them (and the double-sided glass) when you sit inside.
 - Mirrors: `mirrors()` builds a rounded-rectangle housing, a `Chrome` glass and a `GlossBlack` arm ray-cast to the door below the window line (`mirrorbase`).
 
+911 shape: `T911` in `porsches.py` was traced from a 1:25 side/top/front/rear drawing of the 992 GT3 RS (scale checked: the hub spacing comes out at the real 2.457 m wheelbase). `body_911()` owns everything the seven 911s share (glasshouse, round domed headlights via `headlight_911(..., bowl='Gloss', dome=.045)`, mirrors, light bar); the variants only add bumpers, vents, wings and wheels. To check a shape against a drawing, render the model's silhouette with an orthographic camera per view (Cycles, 1 sample, transparent film; Workbench needs a GPU) and lay it over the drawing at the drawing's scale.
+
 Model gotchas:
 - If a cross-section's points swap height order, the cage self-intersects and Blender flips all normals. You then see the wheel-well booleans *adding* cylinders, and every decal hidden inside the body. The script now forces outward normals, but keep each station's points ordered.
 - Decals (glass, vents, lights) are ray-cast patches. When the rays hit the body at a grazing angle, the patch gets holes, so fan the rays from inside the car (`Car.fan()`) at wrapped corners.

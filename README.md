@@ -170,7 +170,11 @@ When you sit inside the car (C), you see the brand's own cockpit instead.
 
 ![All 14 Porsches built in Blender](media/porsches-blender.jpg)
 
-All 14 Porsches are real 3D models built in [Blender](https://www.blender.org/). Each one is made entirely by Python script, at its real dimensions (length, width, height, wheelbase and wheel sizes). Each car has its own details:
+All 14 Porsches are real 3D models built in [Blender](https://www.blender.org/). Each one is made entirely by Python script, at its real dimensions (length, width, height, wheelbase and wheel sizes). 
+
+**The 911s are traced from the real car.** Their shape comes from a measured 1:25 drawing of the 992 GT3 RS (side, top, front and back views). Its wheelbase came out at exactly the real 2,457 mm, so the scale is right. The roof line, the window shapes, the wide rear hips, the round headlights that bulge out of the front fenders, the thin light bar and the bumpers all follow that drawing. All seven 911s (GT3 RS, GT3, GT3 Touring, S/T, GT2 RS, Turbo S and Dakar) share this new body.
+
+Each car has its own details:
 
 | Car | What makes it look right |
 |---|---|

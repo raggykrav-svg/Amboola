@@ -11,43 +11,65 @@ import bpy
 from carkit import Car, V, lerp, stations, edit, both, side, main
 
 # ======================================================================= 911 (992)
+# Traced from a 1:25 drawing of the 992 GT3 RS (side, top, front and rear views): 4.57 m long, 2.457 m wheelbase,
+# roof 1.30 m, round headlights 0.69 m out at 0.73 m, a narrow cabin on broad shoulders, rear hips 1.92 m wide.
 # x, zb, w, zs, wb, zbl, wg, zg, wr, zr, zt   (front axle x=1.22, rear axle x=-1.24)
+# in front of the windscreen wg,zg is the fender crown and wr,zr the bonnet's valley between the fenders
 T911 = [
-    ( 2.27, .27, .66, .41, .64, .47, .55, .50, .30, .51, .505),
-    ( 2.20, .18, .84, .45, .82, .55, .68, .625, .44, .565, .555),
-    ( 2.05, .155, .89, .50, .875, .64, .71, .725, .50, .615, .60),
-    ( 1.80, .15, .915, .55, .90, .72, .73, .785, .52, .67, .655),
-    ( 1.50, .15, .925, .585, .91, .77, .745, .83, .53, .715, .70),
-    ( 1.22, .15, .93, .61, .915, .80, .755, .855, .53, .755, .74),
-    ( 0.92, .13, .92, .625, .905, .845, .77, .89, .52, .835, .82),
-    ( 0.58, .13, .905, .615, .89, .865, .78, .955, .60, 1.07, 1.095),
-    ( 0.24, .13, .895, .60, .88, .875, .75, 1.09, .635, 1.27, 1.285),
-    (-0.30, .13, .895, .60, .88, .885, .735, 1.115, .64, 1.29, 1.305),
-    (-0.74, .13, .925, .62, .90, .905, .725, 1.095, .62, 1.255, 1.27),
-    (-1.04, .15, .95, .655, .915, .935, .705, 1.035, .585, 1.165, 1.18),
-    (-1.25, .17, .955, .675, .92, .955, .685, 1.00, .55, 1.08, 1.095),
-    (-1.60, .20, .945, .69, .905, .965, .66, .99, .50, 1.018, 1.03),
-    (-1.95, .25, .905, .70, .865, .955, .62, .98, .45, .988, 1.00),
-    (-2.19, .30, .82, .68, .78, .925, .55, .955, .36, .953, .965),
-    (-2.30, .37, .62, .63, .58, .86, .44, .885, .25, .873, .885),
+    ( 2.275, .30, .26, .44, .24, .50, .18, .52, .10, .53, .53),
+    ( 2.245, .22, .42, .43, .40, .52, .33, .55, .18, .555, .555),
+    ( 2.19, .19, .53, .42, .51, .545, .44, .58, .24, .575, .57),
+    ( 2.12, .175, .62, .425, .60, .57, .53, .615, .30, .595, .585),
+    ( 2.05, .17, .70, .43, .68, .60, .60, .645, .35, .615, .605),
+    ( 1.97, .165, .78, .44, .76, .63, .66, .68, .39, .635, .625),
+    ( 1.88, .16, .865, .46, .845, .66, .70, .72, .42, .66, .645),
+    ( 1.78, .155, .905, .48, .89, .70, .715, .765, .44, .685, .67),
+    ( 1.66, .15, .925, .51, .91, .75, .725, .815, .46, .715, .70),
+    ( 1.53, .15, .94, .54, .925, .80, .735, .86, .47, .745, .73),
+    ( 1.38, .15, .95, .57, .935, .835, .74, .885, .48, .77, .755),
+    ( 1.22, .15, .952, .60, .938, .855, .745, .898, .49, .795, .78),
+    ( 1.05, .145, .952, .62, .936, .87, .75, .91, .50, .82, .805),
+    ( 0.90, .135, .945, .625, .928, .88, .755, .92, .52, .845, .835),
+    ( 0.78, .135, .935, .625, .915, .885, .76, .93, .55, .91, .905),
+    ( 0.65, .13, .925, .62, .90, .89, .74, .97, .56, 1.00, 1.00),
+    ( 0.50, .13, .91, .615, .87, .895, .70, 1.02, .55, 1.08, 1.09),
+    ( 0.35, .13, .905, .61, .83, .90, .64, 1.10, .53, 1.17, 1.18),
+    ( 0.20, .13, .90, .605, .81, .905, .60, 1.17, .50, 1.24, 1.25),
+    ( 0.00, .13, .90, .60, .80, .908, .575, 1.195, .47, 1.27, 1.29),
+    (-0.25, .13, .905, .60, .80, .91, .565, 1.20, .46, 1.28, 1.30),
+    (-0.50, .13, .915, .61, .81, .915, .57, 1.17, .46, 1.265, 1.285),
+    (-0.75, .135, .935, .63, .86, .915, .60, 1.12, .46, 1.225, 1.25),
+    (-0.95, .14, .958, .65, .91, .905, .63, 1.08, .47, 1.18, 1.21),
+    (-1.15, .15, .958, .66, .93, .90, .66, 1.03, .48, 1.125, 1.155),
+    (-1.35, .16, .958, .67, .935, .90, .70, .975, .47, 1.06, 1.08),
+    (-1.55, .175, .95, .68, .93, .90, .72, .945, .46, 1.0, 1.015),
+    (-1.72, .19, .925, .69, .905, .91, .75, .93, .46, .955, .96),
+    (-1.88, .21, .88, .70, .86, .905, .72, .925, .44, .925, .93),
+    (-2.02, .24, .845, .70, .825, .90, .68, .915, .42, .91, .91),
+    (-2.14, .27, .83, .69, .81, .885, .65, .90, .40, .90, .90),
+    (-2.22, .31, .78, .67, .76, .82, .60, .83, .36, .82, .82),
+    (-2.29, .38, .60, .62, .56, .72, .44, .74, .26, .73, .73),
 ]
 W911 = dict(F=dict(x=1.22, r=0.350, w=0.275, y=0.775, rim=0.254), R=dict(x=-1.24, r=0.367, w=0.335, y=0.785, rim=0.267))
 
 def body_911(k, ys=1.0, rows=T911, wheels=W911, rear_intakes=True, roof='Carbon', hood=None):
-    """the shared 992 shell: body, wheel wells, glasshouse, door lines, mirrors, engine-lid grille, light bar, cabin"""
+    """the shared 992 shell: body, wheel wells, glasshouse, door lines, round headlights, mirrors, light bar, cabin"""
     k.loft(stations(rows, ys)); k.arches(wheels); k.surface()
-    k.windscreen(0.90, 0.23, 0.86, 0.57, 0.60 * ys, 0.53 * ys)
-    k.rear_window(-1.42, -0.80, 1.02, 0.36, 0.40 * ys, 0.47 * ys)
-    k.side_glass(top=[(0.62, 0.90), (0.42, 1.03), (0.16, 1.205), (-0.20, 1.237), (-0.55, 1.212), (-0.84, 1.105), (-1.02, 0.985)],
-                 bot=[(0.62, 0.895), (-0.40, 0.917), (-0.86, 0.945), (-1.02, 0.975)], pillars=[-0.517])
-    if roof: k.decal('roof', roof, 'top', -0.70, 0.17, -0.50 * ys, 0.50 * ys, 16, 12, off=.003)
-    if hood: k.decal('hood', hood, 'top', 1.25, 2.10, -0.46 * ys, 0.46 * ys, 16, 12, off=.003)
+    k.windscreen(0.82, 0.22, 0.885, 0.585, 0.57 * ys, 0.48 * ys, sweep=0.22)
+    k.rear_window(-1.60, -0.90, 0.98, 0.343, 0.48 * ys, 0.50 * ys)
+    k.side_glass(top=[(0.50, 0.912), (0.40, 0.99), (0.30, 1.06), (0.20, 1.12), (0.11, 1.178), (-0.12, 1.206), (-0.36, 1.200),
+                      (-0.58, 1.165), (-0.70, 1.129), (-0.89, 1.088), (-1.07, 1.041), (-1.21, 0.985)],
+                 bot=[(0.50, 0.911), (-0.52, 0.912), (-0.67, 0.950), (-1.21, 0.978)], pillars=[-0.555], pillar_w=0.06)
+    if roof: k.decal('roof', roof, 'top', -0.88, 0.20, -0.47 * ys, 0.47 * ys, 16, 12, off=.003)
+    if hood: k.decal('hood', hood, 'top', 1.05, 2.12, -0.44 * ys, 0.44 * ys, 16, 12, off=.003)
     for s in (1, -1):
-        for xg in (0.64, -0.62): k.decal('doorline', 'Black', side(s), xg - .004, xg + .004, 0.25, 0.89, 1, 12, off=.002)
-        k.decal('handle', 'Black', side(s), -0.40, -0.26, 0.835, 0.855, 4, 1, off=.003)
+        for xg in (0.62, -0.58): k.decal('doorline', 'Black', side(s), xg - .004, xg + .004, 0.25, 0.89, 1, 12, off=.002)
+        k.decal('handle', 'Black', side(s), -0.48, -0.30, 0.705, 0.725, 4, 1, off=.003)
         if rear_intakes: k.slanted('sideintake', 'Gloss', s, -0.70, -0.86, 0.56, 0.74, lean=0.08, nu=6)
-    k.mirrors(0.47, 1.01 * ys, 0.995)
-    k.light_bar(-1.55, 0.856, 0.890, 0.84, bg=0.022, frac=1.0)
+    # the round 992 headlights sit in the noses of the front fenders, looking forward and a little up
+    k.headlight_911((1.84, 0.69 * ys, 0.74), (0.96, 0.08, 0.26), rx=0.13, ry=0.128, bowl='Gloss', drl=(0.2, 0.11, 0.65), dome=0.045)
+    k.mirrors(0.34, 0.90 * ys, 0.945, size=(0.15, 0.21, 0.105))
+    k.light_bar(-1.55, 0.712, 0.758, 0.86, bg=0.02, frac=0.55)
     k.interior(-0.25, 1.3 * ys, 0.72)
 
 def engine_grille(k, x0=-2.12, x1=-1.68, hw=0.50, slats=9, mat='Carbon'):
@@ -68,23 +90,24 @@ def gt3rs(k):
     for i in range(7):
         both(lambda s, i=i: k.decal('louvre', 'Gloss', 'top', 0.98 + i * .062, 1.012 + i * .062, s * 0.62, s * 0.84, 1, 5))
     both(lambda s: k.slanted('archvent', 'Gloss', s, 0.70, 0.79, 0.42, 0.70, lean=0.05, nu=3, nv=8))
-    k.headlight_911((2.03, 0.62, 0.69), (0.72, 0.22, 0.66))
     # rear: engine-lid grille, black bumper, carbon diffuser, twin centre pipes, side skirts
     engine_grille(k)
-    k.fan('rearpanel', 'Gloss', -1.55, 0.47, 0.66, -0.60, 0.60, 30, 4)
-    k.fan('diffuser', 'Carbon', -1.55, 0.35, 0.47, -0.60, 0.60, 30, 3)
+    k.fan('rearpanel', 'Gloss', -1.55, 0.36, 0.56, -0.62, 0.62, 30, 4)
+    k.fan('diffuser', 'Carbon', -1.55, 0.17, 0.36, -0.62, 0.62, 30, 3)
     both(lambda s: k.decal('skirt', 'Carbon', side(s), -0.92, 0.86, 0.163, 0.235, 30, 2))
-    k.exhaust(0.075, 0.40)
+    k.exhaust(0.072, 0.46)
     # swan-neck wing with DRS flap and big end plates
-    k.swan_wing(-1.66, 1.32, 0.44, 1.80, -1.66, 0.30, flap=(-2.04, 1.405, 0.20, -22),
-                endplate=[(-1.60, 1.29), (-1.63, 1.45), (-2.18, 1.49), (-2.25, 1.36), (-2.05, 1.27)])
+    k.swan_wing(-1.66, 1.23, 0.44, 1.80, -1.66, 0.30, flap=(-2.04, 1.315, 0.20, -22),
+                endplate=[(-1.60, 1.20), (-1.63, 1.33), (-2.18, 1.36), (-2.25, 1.26), (-2.05, 1.18)])
     k.join(); k.wheels(spokes=10)
 
 def front_911(k, style, ys=1.0):
     """992 front bumpers: 'rs' (huge intakes), 'gt3', 'touring', 'gt2rs', 'turbo', 'dakar'"""
     if style in ('gt3', 'touring', 'dakar'):
-        k.decal('intakeC', 'Gloss', 'front', -0.36, 0.36, 0.24, 0.37, 16, 5)
-        both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.50, s * 0.72 * ys, 0.25, 0.42, 8, 6))
+        # a wide centre mouth (wider at the bottom) and angled corner intakes that wrap round the bumper
+        k.rect('intakeC', 'Gloss', (2.2, 0, 0.30), (1, 0, 0), 0.86, 0.14, .004, 16, 4, taper=0.1)
+        both(lambda s: k.rect('intakeS', 'Gloss', (2.0, s * 0.66 * ys, 0.335), (0.82, s * 0.57, 0), 0.25, 0.19, .004, 8, 6, slant=s * -0.035, taper=0.18))
+        for s in (1, -1): k.rect('intakefin', 'Paint', (2.0, s * 0.66 * ys, 0.335), (0.82, s * 0.57, 0), 0.25, 0.018, .008, 8, 1)
         k.decal('splitter', 'Carbon' if style == 'gt3' else 'Gloss', 'front', -0.78, 0.78, 0.19, 0.225, 30, 2)
     elif style in ('gt2rs', 'turbo'):
         k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.22, 0.34, 16, 4)
@@ -102,13 +125,12 @@ def gt3(k):
     body_911(k, ys, rear_intakes=False, roof=None)
     front_911(k, 'gt3', ys)
     both(lambda s: k.decal('nostril', 'Gloss', 'top', 1.70, 1.98, s * 0.10, s * 0.30, 6, 5))
-    k.headlight_911((2.03, 0.62 * ys, 0.69), (0.72, 0.22, 0.66))
     engine_grille(k, hw=0.48)
-    k.fan('rearpanel', 'Gloss', -1.55, 0.47, 0.62, -0.55, 0.55, 30, 4)
-    k.fan('diffuser', 'Carbon', -1.55, 0.35, 0.47, -0.55, 0.55, 30, 3)
-    k.exhaust(0.08, 0.40, r=0.055)
-    k.swan_wing(-1.72, 1.22, 0.36, 1.64, -1.72, 0.30, aoa=-6,
-                endplate=[(-1.68, 1.19), (-1.70, 1.31), (-2.12, 1.34), (-2.16, 1.24), (-2.02, 1.17)])
+    k.fan('rearpanel', 'Gloss', -1.55, 0.36, 0.54, -0.58, 0.58, 30, 4)
+    k.fan('diffuser', 'Carbon', -1.55, 0.17, 0.36, -0.58, 0.58, 30, 3)
+    k.exhaust(0.08, 0.44, r=0.055)
+    k.swan_wing(-1.72, 1.16, 0.36, 1.64, -1.72, 0.30, aoa=-6,
+                endplate=[(-1.68, 1.13), (-1.70, 1.25), (-2.12, 1.28), (-2.16, 1.18), (-2.02, 1.11)])
     k.join(); k.wheels(spokes=10, spoke_w=(0.026, 0.017))
 
 # ---- 911 GT3 Touring: no fixed wing, deployable spoiler, silver window frames
@@ -116,27 +138,25 @@ def gt3t(k):
     ys = 0.975
     body_911(k, ys, rear_intakes=False, roof=None)
     front_911(k, 'touring', ys)
-    k.headlight_911((2.03, 0.62 * ys, 0.69), (0.72, 0.22, 0.66))
     engine_grille(k, x0=-2.06, x1=-1.70, hw=0.44, slats=8, mat='Gloss')
-    k.spoiler(-1.98, 1.03, 0.26, 1.30, strut_y=0.30)
-    k.fan('rearpanel', 'Gloss', -1.55, 0.47, 0.58, -0.50, 0.50, 30, 3)
-    k.fan('diffuser', 'Gloss', -1.55, 0.35, 0.47, -0.55, 0.55, 30, 3)
-    k.exhaust(0.08, 0.40, r=0.055)
+    k.spoiler(-1.98, 0.98, 0.26, 1.30, strut_y=0.30)
+    k.fan('rearpanel', 'Gloss', -1.55, 0.38, 0.52, -0.55, 0.55, 30, 3)
+    k.fan('diffuser', 'Gloss', -1.55, 0.17, 0.38, -0.58, 0.58, 30, 3)
+    k.exhaust(0.08, 0.44, r=0.055)
     for s in (1, -1):   # aluminium-look side window frames
         k.project('chromeline', 'Chrome', lambda u, v, s=s: k.VIEW[side(s)](lerp(0.60, -0.98, u), lerp(0.880, 0.893, v) + 0.06 * max(0, -0.40 - lerp(0.60, -0.98, u))), 30, 1, off=.006)
     k.join(); k.wheels(spokes=10, spoke_w=(0.026, 0.017))
 
 # ---- 911 S/T: lightweight Touring with a fixed ducktail, carbon hood and roof, magnesium wheels
-T911_DUCK = edit(edit(T911, -2.19, zt=1.035, zr=1.02, zg=1.0, zbl=.945), -2.30, zt=1.04, zr=1.03, zg=1.0, zbl=.90)
+T911_DUCK = edit(edit(edit(T911, -2.02, zt=.935, zr=.935, zg=.93), -2.14, zt=.98, zr=.975, zg=.96, zbl=.90), -2.22, zt=.985, zr=.98, zg=.95, zbl=.86)
 def st(k):
     ys = 0.975
     body_911(k, ys, rows=T911_DUCK, rear_intakes=False, roof='Carbon', hood='Carbon')
     front_911(k, 'touring', ys)
-    k.headlight_911((2.03, 0.62 * ys, 0.69), (0.72, 0.22, 0.66))
     engine_grille(k, x0=-2.02, x1=-1.68, hw=0.44, slats=8, mat='Gloss')
-    k.fan('rearpanel', 'Gloss', -1.55, 0.47, 0.58, -0.50, 0.50, 30, 3)
-    k.fan('diffuser', 'Gloss', -1.55, 0.35, 0.47, -0.55, 0.55, 30, 3)
-    k.exhaust(0.08, 0.40, r=0.052)
+    k.fan('rearpanel', 'Gloss', -1.55, 0.38, 0.52, -0.55, 0.55, 30, 3)
+    k.fan('diffuser', 'Gloss', -1.55, 0.17, 0.38, -0.58, 0.58, 30, 3)
+    k.exhaust(0.08, 0.44, r=0.052)
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
 # ---- 911 GT2 RS: wide body, NACA ducts, fender gills, huge wing on uprights, big titanium pipes
@@ -146,27 +166,25 @@ def gt2rs(k):
     k.naca(1.55, 1.95, 0.22, 0.03, 0.16)
     for i in range(6):
         both(lambda s, i=i: k.decal('gill', 'Gloss', 'top', 0.98 + i * .07, 1.015 + i * .07, s * 0.64, s * 0.84, 1, 5))
-    k.headlight_911((2.03, 0.62, 0.69), (0.72, 0.22, 0.66))
     engine_grille(k, x0=-2.10, x1=-1.80, hw=0.46, slats=7)
-    k.fan('rearpanel', 'Gloss', -1.55, 0.47, 0.66, -0.62, 0.62, 30, 4)
-    k.fan('diffuser', 'Carbon', -1.55, 0.33, 0.47, -0.62, 0.62, 30, 3)
+    k.fan('rearpanel', 'Gloss', -1.55, 0.36, 0.56, -0.62, 0.62, 30, 4)
+    k.fan('diffuser', 'Carbon', -1.55, 0.15, 0.36, -0.62, 0.62, 30, 3)
     both(lambda s: k.decal('skirt', 'Carbon', side(s), -0.92, 0.86, 0.163, 0.235, 30, 2))
-    k.exhaust(0.10, 0.42, r=0.068)
-    k.post_wing(-1.66, 1.30, 0.42, 1.74, -1.86, 0.36, aoa=-8,
-                endplate=[(-1.60, 1.25), (-1.62, 1.40), (-2.16, 1.44), (-2.20, 1.30), (-2.02, 1.22)])
+    k.exhaust(0.10, 0.45, r=0.068)
+    k.post_wing(-1.66, 1.25, 0.42, 1.74, -1.86, 0.36, aoa=-8,
+                endplate=[(-1.60, 1.20), (-1.62, 1.35), (-2.16, 1.39), (-2.20, 1.25), (-2.02, 1.17)])
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
 # ---- 911 Turbo S: wide body with big rear-fender intakes, active wing deployed, outboard rectangular pipes
 def turbos(k):
     body_911(k, roof=None)
     front_911(k, 'turbo')
-    k.headlight_911((2.03, 0.62, 0.69), (0.72, 0.22, 0.66))
     for s in (1, -1): k.slanted('sideintake2', 'Gloss', s, -0.68, -0.90, 0.52, 0.80, lean=0.10, nu=6)
     engine_grille(k, x0=-2.06, x1=-1.70, hw=0.46, slats=10, mat='Gloss')
-    k.spoiler(-1.80, 1.10, 0.40, 1.62, aoa=-6, strut_y=0.42)
-    k.fan('rearpanel', 'Gloss', -1.55, 0.47, 0.60, -0.62, 0.62, 30, 3)
-    k.fan('diffuser', 'Gloss', -1.55, 0.35, 0.47, -0.66, 0.66, 30, 3)
-    k.exhaust(0.56, 0.42, shape='rect', w=0.15, h=0.085)
+    k.spoiler(-1.80, 1.04, 0.40, 1.62, aoa=-6, strut_y=0.42)
+    k.fan('rearpanel', 'Gloss', -1.55, 0.36, 0.54, -0.62, 0.62, 30, 3)
+    k.fan('diffuser', 'Gloss', -1.55, 0.17, 0.36, -0.66, 0.66, 30, 3)
+    k.exhaust(0.56, 0.44, shape='rect', w=0.15, h=0.085)
     k.join(); k.wheels(spokes=5, pairs=True, spoke_w=(0.024, 0.016))
 
 # ---- 911 Dakar: rally-raised 911 on all-terrain tyres, arch cladding, roof basket with spot lights
@@ -177,13 +195,12 @@ def dakar(k):
     ys = 0.98
     body_911(k, ys, wheels=W_DAKAR, rear_intakes=False, roof=None)
     front_911(k, 'dakar', ys)
-    k.headlight_911((2.03, 0.62 * ys, 0.69), (0.72, 0.22, 0.66))
     k.arch_trim(0.07)
     both(lambda s: k.decal('cladding', 'Black', side(s), -0.86, 0.80, 0.14, 0.30, 30, 3, off=.006))
     engine_grille(k, x0=-2.06, x1=-1.70, hw=0.44, slats=8, mat='Gloss')
-    k.spoiler(-1.84, 1.06, 0.34, 1.50, aoa=-5, strut_y=0.40, mat='Paint')
-    k.fan('rearpanel', 'Black', -1.55, 0.40, 0.60, -0.62, 0.62, 30, 4)
-    k.exhaust(0.08, 0.44, r=0.05)
+    k.spoiler(-1.84, 1.00, 0.34, 1.50, aoa=-5, strut_y=0.40, mat='Paint')
+    k.fan('rearpanel', 'Black', -1.55, 0.30, 0.54, -0.62, 0.62, 30, 4)
+    k.exhaust(0.08, 0.46, r=0.05)
     both(lambda s: k.box('towhook_r', 'Accent', (-2.33, s * 0.32, 0.36), (0.10, 0.03, 0.06), bevel=.008))
     k.roof_rack(-0.78, 0.12, 0.50, 1.40)
     k.join(lift=DAKAR_LIFT); k.wheels(spokes=10, spoke_w=(0.03, 0.02), nut='bolts', offroad=True)

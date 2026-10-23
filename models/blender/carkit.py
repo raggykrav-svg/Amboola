@@ -338,17 +338,27 @@ class Car:
                 self.decal('pillar', frame, side(s), px - pillar_w / 2, px + pillar_w / 2, pl(bot, px) - .01, pl(top, px) + .01, 1, 8, off=.007)
 
     # ------------------------------------------------------------ lights
-    def headlight_911(self, c, f, rx=0.112, ry=0.090, ring=1.14):
-        """992-style: oval lens in a gloss-black surround, chrome bowl, projector and the 4-point LED signature"""
+    def headlight_911(self, c, f, rx=0.112, ry=0.090, ring=1.14, bowl='Chrome', drl=(0.23, 0.22, 0.63), dome=0.0):
+        """992-style: oval lens in a gloss-black surround, a bowl (chrome, or dark like the 992's), a chrome-ringed
+        projector and the 4-point LED signature (drl = dot width, dot height and distance from the middle, as fractions
+        of rx/ry). Projected along -f, so a lamp facing forward onto a sloping fender is round from the front and a
+        long teardrop from the side, like the real thing. dome>0 bulges the lens out of the fender by that much at its
+        middle (the 911's frog eyes)."""
         for s in (1, -1):
             cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2])
-            self.oval('headlight_ring', 'Gloss', cs, fs, rx * ring, ry * ring, .004, ring=0.80)
-            self.oval('headlight', 'Chrome', cs, fs, rx, ry, .006)
-            self.oval('headlight_core', 'Headlight', cs, fs, rx * .32, ry * .33, .009, n=6)
-            _, e1, e2 = self.basis(fs)
+            fn, e1, e2 = self.basis(fs)
+            lamp = [self.oval('headlight_ring', 'Gloss', cs, fs, rx * ring, ry * ring, .004, ring=0.80),
+                    self.oval('headlight', bowl, cs, fs, rx, ry, .006, n=14 if dome else 10)]
+            if bowl != 'Chrome': lamp.append(self.oval('headlight_proj', 'Chrome', cs, fs, rx * .40, ry * .41, .008, ring=0.7))
+            lamp.append(self.oval('headlight_core', 'Headlight', cs, fs, rx * .32, ry * .33, .009, n=6))
             for k in range(4):
                 a = k * math.pi / 2 + math.pi / 4
-                self.oval('drl', 'Headlight', cs + (e1 * math.cos(a) * rx * .63 + e2 * math.sin(a) * ry * .62), fs, rx * .23, ry * .22, .010, n=4)
+                lamp.append(self.oval('drl', 'Headlight', cs + (e1 * math.cos(a) * rx + e2 * math.sin(a) * ry) * drl[2], fs, rx * drl[0], ry * drl[1], .010, n=4))
+            if dome:   # lift every layer by the same bump, so the dots ride on the lens
+                for o in lamp:
+                    for v in o.data.vertices:
+                        d = v.co - cs; x, y = d.dot(e1) / rx, d.dot(e2) / ry
+                        v.co += fn * dome * max(0.0, 1 - x * x - y * y)
     def headlight_quad(self, c, f, w, h, slant=0.0, taper=0.0, dots=4):
         """Taycan / Cayenne style: rounded housing with four LED points in a 2x2 grid (or a row with dots='row')"""
         for s in (1, -1):
