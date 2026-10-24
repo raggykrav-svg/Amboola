@@ -502,7 +502,11 @@ Crash into almost anything except a building and it breaks!
   - **🏁 RACE TO THE TOP:** you and 5 Cypriot drivers (Andreas, Eleni, Nikos, Maria and Yiannis), all in Troodos 4×4 trucks. Drive through the 6 gates to the finish arch on the summit. Win **$50,000**, and the first time you win, **the truck is yours!** The rivals are faster on the walls, you are faster on the flat parts.
   - **🚙 TAKE THE TRUCK:** borrow the truck and hike up the mountain your way, no race. It goes back (and you get your own car back) when you drive into town.
   - **🚗 MY CAR:** try the trail in your own car.
-- **Bumpy dirt:** nobody goes much faster than 80 km/h on the rocky trail.
+- **Bumpy dirt:** nobody goes much faster than 80 km/h on the rocky trail, and it is full of rocks and loose dirt.
+- **🛣 The asphalt road:** a second way up, for every car. A smooth 4 km mountain road with hairpin bends climbs from the end of the town's street to the summit, with red-and-white posts and a **steel crash barrier** on the drop side, so you bounce back instead of falling down the mountain. It never crosses the dirt trail's walls.
+- **🏘 Platres:** halfway up the road (about 80 m high) is the real Troodos village: stone houses with red tile roofs, a church with a bell tower, a little square with a fountain, café umbrellas and people. Find it on the map: *Platres*.
+- **A thick pine forest:** more than 10,000 trees cover the mountain now.
+- **GPS:** *Olympos Summit* takes the asphalt road (unless you are already on the trail).
 
 ### AMBOOLA Hotels 🏨 and walking 🚶
 
@@ -524,6 +528,29 @@ Crash into almost anything except a building and it breaks!
 - **Lots of people** walk on the pavements in Tokyo and in all the country towns, in all kinds of clothes. Some stop to chat. If you drive at them, they **jump out of the way** with their arms in the air, so **nobody ever gets hurt**.
 - **Traffic jams:** sometimes there is a **crash** (two crashed cars and a police car with flashing lights) or **road works** (barriers, cones, a digger and a worker) on a Tokyo street. The cars wait behind it in both lanes, **up to 50 cars**, and city cars that drive up join the back of the queue. When it is cleared, they all drive off one after another.
 - **On the map:** a jam is a **red line** with a **!** sign on the minimap and the big map. The **GPS finds another way round** it, and tells you if a new jam is on your way.
+
+### Challenges 🏆
+
+![The pizza tower in Italy, the camel race in Dubai, Eiffel Tower laps in Paris, the London buses, the frozen lake in the Alps and the road to the pyramids](media/challenges.jpg)
+
+- **20 challenges:** two in every country and two in Tokyo. Each one has a gold ring on the street: stop on it and press **Enter** (or tap). Win **1, 2 or 3 ⭐** ($3,000, $6,000 or $12,000).
+- **🏆 Golden trophies:** do both challenges in a country and you win its **golden trophy, $25,000** and a **special-edition car** (find it in your garage):
+
+  | Where | Challenges | Prize car |
+  |---|---|---|
+  | 🗼 Tokyo | 🔑 **Hotel Hide and Seek**: walk round the hotel lobby and find the golden key (🔥 = close!) · 🪝 **Traffic Jam Hero**: tow the 2 crashed cars to the green tow zone | Nissan GT-R Neon Night |
+  | 🇨🇾 Cyprus | 🧀 **Halloumi Hurry**: hot halloumi on the roof, up to Olympos before it gets cold · 🪨 **Aphrodite's Rock Jump**: fly off the pink beach ramp and land close to the rock | Porsche 911 Dakar Aphrodite |
+  | 🇮🇹 Italy | 🍕 **Pizza Tower**: 3 customers with 10 pizzas on the roof (every bump knocks one off) · 🏎 **Ferrari Parade**: follow the red Ferrari, not too close, not too far | Ferrari SF90 Tricolore |
+  | 🇦🇪 Dubai | 🏜 **Dune Bash**: fly over 10 sand dunes · 🐫 **Camel Race**: beat 3 racing camels to the oasis | Bugatti Chiron Golden Falcon |
+  | 🇫🇷 Paris | 🗼 **Eiffel Tower Laps**: 3 laps through the yellow gates · 🥐 **Croissant Catch**: 20 floating croissants in 2 minutes | Bugatti Divo Bleu de France |
+  | 🇺🇸 New York | 🚕 **Yellow Taxi Rush**: pick up 4 people waving on the pavement · 🚁 **Skyscraper Search**: fly the helicopter through 5 stars on the skyscrapers | Ford Mustang Big Apple |
+  | 🇨🇭 Swiss Alps | ⚪ **Snowball Run**: a giant snowball rolls after you! · ⛸ **Ice Drift**: slide on the new **frozen lake** for 60 s | Mercedes-AMG G 63 Matterhorn |
+  | 🇬🇧 London | 🕰 **Big Ben Beat**: get to Big Ben before the 12th BONG · 🚌 **Double-Decker Dodge**: dodge the red buses (3 lives) | Rolls-Royce Spectre Royal Green |
+  | 🇪🇬 Egypt | 💰 **Pyramid Treasure**: drive over the new **causeway** to the pyramids and find 3 chests · 🦁 **Sphinx Riddle**: 3 riddles, drive to the right answer and stop on it | Lamborghini Urus Pharaoh |
+  | 🇿🇦 South Africa | 🦁 **Lion Escape**: drive 3 people back to the camp while lions chase you · 🐒 **Monkey Mischief**: get your 5 bananas back from the monkeys | Toyota Land Cruiser Safari |
+
+- **🏆 CHALLENGES board:** in the pause menu. It shows your stars for every challenge, and **GO** sets the GPS to one.
+- **Smarter GPS in the towns:** the route now follows the streets (round the stunt loops and the Empire State Building) instead of going straight through the houses.
 
 ### The sea 🌊
 

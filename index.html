@@ -338,6 +338,9 @@
   #stunt.bad b { color:#ff5050; text-shadow:0 0 18px #c8141b, 0 3px 0 #000; }
   @media (max-width: 760px) { #stunt { top:150px; } #stunt b { font-size:22px; } #stunt b + b { font-size:16px; } #stunt i { font-size:18px; } #stunt small { font-size:12px; } }
   @keyframes stuntPop { 0% { opacity:0; transform:translateX(-50%) scale(.5); } 8% { opacity:1; transform:translateX(-50%) scale(1.18); } 16% { transform:translateX(-50%) scale(1); } 80% { opacity:1; transform:translateX(-50%) scale(1); } 100% { opacity:0; transform:translateX(-50%) translateY(-14px); } }
+  #chalNote { position:fixed; left:50%; top:74px; transform:translateX(-50%); z-index:20; max-width:min(760px, 92vw); padding:8px 16px; background:rgba(10,12,18,.82); border-left:4px solid #ffd21f; color:#fff; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:17px; line-height:1.3; text-align:center; pointer-events:none; }
+  #chalNote.hidden { display:none; } #chalNote small { display:block; color:#ffd21f; font-size:14px; letter-spacing:.06em; margin-top:3px; }
+  @media (max-width: 760px) { #chalNote { top:52px; font-size:14px; } }
   #sleepFx { position:fixed; inset:0; z-index:40; pointer-events:none; opacity:0; transition:opacity 1.1s; background:radial-gradient(circle at 50% 45%, #1a1440, #05040c 70%); color:#fff;
     display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:90px; font-family:'Orbitron',sans-serif; }
   #sleepFx.on { opacity:1; }
@@ -557,6 +560,7 @@
   <div id="chain"><div class="lbl" id="chainLbl"></div><div class="pts" id="chainPts"></div></div>
   <div id="toast"></div>
   <div id="sleepFx"></div>
+  <div id="chalNote" class="hidden"></div>
   <div id="stunt"></div>
   <canvas id="tacho" width="520" height="520"></canvas>
   <canvas id="dmgHud" class="hidden" width="64" height="104" title="Damage: repair it in the garage"></canvas>
@@ -651,6 +655,7 @@
   <button id="bMusic">🎵 MUSIC: AMBOOLA</button>
   <button id="bSpot">🎸 MY SPOTIFY PLAYLIST</button>
   <button id="bBadges">⭐ LEVEL &amp; BADGES</button>
+  <button id="bChal">🏆 CHALLENGES</button>
   <button id="bSeason">SEASON</button>
   <button id="bRaces">RACES</button>
   <button id="bLeave" class="hidden">LEAVE RACE</button>
@@ -1819,7 +1824,7 @@ async function buildWorld() {
   buildWangan(); buildSnowArea(); buildFujiArea(); buildVolcano(); buildMoon(); buildPark(); buildBoatRamp(); applySeason();
   setLoad(.77, 'Building the bridges to Cyprus, Italy and Dubai…'); await nextFrame();
   buildCountries(); buildTokyoAirport();
-  buildSpeedCams(); buildPatrols(); buildActs();
+  buildSpeedCams(); buildPatrols(); buildActs(); buildChallenges();
   buildMinimapImage();
 }
 
@@ -2231,8 +2236,18 @@ const INTERIORS = { Porsche: 'porsche', Tesla: 'tesla', Lamborghini: 'lambo', Fe
 const INTERIOR_MODELS = Object.values(INTERIORS).map(k => 'int_' + k);
 const CITY_MODELS = ['cyprus', 'italy', 'dubai', 'paris', 'newyork', 'alps', 'london', 'egypt'].map(id => 'city_' + id);   // Tokyo's own town (city_tokyo) loads with the traffic and is swapped in by upgradeTokyo   // the countries' Blender towns (see upgradeCity)
 const MODEL_FILES = ['gt3rs', 'gt3', 'gt3t', 'st', 'gt2rs', 'turbos', 'gt4rs', 'spyrs', 'dakar', '918', 'taycangt', 'macanev', 'cayennegt', 'cayenneeh', 'revuelto', 'svj', 'temerario', 'sto', 'sterrato', 'urusp', 'sf90', 'laferrari', '812c', '12cil', '296gtb', 'f8', 'purosangue', 'w1', 'senna', 'p1', '765lt', '750s', 'artura', 'gts', 'tourbillon', 'chironss', 'chironps', 'divo', 'veyronss', 'bolide', 'roadster2', 'roadster08', 'modelsplaid', 'model3p', 'modelxplaid', 'modelyp', 'cyberbeast', 'cybercab', 'jesko', 'jeskoattack', 'regera', 'gemera', 'cc850', 'agerars', 'grsupra', 'gr86', 'gryaris', 'grcorolla', 'lc300', 'grgt', 'amboolataxi', 'tora', 'raiden', 'kaze', 'oni', 'sakura', 'ryu', 'kitsune', 'shogun', 'samurai', 'yuki', 'neon', 'hayabusa', 'kaminari', 'tsunami', 'taiyo', 'kuro', 'hoshi', 'kasai', 'minitora', 'torazero', 'amboolabus', 'm2', 'm4csl', 'm5', 'xm', 'r8', 'rs6', 'rsetrongt', 'rsq8', 'devel16', 'amggt', 'amgone', 'g63', 'c63', 'phantom', 'cullinan', 'spectre', 'mustang', 'corvette', 'gtr', 'nsx', 'utopia', 'towtruck', 'firetruck', 'troodos', 'camel', 'dog', 'monster', 'heli', 'cat', 'parrot', 'dragon', 'lion', 'monkey', 'goldtora', 'title', ...TRAFFIC_MODELS, 'city_tokyo', ...CITY_MODELS, ...INTERIOR_MODELS];
+// the challenge prizes: special editions of real cars (they use the base car's model, in their own colours)
+const MODEL_ALIAS = {};
+for (const [cid, base, name, paint, flag] of [['tokyo', 'gtr', 'Nissan GT-R Neon Night', 22, '🗼 TOKYO'], ['cyprus', 'dakar', 'Porsche 911 Dakar Aphrodite', 36, '🇨🇾 CYPRUS'], ['italy', 'sf90', 'Ferrari SF90 Tricolore', 23, '🇮🇹 ITALY'],
+  ['dubai', 'chironss', 'Bugatti Chiron Golden Falcon', 38, '🇦🇪 DUBAI'], ['paris', 'divo', 'Bugatti Divo Bleu de France', 28, '🇫🇷 PARIS'], ['newyork', 'mustang', 'Ford Mustang Big Apple', 33, '🇺🇸 NEW YORK'],
+  ['alps', 'g63', 'Mercedes-AMG G 63 Matterhorn', 14, '🇨🇭 SWISS ALPS'], ['london', 'spectre', 'Rolls-Royce Spectre Royal Green', 12, '🇬🇧 LONDON'], ['egypt', 'urusp', 'Lamborghini Urus Pharaoh', 9, '🇪🇬 EGYPT'], ['southafrica', 'lc300', 'Toyota Land Cruiser Safari', 39, '🇿🇦 SOUTH AFRICA']]) {
+  const b = CARS.find(c => c.id === base); if (!b) continue; const id = 'ed_' + cid;
+  CARS.push({ ...b, id, name, paint, kw: Math.round(b.kw * 1.08), usd: Math.round(b.usd * 1.25), prize: `🏆 DO BOTH ${flag} CHALLENGES`, prizeTag: `🏆 ${flag} CHALLENGE PRIZE`, desc: `Special edition · the ${flag} challenge trophy car` });
+  MODEL_ALIAS[id] = base; MODEL_FILES.push(id);
+}
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
+  if (MODEL_ALIAS[id]) return MODELS[id] ? Promise.resolve(MODELS[id]) : loadModel(MODEL_ALIAS[id]).then(m => { if (m) MODELS[id] = m; return m || null; });   // a special edition: the base car's model
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
   return modelJobs[id] ??= new Promise(res => {
     const parse = async () => {
@@ -2964,7 +2979,7 @@ class Player {
     if (this.wreckT > 0) { this.wreckT -= dt; inp = { throttle: 0, brake: 0, steer: 0, handbrake: 1, nitro: 0 }; }   // a crash landing: skid to a stop, then flip back
     const s = this.spec;
     const off = this.terrain === 'sand' || this.terrain === 'dirt' ? offroadOf(s) : this.terrain === 'trail' ? lerp(offroadOf(s), 1, .45) : this.terrain === 'water' || this.terrain === 'sea' ? .1 : -1;   // sand: rally cars keep their grip, low supercars slither and bog down (the Troodos trail is packed dirt: a bit better)
-    const gripK = s.grip * surfGrip * (off >= 0 ? lerp(.56, .96, off) : 1);
+    const gripK = s.grip * surfGrip * (off >= 0 ? lerp(.56, .96, off) : 1) * (this.terrain === 'ice' ? .3 : 1);   // (the frozen lake in the Alps)
     const fx = Math.sin(this.heading), fz = Math.cos(this.heading), rx = -fz, rz = fx;
     let vf = this.vx * fx + this.vz * fz, vr = this.vx * rx + this.vz * rz;
     const speed = Math.hypot(this.vx, this.vz);
@@ -3026,8 +3041,8 @@ class Player {
     if (!drive && !brake && Math.abs(nvf) < .15 && !this.loop) nvf = 0;   // (in a loop gravity must be free to roll it back)
     this.accel = (nvf - vf) / dt; vf = nvf;
     // lateral grip
-    const sliding = Math.abs(vr) > 3.2 && speed > 7;
-    let lat = 11 * gripK;
+    const sliding = Math.abs(vr) > 3.2 && speed > 7, ice = this.terrain === 'ice';
+    let lat = 11 * gripK * (ice ? .5 : 1);   // on ice the car still turns but its speed lags behind the nose: a slide
     if (inp.handbrake && speed > 4) lat = 1.1;
     else if (sliding) lat = 2.6 * gripK * (Math.sign(this.steer) === Math.sign(vr) || Math.abs(this.steer) < .2 ? 1.25 : .85);
     if (s.drive === 'RWD' && spin > .15 && Math.abs(this.steer) > .2) lat *= .45;
@@ -3037,7 +3052,7 @@ class Player {
     const maxSteer = .6 / (1 + speed * .042);
     const sa = this.steer * maxSteer;
     let yawT = -vf * Math.tan(sa) / s.wb;
-    const yawCap = (g * gripK * 1.12 + down) / Math.max(speed, 1) * (sliding || inp.handbrake ? 1.7 : 1);
+    const yawCap = (g * gripK * (ice ? 3 : 1) * 1.12 + down) / Math.max(speed, 1) * (sliding || inp.handbrake ? 1.7 : 1);
     yawT = clamp(yawT, -yawCap, yawCap);
     if (sliding || (inp.handbrake && speed > 4)) yawT += -this.steer * 1.25 * clamp(speed / 12, 0, 1) * (inp.handbrake ? 1.4 : 1);
     if (s.drive === 'RWD' && spin > .15) yawT += -this.steer * spin * 1.2;
@@ -6202,7 +6217,7 @@ function drawAreasMap(g) {
     const R = A.R; g.strokeStyle = A.id === 'snow' ? '#b8a07a' : '#e0a030'; g.lineWidth = R.w * 1.1; g.lineJoin = 'round';
     const st = Math.max(3, Math.round(R.n / 300)); g.beginPath(); for (let i = 0; i < R.n; i += st) i ? g.lineTo(R.x[i], R.z[i]) : g.moveTo(R.x[i], R.z[i]); g.lineTo(R.x[R.n - 1], R.z[R.n - 1]); g.stroke();
     if (A.country) { g.fillStyle = 'rgba(214,196,150,.95)'; g.fillRect(A.country.x0 - 40, A.country.z0 - 40, A.country.x1 - A.country.x0 + 80, A.country.z1 - A.country.z0 + 80); }
-    for (const P of A.pads) { g.fillStyle = A.id === 'snow' ? '#b9c3cf' : A.country ? '#5c6470' : 'rgba(92,100,112,.0)'; for (const r of P.rects) { if (r === TRO.rect) { g.fillStyle = '#7e8a4c'; } const [x0, z0, x1, z1] = r; g.fillRect(x0, z0, x1 - x0, z1 - z0); } }
+    for (const P of A.pads) { g.fillStyle = A.id === 'snow' ? '#b9c3cf' : A.country ? '#5c6470' : 'rgba(92,100,112,.0)'; for (const r of P.rects) { if (r === TRO.rect) { g.fillStyle = '#7e8a4c'; } else if (r.col) g.fillStyle = r.col; const [x0, z0, x1, z1] = r; g.fillRect(x0, z0, x1 - x0, z1 - z0); } }
     if (A.country?.troodos) {   // the Troodos: forest green, darker rings going up, the trail and its gates
       for (const [k, col] of [[1, '#3d5a2c'], [.75, '#36522a'], [.5, '#2f4a26'], [.28, '#2a4322'], [.09, '#b9ad98']]) { g.fillStyle = col; g.beginPath(); g.ellipse(TRO.cx, TRO.cz, TRO.R * TRO.ex * k, TRO.R * TRO.ez * k, 0, 0, 7); g.fill(); }
       { const R = TRO.Rd; g.strokeStyle = '#8a93a3'; g.lineWidth = 11; g.lineJoin = 'round'; g.beginPath(); for (let i = 0; i < R.n; i += 4) i ? g.lineTo(R.x[i], R.z[i]) : g.moveTo(R.x[i], R.z[i]); g.lineTo(R.x[R.n - 1], R.z[R.n - 1]); g.stroke();
@@ -6760,6 +6775,16 @@ function buildTroodosRoad(g, C) {
     posts.push([x, troCarve(x, z) - .05, z, Math.atan2(R.tx[i], R.tz[i]), 1]);
   }
   instanced(post, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .5 }), posts);
+  // a steel crash barrier along the drop side (the outside of the hairpins too), so a car that runs wide bounces back
+  // instead of tumbling down the mountain; it stops where the dirt trail crosses and at Platres' square
+  const side = Array.from({ length: R.n }, (_, i) => { const o = [-R.tz[i], R.tx[i]]; return troNatural(R.x[i] + o[0] * 12, R.z[i] + o[1] * 12) < troNatural(R.x[i] - o[0] * 12, R.z[i] - o[1] * 12) ? 1 : -1; }), rail = [];
+  for (let i = 24; i < R.n - 14; i++) {
+    let v = 0; for (let k = -5; k <= 5; k++) v += side[clamp(i + k, 0, R.n - 1)];   // (the side of most of the samples round it: no flickering)
+    const s = v >= 0 ? 1 : -1, x = R.x[i] - R.tz[i] * 6.1 * s, z = R.z[i] + R.tx[i] * 6.1 * s;
+    if (Math.hypot(x - TRO.plat.x, z - TRO.plat.z) < TRO.plat.r + 3 || troNearIn(TRO.T, x, z, 14)) continue;
+    rail.push([x, troCarve(x, z), z, Math.atan2(R.tx[i], R.tz[i]), 1]); C.P.addCol(x - .3, z - .3, x + .3, z + .3);
+  }
+  instanced(new THREE.BoxGeometry(.12, .32, 2.2).translate(0, .62, 0), new THREE.MeshStandardMaterial({ color: 0xb8bec6, metalness: .7, roughness: .35 }), rail);
   // signs at the foot of the road
   const sg = signTex(1024, 512, '#1d4f8f', [['ΤΡΟΟΔΟΣ · TROODOS', .2, .14, OR, '#fff'], [`ΠΛΑΤΡΕΣ · PLATRES  ${(R.s[TRO.platI] / 1000).toFixed(1)} km`, .45, .11, OR, '#fff'], [`ΟΛΥΜΠΟΣ · OLYMPOS  ${(R.L / 1000).toFixed(1)} km`, .66, .11, OR, '#fff'], ['🏔 520 m', .86, .11, OR, '#ffd21f']], '#ffffff');
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), new THREE.MeshBasicMaterial({ map: sg, side: THREE.DoubleSide })); const si = 22, so = [-R.tz[si], R.tx[si]];
@@ -8234,6 +8259,7 @@ const repairCost = c => { const t = dmgTotal(c.id); return t ? Math.max(150, Mat
 let dentCool = 0;
 // called for every hard hit: (dvx, dvz) is how the hit changed the car's velocity, so the car was hit on the other side
 function carHit(p, dvx, dvz, hit, zone) {
+  if (p === player && chal?.S.onHit) chal.S.onHit(hit);   // (the pizza tower)
   if (NO_DAMAGE || !p?.car?.model || hit < 4.5 || p.spec.jet || dentCool > 0) return;
   const G = p.car.G ??= carGeom(p.car); if (!G) return;
   const fx = Math.sin(p.heading), fz = Math.cos(p.heading); let a = 0, b = 0;
@@ -9405,7 +9431,7 @@ function jamProps(J) {
   const lights = [];
   if (J.kind === 'crash') {
     const a = buildTrafficCar(TRAFFIC_TYPES[2]), b = buildTrafficCar(TRAFFIC_TYPES[0]); a.position.set(X(2.6), 0, 3); a.rotation.y = .6 * side; b.position.set(X(5.4), 0, 5.6); b.rotation.set(0, -2.2 * side, .12); g.add(a, b);
-    const pol = buildPoliceCar(); pol.position.set(X(4.2), 0, -3.4); pol.rotation.y = .25 * side; g.add(pol); lights.push(...(pol.userData.flash || []));
+    const pol = buildPoliceCar(); pol.position.set(X(4.2), 0, -3.4); pol.rotation.y = .25 * side; g.add(pol); lights.push(...(pol.userData.flash || [])); J.wrecks = [a, b];
   } else {
     const stripe = canvasTex(128, 32, (q, w, hh) => { q.fillStyle = '#fff'; q.fillRect(0, 0, w, hh); q.fillStyle = '#d61a1a'; for (let k = -1; k < 6; k++) { q.beginPath(); q.moveTo(k * 26, 0); q.lineTo(k * 26 + 13, 0); q.lineTo(k * 26 + 26, hh); q.lineTo(k * 26 + 13, hh); q.fill(); } });
     const bar = new THREE.Mesh(new THREE.BoxGeometry(7.4, .5, .25), new THREE.MeshStandardMaterial({ map: stripe, emissive: 0x220000 })); bar.position.set(X(3.8), .9, -1); g.add(bar);
@@ -9426,13 +9452,13 @@ function jamProps(J) {
   const [cx, cz] = jamPos(J, J.s0 + J.dir * 2, 0), [dx, dz] = jamPos(J, J.s0 + J.dir * 2, 1);
   J.col = addCol(Math.min(cx, dx) - 2.2, Math.min(cz, dz) - 2.2, Math.max(cx, dx) + 2.2, Math.max(cz, dz) + 2.2);
 }
-function startJam(px, pz) {
+function startJam(px, pz, o = {}) {
   for (let t = 0; t < 40; t++) {
     const axis = Math.random() < .5 ? 'x' : 'z', line = 1 + Math.floor(Math.random() * (N - 1)), dir = Math.random() < .5 ? 1 : -1, k = 2 + Math.floor(Math.random() * (N - 4));
-    const J = { axis, line, dir, s0: (rc(k) + rc(k + 1)) / 2 + dir * 18, kind: Math.random() < .5 ? 'crash' : 'works', count: 6 + Math.floor(Math.random() * 6), max: 30 + Math.floor(Math.random() * (JAM_MAX - 29)), t: 0, state: 'jam', life: 140 + Math.random() * 100, grow: 0 };
+    const J = { axis, line, dir, s0: (rc(k) + rc(k + 1)) / 2 + dir * 18, kind: o.kind || (Math.random() < .5 ? 'crash' : 'works'), count: 6 + Math.floor(Math.random() * 6), max: 30 + Math.floor(Math.random() * (JAM_MAX - 29)), t: 0, state: 'jam', life: 140 + Math.random() * 100, grow: 0 };
     J.slots = jamSlots(J); J.max = Math.min(J.max, J.slots.length);
     const [ix, iz] = jamPos(J, J.s0, 0), [ex, ez] = jamPos(J, jamTail({ ...J, count: J.max }), 0), mid = [(ix + ex) / 2, (iz + ez) / 2];
-    if (Math.hypot(ix - px, iz - pz) < 260 || Math.hypot(ex - px, ez - pz) < 220) continue;   // out of sight
+    if (Math.hypot(ix - px, iz - pz) < 260 || Math.hypot(ex - px, ez - pz) < 220 || (o.max && Math.hypot(ix - px, iz - pz) > o.max)) continue;   // out of sight
     if (JAMS.some(o => o.axis === axis && o.line === line) || ACTS.some(a => Math.hypot(a.x - mid[0], a.z - mid[1]) < Math.hypot(ix - ex, iz - ez) / 2 + 12)) continue;
     jamProps(J); JAMS.push(J);
     if (nav && !nav.d.zone && routeJammed(px, pz, nav.route || [])) setTimeout(() => toast('🚧 TRAFFIC JAM ON YOUR WAY', 'THE GPS FOUND ANOTHER WAY ROUND'), 600);
@@ -9440,7 +9466,7 @@ function startJam(px, pz) {
   }
   return null;
 }
-function endJam(J) { scene.remove(J.props); removeCol(J.col); JAMS.splice(JAMS.indexOf(J), 1); for (const c of JAM.pool) if (c.J === J) { c.J = null; c.m.visible = false; } }
+function endJam(J) { for (const w of J.extra || []) scene.remove(w); scene.remove(J.props); removeCol(J.col); JAMS.splice(JAMS.indexOf(J), 1); for (const c of JAM.pool) if (c.J === J) { c.J = null; c.m.visible = false; } }
 function updateJams(dt, p) {
   if (!traffic) return;
   const inCity = Math.abs(p.x) < HALF + 30 && Math.abs(p.z) < HALF + 30 && !race && !drag && !worldRace;
@@ -9602,6 +9628,589 @@ function footCamera(dt) {
   camera.fov = damp(camera.fov, 64, 4, dt); camera.updateProjectionMatrix();
 }
 /* =====================================================================
+   CHALLENGES — two in every country and two in Tokyo, each worth 1 to 3 stars. Stop on a challenge's ring and press
+   Enter (or tap). Do both in a country for its golden trophy and its special-edition car. The 🏆 CHALLENGES board
+   (pause menu) shows your stars, and GO sets the GPS to a challenge. Driving far away stops one.
+   Each challenge: at(C) = its ring, start(C, def) → its state (or null to wait for a model), update(S, dt, p, C, c) →
+   undefined while it runs or { stars, msg } when it is over, stop(S) to tidy up.
+   ===================================================================== */
+const CHAL_KEY = 'amboola.chal', CHAL_PAY = [0, 3000, 6000, 12000];
+let chal = null, chalBest = (() => { try { return JSON.parse(localStorage.getItem(CHAL_KEY)) || {}; } catch (e) { return {}; } })();
+const CHAL_FLAG = { tokyo: '🗼', cyprus: '🇨🇾', italy: '🇮🇹', dubai: '🇦🇪', paris: '🇫🇷', newyork: '🇺🇸', alps: '🇨🇭', london: '🇬🇧', egypt: '🇪🇬', southafrica: '🇿🇦' };
+const chalCountry = cid => cid === 'tokyo' ? null : COUNTRIES.find(c => c.id === cid);
+const chalSt = C => C.streets ??= cStreets(C);
+const chalLeft = (S, lim) => Math.max(0, lim - S.t);
+const chalDist = d => d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+const chalNote = txt => { const n = $('chalNote'); if (!txt) { n.classList.add('hidden'); return; } n.innerHTML = txt; n.classList.remove('hidden'); };
+function chalMarker(col, x, z, y = 0) { const m = makeTaxiMarker(col); m.position.set(x, y, z); return m; }
+function chalLabel(txt, sub, col, x, y, z) {
+  const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTex(512, 160, '#0d1018', [[txt, .42, .34, `${OR}, ${JP}`, '#fff'], [sub || '', .8, .17, `${OR}, ${JP}`, col]], col) }));
+  m.scale.set(13, 4, 1); m.position.set(x, y, z); scene.add(m); return m;
+}
+function chalNav(C, n, x, z) { if (C) setNav({ n, zone: C.id, idx: C.R.n - 1, end: [x, z], keep: true }); else setNav({ n, x, z, keep: true }); }
+function chalRoof(p) { const g = p.car.group; g.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(g); return b.max.y - g.position.y; }   // the top of the car, for things carried on the roof
+function chalBong(f = 98) {   // a big bell
+  const ctx = audio.ctx; if (!ctx) return; const t = ctx.currentTime;
+  for (const [m, gn] of [[1, .45], [2.76, .16], [5.4, .07], [.5, .25]]) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f * m; g.gain.setValueAtTime(gn, t); g.gain.exponentialRampToValueAtTime(.0001, t + 3); o.connect(g).connect(audio.master); o.start(t); o.stop(t + 3.1); }
+}
+const chalPing = (k = 0) => { audio.beep(880 + k * 110, .08); setTimeout(() => audio.beep(1320 + k * 110, .14), 90); };
+function chalPushOut(p, x, z, R) { const dx = p.x - x, dz = p.z - z, d = Math.hypot(dx, dz); if (d < R && d > 1e-3) { p.x += dx / d * (R - d); p.z += dz / d * (R - d); const vn = p.vx * dx / d + p.vz * dz / d; if (vn < 0) { p.vx -= 1.3 * vn * dx / d; p.vz -= 1.3 * vn * dz / d; } return true; } return false; }
+// a point on a street: on z-street j between x-streets i and i+1 at fraction f, or on x-street i between z-streets j and j+1
+const zStreet = (C, i, j, f = .5) => { const { xs, zs } = chalSt(C); return [lerp(xs[i], xs[i + 1], f), zs[j]]; };
+const xStreet = (C, i, j, f = .5) => { const { xs, zs } = chalSt(C); return [xs[i], lerp(zs[j], zs[j + 1], f)]; };
+function chalRandomStreet(C, rnd = Math.random) {   // (not where a landmark stands on the street)
+  const { xs, zs } = chalSt(C); let q;
+  for (let t = 0; t < 20; t++) { q = rnd() < .5 ? [xs[Math.floor(rnd() * xs.length)] + (rnd() - .5) * 6, lerp(zs[0], zs[zs.length - 1], rnd())] : [lerp(xs[0], xs[xs.length - 1], rnd()), zs[Math.floor(rnd() * zs.length)] + (rnd() - .5) * 6]; if (streetFree(C, q[0], q[1])) break; }
+  return q;
+}
+function streetFree(C, x, z, r = 2.5) {   // nothing big (a building, a landmark) on this street spot
+  const gx = Math.floor(x / 40), gz = Math.floor(z / 40);
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const b of C.P.grid.get((gx + i) * 100000 + gz + j) || []) if (b.x1 - b.x0 > 3 && b.z1 - b.z0 > 3 && x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r) return false;
+  return !STUNTS.some(S => S.kind === 'loop' ? Math.hypot(x - S.cx, z - S.cz) < S.rad + 4 : Math.hypot(x - S.x - S.fx * S.L / 2, z - S.z - S.fz * S.L / 2) < S.L / 2 + 8);   // nor on a stunt ramp or loop
+}
+// a path along streets: position and heading at distance s (pts = corners)
+function chalPath(pts) {
+  const segs = []; let L = 0; for (let k = 0; k < pts.length - 1; k++) { const [ax, az] = pts[k], [bx, bz] = pts[k + 1], l = Math.hypot(bx - ax, bz - az); segs.push({ ax, az, bx, bz, l, s0: L }); L += l; }
+  const at = s => { s = clamp(s, 0, L); const g = segs.find(q => s <= q.s0 + q.l) || segs[segs.length - 1], u = (s - g.s0) / g.l; return { x: lerp(g.ax, g.bx, u), z: lerp(g.az, g.bz, u), h: Math.atan2(g.bx - g.ax, g.bz - g.az), tx: (g.bx - g.ax) / g.l, tz: (g.bz - g.az) / g.l }; };
+  const proj = (x, z) => { let best = { d: 1e9, s: 0 }; for (const g of segs) { const u = clamp(((x - g.ax) * (g.bx - g.ax) + (z - g.az) * (g.bz - g.az)) / (g.l * g.l), 0, 1), px = lerp(g.ax, g.bx, u), pz = lerp(g.az, g.bz, u), d = Math.hypot(x - px, z - pz); if (d < best.d) best = { d, s: g.s0 + u * g.l }; } return best; };
+  return { L, at, proj, pts };
+}
+function chalLine(pts, col, y = .08) {   // a dashed line painted along a path (a guide for a route)
+  const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
+  const P = chalPath(pts); for (let s = 0; s < P.L; s += 7) { const a = P.at(s), d = new THREE.Mesh(new THREE.PlaneGeometry(.5, 3.5), m); d.rotation.set(-Math.PI / 2, 0, -a.h); d.position.set(a.x, y, a.z); g.add(d); }
+  scene.add(g); return g;
+}
+const CHAL_GOLD = new THREE.MeshStandardMaterial({ color: 0xffc21f, metalness: .8, roughness: .25, emissive: 0x6a4a00 });
+function starMesh(R = 1.6) { const s = new THREE.Shape(); for (let k = 0; k < 10; k++) { const r = k % 2 ? R * .45 : R, a = k / 10 * Math.PI * 2 + Math.PI / 2; k ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r); } s.closePath(); const m = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: R * .3, bevelEnabled: false }).center(), CHAL_GOLD); return m; }
+
+const CHALS = [
+  /* ---------------- Tokyo ---------------- */
+  { id: 'hotelkey', cid: 'tokyo', n: 'Hotel Hide and Seek', ico: '🔑', col: '#ffc21f', d: 'Find the golden key hidden in the hotel lobby · 60 s',
+    at: () => { const H = HOTELS.find(h => h.id === 'tokyo'); return hW(H, 0, 23); },
+    start() {
+      const H = HOTELS.find(h => h.id === 'tokyo'); footStart(H); if (!foot) return null;
+      const spots = [[-14.6, -2.4, .9], [14.4, -20.6, .5], [0, -16, 1.25], [-7.6, -8, .55], [11.4, -8, .75], [9, -20.9, .5], [-12.5, -20.6, .4], [5, -1.2, .3], [-10.7, -9.8, .65], [-14.6, -14, .3]];
+      const [lx, lz, y] = pick(spots), [x, z] = hW(H, lx, lz), key = new THREE.Group();
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(.13, .04, 8, 16), CHAL_GOLD), bar = new THREE.Mesh(new THREE.BoxGeometry(.05, .32, .05), CHAL_GOLD), bit = new THREE.Mesh(new THREE.BoxGeometry(.12, .05, .05), CHAL_GOLD);
+      ring.position.y = .2; bar.position.y = -.05; bit.position.set(.06, -.17, 0); key.add(ring, bar, bit); key.position.set(x, y + .15, z); scene.add(key);
+      chalNote('🔑 Somebody hid a golden key in the hotel! Walk around inside and find it. 🔥 = you are close!');
+      return { H, key, x, z, t: 0 };
+    },
+    update(S, dt) {
+      S.t += dt; S.key.rotation.y += dt * 2; S.key.position.y += Math.sin(S.t * 3) * .002;
+      if (!foot) return { stars: 0, msg: 'YOU LEFT THE HOTEL' };
+      const d = Math.hypot(foot.x - S.x, foot.z - S.z);
+      actHud([['🔑 THE KEY', d < 3 ? '🔥 HOT!' : d < 8 ? '🌡 WARM' : '❄️ COLD'], ['TIME', fmtTime(chalLeft(S, 60))]], '#ffc21f');
+      if (d < 1.6) return { stars: S.t < 20 ? 3 : S.t < 40 ? 2 : 1, msg: `YOU FOUND THE KEY IN ${S.t.toFixed(1)} S` };
+      if (S.t > 60) return { stars: 0, msg: 'TIME UP! THE KEY STAYS HIDDEN' };
+    },
+    stop(S) { scene.remove(S.key); chalNote(null); } },
+  { id: 'jamhero', cid: 'tokyo', n: 'Traffic Jam Hero', ico: '🪝', col: '#ff8a1f', d: 'Tow the 2 crashed cars off the road and clear the jam',
+    at: () => [rc(9) + 4, rc(12) + 40],
+    start() {
+      const p = player; let J = null;
+      for (let k = 0; k < 30 && !J; k++) { J = startJam(p.x, p.z, { kind: 'crash', max: 520 }); }
+      if (!J) { toast('🚧 NO CRASH RIGHT NOW', 'TRY AGAIN IN A MOMENT'); return null; }
+      J.life = 1e9; J.hero = true;
+      const [ix, iz] = chalCrash(J), tz = J.axis === 'z' ? [rc(J.line) + 11.5 * J.dir, J.s0 + J.dir * 34] : [J.s0 + J.dir * 34, rc(J.line) - 11.5 * J.dir];
+      const mk = chalMarker('#7dff3a', tz[0], tz[1]), lab = chalLabel('TOW ZONE', 'DROP THE CARS HERE', '#7dff3a', tz[0], 7, tz[1]);
+      chalNav(null, '🚧 The crash', ix, iz);
+      chalNote('🚧 There was a crash! Drive to it on the free side of the road (the queue blocks the other side), stop next to a crashed car to hook it 🪝, and pull it to the green TOW ZONE.');
+      const rope = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: 0x222222 })); rope.visible = false; rope.frustumCulled = false; scene.add(rope);
+      return { J, tz, mk, lab, rope, towed: 0, hook: null, t: 0, v: new THREE.Vector3() };
+    },
+    update(S, dt, p) {
+      S.t += dt; const J = S.J; if (!JAMS.includes(J)) return { stars: 0, msg: 'THE JAM WAS CLEARED WITHOUT YOU' };
+      const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
+      if (!S.hook) for (const w of J.wrecks || []) {
+        if (w.userData.towed) continue; w.getWorldPosition(S.v);
+        if (Math.hypot(S.v.x - p.x, S.v.z - p.z) < 7.5 && p.speed < 4) { scene.attach(w); S.hook = w; w.rotation.x = w.rotation.z = 0; chalPing(); toast('🪝 HOOKED!', 'PULL IT TO THE GREEN TOW ZONE'); clearNav(true); chalNav(null, '🪝 Tow zone', S.tz[0], S.tz[1]); break; }
+      } else {
+        const w = S.hook, L = 6.5, tx = p.x - fx * L, tz = p.z - fz * L, dx = tx - w.position.x, dz = tz - w.position.z, d = Math.hypot(dx, dz);
+        if (d > .05) { w.position.x += dx * Math.min(1, dt * 6); w.position.z += dz * Math.min(1, dt * 6); }
+        w.rotation.y += wrapA(Math.atan2(p.x - w.position.x, p.z - w.position.z) - w.rotation.y) * Math.min(1, dt * 4);
+        const a = S.rope.geometry.attributes.position; a.setXYZ(0, p.x - fx * 2.2, (p.y || 0) + .6, p.z - fz * 2.2); a.setXYZ(1, w.position.x, .7, w.position.z); a.needsUpdate = true; S.rope.visible = true;
+        if (Math.hypot(w.position.x - S.tz[0], w.position.z - S.tz[1]) < 9) {
+          w.userData.towed = true; S.hook = null; S.rope.visible = false; S.towed++; chalPing(S.towed); (J.extra ??= []).push(w);
+          if (S.towed >= 2) { J.life = 0; return { stars: S.t < 90 ? 3 : S.t < 130 ? 2 : 1, msg: `ROAD CLEAR IN ${Math.round(S.t)} S · THE TRAFFIC IS MOVING!` }; }
+          toast('🪝 ONE DONE!', 'NOW THE OTHER CRASHED CAR'); clearNav(true); const [ix, iz] = chalCrash(J); chalNav(null, '🚧 The crash', ix, iz);
+        }
+      }
+      const [ix, iz] = chalCrash(J);
+      actHud([['🪝 JAM HERO', `${S.towed}/2 TOWED`], ['TIME', fmtTime(chalLeft(S, 180))], [S.hook ? 'TOW ZONE' : 'CRASH', chalDist(S.hook ? Math.hypot(p.x - S.tz[0], p.z - S.tz[1]) : Math.hypot(p.x - ix, p.z - iz))], ['QUEUE', `🚗 ${J.count}`]], '#ff8a1f');
+      if (S.t > 180) return { stars: 0, msg: 'TIME UP! THE JAM IS STILL THERE' };
+    },
+    stop(S) { scene.remove(S.mk); scene.remove(S.lab); scene.remove(S.rope); if (S.hook) (S.J.extra ??= []).push(S.hook); clearNav(true); chalNote(null); if (S.J.state === 'jam' && S.J.life > 1e8) S.J.life = S.J.t + 60; } },
+
+  /* ---------------- Cyprus ---------------- */
+  { id: 'halloumi', cid: 'cyprus', n: 'Halloumi Hurry', ico: '🧀', col: '#ffd21f', d: 'Take hot halloumi up to Olympos, the top of Troodos, before it gets cold',
+    at: C => zStreet(C, 0, 2),
+    start(C) {
+      const end = [TRO.cx + 20, TRO.cz + 18], mk = chalMarker('#ffd21f', end[0], end[1], TRO.top);
+      setNav({ n: '🧀 Olympos Summit', zone: C.id, idx: C.R.n - 1, end, troPath: 'top', keep: true });
+      const crate = new THREE.Mesh(new THREE.BoxGeometry(1, .5, .8), new THREE.MeshStandardMaterial({ color: 0xffe38a, emissive: 0x6a4a10 })); crate.position.set(0, chalRoof(player) + .25, -.3); player.car.group.add(crate);
+      chalNote('🧀 Take the hot halloumi to the very top of the Troodos mountains! Up the asphalt road (or the dirt trail in a 4×4).');
+      return { end, mk, crate, t: 0 };
+    },
+    update(S, dt, p) {
+      S.t += dt; const left = chalLeft(S, 450), d = Math.hypot(p.x - S.end[0], p.z - S.end[1]);
+      actHud([['🧀 HALLOUMI', `${Math.round(left / 450 * 100)}% HOT 🔥`], ['TIME', fmtTime(left)], ['TO OLYMPOS', chalDist(d)], ['HEIGHT', `${Math.round(p.y || 0)} / 520 m`]], '#ffd21f');
+      if ((d < 40 || troR(p.x, p.z) < TRO.plazaR + 6) && (p.y || 0) > 470) return { stars: S.t < 270 ? 3 : S.t < 360 ? 2 : 1, msg: `DELIVERED IN ${fmtTime(S.t)} · STILL HOT! 🧀` };   // (anywhere on the summit square)
+      if (left <= 0) return { stars: 0, msg: 'THE HALLOUMI GOT COLD! 🥶' };
+    },
+    stop(S) { scene.remove(S.mk); S.crate.parent?.remove(S.crate); clearNav(true); chalNote(null); } },
+  { id: 'aphrodite', cid: 'cyprus', n: "Aphrodite's Rock Jump", ico: '🪨', col: '#ff5fa2', d: "Fly off the beach ramp and land as close to Aphrodite's Rock as you can",
+    at: C => [C.aphro.x, C.z1 - 430],
+    start(C) { chalNote("🪨 Drive straight up the street, hit the pink ramp FAST and fly into the sea next to Aphrodite's Rock!"); return { rock: [C.cx + 120, C.z1 + 110], ramp: C.aphro, t: 0, air: false, lx: 0, lz: 0 }; },
+    update(S, dt, p) {
+      S.t += dt; const dRock = Math.hypot(p.x - S.rock[0], p.z - S.rock[1]);
+      if (p.air && p.z > S.ramp.z) { S.air = true; S.lx = p.x; S.lz = p.z; }
+      actHud([['🪨 APHRODITE JUMP', S.air ? 'FLYING! ✈️' : 'GO FAST!'], ['TO THE ROCK', chalDist(dRock)], ['SPEED', `${Math.round(p.speed * 3.6)} km/h`]], '#ff5fa2');
+      if (S.air && (!p.air || swim)) {
+        const d = Math.hypot((swim ? p.x : S.lx) - S.rock[0], (swim ? p.z : S.lz) - S.rock[1]) - 20;
+        if (swim) setTimeout(() => { if (swim) seaRescue(player); }, 3500);
+        return { stars: d < 45 ? 3 : d < 90 ? 2 : 1, msg: `${swim ? '💦 SPLASH! ' : ''}${Math.max(0, Math.round(d))} M FROM APHRODITE'S ROCK` };
+      }
+      if (S.t > 45) return { stars: 0, msg: 'NO JUMP · HIT THE PINK RAMP FAST!' };
+    },
+    stop() { chalNote(null); } },
+
+  /* ---------------- Italy ---------------- */
+  { id: 'pizza', cid: 'italy', n: 'Pizza Tower', ico: '🍕', col: '#ff6a3a', d: 'Deliver to 3 customers with 10 pizzas on the roof · every bump knocks one off',
+    at: C => zStreet(C, 1, 1),
+    start(C) {
+      const g = new THREE.Group(), top = chalRoof(player), boxM = new THREE.MeshStandardMaterial({ color: 0xf4efe6 }), redM = new THREE.MeshStandardMaterial({ color: 0xc8141b });
+      for (let k = 0; k < 10; k++) { const b = new THREE.Mesh(new THREE.BoxGeometry(.85, .09, .85), boxM); b.position.y = top + .05 + k * .1; b.rotation.y = (k % 3 - 1) * .12; const s = new THREE.Mesh(new THREE.BoxGeometry(.5, .01, .2), redM); s.position.y = .05; b.add(s); g.add(b); }
+      g.position.z = -.3; player.car.group.add(g);
+      const drops = []; let last = [player.x, player.z];
+      for (let t = 0; t < 200 && drops.length < 3; t++) { const q = chalRandomStreet(C); if (Math.hypot(q[0] - last[0], q[1] - last[1]) > 200 && Math.hypot(q[0] - last[0], q[1] - last[1]) < 420) { drops.push(q); last = q; } }
+      const S = { g, stack: 10, drops, done: 0, t: 0, cool: 0, mk: null, onHit(h) { if (this.cool > 0 || h < 3 || !this.stack) return; this.cool = .8; this.stack--; const b = this.g.children[this.stack]; b.visible = false; audio.whack?.(); toast('🍕 A PIZZA FELL OFF!', `${this.stack} LEFT · CAREFUL!`); } };
+      chalPizzaNext(S, C); chalNote('🍕 Deliver to 3 customers. Drive smoothly: every bump knocks a pizza off the tower!'); return S;
+    },
+    update(S, dt, p, C) {
+      S.t += dt; S.cool -= dt; const q = S.drops[S.done], d = Math.hypot(p.x - q[0], p.z - q[1]);
+      actHud([['🍕 PIZZA TOWER', `${S.stack}/10`], ['CUSTOMERS', `${S.done}/3`], ['TIME', fmtTime(chalLeft(S, 240))], ['NEXT', chalDist(d)]], '#ff6a3a');
+      if (d < 9 && p.speed < 7) { S.done++; chalPing(S.done); if (S.done >= 3) return { stars: S.stack >= 9 ? 3 : S.stack >= 6 ? 2 : S.stack ? 1 : 0, msg: `${S.stack} PIZZAS STILL ON THE TOWER · BUONISSIMO! 🍕` }; toast('🍕 DELIVERED!', `${3 - S.done} MORE TO GO`); chalPizzaNext(S, C); }
+      if (!S.stack) return { stars: 0, msg: 'ALL THE PIZZAS FELL OFF! 🍕💥' };
+      if (S.t > 240) return { stars: 0, msg: 'TIME UP! THE PIZZAS GOT COLD' };
+    },
+    stop(S) { S.g.parent?.remove(S.g); if (S.mk) { scene.remove(S.mk); scene.remove(S.who); } clearNav(true); chalNote(null); } },
+  { id: 'parade', cid: 'italy', n: 'Ferrari Parade', ico: '🏎', col: '#c1111b', d: 'Follow the red Ferrari round the town for 90 s · not too close, not too far',
+    at: C => zStreet(C, 0, 1, .15),
+    start(C) {
+      const spec = CARS.find(c => c.id === 'sf90'); if (!MODELS.sf90) { toast('🏎 THE FERRARI IS ON ITS WAY', 'ONE MOMENT…'); loadModel('sf90').then(() => chalStart(CHALS.find(d => d.id === 'parade'))); return null; }
+      const { xs, zs } = chalSt(C), P = chalPath([[xs[0], zs[1]], [xs[2], zs[1]], [xs[2], zs[2]], [xs[0], zs[2]], [xs[0], zs[1]]]);
+      const car = buildCar(tunedSpec(spec), PAINTS[23].c, PAINTS[23].m); scene.add(car.group);
+      const line = chalLine(P.pts, '#ffd21f');
+      chalNote('🏎 Follow the red Ferrari! Stay in the GREEN zone: between 6 and 28 m behind it.');
+      return { P, car, line, s: P.proj(player.x, player.z).s + 26, v: 0, inT: 0, t: 0, lane: 2.6 };
+    },
+    update(S, dt, p) {
+      S.t += dt; const a0 = S.P.at(S.s % S.P.L), d = Math.hypot(p.x - a0.x, p.z - a0.z), corner = S.P.pts.some(([x, z]) => Math.hypot(x - a0.x, z - a0.z) < 14);
+      const want = d > 30 ? 6 : d < 7 ? 16 : corner ? 8 : 13; S.v = damp(S.v, want, 1.5, dt); S.s += S.v * dt;
+      const a = S.P.at(S.s % S.P.L), g = S.car.group; g.position.set(a.x + a.tz * S.lane, 0, a.z - a.tx * S.lane); g.rotation.y += wrapA(a.h - g.rotation.y) * Math.min(1, dt * 6);
+      for (const w of S.car.wheels || []) w.spin.rotation.z -= S.v / w.R * dt;
+      chalPushOut(p, g.position.x, g.position.z, 3.2);
+      const ok = d >= 6 && d <= 28; if (ok) S.inT += dt; const pct = S.inT / Math.max(1, S.t);
+      actHud([['🏎 PARADE', `${Math.round(pct * 100)}% IN LINE`], ['TIME', fmtTime(chalLeft(S, 90))], ['GAP', `${Math.round(d)} m`], ['', d < 6 ? '⚠️ TOO CLOSE' : d > 28 ? '⚠️ CATCH UP!' : '✅ PERFECT']], ok ? '#3ad65a' : '#c1111b');
+      if (S.t >= 90) return { stars: pct >= .85 ? 3 : pct >= .65 ? 2 : pct >= .4 ? 1 : 0, msg: `${Math.round(pct * 100)}% OF THE TIME IN LINE · BRAVO! 🇮🇹` };
+    },
+    stop(S) { scene.remove(S.car.group); scene.remove(S.line); chalNote(null); } },
+
+  /* ---------------- Dubai ---------------- */
+  { id: 'dunes', cid: 'dubai', n: 'Dune Bash', ico: '🏜', col: '#e8a23a', d: 'Jump over 10 sand dunes without stopping',
+    at: () => [DESERT.x0 + 60, DESERT.gz], ay: (x, z) => duneH(x, z),
+    start() { chalNote('🏜 Drive fast over the dunes and fly! 10 jumps. Don\'t stop or the challenge ends.'); return { jumps: 0, airT: 0, wasAir: false, stopT: 0, t: 0 }; },
+    update(S, dt, p) {
+      S.t += dt;
+      if (p.air) S.airT += dt; else { if (S.wasAir && S.airT > .3) { S.jumps++; chalPing(S.jumps % 4); toast(`🏜 JUMP ${S.jumps}/10`, S.jumps < 10 ? 'KEEP GOING!' : 'YES!'); } S.airT = 0; }
+      S.wasAir = p.air; S.stopT = p.speed < 2.5 && S.t > 4 ? S.stopT + dt : 0;
+      actHud([['🏜 DUNE BASH', `${S.jumps}/10 JUMPS`], ['TIME', fmtTime(S.t)], ['', S.stopT > 1 ? '⚠️ DON\'T STOP!' : 'FLY!']], '#e8a23a');
+      if (S.jumps >= 10) return { stars: S.t < 60 ? 3 : S.t < 90 ? 2 : 1, msg: `10 JUMPS IN ${fmtTime(S.t)}` };
+      if (S.stopT > 4) return { stars: 0, msg: 'YOU STOPPED! KEEP MOVING OVER THE DUNES' };
+      if (S.t > 150) return { stars: 0, msg: `TIME UP · ${S.jumps} JUMPS` };
+    },
+    stop() { chalNote(null); } },
+  { id: 'camels', cid: 'dubai', n: 'Camel Race', ico: '🐫', col: '#d5b46a', d: 'Race 3 racing camels across the desert to the oasis',
+    at: () => [DESERT.x0 + 60, DESERT.gz + 70], ay: (x, z) => duneH(x, z),
+    start() {
+      const [sx, sz] = [DESERT.x0 + 60, DESERT.gz + 70], fin = [DESERT.oasis[0] - 60, DESERT.oasis[1] - 10];
+      const camels = [-12, 12, 22].map((o, k) => { const m = camelMesh(); m.scale.setScalar(1.15); scene.add(m); return { m, x: sx + 6, z: sz + o, v: 0, vmax: [17, 19.5, 22][k], ph: k * 2, fin: null, n: ['Habibi', 'Sultan', 'Zayed'][k] }; });
+      const mk = chalMarker('#d5b46a', fin[0], fin[1], duneH(...fin)), lab = chalLabel('🏁 OASIS', 'FINISH', '#d5b46a', fin[0], duneH(...fin) + 8, fin[1]);
+      chalNav(chalCountry('dubai'), '🐫 The oasis', fin[0], fin[1]);
+      chalNote('🐫 Beat the racing camels to the oasis! Ready… 3… 2… 1…');
+      return { camels, fin, mk, lab, t: -3, place: 0, beeps: 4, hold: [player.x, player.z, player.heading] };
+    },
+    update(S, dt, p) {
+      S.t += dt;
+      if (S.t < 0) { Object.assign(p, { x: S.hold[0], z: S.hold[1], heading: S.hold[2], vx: 0, vz: 0 }); const c = Math.ceil(-S.t); if (c < S.beeps) { S.beeps = c; audio.beep(c ? 660 : 1320, c ? .2 : .5); toast(c ? String(c) : 'GO!', '🐫 CAMEL RACE'); } }
+      for (const c of S.camels) {
+        if (S.t > 0) { c.v = damp(c.v, c.fin == null ? c.vmax * (.92 + .08 * Math.sin(S.t * .7 + c.ph)) : 0, .8, dt); const dx = S.fin[0] - c.x, dz = S.fin[1] - c.z, d = Math.hypot(dx, dz); if (d > 1) { c.x += dx / d * c.v * dt; c.z += dz / d * c.v * dt; } if (c.fin == null && d < 25) c.fin = S.t; c.ph += c.v * dt * .9; }
+        const y = duneH(c.x, c.z); c.m.position.set(c.x, y + Math.abs(Math.sin(c.ph)) * .35 * clamp(c.v / 8, 0, 1), c.z); c.m.rotation.set(Math.sin(c.ph * 2) * .04, Math.atan2(S.fin[0] - c.x, S.fin[1] - c.z), 0);
+        chalPushOut(p, c.x, c.z, 2.6);
+      }
+      const dMe = Math.hypot(p.x - S.fin[0], p.z - S.fin[1]), ahead = S.camels.filter(c => c.fin != null || Math.hypot(c.x - S.fin[0], c.z - S.fin[1]) < dMe).length;
+      actHud([['🐫 CAMEL RACE', `POS ${ahead + 1}/4`], ['TIME', fmtTime(Math.max(0, S.t))], ['TO THE OASIS', chalDist(dMe)]], '#d5b46a');
+      if (dMe < 25 && S.t > 0) { const pos = 1 + S.camels.filter(c => c.fin != null).length; return { stars: [0, 3, 2, 1][pos] || 0, msg: pos === 1 ? `YOU BEAT THE CAMELS! ${fmtTime(S.t)} 🏆` : `FINISHED ${pos}${['ST', 'ND', 'RD', 'TH'][pos - 1]} · ${S.camels.filter(c => c.fin != null).map(c => c.n).join(', ')} WAS FASTER` }; }
+      if (S.t > 150) return { stars: 0, msg: 'THE CAMELS WON THIS TIME 🐫' };
+    },
+    stop(S) { for (const c of S.camels) scene.remove(c.m); scene.remove(S.mk); scene.remove(S.lab); clearNav(true); chalNote(null); } },
+
+  /* ---------------- Paris ---------------- */
+  { id: 'eiffel', cid: 'paris', n: 'Eiffel Tower Laps', ico: '🗼', col: '#2a3a8a', d: '3 laps round the Eiffel Tower, through all the gates',
+    at: C => [C.eiffel[0], C.eiffel[1] - 48],
+    start(C) {
+      const [ex, ez] = C.eiffel, R = 48, gates = Array.from({ length: 8 }, (_, k) => { const a = -Math.PI / 2 + k * Math.PI / 4; return [ex + Math.cos(a) * R, ez + Math.sin(a) * R]; });
+      const chalk = new THREE.Mesh(new THREE.RingGeometry(R - 1.2, R + 1.2, 120), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .45, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 })); chalk.rotation.x = -Math.PI / 2; chalk.position.set(ex, .07, ez); scene.add(chalk);
+      const mk = chalMarker('#ffd21f', ...gates[1]);
+      chalNote('🗼 Drive round the tower on the white circle, through the yellow gates. 3 laps!');
+      return { gates, chalk, mk, g: 1, lap: 0, t: 0 };
+    },
+    update(S, dt, p) {
+      S.t += dt; const [gx, gz] = S.gates[S.g];
+      if (Math.hypot(p.x - gx, p.z - gz) < 14) {
+        if (S.g === 0) { S.lap++; chalPing(S.lap); if (S.lap >= 3) return { stars: S.t < 55 ? 3 : S.t < 75 ? 2 : 1, msg: `3 LAPS IN ${fmtTime(S.t)} · TRÈS BIEN! 🗼` }; toast(`🗼 LAP ${S.lap + 1}/3`, fmtTime(S.t)); }
+        S.g = (S.g + 1) % 8; S.mk.position.set(...S.gates[S.g].flatMap((v, k) => k ? [0, v] : [v]));
+      }
+      actHud([['🗼 EIFFEL LAPS', `LAP ${Math.min(3, S.lap + 1)}/3`], ['GATE', `${S.g || 8}/8`], ['TIME', fmtTime(S.t)]], '#2a3a8a');
+      if (S.t > 150) return { stars: 0, msg: 'TIME UP!' };
+    },
+    stop(S) { scene.remove(S.chalk); scene.remove(S.mk); chalNote(null); } },
+  { id: 'croissant', cid: 'paris', n: 'Croissant Catch', ico: '🥐', col: '#e0a030', d: 'Catch 20 floating croissants on the streets in 2 minutes',
+    at: C => zStreet(C, 4, 2, .3),
+    start(C) {
+      const geo = new THREE.TorusGeometry(.75, .34, 8, 16, Math.PI * 1.3), mat = new THREE.MeshStandardMaterial({ color: 0xd9962f, roughness: .5, emissive: 0x4a2a05 }), beamM = new THREE.MeshBasicMaterial({ color: 0xffc23a, transparent: true, opacity: .25, blending: THREE.AdditiveBlending, depthWrite: false });
+      const items = [], p = player;
+      for (let t = 0; t < 400 && items.length < 20; t++) {
+        const [x, z] = chalRandomStreet(C); if (Math.hypot(x - p.x, z - p.z) > 330 || Math.hypot(x - p.x, z - p.z) < 30 || items.some(o => Math.hypot(o.x - x, o.z - z) < 36)) continue;
+        const g = new THREE.Group(), m = new THREE.Mesh(geo, mat); m.rotation.x = .4; g.add(m); const b = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, 30, 8, 1, true), beamM); b.position.y = 15; g.add(b); g.position.set(x, 1.3, z); scene.add(g); items.push({ x, z, g, m });
+      }
+      chalNote('🥐 Drive through the croissants floating on the streets. Look for the golden lights!');
+      return { items, got: 0, t: 0 };
+    },
+    update(S, dt, p) {
+      S.t += dt;
+      for (const o of S.items) { if (!o.g.visible) continue; o.m.rotation.y += dt * 2; o.g.position.y = 1.3 + Math.sin(S.t * 3 + o.x) * .2; if (Math.hypot(p.x - o.x, p.z - o.z) < 4.5) { o.g.visible = false; S.got++; chalPing(S.got % 4); } }
+      actHud([['🥐 CROISSANTS', `${S.got}/20`], ['TIME', fmtTime(chalLeft(S, 120))]], '#e0a030');
+      if (S.got >= 20 || S.t >= 120) return { stars: S.got >= 20 ? 3 : S.got >= 13 ? 2 : S.got >= 6 ? 1 : 0, msg: `${S.got} CROISSANTS · MIAM MIAM! 🥐` };
+    },
+    stop(S) { for (const o of S.items) scene.remove(o.g); chalNote(null); } },
+
+  /* ---------------- New York ---------------- */
+  { id: 'taxirush', cid: 'newyork', n: 'Yellow Taxi Rush', ico: '🚕', col: '#f2c20f', d: 'Pick up 4 people waving on the pavement and drive them where they want to go',
+    at: C => zStreet(C, 1, 1),
+    start(C) { const S = { C, done: 0, t: 0, phase: 'pick', who: null, mk: null, x: 0, z: 0 }; chalTaxiNext(S); chalNote('🚕 Stop next to the person waving 🙋 to pick them up, then drive them to the yellow ring.'); return S; },
+    update(S, dt, p) {
+      S.t += dt; const d = Math.hypot(p.x - S.x, p.z - S.z);
+      if (S.who) poseWalker(S.who, S.wx, 0, S.wz, S.wh, 0, 0, 0, .55 + Math.sin(S.t * 9) * .35);
+      if (d < (S.phase === 'pick' ? 8 : 9) && p.speed < 3.5) {
+        if (S.phase === 'pick') { S.phase = 'drop'; scene.remove(S.who); S.who = null; chalPing(); toast('🚕 HOP IN!', 'DRIVE TO THE YELLOW RING'); chalTaxiDrop(S); }
+        else { S.done++; chalPing(S.done); if (S.done >= 4) return { stars: 3, msg: `ALL 4 DRIVEN IN ${fmtTime(S.t)} · WHAT A TAXI DRIVER! 🚕` }; toast('🚕 THANK YOU!', `+1 · ${4 - S.done} MORE`); S.phase = 'pick'; chalTaxiNext(S); }
+      }
+      actHud([['🚕 TAXI RUSH', `${S.done}/4`], ['TIME', fmtTime(chalLeft(S, 240))], [S.phase === 'pick' ? '🙋 PICK UP' : '📍 DROP OFF', chalDist(d)]], '#f2c20f');
+      if (S.t > 240) return { stars: S.done >= 2 ? 2 : S.done >= 1 ? 1 : 0, msg: `TIME UP · ${S.done} PEOPLE DRIVEN` };
+    },
+    stop(S) { if (S.who) scene.remove(S.who); if (S.mk) scene.remove(S.mk); clearNav(true); chalNote(null); } },
+  { id: 'skyscraper', cid: 'newyork', n: 'Skyscraper Search', ico: '🚁', col: '#7cc8e8', d: 'Fly the helicopter through 5 golden stars on top of the skyscrapers',
+    at: C => zStreet(C, 4, 1),
+    start(C) {
+      const spec = CARS.find(c => c.heli); if (!spec) return null;
+      const tall = [...(C.town?.b || [])].sort((a, b) => b.h - a.h), pick5 = [];
+      for (const b of tall) if (pick5.length < 5 && pick5.every(o => Math.hypot(o.x - b.x, o.z - b.z) > 110)) pick5.push(b);
+      const stars = pick5.map(b => { const m = starMesh(3); m.position.set(b.x, b.h + 9, b.z); scene.add(m); const mk = chalMarker('#ffd21f', b.x, b.z, b.h + .3); return { x: b.x, y: b.h + 9, z: b.z, m, mk, got: false }; });
+      const back = { x: player.x, z: player.z, h: player.heading };
+      startHeli(spec); if (heli?.job) { scene.remove(heli.job.g); heli.job = null; }
+      chalNote('🚁 Hold ↑ or SPACE to fly up. Fly through the golden stars on the tallest skyscrapers!');
+      return { stars, got: 0, t: 0, back };
+    },
+    update(S, dt) {
+      S.t += dt; if (!heli) return { stars: 0, msg: 'YOU LEFT THE HELICOPTER' };
+      let near = 1e9; for (const s of S.stars) { if (s.got) continue; s.m.rotation.y += dt * 2; const d = Math.hypot(heli.x - s.x, heli.y - s.y, heli.z - s.z); near = Math.min(near, d); if (d < 13) { s.got = true; scene.remove(s.m); scene.remove(s.mk); S.got++; chalPing(S.got); toast(`⭐ STAR ${S.got}/5`, S.got < 5 ? 'NEXT ONE!' : ''); } }
+      actHud([['🚁 SKYSCRAPERS', `${S.got}/5 STARS`], ['TIME', fmtTime(chalLeft(S, 210))], ['NEXT STAR', near < 1e8 ? chalDist(near) : '—'], ['ALTITUDE', `${Math.round(heli.y)} m`]], '#7cc8e8');
+      if (S.got >= 5) return chalHeliHome(S, { stars: S.t < 100 ? 3 : S.t < 150 ? 2 : 1, msg: `ALL 5 STARS IN ${fmtTime(S.t)} · NEW YORK FROM THE SKY! 🗽` });
+      if (S.t > 210) return chalHeliHome(S, { stars: S.got >= 3 ? 1 : 0, msg: `TIME UP · ${S.got} STARS` });
+    },
+    stop(S) { for (const s of S.stars) { scene.remove(s.m); scene.remove(s.mk); } chalNote(null); if (heli) chalHeliHome(S); } },
+
+  /* ---------------- Swiss Alps ---------------- */
+  { id: 'snowball', cid: 'alps', n: 'Snowball Run', ico: '⚪', col: '#cfe6ff', d: 'A giant snowball is rolling after you! Reach the finish before it squashes you',
+    at: C => xStreet(C, 0, 0, .3),
+    start(C) {
+      const { xs, zs } = chalSt(C), P = chalPath([[xs[0], zs[0] - 40], [xs[0], zs[1]], [xs[2], zs[1]], [xs[2], zs[2]], [xs[4], zs[2]], [xs[4], zs[3]], [xs[6], zs[3]]]);
+      const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(5, 2), new THREE.MeshStandardMaterial({ color: 0xf6f9fc, roughness: .95, flatShading: true })); ball.castShadow = true; scene.add(ball);
+      const end = P.at(P.L), mk = chalMarker('#7dff3a', end.x, end.z), line = chalLine(P.pts, '#7cc8e8');
+      chalNote('⚪ RUN! A giant snowball is coming! Follow the blue line to the green finish ring.');
+      return { P, ball, mk, line, bs: 0, bv: 8, t: 0, ps: P.proj(player.x, player.z).s };
+    },
+    update(S, dt, p) {
+      S.t += dt; S.bv = Math.min(24, S.bv + dt * .5); S.bs += S.bv * dt;
+      const a = S.P.at(S.bs); S.ball.position.set(a.x, 5, a.z); S.ball.rotateOnWorldAxis(new THREE.Vector3(a.tz, 0, -a.tx), S.bv * dt / 5);
+      if (Math.random() < dt * 20) dust.spray(a.x + rr(-4, 4), a.z + rr(-4, 4), a.tx * 6, a.tz * 6, .8, 0);
+      const pr = S.P.proj(p.x, p.z); if (pr.d < 30) S.ps = Math.max(S.ps, pr.s);
+      const gap = S.ps - S.bs;
+      actHud([['⚪ SNOWBALL', gap > 60 ? 'FAR BEHIND' : gap > 25 ? '⚠️ CLOSE!' : '😱 RIGHT BEHIND YOU!'], ['GAP', `${Math.max(0, Math.round(gap))} m`], ['TO THE FINISH', chalDist(S.P.L - S.ps)]], gap > 25 ? '#7cc8e8' : '#ff3a3a');
+      if (S.ps > S.P.L - 12) return { stars: gap > 120 ? 3 : gap > 50 ? 2 : 1, msg: `YOU ESCAPED! THE SNOWBALL WAS ${Math.round(gap)} M BEHIND ⚪` };
+      if (Math.hypot(p.x - a.x, p.z - a.z) < 6.5 || gap < -5) { dirt = Math.min(1, dirt + .5); applyDirt(p.car); p.vx *= .2; p.vz *= .2; shakeT += 2; audio.crash(8); for (let k = 0; k < 30; k++) dust.spray(p.x + rr(-3, 3), p.z + rr(-3, 3), rr(-8, 8), rr(-8, 8), 1, 0); return { stars: 0, msg: 'SQUASHED BY THE SNOWBALL! ⚪💥' }; }
+    },
+    stop(S) { scene.remove(S.ball); scene.remove(S.mk); scene.remove(S.line); chalNote(null); } },
+  { id: 'icedrift', cid: 'alps', n: 'Ice Drift', ico: '⛸', col: '#9fe0ff', d: 'Drift on the frozen lake for 60 s and score as many points as you can',
+    at: C => [C.lake.x + C.lake.r + 22, C.lake.z],
+    start(C) { chalNote('⛸ Drive onto the frozen lake and slide sideways! Steer and use the HANDBRAKE (SPACE) to drift.'); return { pts: 0, t: 0, onT: 0 }; },
+    update(S, dt, p, C) {
+      const on = Math.hypot(p.x - C.lake.x, p.z - C.lake.z) < C.lake.r; if (on || S.onT > 0) S.t += dt; if (on) S.onT += dt;
+      const slide = Math.abs(p.vr || 0); if (on && slide > 2 && p.speed > 5) S.pts += slide * p.speed * dt * 5;
+      actHud([['⛸ ICE DRIFT', `${Math.round(S.pts).toLocaleString()} PTS`], ['TIME', S.onT > 0 ? fmtTime(chalLeft(S, 60)) : 'ONTO THE ICE!'], ['STARS', S.pts >= 6000 ? '⭐⭐⭐' : S.pts >= 3500 ? '⭐⭐' : S.pts >= 1500 ? '⭐' : '—']], '#9fe0ff');
+      if (S.t >= 60) return { stars: S.pts >= 6000 ? 3 : S.pts >= 3500 ? 2 : S.pts >= 1500 ? 1 : 0, msg: `${Math.round(S.pts).toLocaleString()} DRIFT POINTS ⛸` };
+    },
+    stop() { chalNote(null); } },
+
+  /* ---------------- London ---------------- */
+  { id: 'bigben', cid: 'london', n: 'Big Ben Beat', ico: '🕰', col: '#d8b04a', d: 'Big Ben rings 12 times · get to it before the last BONG',
+    at: C => zStreet(C, 4, 3, .5),
+    start(C) { const [bx, bz] = C.ben; chalNav(C, '🕰 Big Ben', bx, bz - 42); chalNote('🕰 BONG! Big Ben is ringing 12 times. Drive to it before the 12th bong!'); chalBong(); return { bx, bz, n: 1, t: 0 }; },
+    update(S, dt, p) {
+      S.t += dt; if (S.t > S.n * 5 && S.n < 12) { S.n++; chalBong(S.n === 12 ? 82 : 98); }
+      const d = Math.hypot(p.x - S.bx, p.z - S.bz);
+      actHud([['🕰 BIG BEN', `BONG ${S.n}/12`], ['LEFT', `${12 - S.n} 🔔`], ['TO BIG BEN', chalDist(d)]], '#d8b04a');
+      if (d < 48) { const left = 12 - S.n; return { stars: left >= 5 ? 3 : left >= 2 ? 2 : 1, msg: `YOU MADE IT WITH ${left} BONGS LEFT! 🕰` }; }
+      if (S.t > 12 * 5 + 1.5) return { stars: 0, msg: 'THE 12TH BONG! TOO LATE 🔔' };
+    },
+    stop() { clearNav(true); chalNote(null); } },
+  { id: 'buses', cid: 'london', n: 'Double-Decker Dodge', ico: '🚌', col: '#c8141b', d: 'Drive the route without touching the red buses coming at you · 3 lives',
+    at: C => zStreet(C, 0, 1, .15),
+    start(C) {
+      const { xs, zs } = chalSt(C), P = chalPath([[xs[0], zs[1]], [xs[3], zs[1]], [xs[3], zs[4]], [xs[6], zs[4]]]);
+      const red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .5 }), buses = [];
+      for (let k = 0; k < 4; k++) { const g = new THREE.Group(), lo = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.2, 10), red), up = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.9, 10), red); lo.position.y = 1.5; up.position.y = 3.6; g.add(lo, up); for (const y of [1.9, 3.8]) { const w = new THREE.Mesh(new THREE.BoxGeometry(2.56, .7, 9.2), glassMat); w.position.y = y; g.add(w); } scene.add(g); buses.push({ g, s: -1, v: 0, lane: 0 }); }
+      const end = P.at(P.L), mk = chalMarker('#7dff3a', end.x, end.z), line = chalLine(P.pts, '#ffffff');
+      chalNote('🚌 Follow the white line to the green finish. The red buses drive at you: dodge them! 3 lives ❤️');
+      return { P, buses, mk, line, lives: 3, cool: 0, t: 0, ps: 0 };
+    },
+    update(S, dt, p) {
+      S.t += dt; S.cool -= dt; const pr = S.P.proj(p.x, p.z); if (pr.d < 25) S.ps = Math.max(S.ps, pr.s);
+      for (const b of S.buses) {
+        if (b.s < 0 || b.s < S.ps - 30) { b.s = Math.min(S.P.L - 5, S.ps + 140 + Math.random() * 260); b.v = 8 + Math.random() * 3; b.lane = Math.random() < .5 ? -2.4 : 2.4; if (S.buses.some(o => o !== b && o.s > 0 && Math.abs(o.s - b.s) < 60)) b.s = -1; }
+        if (b.s < 0) { b.g.visible = false; continue; }
+        b.s -= b.v * dt; const a = S.P.at(b.s); b.g.visible = true; b.g.position.set(a.x - a.tz * b.lane, 0, a.z + a.tx * b.lane); b.g.rotation.y = a.h + Math.PI;
+        const bx = Math.sin(a.h + Math.PI), bz = Math.cos(a.h + Math.PI);
+        for (const o of [-3.5, 0, 3.5]) if (Math.hypot(p.x - (b.g.position.x + bx * o), p.z - (b.g.position.z + bz * o)) < 2.6) {
+          chalPushOut(p, b.g.position.x + bx * o, b.g.position.z + bz * o, 2.7);
+          if (S.cool <= 0) { S.cool = 2; S.lives--; audio.crash(8); shakeT += 1; toast('🚌 BUMP!', S.lives ? `${S.lives} ${S.lives > 1 ? 'LIVES' : 'LIFE'} LEFT` : ''); }
+        }
+      }
+      actHud([['🚌 BUS DODGE', '❤️'.repeat(Math.max(0, S.lives)) + '🖤'.repeat(3 - Math.max(0, S.lives))], ['TIME', fmtTime(chalLeft(S, 150))], ['TO THE FINISH', chalDist(S.P.L - S.ps)]], '#c8141b');
+      if (S.lives <= 0) return { stars: 0, msg: 'TOO MANY BUSES! 🚌💥' };
+      if (S.ps > S.P.L - 15) return { stars: S.lives, msg: `MADE IT WITH ${S.lives} ${S.lives > 1 ? 'LIVES' : 'LIFE'} LEFT · JOLLY GOOD! 🇬🇧` };
+      if (S.t > 150) return { stars: 0, msg: 'TIME UP!' };
+    },
+    stop(S) { for (const b of S.buses) scene.remove(b.g); scene.remove(S.mk); scene.remove(S.line); chalNote(null); } },
+
+  /* ---------------- Egypt ---------------- */
+  { id: 'treasure', cid: 'egypt', n: 'Pyramid Treasure', ico: '💰', col: '#ffd23a', d: 'Find 3 golden treasure chests hidden round the pyramids',
+    at: C => [C.causeway, C.z1 - 45],
+    start(C) {
+      const spots = (C.props?.pyramid || []).map(([x, z, , s]) => { const r = 113 * s + 22, a = Math.floor(Math.random() * 4) * Math.PI / 2; return [x + Math.cos(a) * r, z + Math.sin(a) * r]; });
+      const chests = spots.map(([x, z]) => { const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0x7a4a22 }); const b = new THREE.Mesh(new THREE.BoxGeometry(1.6, .9, 1.1), wood); b.position.y = .45; const lid = new THREE.Mesh(new THREE.CylinderGeometry(.55, .55, 1.6, 12, 1, false, 0, Math.PI), wood); lid.rotation.z = Math.PI / 2; lid.position.y = .9; const band = new THREE.Mesh(new THREE.BoxGeometry(1.64, .14, 1.14), CHAL_GOLD); band.position.y = .5; g.add(b, lid, band); const glow = new THREE.Mesh(new THREE.SphereGeometry(.5, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: .5 })); glow.position.y = 1.4; g.add(glow); g.position.set(x, 0, z); scene.add(g); return { x, z, g, got: false }; });
+      chalNav(C, '🔺 The pyramids', C.causeway, C.z1 + 140);
+      chalNote('💰 Drive over the causeway to the pyramids and find the 3 chests. Watch the 🔥 HOT / ❄️ COLD meter!');
+      return { chests, got: 0, t: 0 };
+    },
+    update(S, dt, p) {
+      S.t += dt; let near = 1e9;
+      for (const c of S.chests) { if (c.got) continue; const d = Math.hypot(p.x - c.x, p.z - c.z); near = Math.min(near, d); if (d < 7) { c.got = true; scene.remove(c.g); S.got++; chalPing(S.got); toast(`💰 TREASURE ${S.got}/3!`, S.got < 3 ? 'FIND THE NEXT ONE' : ''); } }
+      actHud([['💰 TREASURE', `${S.got}/3`], ['TIME', fmtTime(chalLeft(S, 240))], ['', near < 40 ? '🔥 HOT!' : near < 120 ? '🌡 WARM' : near < 300 ? '🙂 COOL' : '❄️ COLD']], '#ffd23a');
+      if (S.got >= 3) return { stars: S.t < 110 ? 3 : S.t < 160 ? 2 : 1, msg: `ALL THE GOLD IN ${fmtTime(S.t)}! 💰` };
+      if (S.t > 240) return { stars: S.got >= 2 ? 1 : 0, msg: `TIME UP · ${S.got} CHESTS` };
+    },
+    stop(S) { for (const c of S.chests) scene.remove(c.g); clearNav(true); chalNote(null); } },
+  { id: 'riddle', cid: 'egypt', n: 'Sphinx Riddle', ico: '🦁', col: '#c9a468', d: 'The Sphinx asks 3 riddles · drive to the right answer',
+    at: C => C.sphinxRing,
+    start(C) {
+      const P = C.riddleSpots, pool = [
+        ['I am tall and thin, made from ONE giant stone, with a point on top. What am I?', 'OBELISK', ['OBELISK', 'PYRAMID', 'HOTEL']],
+        ['Kings were buried inside me. I have 4 sides that meet at the top. What am I?', 'PYRAMID', ['SPHINX', 'PYRAMID', 'GAS STATION']],
+        ['I carry cars across the sea and go TOOT TOOT! What am I?', 'FERRY', ['FERRY', 'HOTEL', 'OBELISK']],
+        ['You sleep here when you are far from home. Where?', 'HOTEL', ['GAS STATION', 'HOTEL', 'SPHINX']],
+        ['Your car drinks here when it is thirsty. Where?', 'GAS STATION', ['OBELISK', 'GAS STATION', 'FERRY']],
+        ['I have the body of a lion and the head of a king. Drive back to me!', 'SPHINX', ['PYRAMID', 'FERRY', 'SPHINX']],
+      ].sort(() => Math.random() - .5).slice(0, 3);
+      const S = { P, pool, k: -1, right: 0, t: 0, marks: [] }; chalRiddleNext(S, C); return S;
+    },
+    update(S, dt, p, C) {
+      S.t += dt; S.rt += dt; const R = S.pool[S.k];
+      for (const m of S.marks) { const d = Math.hypot(p.x - m.x, p.z - m.z); if (d > 22) m.armed = true; if (!m.armed || d > 11 || p.speed > 5) continue;   // (stop on it: driving past is not an answer)
+        const ok = m.name === R[1]; if (ok) { S.right++; chalPing(S.right); toast('✅ RIGHT!', `IT WAS THE ${R[1]}`); } else { audio.beep(220, .4); toast('❌ WRONG!', `IT WAS THE ${R[1]}`); }
+        if (S.k >= 2) return { stars: S.right, msg: `${S.right}/3 RIDDLES RIGHT · THE SPHINX ${S.right === 3 ? 'IS AMAZED! 🦁' : 'SMILES'}` };
+        chalRiddleNext(S, C); return;
+      }
+      actHud([['🦁 RIDDLE', `${S.k + 1}/3`], ['RIGHT', `${S.right} ✅`], ['TIME', fmtTime(Math.max(0, 100 - S.rt))]], '#c9a468');
+      if (S.rt > 100) { toast('⏰ TOO SLOW!', `IT WAS THE ${R[1]}`); if (S.k >= 2) return { stars: S.right, msg: `${S.right}/3 RIDDLES RIGHT` }; chalRiddleNext(S, C); }
+    },
+    stop(S) { for (const m of S.marks) { scene.remove(m.mk); scene.remove(m.lab); } chalNote(null); } },
+
+  /* ---------------- South Africa ---------------- */
+  { id: 'lions', cid: 'southafrica', n: 'Lion Escape', ico: '🦁', col: '#ffb020', d: 'Drive 3 people from deep in the jungle back to the camp · the lions are chasing!',
+    at: C => [C.R.x[C.R.n - 1] - 130, C.z0 + 55],
+    start(C) {
+      if (!MODELS.lion || !MODELS.monkey) { toast('🦁 THE ANIMALS ARE WAKING UP…', 'ONE MOMENT'); Promise.all([loadModel('lion'), loadModel('monkey')]).then(() => chalStart(CHALS.find(d => d.id === 'lions'))); return null; }
+      if (!JA.built) buildAnimals();
+      const { xs, zs } = chalSt(C), x = xs[Math.floor(Math.random() * xs.length)], z = zs[zs.length - 1] - 20, p = player;
+      Object.assign(p, { x, z, heading: Math.PI, vx: 0, vz: 0, yawRate: 0, y: 0 }); camPos.set(x, 4, z + 9);
+      chalNav(C, '🏕 The camp', C.R.x[C.R.n - 1], C.z0 + 60);
+      chalNote('🦁 You are deep in the jungle with 3 people! Follow the GPS line back to the camp. Don\'t let the lions catch you!');
+      return { C, lives: 3, t: 0, cool: 0, amb: 3 };
+    },
+    update(S, dt, p, C) {
+      S.t += dt; S.cool -= dt; S.amb -= dt;
+      const lions = JA.list.filter(a => a.kind === 'lion'), chasing = lions.filter(a => a.st === 'chase');
+      if (S.amb <= 0 && chasing.length < 3 && p.z > JG.camp + 60) {   // a lion comes out of the trees ahead of you
+        S.amb = 5; const a = lions.filter(a => a.st !== 'chase').sort(() => Math.random() - .5)[0], q = huntAhead(p, 80 + Math.random() * 40), side = Math.random() < .5 ? -1 : 1;
+        if (a) { a.x = clamp(q.x + q.nx * side * 18, C.x0 + 10, C.x1 - 10); a.z = clamp(q.z + q.nz * side * 18, JG.camp + 30, C.z1 - 10); a.y = 0; a.vy = 0; a.v = 0; a.st = 'chase'; a.roarK = 1; lionRoar(.8); }
+      }
+      for (const a of chasing) if (Math.hypot(a.x - p.x, a.z - p.z) < AN.lion.catchR && S.cool <= 0) {
+        S.cool = 2.5; S.lives--; a.st = 'rest'; a.t = 6; a.v = 0; lionRoar(1); p.vx *= .35; p.vz *= .35; shakeT += 1.5; audio.crash(9);
+        toast('🦁 THE LION GOT ONE!', S.lives ? `${S.lives} PEOPLE LEFT IN YOUR CAR · DRIVE!` : 'OH NO!');
+      }
+      actHud([['🦁 LION ESCAPE', '🧑'.repeat(Math.max(0, S.lives)) + '·'.repeat(3 - Math.max(0, S.lives))], ['TIME', fmtTime(chalLeft(S, 150))], ['TO THE CAMP', chalDist(Math.max(0, p.z - JG.camp))], ['CHASING', `🦁 ${chasing.length}`]], '#ffb020');
+      if (S.lives <= 0) return { stars: 0, msg: 'THE LIONS GOT EVERYBODY! 🦁' };
+      if (p.z < JG.camp + 15) return { stars: S.lives, msg: `${S.lives} PEOPLE SAFE IN THE CAMP! 🏕` };
+      if (S.t > 150) return { stars: 0, msg: 'TIME UP · LOST IN THE JUNGLE' };
+    },
+    stop() { for (const a of JA.list) if (a.kind === 'lion' && a.st === 'chase') a.st = 'home'; clearNav(true); chalNote(null); } },
+  { id: 'monkeys', cid: 'southafrica', n: 'Monkey Mischief', ico: '🐒', col: '#ffe14a', d: '5 monkeys stole your bananas! Chase them down the trails and get them back',
+    at: C => [C.R.x[C.R.n - 1] - 190, C.z0 + 55],
+    start(C) {
+      if (!MODELS.lion || !MODELS.monkey) { toast('🐒 THE MONKEYS ARE WAKING UP…', 'ONE MOMENT'); Promise.all([loadModel('lion'), loadModel('monkey')]).then(() => chalStart(CHALS.find(d => d.id === 'monkeys'))); return null; }
+      if (!JA.built) buildAnimals();
+      const { xs, zs } = chalSt(C), p = player, bananaM = new THREE.MeshStandardMaterial({ color: 0xffe14a, emissive: 0x4a3a00 });
+      const near = xs.slice().sort((a, b) => Math.abs(a - p.x) - Math.abs(b - p.x));
+      const mk = JA.list.filter(a => a.kind === 'monkey').slice(0, 5).map((a, k) => {
+        const x = near[k % 3], z = JG.camp + 45 + k * 22; Object.assign(a, { x, z, y: 0, vy: 0, v: 0, st: 'flee', t: 5, h: 0 });
+        const b = new THREE.Mesh(new THREE.CapsuleGeometry(.12, .5, 3, 8), bananaM); b.rotation.z = 1.2; b.position.y = 1.5 / a.g.scale.x; b.scale.setScalar(1 / a.g.scale.x); a.g.add(b);
+        return { a, b, got: false, axis: 'x', line: x, dir: 1 };
+      });
+      chalNote('🐒 Cheeky monkeys took your bananas 🍌 into the jungle! Drive into them to get the bananas back.');
+      return { C, mk, got: 0, t: 0, xs, zs };
+    },
+    update(S, dt, p, C) {
+      S.t += dt;
+      for (const m of S.mk) {
+        if (m.got) continue; const a = m.a;
+        if (Math.hypot(a.x - p.x, a.z - p.z) < 3.6) { m.got = true; a.g.remove(m.b); a.st = 'flee'; a.t = 2; a.vy = 5; S.got++; chalPing(S.got); monkeyCall(.8); toast(`🍌 BANANA ${S.got}/5!`, S.got < 5 ? 'GET THE OTHERS!' : ''); continue; }
+        // run along the trails, away from you: at a crossing, take the way that goes furthest from the car
+        const L = m.axis === 'x' ? S.zs : S.xs, pos = m.axis === 'x' ? a.z : a.x;
+        for (const c of L) if (Math.abs(pos - c) < 1.2 && m.lastC !== c) { m.lastC = c; const opts = [['x', m.axis === 'x' ? m.line : c], ['z', m.axis === 'z' ? m.line : c]].flatMap(([ax, ln]) => [1, -1].map(dr => [ax, ln, dr])); const sc = ([ax, ln, dr]) => { const nx = ax === 'x' ? ln : (m.axis === 'x' ? m.line : c) + dr * 30, nz = ax === 'x' ? (m.axis === 'x' ? c : m.line) + dr * 30 : ln; return Math.hypot(nx - p.x, nz - p.z) + Math.random() * 40; }; [m.axis, m.line, m.dir] = opts.sort((u, v) => sc(v) - sc(u))[0]; }
+        const tx = m.axis === 'x' ? m.line : a.x + m.dir * 10, tz = m.axis === 'x' ? a.z + m.dir * 10 : m.line;
+        if ((m.axis === 'x' && (a.z > C.z1 - 30 && m.dir > 0 || a.z < JG.camp + 40 && m.dir < 0)) || (m.axis === 'z' && (a.x > C.x1 - 30 && m.dir > 0 || a.x < C.x0 + 30 && m.dir < 0))) m.dir = -m.dir;
+        a.st = 'flee'; a.t = 5; a.h = Math.atan2(tx - a.x, tz - a.z);
+      }
+      actHud([['🐒 BANANAS', `${S.got}/5 🍌`], ['TIME', fmtTime(chalLeft(S, 120))]], '#ffe14a');
+      if (S.got >= 5 || S.t >= 120) return { stars: S.got >= 5 ? 3 : S.got >= 3 ? 2 : S.got >= 1 ? 1 : 0, msg: `${S.got} BANANAS BACK! 🍌` };
+    },
+    stop(S) { for (const m of S.mk) { m.a.g.remove(m.b); if (m.a.st === 'flee') m.a.st = 'home'; } chalNote(null); } },
+];
+function chalPizzaNext(S, C) { const [x, z] = S.drops[S.done]; if (S.mk) { scene.remove(S.mk); scene.remove(S.who); } S.mk = chalMarker('#ff6a3a', x, z); S.who = makeWalker(randomLook()); poseWalker(S.who, x + 6, 0, z, -Math.PI / 2, 0, 0, 0, .6); scene.add(S.who); clearNav(true); chalNav(C, `🍕 Customer ${S.done + 1}`, x, z); }
+function chalTaxiNext(S) {
+  const C = S.C, p = player; let q; for (let t = 0; t < 200; t++) { q = chalRandomStreet(C); const d = Math.hypot(q[0] - p.x, q[1] - p.z); if (d > 70 && d < 220) break; }
+  const { xs, zs } = chalSt(C), onX = xs.some(v => Math.abs(q[0] - v) < 5), side = Math.random() < .5 ? 1 : -1;
+  S.wx = onX ? Math.round(q[0]) + side * 10 : q[0]; S.wz = onX ? q[1] : q[1] + side * 10; S.wh = onX ? (side > 0 ? -Math.PI / 2 : Math.PI / 2) : (side > 0 ? Math.PI : 0);
+  [S.x, S.z] = q; if (S.mk) scene.remove(S.mk); S.mk = chalMarker('#7dff3a', q[0], q[1]); S.who = makeWalker(randomLook()); scene.add(S.who);
+  clearNav(true); chalNav(C, '🙋 Passenger', q[0], q[1]);
+}
+function chalTaxiDrop(S) { const C = S.C, p = player; let q; for (let t = 0; t < 200; t++) { q = chalRandomStreet(C); const d = Math.hypot(q[0] - p.x, q[1] - p.z); if (d > 140 && d < 300) break; } [S.x, S.z] = q; scene.remove(S.mk); S.mk = chalMarker('#ffd21f', q[0], q[1]); clearNav(true); chalNav(C, '📍 Drop off', q[0], q[1]); }
+function chalRiddleNext(S, C) {
+  for (const m of S.marks) { scene.remove(m.mk); scene.remove(m.lab); } S.marks = []; S.k++; S.rt = 0; const R = S.pool[S.k];
+  R[2].forEach((name, i) => { const [x, z] = S.P[name], L = 'ABC'[i], mk = chalMarker(['#ff5fa2', '#2fe0ff', '#7dff3a'][i], x, z), lab = chalLabel(`${L} · ${name}`, 'STOP HERE TO ANSWER', ['#ff5fa2', '#2fe0ff', '#7dff3a'][i], x, 9, z); S.marks.push({ x, z, name, mk, lab, armed: Math.hypot(player.x - x, player.z - z) > 22 }); });
+  chalNote(`🦁 <b>RIDDLE ${S.k + 1}/3:</b> ${R[0]}<br><small>A: ${R[2][0]} · B: ${R[2][1]} · C: ${R[2][2]} · drive to the answer and STOP on it (see the map)</small>`);
+}
+const chalCrash = J => J.axis === 'z' ? [rc(J.line) - LANES[0] * J.dir, J.s0 + J.dir * 4] : [J.s0 + J.dir * 4, rc(J.line) + LANES[0] * J.dir];   // beside the wrecks, in the lanes the queue doesn't block
+function chalHeliHome(S, r) {   // land back in your car where you started
+  if (heli) { endHeli(); state = 'drive'; Object.assign(player, { x: S.back.x, z: S.back.z, heading: S.back.h, vx: 0, vz: 0, y: 0, yawRate: 0 }); camPos.set(S.back.x - Math.sin(S.back.h) * 8, 4, S.back.z - Math.cos(S.back.h) * 8); }
+  return r;
+}
+
+function chalStart(def) {
+  if (chal || state !== 'drive' || foot || (busyAct() && !hunt)) return;
+  if (hunt) endHunt(null, true);
+  endActs(); endChase(null, player); clearNav(true);
+  const C = chalCountry(def.cid), S = def.start(C, def); if (!S) return;
+  chal = { def, C, S, t: 0, x: player.x, z: player.z };
+  toast(`${def.ico} ${def.n.toUpperCase()}`, def.d.toUpperCase()); audio.beep(660, .15); setTimeout(() => audio.beep(990, .3), 160);
+}
+function updateChal(dt) {
+  const c = chal; if (!c) return;
+  const px = heli ? heli.x : foot ? foot.x : player.x, pz = heli ? heli.z : foot ? foot.z : player.z;
+  if (Math.hypot(px - c.x, pz - c.z) > (c.def.leash || 3000)) return chalEnd(null, 'YOU WENT TOO FAR AWAY');
+  c.t += dt; const r = c.def.update(c.S, dt, player, c.C, c); if (r) chalEnd(r);
+}
+function chalEnd(r, why) {
+  const c = chal; if (!c) return; chal = null; c.def.stop?.(c.S); actHud(null);
+  if (!r) { if (why) toast('CHALLENGE STOPPED', why); return; }
+  const id = c.def.id, before = chalBest[id] || 0, stars = r.stars;
+  if (stars > before) { chalBest[id] = stars; localStorage.setItem(CHAL_KEY, JSON.stringify(chalBest)); }
+  if (stars > 0) { earn(CHAL_PAY[stars]); bump('challenges'); audio.beep(880, .2); setTimeout(() => audio.beep(1320, .5), 220); } else audio.beep(260, .5);
+  banner(stars ? `${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)} ${c.def.n.toUpperCase()}` : `😢 ${c.def.n.toUpperCase()}`, r.msg, stars ? `+${fmtUSD(CHAL_PAY[stars])}${stars > before && before ? ' · NEW BEST!' : ''}` : 'TRY AGAIN! · STOP ON THE RING');
+  chalTrophy(c.def.cid);
+}
+function chalTrophy(cid) {
+  const list = CHALS.filter(d => d.cid === cid); if (!list.every(d => chalBest[d.id] > 0) || chalBest['trophy_' + cid]) return;
+  chalBest['trophy_' + cid] = 1; localStorage.setItem(CHAL_KEY, JSON.stringify(chalBest));
+  const ed = CARS.find(c => c.id === 'ed_' + cid); if (ed) { wallet.owned.add(ed.id); saveWallet(); buildMenu(); }
+  earn(25000); bump('trophies');
+  const name = cid === 'tokyo' ? 'TOKYO' : chalCountry(cid).name.toUpperCase();
+  setTimeout(() => banner(`🏆 ${CHAL_FLAG[cid]} GOLDEN TROPHY!`, `ALL ${name} CHALLENGES DONE · +$25,000`, ed ? `The ${ed.name} is yours! Find it in your garage` : ''), 2600);
+}
+// the challenge rings, and what some challenges need built: Aphrodite's ramp, the frozen lake in the Alps, the road to the pyramids
+function buildChallenges() {
+  for (const C of COUNTRIES) {
+    if (C.id === 'cyprus') { const { xs } = chalSt(C), X = xs.reduce((a, b) => Math.abs(b - (C.cx + 120)) < Math.abs(a - (C.cx + 120)) ? b : a); C.aphro = addRamp({ parent: C.group, col: '#ff5fa2', x: X, z: C.z1 - 110, ry: 0, prof: 'kick', W: 9, L: 26, H: 5.5, name: "Aphrodite's Ramp" }); C.group.add(rampMesh(C.aphro)); }
+    if (C.id === 'paris') C.eiffel = [C.cx - 85, C.cz + 35];
+    if (C.id === 'london') C.ben = [C.cx - 85, C.cz - 115];
+    if (C.id === 'alps') alpsLake(C);
+    if (C.id === 'egypt') egyptDesert(C);
+  }
+  for (const def of CHALS) {
+    const C = chalCountry(def.cid), [x, z] = def.at(C);
+    def.ring = [x, z];
+    addAct({ x, z, y: def.ay ? def.ay(x, z) : 0, r: 7, col: def.col, title: `${def.ico} ${def.n}`, sub: `CHALLENGE · ${def.d.toUpperCase()}`, sign: `⭐ CHALLENGE · ${def.n.toUpperCase()}`, parent: C ? C.group : undefined, go: () => chalStart(def), chal: def });
+  }
+}
+function extendArea(C, r) { const A = AREAS.find(A => A.country === C); if (A) { A.box[0] = Math.min(A.box[0], r[0] - 80); A.box[1] = Math.min(A.box[1], r[1] - 80); A.box[2] = Math.max(A.box[2], r[2] + 80); A.box[3] = Math.max(A.box[3], r[3] + 80); } }
+function alpsLake(C) {   // the frozen lake: a snowy point west of the town with a big round sheet of ice (very slippery)
+  const R = 95, LX = C.x0 - 130, LZ = C.cz, r = [C.x0 - 275, LZ - 140, C.x0 + 5, LZ + 140]; r.col = '#e8eef4'; C.P.rects.push(r); C.P.flat.push(0); extendArea(C, r);
+  const snow = new THREE.Mesh(new THREE.PlaneGeometry(r[2] - r[0] + 30, r[3] - r[1] + 30), new THREE.MeshStandardMaterial({ color: 0xf2f5f8, roughness: .95 })); snow.rotation.x = -Math.PI / 2; snow.position.set((r[0] + r[2]) / 2 - 10, .01, LZ); snow.receiveShadow = true; C.group.add(snow);
+  const ice = new THREE.Mesh(new THREE.CircleGeometry(R, 72), new THREE.MeshStandardMaterial({ color: 0xbfe6f6, roughness: .06, metalness: .15, polygonOffset: true, polygonOffsetFactor: -2 })); ice.rotation.x = -Math.PI / 2; ice.position.set(LX, .03, LZ); ice.receiveShadow = true; C.group.add(ice);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.2), new THREE.MeshBasicMaterial({ map: signTex(1024, 256, '#1d4f8f', [['⛸ FROZEN LAKE · GEFRORENER SEE', .5, .3, OR, '#fff']], '#fff'), side: THREE.DoubleSide })); sign.position.set(LX + R + 14, 3.4, LZ - 22); sign.rotation.y = Math.PI / 2; C.group.add(sign);
+  const trees = []; for (let k = 0; k < 46; k++) { const a = k / 46 * Math.PI * 2; if (Math.abs(Math.cos(a) - 1) < .35) continue; const d = R + 12 + (k % 3) * 8, x = LX + Math.cos(a) * d, z = LZ + Math.sin(a) * d; if (x < r[0] + 6 || z < r[1] + 6 || z > r[3] - 6) continue; trees.push([x, 0, z, a, 1]); C.P.addCol(x - .5, z - .5, x + .5, z + .5); }
+  const tm = instanced(new THREE.ConeGeometry(2.4, 9, 8).translate(0, 4.5, 0), new THREE.MeshStandardMaterial({ color: 0x2c5038, roughness: .9, flatShading: true }), trees); if (tm) { scene.remove(tm); C.group.add(tm); }
+  const old = C.P.terrain; C.P.terrain = (x, z) => Math.hypot(x - LX, z - LZ) < R ? 'ice' : old ? old(x, z) : null;
+  C.lake = { x: LX, z: LZ, r: R };
+}
+function egyptDesert(C) {   // the pyramids: a causeway from the end of the last street over to the desert, now drivable
+  const { xs } = chalSt(C), X = xs[xs.length - 1], z1 = C.z1, cw = [X - 14, z1 - 25, X + 14, z1 + 75], ds = [C.cx - 1250, z1 + 70, C.cx + 1250, z1 + 1440];
+  cw.col = '#8a93a3'; ds.col = '#e6c98c'; C.P.rects.push(cw, ds); C.P.flat.push(0, 0); extendArea(C, ds); C.causeway = X;
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(26, 110), new THREE.MeshStandardMaterial({ map: ROAD_TEX(), roughness: .8 })); road.material.map.repeat.set(1, 110 / 16); road.material.map.wrapT = THREE.RepeatWrapping; road.rotation.x = -Math.PI / 2; road.position.set(X, .04, z1 + 25); road.receiveShadow = true; C.group.add(road);
+  const sand = new THREE.Mesh(new THREE.PlaneGeometry(ds[2] - ds[0] + 40, ds[3] - ds[1] + 40), new THREE.MeshStandardMaterial({ color: 0xe6c98c, roughness: 1 })); sand.rotation.x = -Math.PI / 2; sand.position.set((ds[0] + ds[2]) / 2, .02, (ds[1] + ds[3]) / 2); sand.receiveShadow = true; C.group.add(sand);
+  for (const [x, z, , s] of C.props?.pyramid || []) { const h = 113 * s; C.P.addCol(x - h, z - h, x + h, z + h); }
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.4), new THREE.MeshBasicMaterial({ map: signTex(1024, 256, '#6a4a1a', [['🔺 PYRAMIDS · الأهرامات', .5, .3, `${OR}, sans-serif`, '#ffe9b0']], '#ffd23a'), side: THREE.DoubleSide })); sign.position.set(X + 16, 4, z1 - 20); C.group.add(sign);
+  // the riddle answers: places round the town (a street point next to each)
+  const H = C.hotel, snap = ([x, z]) => { const { xs, zs } = chalSt(C), nx = xs.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a), nz = zs.reduce((a, b) => Math.abs(b - z) < Math.abs(a - z) ? b : a), c = Math.abs(nx - x) < Math.abs(nz - z) ? [[nx, z], [x, nz]] : [[x, nz], [nx, z]]; return c.find(q => streetFree(C, ...q)) || c[0]; };   // (not on the stunt loop)
+  C.riddleSpots = { OBELISK: snap([C.cx + 255, C.cz - 115]), SPHINX: snap([C.cx - 85, C.cz + 35]), PYRAMID: [X, z1 + 45], FERRY: [C.cx - 40, z1 - 70], HOTEL: hW(H, 0, 15), 'GAS STATION': [C.R.x[C.R.n - 1] - 9, C.z0 + 48] };
+  C.sphinxRing = C.riddleSpots.SPHINX;
+}
+function openChalBoard() {
+  state = 'overlay'; if (audio.ctx) audio.ctx.suspend();
+  const total = CHALS.reduce((a, d) => a + (chalBest[d.id] || 0), 0), groups = [...new Set(CHALS.map(d => d.cid))];
+  $('meetTitle').innerHTML = `🏆 CHALLENGES<small>${total} / ${CHALS.length * 3} ⭐ · DO BOTH IN A COUNTRY FOR ITS TROPHY AND SPECIAL CAR</small>`;
+  $('meetList').innerHTML = `<div style="max-height:62vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px">${groups.map(cid => {
+    const C = chalCountry(cid), ed = CARS.find(c => c.id === 'ed_' + cid), won = chalBest['trophy_' + cid];
+    return `<div style="font-family:Orbitron,sans-serif;font-weight:900;letter-spacing:.12em;color:${won ? '#ffd21f' : '#9aa3b2'};margin-top:6px">${CHAL_FLAG[cid]} ${C ? C.name.toUpperCase() : 'TOKYO'} ${won ? '🏆' : ''} <small style="font-size:11px;color:#cfd2d8">· PRIZE: ${ed ? ed.name : ''}</small></div>`
+      + CHALS.filter(d => d.cid === cid).map(d => { const st = chalBest[d.id] || 0; return `<div class="meetRow" style="--glow:${d.col}"><div class="mGlow"></div><div class="mInfo"><b>${d.ico} ${d.n.toUpperCase()}</b><span>${d.d}</span><small>${'⭐'.repeat(st)}${'☆'.repeat(3 - st)}</small></div><button data-c="${d.id}">GO</button></div>`; }).join('');
+  }).join('')}</div>`;
+  $('meetList').querySelectorAll('button[data-c]').forEach(bt => bt.onclick = () => { closeMeet(); const d = CHALS.find(q => q.id === bt.dataset.c), C = chalCountry(d.cid); clearNav(true); if (C) setNav({ n: `${d.ico} ${d.n}`, zone: C.id, idx: C.R.n - 1, end: d.ring }); else setNav({ n: `${d.ico} ${d.n}`, x: d.ring[0], z: d.ring[1] }); });
+  $('meetPanel').classList.remove('hidden');
+}
+/* =====================================================================
    THINGS TO DO IN THE COUNTRIES, AND THE WORLD RACE
    - A street Grand Prix in every country town: 2 laps round the blocks against 3 rivals.
    - A delivery job in every country: halloumi in Cyprus, pizza in Italy, gold in Dubai. 3 deliveries a shift,
@@ -9612,8 +10221,61 @@ function footCamera(dt) {
    ===================================================================== */
 const ACTS = [];
 let actNear = null, cRace = null, deliv = null, worldRace = null;
-const busyAct = () => race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster) || (typeof lantern !== 'undefined' && lantern) || hunt;
+const busyAct = () => (typeof chal !== 'undefined' && chal) || race || drag || taxi || crime || meet || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster) || (typeof lantern !== 'undefined' && lantern) || hunt;
 const cStreets = C => { const xs = [], zs = []; for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x); for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z); return { xs, zs }; };
+// from a point in a country to another: along the town's streets (and over Egypt's causeway when the pyramids are one end)
+function townWay(C, px, pz, end) {
+  const cw = C.causeway, a = [], b = [], onCw = cw && Math.abs(px - cw) < 20 && pz > C.z1 - 40 && pz < C.z1 + 80; let sx = px, sz = pz, ex = end[0], ez = end[1];
+  if (cw && ez > C.z1 + 20) { if (onCw) return pz < C.z1 + 50 ? [[cw, C.z1 + 60], end] : [end]; if (pz > C.z1 + 20) return [end]; b.push([cw, C.z1 + 60]); ex = cw; ez = C.z1 - 20; }   // out to the desert
+  else if (cw && pz > C.z1 + 20 && !onCw) { a.push([cw, C.z1 + 60]); sx = cw; sz = C.z1 - 20; }   // back from the desert
+  return [...a, ...townRoute(C, sx, sz, ex, ez), ...b, end];
+}
+// the town's street grid as a graph: which stretches between two crossroads a building or a landmark blocks (and where)
+function townGraph(C) {
+  if (C.tg) return C.tg;
+  const { xs, zs } = C.streets ??= cStreets(C);
+  const block = (x0, z0, x1, z1) => {   // the part of a stretch of street that something big stands on: [from, to] along it, or null
+    const along = x1 - x0 > z1 - z0, seen = new Set(); let lo = 1e9, hi = -1e9;
+    for (let i = Math.floor(x0 / 40); i <= Math.floor(x1 / 40); i++) for (let j = Math.floor(z0 / 40); j <= Math.floor(z1 / 40); j++) for (const b of C.P.grid.get(i * 100000 + j) || []) {
+      if (seen.has(b)) continue; seen.add(b);
+      if (b.x1 - b.x0 > 3 && b.z1 - b.z0 > 3 && b.x1 > x0 && b.x0 < x1 && b.z1 > z0 && b.z0 < z1) { lo = Math.min(lo, along ? b.x0 : b.z0); hi = Math.max(hi, along ? b.x1 : b.z1); }
+    }
+    for (const S of STUNTS) if (S.kind === 'loop' && S.cx > x0 - 8 && S.cx < x1 + 8 && S.cz > z0 - 8 && S.cz < z1 + 8) { const c = along ? S.cx : S.cz; lo = Math.min(lo, c - S.rad); hi = Math.max(hi, c + S.rad); }   // the stunt loop fills its street
+    return hi > lo ? [lo, hi] : null;
+  };
+  return C.tg = { xs, zs, H: zs.map(z => xs.slice(0, -1).map((x, i) => block(x, z - 2.5, xs[i + 1], z + 2.5))), V: xs.map(x => zs.slice(0, -1).map((z, j) => block(x - 2.5, z, x + 2.5, zs[j + 1]))) };
+}
+// the shortest way between two points along a town's streets, round the blocked bits: the corners to drive by
+function townRoute(C, ax, az, bx, bz) {
+  const { xs, zs, H, V } = townGraph(C), nZ = zs.length, id = (i, j) => i * nZ + j, near = (L, v) => L.reduce((k, w, i) => Math.abs(w - v) < Math.abs(L[k] - v) ? i : k, 0);
+  const at = (x, z) => {   // the stretch of street a point is on, and the crossroads it can reach (not through a block)
+    const i0 = near(xs, x), j0 = near(zs, z), onX = Math.abs(xs[i0] - x) <= Math.abs(zs[j0] - z), L = onX ? zs : xs, v = onX ? clamp(z, C.z0 + 20, C.z1 - 20) : clamp(x, C.x0 + 20, C.x1 - 20), P = onX ? [xs[i0], v] : [v, zs[j0]], n = L.length - 1;
+    if (v <= L[0] || v >= L[n]) { const end = v <= L[0] ? 0 : n; return { P, key: (onX ? 'V' : 'H') + (onX ? i0 : j0) + '_' + (end ? 'hi' : 'lo'), e: [[onX ? id(i0, end) : id(end, j0), Math.abs(v - L[end])]], v, bl: null }; }   // the ends of the streets, out to the edge of the town
+    let k = 0; while (k < L.length - 2 && v > L[k + 1]) k++;
+    const bl = onX ? V[i0][k] : H[j0][k], e = [];
+    if (!bl || v <= bl[0] || v >= bl[0] && v <= bl[1]) e.push([onX ? id(i0, k) : id(k, j0), v - L[k]]);
+    if (!bl || v >= bl[1] || v >= bl[0] && v <= bl[1]) e.push([onX ? id(i0, k + 1) : id(k + 1, j0), L[k + 1] - v]);
+    return { P, key: (onX ? 'V' : 'H') + (onX ? i0 : j0) + '_' + k, e, v, bl };
+  };
+  const A = at(ax, az), B = at(bx, bz);
+  if (A.key === B.key && !(A.bl && Math.min(A.v, B.v) < A.bl[0] && Math.max(A.v, B.v) > A.bl[1])) return [A.P, B.P];
+  const N = xs.length * nZ, dist = new Float64Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), done = new Uint8Array(N);
+  for (const [n, c] of A.e) dist[n] = Math.min(dist[n], c);
+  for (;;) {
+    let u = -1; for (let n = 0; n < N; n++) if (!done[n] && dist[n] < Infinity && (u < 0 || dist[n] < dist[u])) u = n;
+    if (u < 0) break; done[u] = 1; const i = Math.floor(u / nZ), j = u % nZ;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ni = i + di, nj = j + dj; if (ni < 0 || nj < 0 || ni >= xs.length || nj >= nZ) continue;
+      if (di ? H[j][Math.min(i, ni)] : V[i][Math.min(j, nj)]) continue;
+      const w = id(ni, nj), c = dist[u] + (di ? Math.abs(xs[ni] - xs[i]) : Math.abs(zs[nj] - zs[j]));
+      if (c < dist[w]) { dist[w] = c; prev[w] = u; }
+    }
+  }
+  let best = -1, bc = Infinity; for (const [n, c] of B.e) if (dist[n] + c < bc) { bc = dist[n] + c; best = n; }
+  if (best < 0) return [A.P, B.P];
+  const mid = []; for (let n = best; n >= 0; n = prev[n]) mid.unshift([xs[Math.floor(n / nZ)], zs[n % nZ]]);
+  return [A.P, ...mid, B.P];
+}
 function addAct(o) {
   const g = new THREE.Group(), col = new THREE.Color(o.col); g.position.set(o.x, o.y || 0, o.z); (o.parent || scene).add(g);
   const ring = new THREE.Mesh(new THREE.RingGeometry(o.r - 1.2, o.r, 40), new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(2.2), side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false }));
@@ -9632,7 +10294,7 @@ function updateActs(dt, p) {
   const fn = foot?.near;
   if (fn && state === 'drive') { pr.innerHTML = `${fn.t}<small>${fn.s} · ${isTouch ? 'TAP HERE' : 'PRESS ENTER'}</small>`; pr.style.borderColor = fn.col; pr.classList.remove('hidden'); }
   else if (actNear?.hotel && state === 'drive') { pr.innerHTML = `🚶 GO OUT<small>${actNear.hotel.name.toUpperCase()} · WALK IN AND RELAX · ${isTouch ? 'TAP HERE' : 'PRESS ENTER'}</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
-  else if (actNear && state === 'drive' && !foot) { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
+  else if (actNear && state === 'drive' && !foot) { pr.innerHTML = `${actNear.title.toUpperCase()}${actNear.chal ? ' ' + '⭐'.repeat(chalBest[actNear.chal.id] || 0) : ''}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
   else pr.classList.add('hidden');
   if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p); if (job) updateJob(dt, p); if (monster) updateMonster(dt, p); if (lantern) updateLantern(dt, p); if (hunt) updateHunt(dt, p);
 }
@@ -12635,6 +13297,7 @@ function buildPlaces() {
   P.push({ n: 'Fuji Five Lakes', jp: '富士五湖', type: 'Lake village under Mt. Fuji · onsen · airstrip', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [-3480, -4380], x: FUJI.cx, z: FUJI.cz, col: '#ff7aa8' });
   P.push({ n: 'Chureito Pagoda', jp: '忠霊塔', type: 'Five-storey pagoda · cherry blossom · Fuji view', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [FUJI.pagoda[0], FUJI.pagoda[1] + 40], face: Math.PI, x: FUJI.pagoda[0], z: FUJI.pagoda[1], col: '#ff7aa8' });
   P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
+  for (const d of CHALS) { const C = chalCountry(d.cid); if (!d.ring) continue; P.push(C ? { n: `${d.ico} ${d.n}`, jp: 'CHALLENGE', type: `Challenge · ${C.name} · ${d.d}`, kind: 'area', zone: C.id, idx: C.R.n - 1, end: d.ring, x: d.ring[0], z: d.ring[1], col: d.col } : { n: `${d.ico} ${d.n}`, jp: 'CHALLENGE', type: `Challenge · Tokyo · ${d.d}`, kind: 'city', x: d.ring[0], z: d.ring[1], col: d.col }); }
   for (const H of HOTELS) { const [x, z] = hW(H, 0, 15); P.push(H.C ? { n: H.name, jp: H.S.word, type: 'Hotel · walk in, relax, sleep · car park', kind: 'area', zone: H.C.id, idx: H.C.R.n - 1, end: hW(H, 0, 18), face: H.ry + Math.PI, x, z, col: H.S.acc } : { n: H.name, jp: H.S.word, type: 'Hotel · walk in, relax, sleep · car park', kind: 'city', x, z, col: H.S.acc }); }
   GAS.filter(g => g.area === 'tokyo').forEach((g, k) => P.push({ n: `Gas Station ${k + 1}`, jp: 'ガソリンスタンド', type: 'Fuel and charging', kind: 'city', x: g.x, z: g.z, col: '#ff5a1f' }));
   P.push({ n: 'Car Wash', jp: '洗車', type: 'Make your car shine · $50', kind: 'city', x: WASHES[0].x, z: WASHES[0].z, col: '#2fe0ff' });
@@ -12680,15 +13343,15 @@ function navRoute(px, pz, d) {
     const R = TRO.Rd, C = COUNTRIES.find(c => c.troodos), mx = C.R.x[C.R.n - 1], to = d.troPath === 'top' ? R.n - 1 : TRO.platI, q = troIn(px, pz) ? troNearIn(R, px, pz, 300) : null;
     const tail = []; for (let i = q ? q.i : 0; i < to; i += 6) tail.push([R.x[i], R.z[i]]); tail.push(d.end);
     if (q) return tail;
-    const head = C.P.inside(px, pz) ? [] : navRoute(px, pz, { ...d, troPath: null, end: [mx, C.z0 + 110] });
-    return [...head, [C.x0 + 90, C.z0 + 110], [C.x0 + 90, R.z[0]], [R.x[0], R.z[0]], ...tail];
+    const head = C.P.inside(px, pz) ? [] : navRoute(px, pz, { ...d, troPath: null, end: [mx, C.z0 + 110] }), [hx, hz] = head[head.length - 1] || [px, pz];
+    return [...head, ...(Math.hypot(hx - R.x[0], hz - R.z[0]) < 60 ? [] : townRoute(C, hx, hz, R.x[0], R.z[0])), ...tail];   // (the tail starts at the foot of the road)
   }
   if (d.troPath && TRO.T) {   // the Troodos: through the town streets to the foot of the trail (and up the trail to the summit)
     const T = TRO.T, C = COUNTRIES.find(c => c.troodos), mx = C.R.x[C.R.n - 1], up = d.troPath === 'top', q = troIn(px, pz) ? troNear(px, pz, 400) : null;
     const tail = []; if (up) { for (let i = q ? q.i : 0; i < T.n; i += 6) tail.push([T.x[i], T.z[i]]); tail.push(d.end); }
     if (q) return up ? tail : [[T.x[0] + 20, T.z[0]]];
-    const head = C.P.inside(px, pz) ? [] : navRoute(px, pz, { ...d, troPath: null, end: [mx, C.z0 + 110] });
-    return [...head, [C.x0 + 90, C.z0 + 110], [C.x0 + 90, 14410], [T.x[0] + 20, T.z[0]], ...tail];
+    const head = C.P.inside(px, pz) ? [] : navRoute(px, pz, { ...d, troPath: null, end: [mx, C.z0 + 110] }), [hx, hz] = head[head.length - 1] || [px, pz];
+    return [...head, ...(Math.hypot(hx - T.x[0], hz - T.z[0]) < 60 ? [] : [...townRoute(C, hx, hz, T.x[0] + 20, T.z[0]), [T.x[0] + 20, T.z[0]]]), ...tail];
   }
   { const zp = zoneAt(px, pz), zd = d.zone || 'city';   // the moon has no road from here; the volcano is through the tunnel from the beach
     if (zd === 'moon' || zp === 'moon') return [[d.end?.[0] ?? d.x, d.end?.[1] ?? d.z]];
@@ -12700,8 +13363,11 @@ function navRoute(px, pz, d) {
   const Z = ZONES[zd], J = d.end && COUNTRIES.find(c => c.id === zd && c.jungle);
   if (J && zp === zd && px > J.x0 - 20 && px < J.x1 + 20 && pz > J.z0 - 20) return [...out, ...jungleRoute(J, px, pz, d.end[0], d.end[1])];   // in the jungle: along the trails
   if (zp !== zd) out.push(...taxiRoute(cx, cz, Z.gate[0], Z.gate[1]));
+  const TC = d.end && !J ? COUNTRIES.find(c => c.id === zd) : null;   // in a town: along its streets, not through the houses
+  if (TC && zp === zd && pz > TC.z0 - 20) return [...out, ...townWay(TC, px, pz, d.end)];
   out.push(...zPath(Z.R, zp === zd ? zIndex(Z.R, px, pz) : 0, d.idx));
   if (J) { while (out.length > 1 && out[out.length - 1][1] > J.z0 + 100) out.pop(); const [ex, ez] = out[out.length - 1] || [px, pz]; out.push(...jungleRoute(J, ex, ez, d.end[0], d.end[1])); }
+  else if (TC) { const [ex, ez] = out[out.length - 1] || [px, pz]; out.push(...townWay(TC, ex, ez, d.end)); }
   else if (d.end) out.push(d.end);
   return out;
 }
@@ -12741,7 +13407,7 @@ function drawNavRoute(g) {
   g.fillStyle = '#2fe0ff'; g.beginPath(); g.arc(nav.tx, nav.tz, 20, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(nav.tx, nav.tz, 9, 0, 7); g.fill();
 }
 function travelTo(d) {
-  footEnd(true);
+  chalEnd(null, 'YOU TRAVELLED AWAY'); footEnd(true);
   if (crime) { toast('NO FAST TRAVEL', 'NOT DURING OUTLAW / POLICE'); return false; }
   if (taxi) { toast('TAXI SHIFT ACTIVE', 'NO FAST TRAVEL DURING A SHIFT'); return false; }
   const p = player;
@@ -13365,6 +14031,7 @@ $('bResume').onclick = () => setPause(false);
 $('bSeason').onclick = () => cycleSeason();
 $('bPhoto').onclick = () => startPhoto();
 $('bBadges').onclick = () => openBadges();
+$('bChal').onclick = () => { setPause(false); openChalBoard(); };
 $('bRadio').onclick = () => { cycleRadio(); $('bRadio').textContent = '📻 ' + (RADIO[radio.st]?.n || 'RADIO OFF'); };
 const MUSIC_MODES = { songs: '🎵 MUSIC: AMBOOLA', spotify: '🎸 MUSIC: SPOTIFY', off: '🔇 MUSIC: OFF' };
 const musicBtn = () => { $('bMusic').textContent = music.mode === 'spotify' && spotMix() ? '🦂 MUSIC: SCORPIONS' : MUSIC_MODES[music.mode]; };
@@ -13387,7 +14054,7 @@ $('bGarage').onclick = () => { endActs(); endChase(null, player); endMeetRace(fa
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
-  footEnd(true); carEnvRelease(); if (swim) endSwim(player, false);
+  chalEnd(null); footEnd(true); carEnvRelease(); if (swim) endSwim(player, false);
   if (tro) { if (tro.ais) troEnd(true); if (tro.loan) ({ carIdx, paintIdx } = tro.loan); tro = null; }   // a lent Troodos truck goes back
   if (build.mode) { build.mode = null; build.run = null; buildBar(); camera.fov = 62; camera.updateProjectionMatrix(); }
   state = 'garage'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
@@ -13562,7 +14229,7 @@ function tick(dt) {
   if (state === 'photo') { updatePhoto(dt); return; }
   if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
   if (state === 'build') { buildCam(dt); composer.render(dt); return; }
-  if (state === 'heli') { updateHeli(dt); if (state === 'heli') { updateCountryCulling(dt); composer.render(dt); } return; }   // (the flying Roadster can reach the countries)
+  if (state === 'heli') { updateHeli(dt); updateChal(dt); if (state === 'heli') { updateCountryCulling(dt); composer.render(dt); } return; }   // (the flying Roadster can reach the countries)
   if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
   if (state === 'title') { updateTitle(dt); composer.render(dt); return; }
   if (state === 'garage') {
@@ -13583,7 +14250,7 @@ function tick(dt) {
     [-1, 1].forEach((s, k) => {
       const wx = player.x + fx * B.rX + rx * s * (B.W / 2 - .2), wz = player.z + fz * B.rX + rz * s * (B.W / 2 - .2);
       if (grounded && WX.wet > .3 && player.speed > 6 && Math.random() < clamp(player.speed / 40, 0, 1) * WX.wet * dt * 50) spray.spray(wx, wz, player.vx, player.vz, clamp(player.speed / 45, .3, 1) * WX.wet, player.y || 0);
-      if (grounded && player.terrain && player.speed > 4 && Math.random() < clamp(player.speed / 30, .2, 1) * dt * 26) (player.terrain === 'water' ? spray : dust).spray(wx, wz, player.vx, player.vz, player.terrain === 'water' ? 1 : clamp(player.speed / 35, .35, .9), player.y || 0);
+      if (grounded && player.terrain && player.speed > 4 && Math.random() < clamp(player.speed / 30, .2, 1) * dt * 26) (player.terrain === 'water' || player.terrain === 'ice' ? spray : dust).spray(wx, wz, player.vx, player.vz, player.terrain === 'water' ? 1 : clamp(player.speed / 35, .35, .9), player.y || 0);
       if (marking) { skids.add(k, wx, wz, fx, fz, player.y || 0); if (Math.random() < clamp((player.slip - .3) * .7, 0, .55) * dt * 60) smoke.emit(wx, wz, player.vx, player.vz, clamp(player.slip - .2, .2, .9), player.y || 0); } else skids.lift(k);
     });
     // a badly damaged car trails a thin dark wisp while it drives (never a cloud piling up on a parked car)
@@ -13596,7 +14263,7 @@ function tick(dt) {
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
     seaView();
     sky.position.copy(camera.position);
-    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player); updateHotels(dt, foot ? foot.x : player.x, foot ? foot.z : player.z); updateCrowd(dt, foot ? foot.x : player.x, foot ? foot.z : player.z); updateJams(dt, player);
+    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player); updateHotels(dt, foot ? foot.x : player.x, foot ? foot.z : player.z); updateCrowd(dt, foot ? foot.x : player.x, foot ? foot.z : player.z); updateJams(dt, player); updateChal(dt);
     audio.weather(WX.wet, player.speed, camMode >= 2 || SEA.under);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 || SEA.under, air: player.air });
     // big screens cycle
@@ -13643,7 +14310,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
