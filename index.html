@@ -600,6 +600,7 @@
 <div id="tiSettings" class="tiPanel hidden"><h2>⚙ SETTINGS · 設定</h2>
   <div class="tiRow"><b>GRAPHICS</b><div class="tiOpts" id="tiGfx"><button data-v="low">LOW</button><button data-v="high">HIGH</button><button data-v="ultra">ULTRA</button></div><small id="tiGfxInfo"></small></div>
   <div class="tiRow"><b>GAME MODE</b><div class="tiOpts" id="tiDiff"><button data-v="easy">😊 EASY</button><button data-v="medium">🙂 MEDIUM</button><button data-v="hard">😈 HARD</button></div><small id="tiDiffInfo"></small></div>
+  <div class="tiRow"><b>TRAFFIC</b><div class="tiOpts" id="tiTraffic"><button data-v="0">NORMAL</button><button data-v="1000">1,000</button><button data-v="3000">3,000</button><button data-v="6000">6,000</button><button data-v="10000">10,000</button></div><small>Extra cars on the Tokyo streets. Lots of cars need a strong computer.</small></div>
   <div class="tiRow"><b>SOUND</b><div class="tiOpts" id="tiSound"><button data-v="on">🔊 ON</button><button data-v="off">🔇 OFF</button></div></div>
   <div class="tiRow"><b>RACE MUSIC</b><div class="tiOpts" id="tiMusic"><button data-v="songs">🎵 AMBOOLA</button><button data-v="spotify">🦂 SCORPIONS</button><button data-v="off">🔇 OFF</button></div></div>
   <button class="tiBack">◀ BACK</button></div>
@@ -666,6 +667,7 @@
   <button id="bPolice">POLICE</button>
   <button id="bGarage">GARAGE · CHANGE CAR</button>
   <button id="bMute">SOUND: ON</button>
+  <button id="bTraffic">🚗 TRAFFIC: NORMAL</button>
 </div>
 
 <div id="touch" class="hidden">
@@ -2146,7 +2148,7 @@ function plateTexture(id) {
 }
 // put the painted face on every plate of a model car: plates are found by their material, front and back by which end they sit
 function paintPlates(group, id) {
-  const pm = new THREE.MeshStandardMaterial({ map: plateTexture(id), roughness: .45 }), m4 = new THREE.Matrix4(), o0 = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  const pm = new THREE.MeshStandardMaterial({ map: plateTexture(id), roughness: .45 }); pm.userData.plate = true; const m4 = new THREE.Matrix4(), o0 = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const meshes = []; group.traverse(o => { if (o.isMesh && o.material === plateMat) meshes.push(o); });
   for (const o of meshes) {
     const P = o.geometry.attributes.position, N = o.geometry.attributes.normal, v = new THREE.Vector3(), nv = new THREE.Vector3();
@@ -3278,6 +3280,76 @@ function buildTrafficCar(T) {
   if (!dressTraffic(g)) { g.add(lo); trafficWaiting.push(g); }
   return g;
 }
+/* =====================================================================
+   MASS TRAFFIC — up to 10,000 extra cars on every Tokyo lane (Settings → TRAFFIC). They are drawn all together (one
+   instanced mesh, only the ones near the camera) and simply follow the car in front, keeping their distance, and wait
+   at red lights (x roads go for 18 s, then the z roads). They stop for you, and you can't drive through them.
+   ===================================================================== */
+const MASS_OPTS = [0, 1000, 3000, 6000, 10000];
+const MASS = { n: +(localStorage.getItem('amboola.traffic') || 0), cars: null, lanes: [], im: null, fix: null, t: 0, cols: [0xe8e9ec, 0x1b1c20, 0xb3121a, 0x1d5fc4, 0xa9adb1, 0x2c3a2b, 0xf2c20f, 0xe0501a, 0x5a5f66, 0xf4f4f2, 0x16295c] };
+if (!MASS_OPTS.includes(MASS.n)) MASS.n = 0;
+const massGreen = axis => { const t = MASS.t % 40; return axis === 'x' ? t < 18 : t >= 20 && t < 38; };
+function massBuild(n) {
+  MASS.n = n; localStorage.setItem('amboola.traffic', n);
+  if (MASS.im) { scene.remove(MASS.im, MASS.fix); MASS.im = MASS.fix = null; }
+  MASS.cars = null; MASS.lanes = []; if (!n) return;
+  const L = 2 * HALF, lanes = []; for (const axis of ['x', 'z']) for (let line = 0; line <= N; line++) for (const dir of [1, -1]) for (const lane of [0, 1]) lanes.push({ axis, line, dir, lane, cars: [] });
+  const per = Math.ceil(n / lanes.length), rnd = mulberry32(n), cars = [];
+  for (const ln of lanes) for (let k = 0; k < per && cars.length < n; k++) {
+    const c = { ln, s: -HALF + (k + rnd() * .5) / per * L, v: 0, vmax: rr(11, 16), col: MASS.cols[Math.floor(rnd() * MASS.cols.length)], len: rnd() < .15 ? 6 : 4.4 };
+    ln.cars.push(c); cars.push(c);
+  }
+  for (const ln of lanes) ln.cars.sort((a, b) => (a.s - b.s) * ln.dir);   // the one furthest along the lane last
+  MASS.lanes = lanes; MASS.cars = cars;
+  // one simple low-poly car: the body (tinted per car) and the dark parts (glass, wheels) and red tail lights
+  const part = (w, h, d, x, y, z, col) => { const g = new THREE.BoxGeometry(w, h, d).translate(x, y, z), c = new Float32Array(g.attributes.position.count * 3); for (let i = 0; i < c.length; i += 3) c.set(col, i); g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g; };
+  const body = mergeGeometries([part(1.8, .62, 4.3, 0, .55, 0, [1, 1, 1]), part(1.62, .5, 2.2, 0, 1.1, -.2, [1, 1, 1])]);
+  const fix = mergeGeometries([part(1.66, .38, 2.06, 0, 1.12, -.2, [.05, .06, .08]), part(1.5, .3, .05, 0, 1.1, .92, [.05, .06, .08]),
+    ...[[-.86, 1.35], [.86, 1.35], [-.86, -1.35], [.86, -1.35]].map(([x, z]) => part(.24, .62, .62, x, .31, z, [.03, .03, .03])),
+    part(.4, .14, .04, -.6, .72, -2.16, [1, .05, .03]), part(.4, .14, .04, .6, .72, -2.16, [1, .05, .03]), part(.36, .12, .04, -.62, .7, 2.16, [1, .95, .8]), part(.36, .12, .04, .62, .7, 2.16, [1, .95, .8])]);
+  const cap = Math.min(n, 4000);
+  MASS.im = new THREE.InstancedMesh(body, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .35, metalness: .4 }), cap);
+  MASS.fix = new THREE.InstancedMesh(fix, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .3 }), cap);
+  MASS.fix.instanceMatrix = MASS.im.instanceMatrix;
+  MASS.im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
+  for (const m of [MASS.im, MASS.fix]) { m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; m.count = 0; scene.add(m); }
+}
+const massPos = (c, out) => { const ln = c.ln, off = LANES[ln.lane] * ln.dir; if (ln.axis === 'z') { out[0] = rc(ln.line) + off; out[1] = c.s; } else { out[0] = c.s; out[1] = rc(ln.line) - off; } return out; };
+function massUpdate(dt, p) {
+  if (!MASS.cars) return;
+  const inCity = Math.abs(p.x) < HALF + 600 && Math.abs(p.z) < HALF + 600;
+  MASS.im.visible = MASS.fix.visible = inCity && !worldRace; if (!MASS.im.visible) return;
+  MASS.t += dt; const L = 2 * HALF, pos = [0, 0], E = MASS.im.instanceMatrix.array, C = MASS.im.instanceColor.array, col = new THREE.Color(), cap = MASS.im.instanceMatrix.count;
+  const cx = camera.position.x, cz = camera.position.z, R2 = 650 * 650, drv = !foot;
+  let k = 0;
+  for (const ln of MASS.lanes) {
+    const cs = ln.cars, m = cs.length, green = massGreen(ln.axis), h = ln.axis === 'z' ? (ln.dir > 0 ? 0 : Math.PI) : ln.dir * Math.PI / 2, sn = Math.sin(h), co = Math.cos(h);
+    // the player in this lane? (cars stop behind you)
+    const lat = ln.axis === 'z' ? p.x - (rc(ln.line) + LANES[ln.lane] * ln.dir) : p.z - (rc(ln.line) - LANES[ln.lane] * ln.dir), ps = ln.axis === 'z' ? p.z : p.x, pin = drv && Math.abs(lat) < 2.4;
+    for (let i = 0; i < m; i++) {
+      const c = cs[i], lead = cs[(i + 1) % m];
+      let gap = ((lead.s - c.s) * ln.dir + L) % L; if (m === 1) gap = 999;
+      let want = Math.min(c.vmax, Math.max(0, (gap - c.len - 4) * .9));
+      // red light: stop before the next crossing (unless already in it)
+      const kx = (c.s + HALF) / CELL, nk = ln.dir > 0 ? Math.floor(kx + 1e-3) + 1 : Math.ceil(kx - 1e-3) - 1, d = (rc(nk) - c.s) * ln.dir - 11;
+      if (!green && d > 0 && d < 30) want = Math.min(want, Math.sqrt(2 * 4 * Math.max(0, d - 1)));
+      if (pin) { const dp = (ps - c.s) * ln.dir; if (dp > 0 && dp < 16) want = Math.min(want, Math.max(0, (dp - 7) * .8)); }
+      c.v = c.v < want ? Math.min(want, c.v + 3 * dt) : Math.max(want, c.v - 7 * dt);
+      c.s += c.v * ln.dir * dt; if (c.s > HALF) c.s -= L; else if (c.s < -HALF) c.s += L;
+      massPos(c, pos); const x = pos[0], z = pos[1];
+      // you can't drive through them
+      if (drv) { const dx = p.x - x, dz = p.z - z; if (dx * dx + dz * dz < 16) { const lx = dx * co - dz * sn, lz = dx * sn + dz * co, ex = 1.9 - Math.abs(lx), ez = c.len / 2 + 1.2 - Math.abs(lz);
+        if (ex > 0 && ez > 0) { if (ex < ez) { const o = Math.sign(lx) * ex; p.x += o * co; p.z -= o * sn; } else { const o = Math.sign(lz) * ez; p.x += o * sn; p.z += o * co; } p.vx *= .5; p.vz *= .5; c.v = 0; } } }
+      if (k < cap && (x - cx) ** 2 + (z - cz) ** 2 < R2) {
+        const o = k * 16; E[o] = co; E[o + 1] = 0; E[o + 2] = -sn; E[o + 3] = 0; E[o + 4] = 0; E[o + 5] = 1; E[o + 6] = 0; E[o + 7] = 0; E[o + 8] = sn; E[o + 9] = 0; E[o + 10] = co; E[o + 11] = 0;
+        E[o + 12] = x; E[o + 13] = 0; E[o + 14] = z; E[o + 15] = 1;
+        const zs = c.len / 4.4; if (zs !== 1) { E[o + 8] *= zs; E[o + 10] *= zs; }
+        col.setHex(c.col); C[k * 3] = col.r; C[k * 3 + 1] = col.g; C[k * 3 + 2] = col.b; k++;
+      }
+    }
+  }
+  MASS.im.count = MASS.fix.count = k; MASS.im.instanceMatrix.needsUpdate = true; MASS.im.instanceColor.needsUpdate = true;
+}
 class Traffic {
   constructor(count) {
     this.cars = [];
@@ -3306,6 +3378,7 @@ class Traffic {
   head(c) { return c.axis === 'z' ? (c.dir > 0 ? 0 : Math.PI) : c.dir * Math.PI / 2; }
   nextInter(c) { const k = (c.s + HALF) / CELL; c.nextK = c.dir > 0 ? Math.floor(k + 1e-3) + 1 : Math.ceil(k - 1e-3) - 1; }
   update(dt, p) {
+    massUpdate(dt, p);
     if (worldRace) { if (!this.closed) { this.closed = true; this.cars.forEach(c => c.mesh.visible = false); } return; }   // Tokyo closes its roads for the world race
     if (this.closed) { this.closed = false; this.cars.forEach(c => { c.mesh.visible = true; this.spawn(c); }); }
     for (const c of this.cars) {
@@ -3929,7 +4002,8 @@ function buildCockpit(car, spec) {
   });
   const zr = n ? zs / n : G.mid, W = G.xh * 2, ey = Math.max(G.y0 + .72, G.y1 - .3), ez = zr - .1, ex = -Math.min(.4, G.xh * .4), top = G.y1 - .04, belt = ey - .3;
   // from in here only the faces that point inwards show: the model's own cabin (seats, dash, lining), the glass and every two-sided part (stripes, trim, wheels)
-  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (o.material === modelMats.black || o.material.userData.cabin || o.material.side !== THREE.FrontSide)) hide.push(o); });
+  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (o.material === modelMats.black || o.material.userData.cabin || o.material.side !== THREE.FrontSide || o.material === plateMat || o.material.userData.plate)) hide.push(o); });
+  for (const w of car.wheels || []) hide.push(w.pivot);   // from the driver's seat the wheels and the number plates don't show through the bonnet
   const key = interiorOf(spec), IM = key && MODELS['int_' + key];
   if (key && !IM) loadModel('int_' + key).then(m => {   // the brand's own cockpit swaps in as soon as it has loaded
     const ck = car.cockpit; if (!m || !ck?.proc || player?.car !== car) return; const on = ck.on; cockpitView(player, false); car.group.remove(ck.g); car.cockpit = null; if (on) cockpitView(player, true);
@@ -4678,17 +4752,24 @@ function buildYas(T, signM) {
   // the Yas hotel: two towers either side of the track joined by a bridge over it, under one long glowing gridshell
   const hi = near(330, 170), hh = H(hi), [hx, , hz] = P(hi, 0, 0), hotel = new THREE.Group(); hotel.position.set(hx, 0, hz); hotel.rotation.y = hh; scene.add(hotel);
   const hotelM = new THREE.MeshStandardMaterial({ color: 0xdfe3ea, roughness: .35, metalness: .2 }), winM = new THREE.MeshStandardMaterial({ map: WIN_TEX('#5f6f80', '#cfe6ff'), emissiveMap: WIN_EMIS(), emissive: 0xffffff, emissiveIntensity: 0, roughness: .2, metalness: .4 }); dynMats.windows.push(winM);
+  // two oval towers of 12 floors (white balcony bands round each floor), one inside the circuit and one on the marina side
+  const floorM = new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: .4, metalness: .15 });
   for (const sd of [-1, 1]) {   // (local x = across the track)
-    const b = new THREE.Mesh(new THREE.BoxGeometry(34, 30, 120), winM); b.position.set(sd * (hw + 30), 15, 0); b.castShadow = b.receiveShadow = true; hotel.add(b);
-    const base = new THREE.Mesh(new THREE.BoxGeometry(36, 3, 122), hotelM); base.position.set(sd * (hw + 30), 1.5, 0); hotel.add(base);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.04, 44, 56), winM); t.scale.set(19, 1, 62); t.position.set(sd * (hw + 31), 22, 0); t.castShadow = t.receiveShadow = true; hotel.add(t);
+    for (let f = 1; f <= 12; f++) { const r = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, .45, 56), floorM); r.scale.set(19.8 - f * .03, 1, 63 - f * .1); r.position.set(sd * (hw + 31), f * 3.6, 0); hotel.add(r); }
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 3, 56), hotelM); base.scale.set(22, 1, 66); base.position.set(sd * (hw + 31), 1.5, 0); hotel.add(base);
   }
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(2 * (hw + 30), 7, 26), hotelM); bridge.position.set(0, 26, 0); bridge.castShadow = true; hotel.add(bridge);
-  const bwin = new THREE.Mesh(new THREE.BoxGeometry(2 * (hw + 13), 3, 26.2), winM); bwin.position.set(0, 26.5, 0); hotel.add(bwin);
-  // the gridshell: a long curving lattice roof of diamond panels lit by LEDs; its colour drifts round the rainbow
-  const SU = 64, SV = 24, pos = [], uv = [], idx = [];
+  // the sculpted steel bridge over the track: a rounded fuselage with a band of windows
+  const bridge = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2 * (hw + 26), 32), hotelM); bridge.rotation.z = Math.PI / 2; bridge.scale.set(1, 6, 9); bridge.position.set(0, 27, 0); bridge.castShadow = true; hotel.add(bridge);
+  const bwin = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2 * (hw + 14), 32), winM); bwin.rotation.z = Math.PI / 2; bwin.scale.set(1, 2.2, 9.15); bwin.position.set(0, 27.5, 0); hotel.add(bwin);
+  // the gridshell: a 217 m veil of diamond glass panels flowing over both towers and the bridge - a wavy crest over the
+  // track, curtains draping down the outsides, the ends sweeping low; its LEDs drift round the rainbow at night
+  const SU = 80, SV = 30, pos = [], uv = [], idx = [], W = hw + 50;
   for (let a = 0; a <= SU; a++) for (let b = 0; b <= SV; b++) {
-    const u = a / SU * 2 - 1, v = b / SV * 2 - 1, half = 1 - Math.abs(u) ** 3, x = v * (hw + 58) * (.75 + .25 * half), y = 18 + 22 * (1 - v * v) * half + 12 * half, z = u * 112;
-    pos.push(x, y, z); uv.push(a / SU * 18, b / SV * 7);
+    const u = a / SU * 2 - 1, v = (b / SV * 2 - 1) * 1.18, e = 1 - Math.abs(u) ** 5, top = 47 + 6 * Math.sin(u * Math.PI * 2.2 + .6);
+    let y = Math.abs(v) <= 1 ? top + 14 * (1 - v * v) : top - (Math.abs(v) - 1) / .18 * 20;
+    y = 16 + (y - 16) * e;
+    pos.push(v * W * (.8 + .2 * e) + 9 * Math.sin(u * Math.PI), y, u * 108); uv.push(a / SU * 26, b / SV * 9);
   }
   for (let a = 0; a < SU; a++) for (let b = 0; b < SV; b++) { const k = a * (SV + 1) + b; idx.push(k, k + 1, k + SV + 1, k + 1, k + SV + 2, k + SV + 1); }
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); sg.setIndex(idx); sg.computeVertexNormals();
@@ -14424,7 +14505,7 @@ function setQuality(v) {
 function titleSettings() {
   const mark = (id, v) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('sel', b.dataset.v === v));
   document.querySelector('#tiMusic [data-v=spotify]').textContent = spotMix() ? '🦂 SCORPIONS' : '🎸 SPOTIFY';
-  mark('tiGfx', quality); mark('tiDiff', diff); mark('tiSound', audio.muted ? 'off' : 'on'); mark('tiMusic', music.mode);
+  mark('tiGfx', quality); mark('tiDiff', diff); mark('tiTraffic', String(MASS.n)); mark('tiSound', audio.muted ? 'off' : 'on'); mark('tiMusic', music.mode);
   $('tiGfxInfo').textContent = { low: 'Fastest. Best for phones and older computers.', high: 'Sharp, with shadows and shiny car reflections.', ultra: 'The prettiest. Needs a strong computer.' }[quality];
   $('tiDiffInfo').textContent = DIFFS[diff].d;
 }
@@ -14450,6 +14531,10 @@ $('tiSet').onclick = () => { titleSettings(); $('tiSettings').classList.remove('
 $('tiChal').onclick = () => { renderChallenges(); $('tiChallenges').classList.remove('hidden'); $('tiList').scrollTop = 0; };
 document.querySelectorAll('.tiBack').forEach(b => b.onclick = titleClose);
 document.querySelectorAll('#tiGfx button').forEach(b => b.onclick = () => { setQuality(b.dataset.v); titleSettings(); });
+document.querySelectorAll('#tiTraffic button').forEach(b => b.onclick = () => { massBuild(+b.dataset.v); trafficLabel(); titleSettings(); });
+const trafficLabel = () => { const b = $('bTraffic'); if (b) b.textContent = `🚗 TRAFFIC: ${MASS.n ? MASS.n.toLocaleString() + ' CARS' : 'NORMAL'}`; };
+$('bTraffic').onclick = () => { massBuild(MASS_OPTS[(MASS_OPTS.indexOf(MASS.n) + 1) % MASS_OPTS.length]); trafficLabel(); toast('🚗 TRAFFIC', MASS.n ? `${MASS.n.toLocaleString()} EXTRA CARS ON THE STREETS` : 'NORMAL'); };
+trafficLabel();
 document.querySelectorAll('#tiDiff button').forEach(b => b.onclick = () => { diff = b.dataset.v; localStorage.setItem('amboola.diff', diff); titleSettings(); });
 document.querySelectorAll('#tiSound button').forEach(b => b.onclick = () => { audio.setMuted(b.dataset.v === 'off'); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); titleSettings(); });
 document.querySelectorAll('#tiMusic button').forEach(b => b.onclick = () => { music.mode = b.dataset.v; localStorage.setItem('amboola.racemusic', { songs: '1', spotify: 'spotify', off: '0' }[music.mode]); musicBtn(); titleSettings(); });
@@ -14560,7 +14645,7 @@ async function boot() {
   await buildWorld();
   TOKYO.built = true; upgradeTokyo();   // the Blender Tokyo, if its model is already in
   setLoad(.8, 'Spawning traffic…'); await nextFrame();
-  traffic = new Traffic(isTouch ? 26 : 40);
+  traffic = new Traffic(isTouch ? 26 : 40); massBuild(MASS.n);
   skids = new Skids(); smoke = new Smoke(); spray = new Smoke(220); spray.mat.uniforms.tint.value.setRGB(.82, .86, .92); spray.grow = 1.8;   // smaller puffs: the spray must never hide the car
   dust = new Smoke(240); dust.mat.uniforms.tint.value.setRGB(.95, .78, .52);
   mudFx = new Smoke(220); mudFx.mat.uniforms.tint.value.setRGB(.36, .25, .14); mudFx.grow = 1.5;
@@ -14577,7 +14662,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
