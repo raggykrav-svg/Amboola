@@ -338,6 +338,10 @@
   #stunt.bad b { color:#ff5050; text-shadow:0 0 18px #c8141b, 0 3px 0 #000; }
   @media (max-width: 760px) { #stunt { top:150px; } #stunt b { font-size:22px; } #stunt b + b { font-size:16px; } #stunt i { font-size:18px; } #stunt small { font-size:12px; } }
   @keyframes stuntPop { 0% { opacity:0; transform:translateX(-50%) scale(.5); } 8% { opacity:1; transform:translateX(-50%) scale(1.18); } 16% { transform:translateX(-50%) scale(1); } 80% { opacity:1; transform:translateX(-50%) scale(1); } 100% { opacity:0; transform:translateX(-50%) translateY(-14px); } }
+  #sleepFx { position:fixed; inset:0; z-index:40; pointer-events:none; opacity:0; transition:opacity 1.1s; background:radial-gradient(circle at 50% 45%, #1a1440, #05040c 70%); color:#fff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:90px; font-family:'Orbitron',sans-serif; }
+  #sleepFx.on { opacity:1; }
+  #sleepFx small { font-size:26px; font-weight:900; letter-spacing:.3em; margin-top:18px; color:#ffd9a0; }
   #toast small { display:block; font-family:'Rajdhani'; font-size:18px; letter-spacing:.3em; color:var(--accent2); }
   #storyhud { position:absolute; left:22px; top:88px; max-width:min(520px, 60vw); font-size:13px; letter-spacing:.06em; color:#ffc1dc; text-shadow:0 1px 4px #000; cursor:pointer; pointer-events:auto; }
   @media (max-width: 600px) { #storyhud { max-width:52vw; font-size:11px; top:84px; } }
@@ -552,6 +556,7 @@
     <div class="row">BOARDS <b id="boardsN">0/0</b></div><div class="row">TOP SPEED <b id="topN">0</b></div></div>
   <div id="chain"><div class="lbl" id="chainLbl"></div><div class="pts" id="chainPts"></div></div>
   <div id="toast"></div>
+  <div id="sleepFx"></div>
   <div id="stunt"></div>
   <canvas id="tacho" width="520" height="520"></canvas>
   <canvas id="dmgHud" class="hidden" width="64" height="104" title="Damage: repair it in the garage"></canvas>
@@ -1601,7 +1606,8 @@ async function buildWorld() {
   special.set(gkey(17, 18), 'stunt'); special.set(gkey(2, 2), 'stunt');   // the junkyard (buildJunkyard) and your mansion (buildMansion)
   special.set(gkey(11, 11), 'stunt');                                        // AMBOOLA HQ (buildHQ)
   special.set(gkey(12, 19), 'stunt');                                        // the harbour car park of the night meet (buildMeetLot)
-  special.set(gkey(13, 9), 'stunt');                                         // the AMBOOLA Rescue fire station and tow depot (buildRescue)
+  special.set(gkey(13, 9), 'stunt');
+  special.set(gkey(10, 12), 'stunt');                                        // the AMBOOLA Hotel Tokyo (tokyoHotel)                                         // the AMBOOLA Rescue fire station and tow depot (buildRescue)
   // A stunt block is first generated like any other block, so the random numbers (and the rest of the city) stay
   // exactly as they were, and then everything it made is thrown away.
   const genSnap = () => { colMute = true; return { g: [...facadeGB, roofGB, tileGB, plainGB, redGB, ...tkFacadeGB, tkRoofGB, tkHouseGB, tkTileGB].map(b => [b, b.p.length, b.u.length, b.c.length]), a: [...adInst, ...neonInst, trees, sakura, vending, antennas, parks, TOKYO.b].map(a => [a, a.length]), kids: scene.children.length }; };
@@ -1708,7 +1714,7 @@ async function buildWorld() {
     if (district === 1) for (let k = 0; k < 6; k++) { const s = rand() < .5; trees.push([s ? rr(bx0 + 4, bx1 - 4) : (rand() < .5 ? bx0 + 1.5 : bx1 - 1.5), s ? (rand() < .5 ? bz0 + 1.5 : bz1 - 1.5) : rr(bz0 + 4, bz1 - 4), rr(.8, 1.2)]); }
     } finally { if (snap) genDrop(snap); }
   }
-  buildStuntPark(); buildMeetLot(); buildHQ(); buildJunkyard(); buildMansion(); buildRescue();
+  buildStuntPark(); buildMeetLot(); buildHQ(); buildJunkyard(); buildMansion(); buildRescue(); tokyoHotel();
   // distant skyline ring (not reachable) for depth
   for (let k = 0; k < 520; k++) {
     const a = rand() * Math.PI * 2; const r = rr(HALF + 150, HALF + 1400);
@@ -2839,6 +2845,11 @@ class AudioSys {
   setMuted(m) { this.muted = m; localStorage.setItem('amboola.mute', m ? '1' : '0'); if (this.master) this.master.gain.setTargetAtTime(m ? 0 : .9, this.ctx.currentTime, .05); }
   update(dt, s) {
     if (!this.ctx || !this.eng) return; const ctx = this.ctx, t = ctx.currentTime, eng = this.eng, spec = eng.spec;
+    if (this.off) {   // the engine is off: you are out of the car
+      for (const g of [eng.out, this.road.g, this.wind.g, this.squealN.g, this.squealO, eng.whistle?.g, eng.hyb?.g, eng.spool?.g]) g?.gain.setTargetAtTime(0, t, .12);
+      this.wasOff = true; return;
+    }
+    if (this.wasOff) { this.wasOff = false; if (spec.engine === 'ev') eng.out.gain.setTargetAtTime(.9, t, .3); }
     const tc = .025; const kmh = s.speed * 3.6;
     this.road.g.gain.setTargetAtTime(s.air ? 0 : clamp(s.speed / 40, 0, 1) * .5, t, .1);
     this.road.f[0].frequency.setTargetAtTime(160 + s.speed * 6, t, .1);
@@ -3963,7 +3974,14 @@ addEventListener('keydown', e => {
   if (state === 'title') { if (e.code === 'Enter' && document.activeElement?.tagName !== 'BUTTON' && !document.querySelector('.tiPanel:not(.hidden)')) titlePlay(); if (e.code === 'Escape') titleClose(); return; }
   if (state === 'map' && (e.code === 'Escape' || e.code === 'KeyN')) { closeMap(); return; }
   if (keys[e.code]) return; keys[e.code] = true;
-  if (state === 'drive') {
+  if (state === 'drive' && foot) {   // on foot: ENTER does what the button says (SIT, RELAX, SLEEP, GET UP)
+    if (e.code === 'Enter') foot.near?.go();
+    if (e.code === 'KeyT') cycleTime();
+    if (e.code === 'KeyY') cycleWeather();
+    if (e.code === 'KeyH') $('help').classList.toggle('hidden');
+    if (e.code === 'KeyN') openMap();
+    if (e.code === 'Escape' || e.code === 'KeyP') setPause(true);
+  } else if (state === 'drive') {
     if (e.code === 'KeyC') nextCam();
     if (e.code === 'KeyV' && player?.spec.fly) startFlyCar();
     if (e.code === 'KeyT') cycleTime();
@@ -5002,7 +5020,7 @@ $('sellBtn').onclick = () => {
   if (sellCar(c)) { try { audio.init(); audio.beep(660, .12); setTimeout(() => audio.beep(990, .2), 110); } catch (e) { } updateMenu(); }
 };
 $('misBtn').onclick = () => { renderMissions(); $('misPanel').classList.remove('hidden'); };
-$('actprompt').onclick = () => { if (actNear && !busyAct()) actNear.go(); };
+$('actprompt').onclick = () => { if (foot) return foot.near?.go(); if (actNear && !busyAct()) actNear.go(); };
 $('meetClose').onclick = closeMeet; $('storyhud').onclick = () => openStory(); $('meetprompt').onclick = () => { if (meetNear && !meet) openMeet(meetNear); };
 $('bMeet').onclick = () => { if (timeName !== 'night') applyTime('night'); setPause(false); const p = player, M = MEETS.reduce((a, b) => Math.hypot(p.x - a.zone[0], p.z - a.zone[1]) < Math.hypot(p.x - b.zone[0], p.z - b.zone[1]) ? a : b);
   setNav({ n: M.n, jp: M.jp, x: M.zone[0], z: M.zone[1], kind: 'city', type: 'Night meet' }); toast('NIGHT MEET', 'FOLLOW THE ARROWS · ナイト'); };
@@ -6192,6 +6210,7 @@ function drawAreasMap(g) {
       RALLY_PTS.forEach(([x, z], i) => { const nx = rally?.state === 'run' ? i === rally.i % RALLY_PTS.length : i === 0; g.fillStyle = nx ? '#ffc21f' : '#ff6a1a'; g.beginPath(); g.arc(x, z, nx ? 22 : 12, 0, 7); g.fill(); });
     }
   }
+  for (const H of HOTELS) { g.fillStyle = H.S.acc; g.fillRect(H.x - 15, H.z - 15, 30, 30); g.fillStyle = '#111'; g.font = '900 26px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H', H.x, H.z + 1); }
 }
 function updateAreas(dt, p) {
   const t = performance.now() / 1000;
@@ -6918,6 +6937,7 @@ function countryTown(C, S, group) {
   const rm = new THREE.Mesh(rg.build(), new THREE.MeshStandardMaterial({ map: tex, roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 })); rm.receiveShadow = true; group.add(rm);
   const onStreet = (x, z, m) => streets.some(([a, v]) => a === 'x' ? Math.abs(x - v) < 7 + m : Math.abs(z - v) < 7 + m);
   const keep = [...(S.keep || []), [C.x0 + 140, C.z0 + 70, 135], [C.R.x[C.R.n - 1], C.z0 + 30, 30]];   // landmark plots, the airport and the town gate stay empty
+  const hotel = C.hotel = hotelPlot(C, xs, zs, keep); if (hotel) keep.push([hotel.x, hotel.z - 2, 36]);   // the AMBOOLA Hotel's plot
   const wall = new GB(), roof = new GB(), tile = new GB(), b = [];
   for (let k = 0; k < 2600 && b.length < S.count; k++) {
     const x = rr(C.x0 + 30, C.x1 - 30), z = rr(C.z0 + 40, C.z1 - 30), w = rr(S.w[0], S.w[1]), d = rr(S.w[0], S.w[1]);
@@ -6936,14 +6956,15 @@ function countryTown(C, S, group) {
   // street lamps and trees along the streets
   const lamps = [], pools = [], trees = [];
   for (const [a, v] of streets) for (let t = (a === 'x' ? C.z0 : C.x0) + 60; t < (a === 'x' ? C.z1 : C.x1) - 40; t += 55) {
-    const [x, z] = a === 'x' ? [v + 8.5, t] : [t, v + 8.5]; if (onStreet(x, z, -1)) continue;
+    const [x, z] = a === 'x' ? [v + 8.5, t] : [t, v + 8.5]; if (onStreet(x, z, -1) || hotelHit(hotel, x, z, 1)) continue;
     if (b.some(o => Math.abs(o.x - x) < o.w / 2 + 1 && Math.abs(o.z - z) < o.d / 2 + 1)) continue;
     lampsAlong(lamps, pools, x, 0, z, a === 'x' ? -Math.PI / 2 : Math.PI); P.addCol(x - .25, z - .25, x + .25, z + .25);
     const [tx, tz] = a === 'x' ? [v - 9, t + 20] : [t + 20, v - 9];
-    if (!onStreet(tx, tz, -1) && !b.some(o => Math.abs(o.x - tx) < o.w / 2 + 2 && Math.abs(o.z - tz) < o.d / 2 + 2)) { trees.push([tx, 0, tz, rr(0, 6), rr(.8, 1.2)]); P.addCol(tx - .5, tz - .5, tx + .5, tz + .5); }
+    if (!onStreet(tx, tz, -1) && !hotelHit(hotel, tx, tz, 1) && !b.some(o => Math.abs(o.x - tx) < o.w / 2 + 2 && Math.abs(o.z - tz) < o.d / 2 + 2)) { trees.push([tx, 0, tz, rr(0, 6), rr(.8, 1.2)]); P.addCol(tx - .5, tz - .5, tx + .5, tz + .5); }
   }
   buildLamps(lamps, pools);
   countryTrees(C, group, trees, S.trees);
+  if (hotel) buildHotel(hotel, group);
   return b;
 }
 // trees drawn by fn(list), moved into the country's group and kept so the Blender trees can replace them
@@ -7628,6 +7649,8 @@ function buildJungle(C, g) {
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(4, 7, 34, 10), bark); trunk.position.set(gx, 17, gz); trunk.castShadow = true; g.add(trunk);
   for (let k = 0; k < 6; k++) { const root = new THREE.Mesh(new THREE.ConeGeometry(2.4, 10, 5), bark); const a = k / 6 * Math.PI * 2; root.position.set(gx + Math.cos(a) * 6, 2.5, gz + Math.sin(a) * 6); root.rotation.set(Math.sin(a) * .9, 0, -Math.cos(a) * .9); g.add(root); }
   C.P.addCol(gx - 7, gz - 7, gx + 7, gz + 7);
+  { const ox = [85, -85, 130, -130, 60, -60].find(o => { const x = mx + o; return x > C.x0 + 40 && x < C.x1 - 40 && Math.abs(x - (mx + 40)) > 34 && Math.abs(x - (mx - 36)) > 30 && xs.every(v => Math.abs(x - v) > 26); });
+    if (ox !== undefined) { C.hotel = newHotel('southafrica', mx + ox, C.z0 + 70, Math.PI, C); buildHotel(C.hotel, g); } }   // the Jungle Lodge, in the camp clearing
   // everything leafy, in 400 m cells so far-away cells are not drawn
   const cells = new Map(), cellOf = (x, z) => { const k = Math.floor((x - C.x0) / 400) + ',' + Math.floor((z - C.z0) / 400); if (!cells.has(k)) cells.set(k, { palms: [], trees: [], ferns: [], vines: [], crowns: [], x: 0, z: 0, n: 0 }); const c = cells.get(k); c.x += x; c.z += z; c.n++; return c; };
   const free = (x, z, m) => z > JG.camp && Math.hypot(x - gx, z - gz) > 14 + m && x > C.x0 + 6 && x < C.x1 - 6 && z < C.z1 - 6;
@@ -8902,6 +8925,320 @@ function endChase(escaped, p) {
 }
 
 /* =====================================================================
+   PEOPLE — one set of body parts with their joints, used by you when you walk (meshes you can bend) and by the
+   crowds on the pavements (one InstancedMesh per part). Vertex colours mark the dark bits (shoes, belt, eyes); each
+   person's shirt, skin, hair and trouser colours are multiplied on top.
+   ===================================================================== */
+const PERSON = (() => {
+  const shade = (g, f) => { const p = g.attributes.position, c = new Float32Array(p.count * 3); for (let i = 0; i < p.count; i++) c.fill(f(p.getX(i), p.getY(i), p.getZ(i)), i * 3, i * 3 + 3); g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g; };
+  const S = (r, w, h, ...a) => new THREE.SphereGeometry(r, w, h, ...a);
+  return {
+    // joints: the hips at the top of each leg, the hips at the bottom of the torso, the neck under the head and hair, the shoulders at the top of each arm
+    leg: shade(mergeGeometries([new THREE.CapsuleGeometry(.075, .66, 3, 8).translate(0, -.42, 0), new THREE.BoxGeometry(.13, .09, .26).translate(0, -.855, .04)]), (x, y) => y < -.8 ? .2 : 1),
+    torso: shade(mergeGeometries([new THREE.CapsuleGeometry(.17, .3, 4, 10).scale(1, 1, .64).translate(0, .33, 0), S(.085, 8, 6).translate(.19, .55, 0), S(.085, 8, 6).translate(-.19, .55, 0), new THREE.CylinderGeometry(.15, .14, .12, 10).scale(1, 1, .72).translate(0, .03, 0)]), (x, y) => y < .085 ? .3 : 1),
+    head: shade(mergeGeometries([new THREE.CylinderGeometry(.05, .055, .12, 8).translate(0, .04, 0), S(.122, 14, 10).scale(1, 1.08, 1).translate(0, .21, 0), S(.019, 6, 4).translate(.045, .23, .108), S(.019, 6, 4).translate(-.045, .23, .108)]), (x, y, z) => Math.hypot(Math.abs(x) - .045, y - .23, z - .108) < .021 ? .06 : 1),
+    hair: shade(mergeGeometries([S(.132, 14, 8, 0, Math.PI * 2, 0, Math.PI * .5).scale(1, 1.1, 1.05).translate(0, .22, -.006), S(.13, 12, 6, Math.PI * 1.1, Math.PI * .8, Math.PI * .45, Math.PI * .32).translate(0, .21, -.012)]), () => 1),
+    arm: shade(mergeGeometries([new THREE.CapsuleGeometry(.05, .5, 3, 8).translate(0, -.3, 0), S(.058, 8, 6).translate(0, -.62, .01)]), () => 1),
+    SKIN: ['#f1c9a5', '#e0ac85', '#c68863', '#8d5a3b', '#f6d7bd', '#5c3a24'],
+    SHIRT: ['#c8141b', '#1d5fc4', '#2a2b2e', '#f2f2f2', '#e0a030', '#4aa83a', '#8a3fbf', '#e36b9a', '#2fb8c8', '#ff7a1f', '#ffd21f', '#7a8a9a'],
+    PANTS: ['#1c2233', '#2a2b2e', '#5a4a3a', '#39424f', '#3b5a8a', '#c9b48a', '#6b6f75'],
+    HAIR: ['#1a1410', '#3a2414', '#6b4423', '#c9a050', '#8a3a1a', '#2a2a2a', '#d8d4cc'],
+  };
+})();
+const PP = { t: new THREE.Matrix4(), r: new THREE.Matrix4(), s: new THREE.Vector3(.94, .94, .94) };
+// the 7 part matrices of a person (torso, head, hair, left leg, right leg, left arm, right arm) standing at x, y, z facing
+// h: ph is the walk cycle, amp 0 (standing) … 1 (walking), sit 0 … 1, up 0 … 1 (arms in the air)
+function posePerson(out, x, y, z, h, ph, amp, sit = 0, up = 0) {
+  const sw = Math.sin(ph) * amp, hip = .92 - sit * .46, B = out[7];
+  B.makeRotationY(h).scale(PP.s).setPosition(x, y + Math.abs(Math.cos(ph)) * .035 * amp, z);
+  const at = (o, par, px, py, pz, rx, rz = 0) => { PP.t.makeRotationX(rx); if (rz) PP.t.multiply(PP.r.makeRotationZ(rz)); PP.t.setPosition(px, py, pz); return o.multiplyMatrices(par, PP.t); };
+  at(out[0], B, 0, hip, 0, amp * .07 - sit * .15);
+  at(out[1], out[0], 0, .64, 0, sit * .1); out[2].copy(out[1]);
+  at(out[3], B, .1, hip, 0, lerp(sw * .55, -1.2, sit)); at(out[4], B, -.1, hip, 0, lerp(-sw * .55, -1.2, sit));
+  const ar = lerp(-.45 * sit, -2.7, up);
+  at(out[5], out[0], .25, .55, 0, lerp(-sw * .5, 0, sit) + ar, .09 + up * .35); at(out[6], out[0], -.25, .55, 0, lerp(sw * .5, 0, sit) + ar, -.09 - up * .35);
+}
+const poseMats = () => Array.from({ length: 8 }, () => new THREE.Matrix4());
+// a person made of meshes (you, the receptionists): colours { shirt, skin, hair, pants }
+function makeWalker(cols) {
+  const g = new THREE.Group(), mats = [cols.shirt, cols.skin, cols.hair, cols.pants].map(c => new THREE.MeshStandardMaterial({ color: c, vertexColors: true, roughness: .75 }));
+  const geo = [PERSON.torso, PERSON.head, PERSON.hair, PERSON.leg, PERSON.leg, PERSON.arm, PERSON.arm], ci = [0, 1, 2, 3, 3, 1, 1];
+  g.userData.parts = geo.map((G, k) => { const m = new THREE.Mesh(G, mats[ci[k]]); m.matrixAutoUpdate = false; m.castShadow = true; g.add(m); return m; });
+  g.userData.M = poseMats(); return g;
+}
+function poseWalker(g, ...a) { const M = g.userData.M; posePerson(M, ...a); g.userData.parts.forEach((m, k) => m.matrix.copy(M[k])); }
+const randomLook = () => ({ shirt: pick(PERSON.SHIRT), skin: pick(PERSON.SKIN), hair: pick(PERSON.HAIR), pants: pick(PERSON.PANTS) });
+
+/* =====================================================================
+   AMBOOLA HOTELS — one in Tokyo and one in every country, with a car park full of all kinds of cars out front. Stop
+   on the ring in the car park and press GO OUT: you climb out and walk (W/S, A/D, SHIFT runs, SPACE jumps). The glass
+   doors slide open; inside are the reception (SLEEP until morning), a sofa (RELAX) and a hot tub. Relaxing gets the
+   hotel's valet to fill your tank and wash your car. Walk back to your car and press SIT to drive on.
+   The hotel's own frame: the front door at (0, 0), the car park out to z = +26, the building back to z = -22.
+   ===================================================================== */
+const HOTELS = [];
+const HOTEL_STYLE = {   // height, outside wall, accent colour, the word for hotel, roof
+  tokyo: { h: 46, wall: '#ece6da', acc: '#ffc21f', word: 'ホテル', name: 'Tokyo' },
+  cyprus: { h: 22, wall: '#f6efe2', acc: '#2f8fd6', word: 'ΞΕΝΟΔΟΧΕΙΟ' }, italy: { h: 24, wall: '#e8b06a', acc: '#2fa85a', word: 'ALBERGO' },
+  dubai: { h: 74, wall: '#dfe8ee', acc: '#d5b46a', word: 'فندق' }, paris: { h: 27, wall: '#ece2cc', acc: '#2a3a6a', word: 'HÔTEL' },
+  newyork: { h: 66, wall: '#b9c3cc', acc: '#ff8a1f', word: 'HOTEL' }, alps: { h: 17, wall: '#8a5a34', acc: '#c8141b', word: 'BERGHOTEL', gable: '#f4f7fb' },
+  london: { h: 30, wall: '#9a5442', acc: '#c8141b', word: 'HOTEL' }, egypt: { h: 20, wall: '#e6cc98', acc: '#d5b46a', word: 'فندق' },
+  southafrica: { h: 11, wall: '#7a5a3a', acc: '#4aa83a', word: 'JUNGLE LODGE', gable: '#c9a65a' },
+};
+const hW = (H, lx, lz) => [H.x + lx * H.c + lz * H.s, H.z - lx * H.s + lz * H.c];   // hotel frame → world
+const hL = (H, x, z) => { const dx = x - H.x, dz = z - H.z; return [dx * H.c - dz * H.s, dx * H.s + dz * H.c]; };   // world → hotel frame
+function hBox(H, lx0, lz0, lx1, lz1) { const [ax, az] = hW(H, lx0, lz0), [bx, bz] = hW(H, lx1, lz1); return { x0: Math.min(ax, bx), z0: Math.min(az, bz), x1: Math.max(ax, bx), z1: Math.max(az, bz) }; }
+function newHotel(id, x, z, ry, C) {
+  const S = HOTEL_STYLE[id] || HOTEL_STYLE.tokyo, H = { id, C, x, z, ry, c: Math.cos(ry), s: Math.sin(ry), S, name: `AMBOOLA Hotel ${S.name || C?.name || ''}`.trim(), walk: [], spots: [], cars: null, doorK: 0 };
+  H.area = hBox(H, -17, -23, 17, 27);   // the building and its car park (keep lamps and trees out)
+  return H;
+}
+const hotelHit = (H, x, z, m = 0) => H && x > H.area.x0 - m && x < H.area.x1 + m && z > H.area.z0 - m && z < H.area.z1 + m;
+// a country hotel: the block nearest the town gate whose plot misses the landmarks; it faces the street towards the gate
+function hotelPlot(C, xs, zs, keep) {
+  const mx = C.R.x[C.R.n - 1], c = [];
+  for (let j = 0; j < Math.min(2, zs.length - 1); j++) for (let i = 0; i < xs.length - 1; i++) c.push({ x: (xs[i] + xs[i + 1]) / 2, z: zs[j] + 34, d: Math.abs((xs[i] + xs[i + 1]) / 2 - mx) + j * 400 });
+  c.sort((a, b) => a.d - b.d);
+  const ok = c.find(q => keep.every(([kx, kz, kr]) => Math.hypot(q.x - kx, q.z - 2 - kz) > kr + 36));
+  return ok ? newHotel(C.id, ok.x, ok.z, Math.PI, C) : null;
+}
+const HOTEL_FLOOR_TEX = () => canvasTex(256, 256, (g, w, h) => {   // cream marble tiles
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? '#efe7d8' : '#e2d6c0'; g.fillRect(i * 64, j * 64, 64, 64); }
+  g.strokeStyle = 'rgba(160,140,110,.35)'; g.lineWidth = 1.2; for (let k = 0; k < 14; k++) { g.beginPath(); let x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y); for (let s = 0; s < 6; s++) { x += (Math.random() - .5) * 40; y += Math.random() * 30; g.lineTo(x, y); } g.stroke(); }
+  g.strokeStyle = 'rgba(120,100,70,.4)'; g.lineWidth = 2; for (let k = 0; k <= 4; k++) { g.beginPath(); g.moveTo(k * 64, 0); g.lineTo(k * 64, h); g.moveTo(0, k * 64); g.lineTo(w, k * 64); g.stroke(); }
+}, { repeat: true });
+function hotelFacade(wall, acc) {   // 8 windows by 6 floors per tile, with balconies; the lit windows glow at night
+  const lit = [], win = (g, x, y) => { const gr = g.createLinearGradient(x, y, x + 20, y + 26); gr.addColorStop(0, '#26394a'); gr.addColorStop(1, '#7d9db4'); g.fillStyle = gr; g.fillRect(x, y, 20, 24); };
+  const map = canvasTex(256, 192, (g, W, H) => {
+    g.fillStyle = wall; g.fillRect(0, 0, W, H); noise(g, W, H, 8);
+    for (let f = 0; f < 6; f++) for (let c = 0; c < 8; c++) {
+      const x = c * 32 + 6, y = f * 32 + 3; win(g, x, y); lit.push(Math.random() < .45);
+      g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(x - 3, y + 24, 26, 3); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x - 3, y + 27, 26, 1);   // the balcony rail
+      if (f % 2 === 0) { g.fillStyle = acc; g.fillRect(x - 2, y - 2, 24, 3); }
+    }
+  }, { repeat: true });
+  const emis = canvasTex(256, 192, (g, W, H) => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); let k = 0; for (let f = 0; f < 6; f++) for (let c = 0; c < 8; c++) if (lit[k++]) { g.fillStyle = Math.random() < .7 ? '#ffd9a0' : '#fff2dc'; g.fillRect(c * 32 + 6, f * 32 + 3, 20, 24); } }, { repeat: true });
+  const m = new THREE.MeshStandardMaterial({ map, emissiveMap: emis, emissive: 0xffffff, emissiveIntensity: 0, roughness: .75, vertexColors: true }); dynMats.windows.push(m); return m;
+}
+function buildHotel(H, parent) {
+  const S = H.S, g = new THREE.Group(); g.position.set(H.x, 0, H.z); g.rotation.y = H.ry; parent.add(g); H.group = g; HOTELS.push(H);
+  const col = (lx0, lz0, lx1, lz1) => { const b = hBox(H, lx0, lz0, lx1, lz1); H.C ? H.C.P.addCol(b.x0, b.z0, b.x1, b.z1) : addCol(b.x0, b.z0, b.x1, b.z1); };   // a wall cars hit too
+  const wcol = (lx0, lz0, lx1, lz1) => H.walk.push(hBox(H, lx0, lz0, lx1, lz1));   // furniture: only you bump into it on foot
+  const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .6, ...o });
+  const lit = (c, k = .28) => M(c, { emissive: new THREE.Color(c).multiplyScalar(k) });   // indoors: lit by the lobby lights, never in the building's shadow
+  const box = (w, h, d, m, x, y, z, ry = 0, sh = true) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.y = ry; o.castShadow = sh; o.receiveShadow = sh; g.add(o); return o; };
+  const cyl = (rt, rb, h, m, x, y, z, n = 16) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, n), m); o.position.set(x, y, z); g.add(o); return o; };
+  // the car park: asphalt, white bay lines, a red carpet to the door
+  const lot = new GB(), ln = new GB(), W = .12;
+  lot.flat(-16, 0, 16, 26, .035, [0, 0, 8, 6.5]);
+  for (const s of [-1, 1]) { for (let k = 0; k <= 7; k++) ln.flat(s > 0 ? 10.6 : -16, 4 + k * 2.8 - W / 2, s > 0 ? 16 : -10.6, 4 + k * 2.8 + W / 2, .05, [0, 0, 1, 1]); ln.flat(s * 10.6 - W / 2, 4, s * 10.6 + W / 2, 23.6, .05, [0, 0, 1, 1]); }
+  const lm = new THREE.Mesh(lot.build(), new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: .9, polygonOffset: true, polygonOffsetFactor: -1 })); lm.receiveShadow = true; g.add(lm);
+  g.add(new THREE.Mesh(ln.build(), new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: .6, polygonOffset: true, polygonOffsetFactor: -2 })));
+  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(2, 6), M('#a3121a', { roughness: .95, polygonOffset: true, polygonOffsetFactor: -3 })); carpet.rotation.x = -Math.PI / 2; carpet.position.set(0, .06, 3); carpet.receiveShadow = true; g.add(carpet);
+  H.bays = []; for (const s of [-1, 1]) for (let k = 0; k < 7; k++) H.bays.push({ lx: s * 13.3, lz: 5.4 + k * 2.8, h: s * Math.PI / 2, free: (s < 0 && k === 3) || (s > 0 && k === 1) });
+  for (const b of H.bays) if (!b.free) col(b.lx - 2.4, b.lz - 1, b.lx + 2.4, b.lz + 1);
+  // the lobby: solid walls at the sides and back, a glass front with a door gap too narrow for a car
+  const wallM = M(S.wall, { roughness: .8 }), inM = lit('#efe4d0', .22), dark = M('#202328', { roughness: .4, metalness: .5 }), acc = M(S.acc, { roughness: .4, metalness: .3 }), wood = lit('#7a5232', .18);
+  for (const s of [-1, 1]) { box(.4, 5.5, 22, wallM, s * 15.8, 2.75, -11); col(s > 0 ? 15.6 : -16, -22, s > 0 ? 16 : -15.6, 0); }
+  box(32, 5.5, .4, wallM, 0, 2.75, -21.8); col(-16, -22, 16, -21.6);
+  for (const s of [-1, 1]) { box(.42, 5.4, 21.4, inM, s * 15.38, 2.75, -11, 0, false); }   // warm inside faces
+  box(31.2, 5.4, .2, inM, 0, 2.75, -21.5, 0, false);
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0xa8c4d6, roughness: .05, metalness: .1, transparent: true, opacity: .28, side: THREE.DoubleSide, depthWrite: false });
+  for (const s of [-1, 1]) { const gp = box(15.1, 4.4, .08, glass, s * 8.45, 2.2, -.1, 0, false); gp.castShadow = false; col(s > 0 ? .9 : -16, -.3, s > 0 ? 16 : -.9, .05); }
+  box(32, 1.1, .3, wallM, 0, 4.95, -.1);   // over the glass
+  for (let x = -12; x <= 12; x += 4) if (Math.abs(x) > 1) box(.14, 4.4, .16, dark, x, 2.2, -.1);
+  H.doors = [-1, 1].map(s => box(.95, 3, .06, glass, s * .48, 1.5, -.12, 0, false));
+  // the floor, the ceiling with its lights, the floors above, the roof and the name in lights
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(31.2, 21.4), new THREE.MeshStandardMaterial({ map: HOTEL_FLOOR_TEX(), roughness: .25, metalness: .05, emissive: 0x2a2620 }));
+  fl.material.map.repeat.set(7.8, 5.35); fl.rotation.x = -Math.PI / 2; fl.position.set(0, .05, -10.9); g.add(fl);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(31.2, 21.4), lit('#f6f0e4', .5)); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 5.45, -10.9); g.add(ceil);
+  const lampM = new THREE.MeshBasicMaterial({ color: 0xfff1d0 }); for (let x = -12; x <= 12; x += 6) for (const z of [-5, -11, -17]) { const l = new THREE.Mesh(new THREE.CircleGeometry(.5, 16), lampM); l.rotation.x = Math.PI / 2; l.position.set(x, 5.43, z); g.add(l); }
+  const up = new GB(), roof = new GB(); up.box(0, 5.5, -11, 32, S.h - 5.5, 22, 32, 20.4, 0, null, roof);
+  const um = new THREE.Mesh(up.build(), hotelFacade(S.wall, S.acc)); um.castShadow = um.receiveShadow = true; g.add(um);
+  if (S.gable) { const t = new GB(); t.gable(0, S.h, -11, 32, 22, 6, 1.2, new THREE.Color(S.gable).toArray()); const tm = new THREE.Mesh(t.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85, side: THREE.DoubleSide })); tm.castShadow = true; g.add(tm); }
+  else g.add(new THREE.Mesh(roof.build(), M('#8c8f94', { roughness: .9 })));
+  addRoof(...Object.values(hBox(H, -16, -22, 16, 0)), S.h);
+  const nameT = signTex(1024, 256, '#0d1018', [[`AMBOOLA HOTEL`, .4, .34, OR, '#ffffff'], [`${S.word} · ${(S.name || H.C?.name || '').toUpperCase()}`, .78, .17, `${OR}, ${JP}`, S.acc]], S.acc);
+  const nm = new THREE.MeshBasicMaterial({ map: nameT }); dynMats.neon.push(nm);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), nm); sign.position.set(0, 7.6, .06); g.add(sign);
+  if (!S.gable) for (const ry of [0, Math.PI]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(20, 5), nm); s.position.set(0, S.h + 3.6, -11); s.rotation.y = ry; g.add(s); box(.3, 3.6, .3, dark, ry ? 6 : -6, S.h + 1.8, -11); }
+  // the canopy over the door, with posts, and pots of flowers
+  box(10, .4, 6, M('#f4f4f4', { emissive: 0x332a1c }), 0, 4.4, 3); box(10.1, .18, 6.1, acc, 0, 4.12, 3);
+  for (const s of [-1, 1]) { box(.25, 4.3, .25, acc, s * 4.6, 2.15, 5.6); col(s * 4.6 - .2, 5.4, s * 4.6 + .2, 5.8); }
+  const potM = M('#c9b8a0'), bushM = M('#3f7a35', { flatShading: true });
+  for (const s of [-1, 1]) for (const z of [.9, 4.2]) { cyl(.45, .35, .7, potM, s * 2.2, .35, z); const b = new THREE.Mesh(new THREE.IcosahedronGeometry(.6, 0), bushM); b.position.set(s * 2.2, 1.1, z); g.add(b); col(s * 2.2 - .45, z - .45, s * 2.2 + .45, z + .45); }
+  // inside: the reception desk with a receptionist, the lifts, a sofa corner and a hot tub
+  box(8, 1.1, 1.2, wood, 0, .55, -16, 0, false); box(8.2, .08, 1.4, lit('#f4f2ee', .3), 0, 1.14, -16, 0, false); wcol(-4.1, -16.7, 4.1, -15.3);
+  const recT = signTex(1024, 256, '#20160e', [['RECEPTION', .42, .32, OR, '#ffd9a0'], [`${S.word} · フロント`, .78, .16, `${OR}, ${JP}`, '#ffffff']]);
+  const rs = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: recT })); rs.position.set(0, 3.6, -21.38); g.add(rs);
+  H.desk = makeWalker({ shirt: S.acc, skin: pick(PERSON.SKIN), hair: pick(PERSON.HAIR), pants: '#1c2233' }); g.add(H.desk); H.deskWave = 0;
+  for (const s of [-1, 1]) { box(2.2, 3.2, .1, M('#b8bcc2', { metalness: .8, roughness: .3, emissive: 0x222222 }), s * 9, 1.6, -21.35, 0, false); box(.3, .3, .05, lampM, s * 9, 3.5, -21.3, 0, false); }
+  const sofaM = lit('#2c5f7a', .22), cushion = lit('#e8dcc4', .25), rug = new THREE.Mesh(new THREE.PlaneGeometry(6, 7), lit('#7a2a2a', .2)); rug.rotation.x = -Math.PI / 2; rug.position.set(-9.2, .07, -8); g.add(rug);
+  box(.95, .45, 3.4, sofaM, -10.9, .225, -8, 0, false); box(.28, .95, 3.4, sofaM, -11.5, .48, -8, 0, false); for (const z of [-9.85, -6.15]) box(.95, .7, .3, sofaM, -10.9, .35, z, 0, false);
+  for (const z of [-9, -8, -7]) box(.6, .12, .9, cushion, -10.75, .5, z, 0, false);
+  wcol(-11.7, -10, -10.4, -6); box(1.2, .42, 2, wood, -7.6, .21, -8, 0, false); wcol(-8.2, -9, -7, -7);
+  const bowl = cyl(.3, .2, .15, M('#ffffff'), -7.6, .5, -8.4, 12); bowl.castShadow = false;
+  // the hot tub: a white tub with warm, bubbling blue water
+  cyl(2.3, 2.4, .75, lit('#f4f6f8', .3), 9.4, .375, -8, 28); wcol(7.3, -10.1, 11.5, -5.9);
+  const water = cyl(2.1, 2.1, .05, new THREE.MeshStandardMaterial({ color: 0x2fc7e0, emissive: 0x0d5a6a, roughness: .1, metalness: .1, transparent: true, opacity: .85 }), 9.4, .66, -8, 28); water.castShadow = false; H.water = water;
+  H.bubbles = new THREE.InstancedMesh(new THREE.SphereGeometry(.06, 6, 4), new THREE.MeshBasicMaterial({ color: 0xe8fbff }), 30); H.bubbles.frustumCulled = false; g.add(H.bubbles);
+  H.bub = Array.from({ length: 30 }, () => ({ a: Math.random() * 7, r: Math.random() * 1.9, t: Math.random() }));
+  const plantM = M('#2f6a2a', { flatShading: true, emissive: 0x0d1d0b });
+  for (const [x, z] of [[-14.6, -1.2], [14.6, -1.2], [-14.6, -20.6], [14.6, -20.6], [-4.8, -20.6], [4.8, -20.6]]) { cyl(.4, .32, .8, lit('#d8c8b0', .2), x, .4, z); const p = new THREE.Mesh(new THREE.ConeGeometry(.8, 2.2, 7), plantM); p.position.set(x, 1.9, z); g.add(p); wcol(x - .45, z - .45, x + .45, z + .45); }
+  const chand = new THREE.Mesh(new THREE.IcosahedronGeometry(.9, 1), new THREE.MeshBasicMaterial({ color: 0xffe9b8 })); chand.position.set(0, 4.6, -9); g.add(chand);
+  // where you can sit: three places on the sofa (facing the table), three in the tub, and the reception
+  for (const z of [-9, -8, -7]) H.spots.push({ k: 'sofa', lx: -10.65, lz: z, h: Math.PI / 2, y: 0 });
+  for (const a of [Math.PI * .8, Math.PI, Math.PI * 1.2]) H.spots.push({ k: 'tub', lx: 9.4 + Math.cos(a) * 1.55, lz: -8 + Math.sin(a) * 1.55, h: Math.atan2(-Math.cos(a), -Math.sin(a)), y: -.05 });
+  H.spots.push({ k: 'desk', lx: 0, lz: -14.6, h: Math.PI });
+  // flags by the car park
+  for (const s of [-1, 1]) { box(.12, 8, .12, dark, s * 16.6, 4, 25, 0); const f = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.1), new THREE.MeshStandardMaterial({ color: S.acc, side: THREE.DoubleSide, emissive: new THREE.Color(S.acc).multiplyScalar(.2) })); f.position.set(s * 16.6 - s * .9, 7.3, 25); g.add(f); col(s * 16.6 - .2, 24.8, s * 16.6 + .2, 25.2); }
+  // the GO OUT ring in the car park
+  const [rx, rz] = hW(H, 0, 15);
+  addAct({ x: rx, z: rz, r: 5.5, col: S.acc, title: `🏨 ${H.name}`, sub: 'GO OUT · WALK IN AND RELAX', sign: `AMBOOLA HOTEL · ${S.word}`, parent: H.C ? H.C.group : undefined, face: H.ry, hotel: H, go: () => footStart(H) });
+}
+function hotelSpotW(H, sp) { const [x, z] = hW(H, sp.lx, sp.lz); return { x, z, h: sp.h + H.ry }; }
+// Tokyo's hotel: the block across the road from the start, its door facing west
+function tokyoHotel() { buildHotel(newHotel('tokyo', rc(10) + 35, (rc(12) + rc(13)) / 2, -Math.PI / 2, null), scene); }
+
+/* ---------------- the car parks: every kind of car, from the cars you can buy (load as they arrive) ---------------- */
+function hotelCars(H) {
+  const want = H.bays.filter(b => !b.free).slice(0, isTouch ? 7 : 12), have = H.cars || (H.cars = []);
+  if (have.length >= want.length) return;
+  const pool = CARS.filter(c => MODELS[c.id] && !c.jet && !c.heli && (BODIES[c.body]?.L || 4.6) < 5.6 && !have.some(o => o.id === c.id));
+  for (let k = pool.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [pool[k], pool[j]] = [pool[j], pool[k]]; }
+  for (const b of want.slice(have.length)) {
+    const spec = pool.pop(); if (!spec) break;
+    const pi = Math.floor(Math.random() * PAINTS.length), car = buildCar(spec, PAINTS[pi].c, PAINTS[pi].m);
+    car.group.position.set(b.lx, 0, b.lz); car.group.rotation.y = b.h; H.group.add(car.group); have.push({ id: spec.id, group: car.group });
+  }
+}
+let hotelNear = null, hotelCarT = 0;
+function updateHotels(dt, px, pz) {
+  hotelNear = null; let best = 300;
+  for (const H of HOTELS) {
+    const d = Math.hypot(px - H.x, pz - H.z);
+    if (d < best) { best = d; hotelNear = H; }
+    if (d > 650 && H.cars) { for (const c of H.cars) H.group.remove(c.group); H.cars = null; }
+  }
+  const H = hotelNear; if (!H) return;
+  if ((hotelCarT -= dt) < 0) { hotelCarT = 2; hotelCars(H); }   // fills up as the car models arrive
+  // the doors slide open when you walk up; the tub bubbles; the receptionist waves hello
+  const [fx, fz] = foot ? hL(H, foot.x, foot.z) : [99, 99], open = Math.abs(fx) < 2.2 && Math.abs(fz) < 3.2;
+  H.doorK = damp(H.doorK, open ? 1 : 0, 6, dt); H.doors.forEach((d, k) => d.position.x = (k ? 1 : -1) * (.48 + H.doorK * .98));
+  if (H.doorK > .05 && !H.dooring) audio.burst({ type: 'highpass', freq: 2400, q: .6, gain: .05, dur: .5 }); H.dooring = H.doorK > .05;
+  const T = performance.now() / 1000, M4 = PP.t;
+  H.bub.forEach((b, k) => { b.t += dt * (.6 + (k % 5) * .1); if (b.t > 1) { b.t = 0; b.a = Math.random() * 7; b.r = Math.random() * 1.9; } H.bubbles.setMatrixAt(k, M4.makeScale(1 + b.t, 1 + b.t, 1 + b.t).setPosition(9.4 + Math.cos(b.a) * b.r, .7 + b.t * .12, -8 + Math.sin(b.a) * b.r)); });
+  H.bubbles.instanceMatrix.needsUpdate = true; H.water.position.y = .66 + Math.sin(T * 3) * .015;
+  const near = foot && fz < -10 && Math.abs(fx) < 6; if (near && !H.waved) { H.waved = true; H.deskWave = 2.2; } if (!near && fz > -6) H.waved = false;
+  H.deskWave = Math.max(0, H.deskWave - dt);
+  poseWalker(H.desk, 0, 0, -17.3, 0, 0, 0, 0, H.deskWave > 0 ? .7 + Math.sin(T * 9) * .3 : 0);
+}
+
+/* ---------------- walking: you, out of the car ---------------- */
+let foot = null;
+const FOOT_LOOK = { shirt: '#ffc21f', skin: '#e0ac85', hair: '#3a2414', pants: '#1c2233' };
+const FOOT_HOLD = { throttle: 0, brake: 0, steer: 0, handbrake: 1, nitro: 0 };
+function footStart(H) {
+  if (foot || busyAct() || !player) return;
+  if (player.car.cockpit?.on) cockpitView(player, false);
+  const B = BODIES[player.spec.body], fx = Math.sin(player.heading), fz = Math.cos(player.heading), rx = -fz, rz = fx, side = B.W / 2 + .55;
+  const x = player.x + rx * side + fx * .4, z = player.z + rz * side + fz * .4, [dx, dz] = hW(H, 0, 0);
+  foot = { x, z, y: 0, vy: 0, h: Math.atan2(dx - x, dz - z), v: 0, ph: 0, amp: 0, sit: 0, up: 0, H, seat: null, near: null, inside: false, g: makeWalker(FOOT_LOOK) };   // (looking at the hotel's door)
+  scene.add(foot.g); Object.assign(player, { vx: 0, vz: 0, yawRate: 0 }); audio.off = true;
+  footDoor(); toast('🚶 YOU GOT OUT', isTouch ? 'WALK WITH THE PEDALS · STEER TO TURN' : 'W A S D TO WALK · SHIFT RUNS · SPACE JUMPS');
+}
+function footDoor() { audio.burst({ type: 'lowpass', freq: 380, q: .8, gain: .55, dur: .22, thump: 90 }); }
+function footEnd(quiet) {   // back in the driver's seat
+  if (!foot) return; scene.remove(foot.g); foot = null; audio.off = false; actHud(null); $('actprompt').classList.add('hidden');
+  if (!quiet) { footDoor(); toast('🚗 BACK IN YOUR CAR', 'DRIVE SAFE!'); }
+}
+const footGround = (x, z) => foot?.H.C ? (foot.H.C.P.yAt(x, z) || 0) : 0;
+function footPush(f, b, r) {
+  const qx = clamp(f.x, b.x0, b.x1), qz = clamp(f.z, b.z0, b.z1), dx = f.x - qx, dz = f.z - qz, d2 = dx * dx + dz * dz; if (d2 >= r * r) return;
+  if (d2 < 1e-8) { const o = [[f.x - b.x0, -1, 0], [b.x1 - f.x, 1, 0], [f.z - b.z0, 0, -1], [b.z1 - f.z, 0, 1]].sort((u, v) => u[0] - v[0])[0]; f.x += o[1] * (o[0] + r); f.z += o[2] * (o[0] + r); }
+  else { const d = Math.sqrt(d2); f.x += dx / d * (r - d); f.z += dz / d * (r - d); }
+}
+function footCollide(f) {
+  const r = .3, H = f.H;
+  if (H.C) { const G = H.C.P.grid, i = Math.floor(f.x / 40), j = Math.floor(f.z / 40); for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const b of G.get((i + di) * 100000 + j + dj) || []) if (!b.brk?.broken) footPush(f, b, r); }
+  else { const i = Math.floor((f.x + HALF) / CELL), j = Math.floor((f.z + HALF) / CELL); for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const b of colGrid.get(gkey(i + di, j + dj)) || []) if (!b.brk?.broken) footPush(f, b, r); }
+  for (const b of H.walk) footPush(f, b, r);
+  // round your own car
+  const B = BODIES[player.spec.body], c = Math.cos(player.heading), s = Math.sin(player.heading), dx = f.x - player.x, dz = f.z - player.z;
+  const lx = dx * c - dz * s, lz = dx * s + dz * c, hx = B.W / 2 + r, hz = player.spec.L / 2 + r;
+  if (Math.abs(lx) < hx && Math.abs(lz) < hz) { const px = hx - Math.abs(lx), pz = hz - Math.abs(lz); const ox = px < pz ? Math.sign(lx) * px : 0, oz = px < pz ? 0 : Math.sign(lz) * pz; f.x += ox * c + oz * s; f.z += -ox * s + oz * c; }
+  // not too far from your car
+  const fd = Math.hypot(f.x - player.x, f.z - player.z); if (fd > 260) { f.x = player.x + (f.x - player.x) * 260 / fd; f.z = player.z + (f.z - player.z) * 260 / fd; if (!f.farT) { f.farT = 3; toast('🚗 YOUR CAR IS WAITING', "DON'T WALK TOO FAR"); } }
+  if (f.farT) f.farT = Math.max(0, f.farT - .016);
+}
+function updateFoot(dt, inp) {
+  const f = foot, H = f.H;
+  if (f.seat) {   // sitting: relaxing on the sofa or in the tub
+    f.relax += dt; const k = clamp(f.relax / 6, 0, 1);
+    f.sit = damp(f.sit, 1, 5, dt); f.amp = damp(f.amp, 0, 6, dt);
+    actHud([[f.seat.k === 'tub' ? '🫧 HOT TUB' : '😌 RELAXING', k < 1 ? `${Math.round(k * 100)}%` : 'AHH… ✨'], ['GET UP', isTouch ? 'TAP' : 'ENTER / W']], '#7cc8e8');
+    if (k >= 1 && !f.rested) { f.rested = true; hotelRested(H); }
+    if (inp.throttle > 0 && f.relax > .6) footStand();
+  } else {
+    const run = inp.nitro > 0, fwd = inp.throttle - inp.brake, tv = fwd > 0 ? fwd * (run ? 5.4 : 2.1) : fwd * 1.1;
+    f.h -= inp.steer * dt * (run ? 2.2 : 2.7); f.v = damp(f.v, tv, 8, dt);
+    f.x += Math.sin(f.h) * f.v * dt; f.z += Math.cos(f.h) * f.v * dt; footCollide(f);
+    const gy = footGround(f.x, f.z);
+    if (inp.handbrake && f.y <= gy + .02 && !f.jumpHeld) { f.vy = 4.2; f.jumpHeld = true; audio.burst({ type: 'lowpass', freq: 600, q: .6, gain: .08, dur: .08 }); }
+    if (!inp.handbrake) f.jumpHeld = false;
+    f.vy -= 9.81 * dt; f.y += f.vy * dt; if (f.y <= gy) { if (f.vy < -3) audio.burst({ type: 'lowpass', freq: 420, q: .7, gain: .2, dur: .1 }); f.y = gy; f.vy = 0; }
+    const s0 = Math.sin(f.ph); f.ph += Math.abs(f.v) * dt * (run ? 3.2 : 4.4); if (Math.sign(Math.sin(f.ph)) !== Math.sign(s0) && Math.abs(f.v) > .4 && f.y <= gy + .02) audio.burst({ type: 'lowpass', freq: 520, q: .7, gain: run ? .1 : .06, dur: .06 });
+    f.amp = damp(f.amp, clamp(Math.abs(f.v) / 2, 0, 1.25), 8, dt); f.sit = damp(f.sit, 0, 6, dt);
+  }
+  f.up = damp(f.up, f.y > footGround(f.x, f.z) + .3 ? .6 : 0, 8, dt);
+  const [lx, lz] = hL(H, f.x, f.z); f.inside = lz < -.15 && lz > -21.6 && Math.abs(lx) < 15.6;
+  poseWalker(f.g, f.x, f.y + (f.seat?.y || 0) * f.sit, f.z, f.h, f.ph, Math.min(1, f.amp), f.sit, f.up);
+  // what's close: your car (SIT), a seat (RELAX), the reception (SLEEP)
+  f.near = null;
+  if (f.sleeping) f.near = null;
+  else if (f.seat) f.near = { t: '🚶 GET UP', s: 'STAND UP AND WALK', col: '#7cc8e8', go: footStand };
+  else {
+    const B = BODIES[player.spec.body], c = Math.cos(player.heading), s = Math.sin(player.heading), dx = f.x - player.x, dz = f.z - player.z;
+    if (Math.abs(dx * c - dz * s) < B.W / 2 + 1.4 && Math.abs(dx * s + dz * c) < player.spec.L / 2 + 1.2) f.near = { t: '🚗 SIT', s: `GET BACK IN YOUR ${player.spec.name.toUpperCase()}`, col: '#ffc21f', go: () => footEnd() };
+    else if (f.inside) {
+      let best = null, bd = 1.5; for (const sp of H.spots) { const d = Math.hypot(lx - sp.lx, lz - sp.lz); if (d < bd) { bd = d; best = sp; } }
+      if (best?.k === 'desk') f.near = { t: '🛏 SLEEP', s: 'A COSY ROOM UPSTAIRS · SLEEP UNTIL MORNING', col: '#b07dff', go: hotelSleep };
+      else if (best) f.near = { t: best.k === 'tub' ? '🫧 RELAX IN THE HOT TUB' : '😌 RELAX', s: 'SIT DOWN AND RELAX · THE VALET LOOKS AFTER YOUR CAR', col: '#7cc8e8', go: () => footSit(best) };
+    }
+  }
+}
+function footSit(sp) {
+  const f = foot, w = hotelSpotW(f.H, sp); Object.assign(f, { x: w.x, z: w.z, h: w.h, v: 0, seat: sp, relax: 0, rested: false });
+  toast(sp.k === 'tub' ? '🫧 AHHH… WARM BUBBLES' : '😌 RELAXING…', 'THE VALET IS LOOKING AFTER YOUR CAR');
+  audio.beep(523, .25); setTimeout(() => audio.beep(659, .25), 220); setTimeout(() => audio.beep(784, .4), 440);
+}
+function footStand() { const f = foot; if (!f?.seat) return; const sp = f.seat, [x, z] = hW(f.H, sp.lx + Math.sin(sp.h) * .9, sp.lz + Math.cos(sp.h) * .9); Object.assign(f, { seat: null, x, z }); actHud(null); }
+function hotelRested(H) {   // relaxed: the valet has filled your tank and washed your car
+  fuel = 1; fuelWarned = false; localStorage.setItem('amboola.fuel', 1); dirt = 0; localStorage.setItem('amboola.dirt', 0); applyDirt(player.car);
+  bump('relax'); earn(500);
+  banner('😌 FEELING GREAT!', 'THE VALET FILLED YOUR TANK AND WASHED YOUR CAR', `${H.name} · +${fmtUSD(500)}`);
+}
+function hotelSleep() {
+  if (foot.sleeping) return; foot.sleeping = true;
+  const fx = $('sleepFx'), H = foot.H; fx.innerHTML = '💤<small>GOOD NIGHT…</small>'; fx.classList.add('on'); audio.beep(392, .4);
+  setTimeout(() => { applyTime('day'); fx.innerHTML = '☀️<small>GOOD MORNING!</small>'; audio.beep(784, .3); setTimeout(() => audio.beep(988, .4), 250); }, 1800);
+  setTimeout(() => { fx.classList.remove('on'); if (foot) foot.sleeping = false; fuel = 1; localStorage.setItem('amboola.fuel', 1); bump('sleep'); toast('☀️ GOOD MORNING!', 'YOU SLEPT AT THE ' + H.name.toUpperCase()); }, 3600);
+}
+function footCamera(dt) {
+  const f = foot, H = f.H, inR = f.inside, dist = inR ? 3.4 : 4.6, hgt = inR ? 1.95 : 2.4;
+  let tx = f.x - Math.sin(f.h) * dist, tz = f.z - Math.cos(f.h) * dist, ty = f.y + hgt;
+  if (f.seat) { const sp = f.seat, dx = -sp.lx * .6, dz = -6 - sp.lz, d = Math.hypot(dx, dz) || 1; [tx, tz] = hW(H, sp.lx + dx / d * 4.4, sp.lz + dz / d * 4.4); ty = 2.5; }   // sitting: look back at yourself from the middle of the room
+  camPos.x = damp(camPos.x, tx, 6, dt); camPos.z = damp(camPos.z, tz, 6, dt); camPos.y = damp(camPos.y, ty, 6, dt);
+  if (inR) {   // stay in the room
+    const b = hBox(H, -15.2, -21.2, 15.2, 2); camPos.x = clamp(camPos.x, b.x0, b.x1); camPos.z = clamp(camPos.z, b.z0, b.z1); camPos.y = Math.min(camPos.y, 5);
+  } else {
+    const [cx, cz] = hL(H, camPos.x, camPos.z); if (cz < 0 && cz > -22.5 && Math.abs(cx) < 16.5) { const [ox, oz] = hW(H, cx, .4); camPos.x = ox; camPos.z = oz; }   // not inside the hotel's walls
+    camPos.y = Math.max(camPos.y, footGround(camPos.x, camPos.z) + .7);
+  }
+  camera.position.copy(camPos); camLook.set(f.x, f.y + 1.35 - f.sit * .4, f.z); camera.lookAt(camLook);
+  camera.fov = damp(camera.fov, 64, 4, dt); camera.updateProjectionMatrix();
+}
+/* =====================================================================
    THINGS TO DO IN THE COUNTRIES, AND THE WORLD RACE
    - A street Grand Prix in every country town: 2 laps round the blocks against 3 rivals.
    - A delivery job in every country: halloumi in Cyprus, pizza in Italy, gold in Dubai. 3 deliveries a shift,
@@ -8927,9 +9264,12 @@ function addAct(o) {
 }
 function updateActs(dt, p) {
   actNear = null;
-  if (!busyAct()) for (const a of ACTS) if (Math.abs(p.x - a.x) < a.r && Math.abs(p.z - a.z) < a.r && Math.hypot(p.x - a.x, p.z - a.z) < a.r && (p.speed || 0) < 5) { actNear = a; break; }
+  if (!busyAct() && !foot) for (const a of ACTS) if (Math.abs(p.x - a.x) < a.r && Math.abs(p.z - a.z) < a.r && Math.hypot(p.x - a.x, p.z - a.z) < a.r && (p.speed || 0) < 5) { actNear = a; break; }
   const pr = $('actprompt');
-  if (actNear && state === 'drive') { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
+  const fn = foot?.near;
+  if (fn && state === 'drive') { pr.innerHTML = `${fn.t}<small>${fn.s} · ${isTouch ? 'TAP HERE' : 'PRESS ENTER'}</small>`; pr.style.borderColor = fn.col; pr.classList.remove('hidden'); }
+  else if (actNear?.hotel && state === 'drive') { pr.innerHTML = `🚶 GO OUT<small>${actNear.hotel.name.toUpperCase()} · WALK IN AND RELAX · ${isTouch ? 'TAP HERE' : 'PRESS ENTER'}</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
+  else if (actNear && state === 'drive' && !foot) { pr.innerHTML = `${actNear.title.toUpperCase()}<small>${actNear.sub} · PRESS ENTER (OR TAP)</small>`; pr.style.borderColor = actNear.col; pr.classList.remove('hidden'); }
   else pr.classList.add('hidden');
   if (cRace) updateCRace(dt, p); if (deliv) updateDeliv(dt, p); if (worldRace) updateWorldRace(dt, p); if (bus) updateBus(dt, p); if (job) updateJob(dt, p); if (monster) updateMonster(dt, p); if (lantern) updateLantern(dt, p); if (hunt) updateHunt(dt, p);
 }
@@ -11931,6 +12271,7 @@ function buildPlaces() {
   P.push({ n: 'Fuji Five Lakes', jp: '富士五湖', type: 'Lake village under Mt. Fuji · onsen · airstrip', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [-3480, -4380], x: FUJI.cx, z: FUJI.cz, col: '#ff7aa8' });
   P.push({ n: 'Chureito Pagoda', jp: '忠霊塔', type: 'Five-storey pagoda · cherry blossom · Fuji view', kind: 'area', zone: 'fuji', idx: FUJI_ROUTE.n - 1, end: [FUJI.pagoda[0], FUJI.pagoda[1] + 40], face: Math.PI, x: FUJI.pagoda[0], z: FUJI.pagoda[1], col: '#ff7aa8' });
   P.push({ n: 'Fuji Lakes Road', jp: '富士の道', type: `Country road · ${(FUJI_ROUTE.L / 1000).toFixed(1)} km · cedar forest`, kind: 'area', zone: 'fuji', idx: 900, x: FUJI_ROUTE.x[900], z: FUJI_ROUTE.z[900], col: '#ff7aa8' });
+  for (const H of HOTELS) { const [x, z] = hW(H, 0, 15); P.push(H.C ? { n: H.name, jp: H.S.word, type: 'Hotel · walk in, relax, sleep · car park', kind: 'area', zone: H.C.id, idx: H.C.R.n - 1, end: hW(H, 0, 18), face: H.ry + Math.PI, x, z, col: H.S.acc } : { n: H.name, jp: H.S.word, type: 'Hotel · walk in, relax, sleep · car park', kind: 'city', x, z, col: H.S.acc }); }
   GAS.filter(g => g.area === 'tokyo').forEach((g, k) => P.push({ n: `Gas Station ${k + 1}`, jp: 'ガソリンスタンド', type: 'Fuel and charging', kind: 'city', x: g.x, z: g.z, col: '#ff5a1f' }));
   P.push({ n: 'Car Wash', jp: '洗車', type: 'Make your car shine · $50', kind: 'city', x: WASHES[0].x, z: WASHES[0].z, col: '#2fe0ff' });
   for (const C of COUNTRIES) if (C.jungle && WASHES[1]) P.push({ n: 'Jungle Car Wash', jp: '洗車', type: 'Wash the mud off · $50', kind: 'area', zone: C.id, idx: C.R.n - 1, end: [WASHES[1].x, WASHES[1].z - 14], x: WASHES[1].x, z: WASHES[1].z, col: '#2fe0ff' });
@@ -12029,6 +12370,7 @@ function drawNavRoute(g) {
   g.fillStyle = '#2fe0ff'; g.beginPath(); g.arc(nav.tx, nav.tz, 20, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(nav.tx, nav.tz, 9, 0, 7); g.fill();
 }
 function travelTo(d) {
+  footEnd(true);
   if (crime) { toast('NO FAST TRAVEL', 'NOT DURING OUTLAW / POLICE'); return false; }
   if (taxi) { toast('TAXI SHIFT ACTIVE', 'NO FAST TRAVEL DURING A SHIFT'); return false; }
   const p = player;
@@ -12674,7 +13016,7 @@ $('bGarage').onclick = () => { endActs(); endChase(null, player); endMeetRace(fa
 $('bMute').onclick = () => { audio.setMuted(!audio.muted); $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON'); };
 $('bMute').textContent = 'SOUND: ' + (audio.muted ? 'OFF' : 'ON');
 function enterGarage() {
-  carEnvRelease(); if (swim) endSwim(player, false);
+  footEnd(true); carEnvRelease(); if (swim) endSwim(player, false);
   if (tro) { if (tro.ais) troEnd(true); if (tro.loan) ({ carIdx, paintIdx } = tro.loan); tro = null; }   // a lent Troodos truck goes back
   if (build.mode) { build.mode = null; build.run = null; buildBar(); camera.fov = 62; camera.updateProjectionMatrix(); }
   state = 'garage'; $('menu').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
@@ -12860,7 +13202,8 @@ function tick(dt) {
     return;
   }
   if (state === 'drive') {
-    const inp = cabInput(dt, readInput()); simStep(dt, inp); updateViewpoint(dt, inp); cabHud(); flyHud(); HZ.blur = clamp((player.speed * 3.6 - 150) / 230, 0, .85);   // speed blur from 150 km/h
+    if (foot && (race || drag || soccer || boat || swim)) footEnd(true);
+    const raw = readInput(), inp = foot ? FOOT_HOLD : cabInput(dt, raw); simStep(dt, inp); if (foot) updateFoot(dt, raw); updateViewpoint(dt, inp); cabHud(); flyHud(); HZ.blur = clamp((player.speed * 3.6 - 150) / 230, 0, .85);   // speed blur from 150 km/h
     if (state !== 'drive') return;
     // fx
     const fx = Math.sin(player.heading), fz = Math.cos(player.heading), rx = -fz, rz = fx; const B = BODIES[player.spec.body];
@@ -12876,19 +13219,19 @@ function tick(dt) {
     if (player.dmgK < .92 && player.speed > 4 && Math.random() < dt * 14) { const B2 = BODIES[player.spec.body]; dmgSmoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .45, (player.y || 0) + .5); }
     smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt); updateBreak(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
-    updateCamera(dt, player); updateCockpit(dt, player); carReflect();
+    if (foot) footCamera(dt); else updateCamera(dt, player); updateCockpit(dt, player); carReflect();
     // shadows follow player
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
     seaView();
     sky.position.copy(camera.position);
-    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player);
+    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player); updateHotels(dt, foot ? foot.x : player.x, foot ? foot.z : player.z);
     audio.weather(WX.wet, player.speed, camMode >= 2 || SEA.under);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 || SEA.under, air: player.air });
     // big screens cycle
     screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
     // HUD
-    drawTacho(player); drawMinimap(player); drawDmgHud(player.spec.id);
+    drawTacho(player); drawMinimap(foot ? { x: foot.x, z: foot.z, heading: foot.h, speed: 0 } : player); drawDmgHud(player.spec.id);
     const nb = $('nitroBar'), cap = player.spec.nitroCap; nb.classList.toggle('hidden', !cap);
     if (cap) { nb.firstElementChild.nextElementSibling.style.width = (player.nitro / cap * 100) + '%'; nb.classList.toggle('on', player.boosting); }
     $('walletHud').textContent = fmtUSD(wallet.usd); $('skill').textContent = Math.floor(skill.bank).toLocaleString(); $('boardsN').textContent = `${boardsFound}/${boards.length}`; $('topN').textContent = Math.round(topSpeed) + ' km/h';
@@ -12929,7 +13272,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
