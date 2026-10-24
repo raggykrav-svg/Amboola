@@ -2106,9 +2106,10 @@ Object.assign(BODIES, {
   towtruck: { ...BODIES.urus, L: 6.3, W: 2.24, cabW: 2.1, wr: .45, fX: 2.20, rX: -1.70, yb: .44 },
   firetruck: { ...BODIES.urus, L: 8.6, W: 2.5, cabW: 2.4, wr: .52, fX: 3.10, rX: -2.30, yb: .48 },
   troodos: { ...BODIES.urus, L: 5.25, W: 2.16, cabW: 1.9, wr: .465, tw: [.33, .33], fX: 1.50, rX: -1.40, yb: .56 },
+  f1: { ...BODIES.bolide, L: 5.6, W: 2.0, cabW: .8, wr: .36, tw: [.305, .405], fX: 1.95, rX: -1.65, yb: .06 },
 });
 for (const B of Object.values(BODIES)) B.roofY = Math.max(...B.cabin.map(p => p[1]));
-BODIES.amboolabus.roofY = 3.15; BODIES.towtruck.roofY = 2.6; BODIES.firetruck.roofY = 3.3; BODIES.mb_g63.roofY = 1.95; BODIES.troodos.roofY = 2.0; BODIES.rr_cullinan.roofY = 1.85; BODIES.rr_phantom.roofY = 1.65;   // the bus borrows the Urus outline; its real roof is much higher
+BODIES.amboolabus.roofY = 3.15; BODIES.towtruck.roofY = 2.6; BODIES.firetruck.roofY = 3.3; BODIES.mb_g63.roofY = 1.95; BODIES.troodos.roofY = 2.0; BODIES.f1.roofY = 1.0; BODIES.rr_cullinan.roofY = 1.85; BODIES.rr_phantom.roofY = 1.65;   // the bus borrows the Urus outline; its real roof is much higher
 const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .06 });
 // the Blender cars' see-through windows (GlassClear) and the cabin behind them. The glass draws both faces (the far
 // window tints the view too) and writes no depth, so a window seen through another window still shows; everything in
@@ -2245,9 +2246,25 @@ for (const [cid, base, name, paint, flag] of [['tokyo', 'gtr', 'Nissan GT-R Neon
   CARS.push({ ...b, id, name, paint, kw: Math.round(b.kw * 1.08), usd: Math.round(b.usd * 1.25), prize: `🏆 DO BOTH ${flag} CHALLENGES`, prizeTag: `🏆 ${flag} CHALLENGE PRIZE`, desc: `Special edition · the ${flag} challenge trophy car` });
   MODEL_ALIAS[id] = base; MODEL_FILES.push(id);
 }
+// Formula 1: one open-wheel model (models/blender/f1.py) in every team's colours: 'Paint' is the team's main colour, 'Livery'
+// its second colour (spec.livery) and the driver's helmet spec.helmet. Added at the end so saved car numbers stay valid.
+MODEL_FILES.push('f1');
+for (const [id, name, pc, livery, helmet, desc] of [
+  ['f1_ferrari', 'Ferrari SF-24', '#c8141b', '#ffd21f', '#d61a1a', 'Scuderia red · the prancing horse'],
+  ['f1_redbull', 'Red Bull RB20', '#1b2140', '#d8102a', '#1b2140', 'Dark blue and red · the champions'],
+  ['f1_mercedes', 'Mercedes-AMG W15', '#1c1e22', '#00d2be', '#c5ccd2', 'The Silver Arrows in black and teal'],
+  ['f1_mclaren', 'McLaren MCL38', '#ff7a00', '#16181c', '#ff7a00', 'Papaya orange'],
+  ['f1_aston', 'Aston Martin AMR24', '#00594f', '#c8ff00', '#00594f', 'British racing green and lime'],
+  ['f1_alpine', 'Alpine A524', '#1150c8', '#ff87bc', '#1150c8', 'French blue and pink'],
+  ['f1_amboola', 'AMBOOLA F1', '#7cc8e8', '#ff6a13', '#ffd21f', 'Our own F1 team · sky blue and orange']]) {
+  let paint = PAINTS.findIndex(q => q.c === pc); if (paint < 0) { PAINTS.push({ n: name + ' Team', c: pc, m: .35 }); paint = PAINTS.length - 1; }
+  CARS.push({ id, name, brand: 'F1', cat: 'F1', body: 'f1', f1: true, open: true, wing: 'none', kw: 755, redline: 12500, mass: 798, vmax: 350, drive: 'RWD', engine: 'v10na', gears: 8, zero: 2.5,
+    grip: 2.05, aero: 2.6, paint, livery, helmet, rim: '#1b1b1d', caliper: '#1b1b1d', box: '8-speed seamless', usd: 9000000, desc: `Formula 1 · ${desc} · 1,000 PS · huge downforce`, jp: 'F1' });
+  MODEL_ALIAS[id] = 'f1'; MODEL_FILES.push(id);
+}
 const modelJobs = {}; let gltfLoader = null, modelsDone = false;
 function loadModel(id) {
-  if (MODEL_ALIAS[id]) return MODELS[id] ? Promise.resolve(MODELS[id]) : loadModel(MODEL_ALIAS[id]).then(m => { if (m) MODELS[id] = m; return m || null; });   // a special edition: the base car's model
+  if (MODEL_ALIAS[id]) return MODELS[id] ? Promise.resolve(MODELS[id]) : loadModel(MODEL_ALIAS[id]).then(m => { if (m) { MODELS[id] = m; if (state === 'garage' && CARS[carIdx]?.id === id) showGarageCar(); } return m || null; });   // a special edition: the base car's model
   if (MODELS[id] || !MODEL_FILES.includes(id)) return Promise.resolve(MODELS[id] || null);
   return modelJobs[id] ??= new Promise(res => {
     const parse = async () => {
@@ -2293,6 +2310,7 @@ function buildModelCar(spec, src, paint) {
     Caliper: new THREE.MeshStandardMaterial({ color: spec.caliper, roughness: .35, metalness: .3 }),
   };
   MAT.Rim.userData.kind = 'rim'; MAT.Caliper.userData.kind = 'cal';
+  if (spec.livery) { MAT.Livery = new THREE.MeshStandardMaterial({ color: spec.livery, roughness: .3, metalness: .2 }); MAT.Helmet = new THREE.MeshStandardMaterial({ color: spec.helmet || spec.livery, roughness: .2, metalness: .1 }); }   // (F1 teams)
   const dress = node => { const o = node.clone(); o.traverse(m => { if (m.isMesh) { m.material = MAT[m.material.name] || m.material; m.castShadow = true; m.receiveShadow = true; } }); return o; };
   // glTF space is +Z front, +X left; car parts live in profile space (x front, y up, z right): turn by +90 deg
   const toProfile = o => { const f = new THREE.Group(); f.rotation.y = Math.PI / 2; f.add(o); return f; };
@@ -4097,7 +4115,7 @@ function buildMenu() {
   let lastCat = '';
   CARS.forEach((c, i) => {
     if (c.hidden && !owns(c)) return;   // secret prizes only show up once you have won them
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', FORD: 'FORD', CHEVROLET: 'CHEVROLET', NISSAN: 'NISSAN · NISMO', HONDA: 'HONDA', PAGANI: 'PAGANI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', FORD: 'FORD', CHEVROLET: 'CHEVROLET', NISSAN: 'NISSAN · NISMO', HONDA: 'HONDA', F1: 'FORMULA 1 · F1', PAGANI: 'PAGANI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
   });
   const pw = $('paints'); pw.innerHTML = '';
@@ -4674,7 +4692,7 @@ let race = null, nearMarker = null;
 const fmtTime = t => { if (t == null || !isFinite(t)) return '--:--.---'; const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s.toFixed(3).padStart(6, '0')}`; };
 class RaceAI {
   constructor(spec, T, slot) {
-    const pi = spec.paint ?? Math.floor(Math.random() * PAINTS.length), p = PAINTS[(pi + slot * 3) % PAINTS.length];
+    const pi = spec.paint ?? Math.floor(Math.random() * PAINTS.length), p = PAINTS[spec.f1 ? pi : (pi + slot * 3) % PAINTS.length];   // (F1 teams keep their colours)
     this.spec = spec; this.T = T; this.car = buildCar(spec, p.c, p.m, p.r); scene.add(this.car.group);
     const g = gridSlot(T, slot); this.s = g.s; this.off = g.lat; this.lane = clamp(g.lat, -T.w * .3, T.w * .3); this.v = 0;
     this.prog = g.s - T.L; this.done = 0; this.finish = null; this.skill = .93 + Math.random() * .06; this.name = spec.name;
@@ -4717,6 +4735,7 @@ class RaceAI {
   dispose() { scene.remove(this.car.group); }
 }
 function pickRivals(spec, n) {
+  if (spec.f1) return CARS.filter(c => c.f1 && c.id !== spec.id).sort(() => Math.random() - .5).slice(0, n);   // an F1 car races the other F1 teams
   const pw = spec.kw / spec.mass;
   return CARS.filter(c => c.id !== spec.id).map(c => ({ c, d: Math.abs(Math.log((c.kw / c.mass) / pw)) + Math.random() * .3 })).sort((a, b) => a.d - b.d).slice(0, n).map(o => o.c);
 }
