@@ -2979,7 +2979,7 @@ class Player {
     if (this.wreckT > 0) { this.wreckT -= dt; inp = { throttle: 0, brake: 0, steer: 0, handbrake: 1, nitro: 0 }; }   // a crash landing: skid to a stop, then flip back
     const s = this.spec;
     const off = this.terrain === 'sand' || this.terrain === 'dirt' ? offroadOf(s) : this.terrain === 'trail' ? lerp(offroadOf(s), 1, .45) : this.terrain === 'water' || this.terrain === 'sea' ? .1 : -1;   // sand: rally cars keep their grip, low supercars slither and bog down (the Troodos trail is packed dirt: a bit better)
-    const gripK = s.grip * surfGrip * (off >= 0 ? lerp(.56, .96, off) : 1) * (this.terrain === 'ice' ? .3 : 1);   // (the frozen lake in the Alps)
+    const gripK = s.grip * surfGrip * (off >= 0 ? lerp(.56, .96, off) : 1) * (this.terrain === 'ice' ? .3 : 1) * (this.bankK || 1);   // (the frozen lake in the Alps; Daytona's banked turns)
     const fx = Math.sin(this.heading), fz = Math.cos(this.heading), rx = -fz, rz = fx;
     let vf = this.vx * fx + this.vz * fz, vr = this.vx * rx + this.vz * rz;
     const speed = Math.hypot(this.vx, this.vz);
@@ -4328,6 +4328,17 @@ function stadium(len, r) {
   P.push([-h, -r], [-h / 2, -r]);
   return P;
 }
+// Daytona: two 320 m banked turns, a 900 m back straight and the front stretch bulging into the tri-oval, where the
+// start/finish line is (the first point; it runs anticlockwise, all left turns)
+function daytonaPts() {
+  const R = 320, H = 450, D = 120, P = [], bump = x => R + D * Math.cos(x / H * Math.PI / 2) ** 2;
+  for (let x = 0; x < H; x += 75) P.push([x, bump(x)]);
+  for (let k = 0; k <= 12; k++) { const a = k / 12 * Math.PI; P.push([H + R * Math.sin(a), R * Math.cos(a)]); }
+  for (let x = H - 150; x > -H; x -= 150) P.push([x, -R]);
+  for (let k = 0; k <= 12; k++) { const a = k / 12 * Math.PI; P.push([-H - R * Math.sin(a), -R * Math.cos(a)]); }
+  for (let x = -H + 75; x < 0; x += 75) P.push([x, bump(x)]);
+  return P;
+}
 const RUNOFF = 10; // default distance from track edge to wall
 const TRACKS = [
   { id: 'gp', name: 'Amboola Grand Prix Circuit', jp: 'アンブーラ GP サーキット', cx: HALF + 1300, cz: 0, w: 14, laps: 3, col: '#ff5a1f',
@@ -4345,6 +4356,14 @@ const TRACKS = [
   { id: 'kanto', name: 'Kanto Short Circuit', jp: '関東ショートサーキット', cx: -1850, cz: -1150, w: 12, laps: 4, col: '#ffd02d',
     marker: { x: rc(4), z: -HALF, h: Math.PI }, desc: 'Tight club circuit · braking battles',
     pts: [[0, 0], [300, 0], [380, 60], [360, 160], [250, 200], [150, 150], [60, 200], [80, 300], [0, 360], [-150, 340], [-250, 260], [-220, 150], [-300, 80], [-260, 0], [-140, -30]] },
+  { id: 'daytona', name: 'Daytona International Speedway', jp: 'デイトナ・スピードウェイ', cx: 6500, cz: 24600, w: 22, run: 5, laps: 3, col: '#ffcc00',
+    marker: { x: 6880, z: 22485, h: 0, sign: [6893, 22485, -Math.PI / 2] }, desc: 'Florida, USA · 3.9 km tri-oval · 31° banked turns · flat out!',
+    pts: daytonaPts(), bankDeg: (T, i) => Math.abs(T.k[i]) > .0022 ? 31 : T.z[i] - T.cz > 160 ? 18 : 3, build: T => buildDaytona(T) },
+  { id: 'yas', name: 'Yas Marina Circuit', jp: 'ヤス・マリーナ・サーキット', cx: 15500, cz: 16500, w: 15, laps: 2, col: '#b14bff', groundCol: 0xd9c08c,
+    marker: { x: 14580, z: 14185, h: 0, sign: [14593, 14185, -Math.PI / 2] }, desc: 'Abu Dhabi · 5.1 km F1 circuit · under the lights and the Yas hotel',
+    pts: [[0, 160], [0, -100], [0, -330], [-30, -430], [-110, -470], [-210, -450], [-300, -500], [-390, -480], [-460, -500], [-505, -450], [-480, -380], [-440, -200], [-400, 20], [-370, 240], [-350, 380], [-300, 450],
+      [-210, 450], [-60, 445], [100, 450], [260, 455], [400, 445], [470, 400], [480, 320], [440, 250], [380, 230], [330, 170], [280, 110], [200, 110], [150, 160], [110, 230], [50, 270], [10, 230]].map(([x, z]) => [x * 1.4, z * 1.4]),
+    build: (T, signM) => buildYas(T, signM) },
   { id: 'sakura', name: 'Sakura Ring', jp: '桜リンク', cx: 4200, cz: 0, w: 13, run: 6, laps: 1, col: '#ff5fa2',
     marker: { x: HALF, z: rc(15), h: Math.PI / 2 }, desc: '7 km flowing endurance loop',
     pts: Array.from({ length: 48 }, (_, k) => { const a = k / 48 * Math.PI * 2, r = 1 + .12 * Math.sin(3 * a) + .08 * Math.sin(7 * a + 1) + .05 * Math.sin(11 * a + 2) + .025 * Math.sin(17 * a + .5); return [900 * r * Math.cos(a), 1400 * r * Math.sin(a)]; }) },
@@ -4364,10 +4383,19 @@ function prepTrack(T) {
   for (let i = 0; i < n; i++) { let s = 0; for (let d = -4; d <= 4; d++) s += raw[(i + d + n) % n]; T.k[i] = s / 9; }
   T.bx0 = Math.min(...T.x) - 40; T.bx1 = Math.max(...T.x) + 40; T.bz0 = Math.min(...T.z) - 40; T.bz1 = Math.max(...T.z) + 40;
   T.run = T.run ?? RUNOFF;
+  if (T.bankDeg) {   // banked turns: the road tilts up towards the outside wall (bank = tan of the angle, bsg = the infield's side)
+    let mx = 0, mz = 0; for (let i = 0; i < n; i++) { mx += T.x[i] / n; mz += T.z[i] / n; }
+    const want = F(); T.bsg = new Int8Array(n); T.bank = F();
+    for (let i = 0; i < n; i++) { T.bsg[i] = Math.sign(-T.tz[i] * (mx - T.x[i]) + T.tx[i] * (mz - T.z[i])) || 1; want[i] = Math.tan(T.bankDeg(T, i) * Math.PI / 180); }
+    for (let i = 0; i < n; i++) { let a = 0; for (let d = -25; d <= 25; d++) a += want[(i + d + n) % n]; T.bank[i] = a / 51; }   // eased in and out over 100 m
+    T.bx0 -= 60; T.bx1 += 60; T.bz0 -= 60; T.bz1 += 60;
+  }
   T.best = JSON.parse(localStorage.getItem('amboola.best.' + T.id) || 'null');
 }
 TRACKS.forEach(prepTrack);
 const trackPt = (T, i, off, y) => [T.x[i] - T.tz[i] * off, y, T.z[i] + T.tx[i] * off];
+const trackY = (T, i, lat) => T.bank ? Math.max(0, T.bank[i] * (T.w / 2 - T.bsg[i] * lat)) : 0;   // the height of a banked track at lat (0 on the flat)
+const trackBankPt = (T, i, off, y) => trackPt(T, i, off, trackY(T, i, off) + y);
 function trackNearest(T, x, z, hint) {
   let best = 1e18, bi = 0;
   const test = i => { const dx = x - T.x[i], dz = z - T.z[i], d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } };
@@ -4406,36 +4434,47 @@ function buildTracks() {
   const wallMat = new THREE.MeshStandardMaterial({ map: WALL_TEX(), roughness: .5, side: THREE.DoubleSide });
   const chkMat = new THREE.MeshStandardMaterial({ map: CHECKER_TEX(), roughness: .7, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 });
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xf2f2f2, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 });
+  const apronMat = new THREE.MeshStandardMaterial({ color: 0x3a3c40, roughness: .85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 });
+  const bankMat = new THREE.MeshStandardMaterial({ map: (() => { const t = GRASS_TEX(); t.repeat.set(2, 1); return t; })(), roughness: 1, side: THREE.DoubleSide });
   const masts = [];
   for (const T of TRACKS) {
     const n = T.n, hw = T.w / 2;
-    const road = new GB(), kerb = new GB(), wall = new GB(), chk = new GB(), lines = new GB();
+    const road = new GB(), kerb = new GB(), wall = new GB(), chk = new GB(), lines = new GB(), apron = new GB(), bankG = new GB();
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n, s0 = i * T.step, s1 = s0 + T.step;
-      road.quad(trackPt(T, i, -hw, .06), trackPt(T, i, hw, .06), trackPt(T, j, hw, .06), trackPt(T, j, -hw, .06), [0, s0 / 16, 1, s1 / 16]);
-      if (Math.abs(T.k[i]) > 1 / 220) for (const sd of [-1, 1]) kerb.quad(trackPt(T, i, sd * hw, .075), trackPt(T, i, sd * (hw + 1.4), .075), trackPt(T, j, sd * (hw + 1.4), .075), trackPt(T, j, sd * hw, .075), [0, s0 / 3, 1, s1 / 3]);
-      for (const sd of [-1, 1]) wall.quad(trackPt(T, i, sd * (hw + T.run), 0), trackPt(T, j, sd * (hw + T.run), 0), trackPt(T, j, sd * (hw + T.run), 1.15), trackPt(T, i, sd * (hw + T.run), 1.15), [s0 / 24, 0, s1 / 24, 1]);
-      if (i % 60 === 0) masts.push([...trackPt(T, i, (i % 120 ? 1 : -1) * (hw + T.run + 2.5), 0), Math.atan2(T.tx[i], T.tz[i]) + (i % 120 ? -Math.PI / 2 : Math.PI / 2)]);
+      const P = (k, off, y) => trackBankPt(T, k, off, y);   // (on a banked track the road tilts up to the outside)
+      road.quad(P(i, -hw, .06), P(i, hw, .06), P(j, hw, .06), P(j, -hw, .06), [0, s0 / 16, 1, s1 / 16]);
+      if (Math.abs(T.k[i]) > 1 / 220) for (const sd of [-1, 1]) kerb.quad(P(i, sd * hw, .075), P(i, sd * (hw + 1.4), .075), P(j, sd * (hw + 1.4), .075), P(j, sd * hw, .075), [0, s0 / 3, 1, s1 / 3]);
+      for (const sd of [-1, 1]) wall.quad(P(i, sd * (hw + T.run), 0), P(j, sd * (hw + T.run), 0), P(j, sd * (hw + T.run), 1.15), P(i, sd * (hw + T.run), 1.15), [s0 / 24, 0, s1 / 24, 1]);
+      if (T.bank) {   // the apron and the banked run-off between the road and the walls, and the grass bank under the outside wall
+        for (const sd of [-1, 1]) apron.quad(P(i, sd * hw, .055), P(i, sd * (hw + T.run), .055), P(j, sd * (hw + T.run), .055), P(j, sd * hw, .055), [0, s0 / 16, 1, s1 / 16]);
+        const o = -T.bsg[i] * (hw + T.run), oj = -T.bsg[j] * (hw + T.run), yi = trackY(T, i, o), yj = trackY(T, j, oj), fi = o - T.bsg[i] * (yi * 1.7 + 2), fj = oj - T.bsg[j] * (yj * 1.7 + 2);
+        bankG.quad(trackPt(T, i, o, yi), trackPt(T, i, fi, 0), trackPt(T, j, fj, 0), trackPt(T, j, oj, yj), [0, s0 / 8, 1, s1 / 8]);
+        if (i % 50 === 0) { const lat = -T.bsg[i] * (hw + T.run + 2.5), ry = Math.atan2(-T.tz[i] * T.bsg[i], T.tx[i] * T.bsg[i]); masts.push([...trackPt(T, i, lat, yi), ry, trackY(T, i, lat + T.bsg[i] * 12) + .12]); }
+      } else if (i % 60 === 0) masts.push([...trackPt(T, i, (i % 120 ? 1 : -1) * (hw + T.run + 2.5), 0), Math.atan2(T.tx[i], T.tz[i]) + (i % 120 ? -Math.PI / 2 : Math.PI / 2), .1]);
     }
-    chk.quad(trackPt(T, 0, -hw, .08), trackPt(T, 0, hw, .08), trackPt(T, 1, hw, .08), trackPt(T, 1, -hw, .08), [0, 0, 1, 1]);
-    for (let k = 0; k < 6; k++) { const g = gridSlot(T, k), i = g.i; lines.quad(trackPt(T, i, g.lat - 1.2, .08), trackPt(T, i, g.lat + 1.2, .08), trackPt(T, (i + 1) % n, g.lat + 1.2, .08), trackPt(T, (i + 1) % n, g.lat - 1.2, .08), [0, 0, 1, 1]); }
-    for (const [gb, m, sh] of [[road, roadMat, 0], [kerb, kerbMat, 0], [wall, wallMat, 1], [chk, chkMat, 0], [lines, lineMat, 0]]) {
+    chk.quad(trackBankPt(T, 0, -hw, .08), trackBankPt(T, 0, hw, .08), trackBankPt(T, 1, hw, .08), trackBankPt(T, 1, -hw, .08), [0, 0, 1, 1]);
+    for (let k = 0; k < 6; k++) { const g = gridSlot(T, k), i = g.i; lines.quad(trackBankPt(T, i, g.lat - 1.2, .08), trackBankPt(T, i, g.lat + 1.2, .08), trackBankPt(T, (i + 1) % n, g.lat + 1.2, .08), trackBankPt(T, (i + 1) % n, g.lat - 1.2, .08), [0, 0, 1, 1]); }
+    for (const [gb, m, sh] of [[road, roadMat, 0], [kerb, kerbMat, 0], [wall, wallMat, 1], [chk, chkMat, 0], [lines, lineMat, 0], [apron, apronMat, 0], [bankG, bankMat, 0]]) {
       if (gb.empty) continue; const mesh = new THREE.Mesh(gb.build(), m); mesh.receiveShadow = true; mesh.castShadow = !!sh; scene.add(mesh);
     }
     // grass infield / surrounds
     const grassT = GRASS_TEX(); grassT.repeat.set((T.bx1 - T.bx0) / 8, (T.bz1 - T.bz0) / 8);
-    const grass = new THREE.Mesh(new THREE.PlaneGeometry(T.bx1 - T.bx0, T.bz1 - T.bz0), new THREE.MeshStandardMaterial({ map: grassT, roughness: 1 }));
+    const grass = new THREE.Mesh(new THREE.PlaneGeometry(T.bx1 - T.bx0, T.bz1 - T.bz0), new THREE.MeshStandardMaterial(T.groundCol ? { color: T.groundCol, roughness: 1 } : { map: grassT, roughness: 1 }));   // (Yas Marina: desert sand)
     grass.rotation.x = -Math.PI / 2; grass.position.set((T.bx0 + T.bx1) / 2, .02, (T.bz0 + T.bz1) / 2); grass.receiveShadow = true; scene.add(grass);
     // start gantry with countdown lights
     const h0 = Math.atan2(T.tx[0], T.tz[0]);
     const gan = new THREE.Group(); gan.position.set(T.x[0], 0, T.z[0]); gan.rotation.y = h0; scene.add(gan);
     const steel = new THREE.MeshStandardMaterial({ color: 0x2a2d33, roughness: .4, metalness: .7 });
-    for (const sd of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.6, 7.5, .6), steel); p.position.set(sd * (hw + 1.6), 3.75, 0); p.castShadow = true; gan.add(p); }
+    const gy = [-1, 1].map(sd => trackY(T, 0, -sd * (hw + 1.6))), top = Math.max(...gy) + 7.3;   // (gantry x = -lat)
+    [-1, 1].forEach((sd, k) => { const p = new THREE.Mesh(new THREE.BoxGeometry(.6, top - gy[k] + .2, .6), steel); p.position.set(sd * (hw + 1.6), (top + gy[k]) / 2, 0); p.castShadow = true; gan.add(p); });
+    gan.position.y = top - 7.3; gan.children.forEach(c => c.position.y -= top - 7.3);
     const beam = new THREE.Mesh(new THREE.BoxGeometry(T.w + 3.8, 1.6, .7), steel); beam.position.y = 7.3; gan.add(beam);
     const signM = new THREE.MeshBasicMaterial({ map: trackSignTex(T, false) }); dynMats.neon.push(signM);
     for (const sd of [-1, 1]) { const sg = new THREE.Mesh(new THREE.PlaneGeometry(T.w + 3, 1.45), signM); sg.position.set(0, 7.3, sd * .37); sg.rotation.y = sd > 0 ? 0 : Math.PI; gan.add(sg); }
     T.lights = [];
     for (let k = 0; k < 5; k++) { const m = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0xff1a1a, emissiveIntensity: 0 }); const l = new THREE.Mesh(new THREE.SphereGeometry(.32, 12, 8), m); l.position.set((k - 2) * .9, 6.1, -.4); gan.add(l); T.lights.push(m); }
+    if (T.build) { T.build(T, signM); continue; }   // Daytona, Yas Marina: their own grandstands and pits
     // grandstand + pit building along the start straight
     const iS = n - 45, hS = Math.atan2(T.tx[iS], T.tz[iS]);
     const stand = new THREE.Group(); stand.position.set(...trackPt(T, iS, hw + T.run + 9, 0)); stand.rotation.y = hS; scene.add(stand);
@@ -4461,12 +4500,153 @@ function buildTracks() {
   const poolGeo = new THREE.PlaneGeometry(1, 1); poolGeo.rotateX(-Math.PI / 2);
   const pools = new THREE.InstancedMesh(poolGeo, poolMat, masts.length);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
-  masts.forEach(([x, y, z, ry], k) => {
-    M.compose(new THREE.Vector3(x, 0, z), Q.setFromAxisAngle(Y, ry), new THREE.Vector3(1, 1, 1)); poles.setMatrixAt(k, M); heads.setMatrixAt(k, M);
-    M.compose(new THREE.Vector3(x + Math.sin(ry) * 12, .1, z + Math.cos(ry) * 12), new THREE.Quaternion(), new THREE.Vector3(30, 1, 30)); pools.setMatrixAt(k, M);
+  masts.forEach(([x, y, z, ry, py], k) => {
+    M.compose(new THREE.Vector3(x, y, z), Q.setFromAxisAngle(Y, ry), new THREE.Vector3(1, 1, 1)); poles.setMatrixAt(k, M); heads.setMatrixAt(k, M);
+    M.compose(new THREE.Vector3(x + Math.sin(ry) * 12, py, z + Math.cos(ry) * 12), new THREE.Quaternion(), new THREE.Vector3(30, 1, 30)); pools.setMatrixAt(k, M);
   });
   scene.add(poles, heads, pools);
   buildRaceMarkers();
+}
+// a box turned by ry (local z = forwards) into a geometry builder: four walls and a roof
+function obox(gb, x, y0, z, w, h, d, ry, col) {
+  const c = Math.cos(ry), sn = Math.sin(ry), P = (lx, y, lz) => [x + lx * c + lz * sn, y, z - lx * sn + lz * c], W = w / 2, D = d / 2, y1 = y0 + h;
+  for (const [a, b] of [[[-W, -D], [W, -D]], [[W, -D], [W, D]], [[W, D], [-W, D]], [[-W, D], [-W, -D]]]) gb.quad(P(a[0], y0, a[1]), P(b[0], y0, b[1]), P(b[0], y1, b[1]), P(a[0], y1, a[1]), [0, 0, 1, 1], col);
+  gb.quad(P(-W, y1, -D), P(W, y1, -D), P(W, y1, D), P(-W, y1, D), [0, 0, 1, 1], col);
+}
+const FENCE_TEX = () => canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(200,205,212,.95)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h); g.moveTo(w, 0); g.lineTo(0, h); g.stroke(); g.lineWidth = 5; g.strokeRect(0, 0, w, h); }, { repeat: true });
+// Daytona International Speedway: the giant front-stretch grandstand with its five towers and the DAYTONA sign, the
+// catch fence on the high banks, Lake Lloyd in the infield, pit road and the garages, palm trees
+function buildDaytona(T) {
+  const n = T.n, hw = T.w / 2, out = i => -T.bsg[i], wallLat = i => out(i) * (hw + T.run), wallY = i => trackY(T, i, wallLat(i));
+  const lx = i => T.x[i] - T.cx, lz = i => T.z[i] - T.cz;
+  // the front stretch: the samples of the tri-oval, west to east
+  const front = []; for (let i = 0; i < n; i++) if (lz(i) > 250 && Math.abs(lx(i)) < 470) front.push(i);
+  front.sort((a, b) => lx(a) - lx(b));
+  const crowdT = CROWD_TEX(); crowdT.repeat.set(1, 1);
+  const seats = new GB(), conc = new GB(), roofG = new GB(), glassG = new GB(), fence = new GB(), pit = new GB(), white = new GB();
+  for (let k = 0; k < front.length - 4; k += 4) {
+    const i = front[k], j = front[k + 4], fi = wallLat(i) + out(i) * (wallY(i) * 1.7 + 8), fj = wallLat(j) + out(j) * (wallY(j) * 1.7 + 8);
+    const L = (q, f, d) => f + out(q) * d, P = (q, f, d, y) => trackPt(T, q, L(q, f, d), y), u0 = k / 8, u1 = (k + 4) / 8;
+    seats.quad(P(i, fi, 0, 6), P(j, fj, 0, 6), P(j, fj, 72, 44), P(i, fi, 72, 44), [u0, 0, u1, 1]);              // the seats, full of fans
+    conc.quad(P(i, fi, 0, 0), P(j, fj, 0, 0), P(j, fj, 0, 6), P(i, fi, 0, 6), [0, 0, 1, 1]);                     // the front wall
+    conc.quad(P(i, fi, 72, 0), P(j, fj, 72, 0), P(j, fj, 72, 50), P(i, fi, 72, 50), [0, 0, 1, 1]);               // the back
+    roofG.quad(P(i, fi, 30, 52), P(j, fj, 30, 52), P(j, fj, 76, 52), P(i, fi, 76, 52), [0, 0, 1, 1]);            // the roof canopy
+    glassG.quad(P(i, fi, 66, 44), P(j, fj, 66, 44), P(j, fj, 66, 52), P(i, fi, 66, 52), [0, 0, 1, 1]);           // the suites' windows
+  }
+  // five towers (the "injectors") on the back of the stand, and the DAYTONA sign on the roof over the finish line
+  for (let t = 0; t < 5; t++) { const i = front[Math.round((t + .5) / 5 * (front.length - 1))], f = wallLat(i) + out(i) * (wallY(i) * 1.7 + 8 + 80), [x, , z] = trackPt(T, i, f, 0), ry = Math.atan2(T.tx[i], T.tz[i]); obox(conc, x, 0, z, 16, 62, 16, ry); obox(glassG, x, 50, z, 16.4, 10, 16.4, ry); }
+  const mk = (gb, m) => { if (gb.empty) return null; const me = new THREE.Mesh(gb.build(), m); me.castShadow = me.receiveShadow = true; scene.add(me); return me; };
+  const concM = new THREE.MeshStandardMaterial({ color: 0xc9ccd2, roughness: .8, side: THREE.DoubleSide });
+  mk(seats, new THREE.MeshStandardMaterial({ map: crowdT, roughness: .9, side: THREE.DoubleSide })); mk(conc, concM);
+  mk(roofG, new THREE.MeshStandardMaterial({ color: 0xf2f3f5, roughness: .4, metalness: .3, side: THREE.DoubleSide })); mk(glassG, glassMat);
+  const dt = canvasTex(1024, 160, (g, w, h) => { g.fillStyle = '#0b2a6b'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffcc00'; g.fillRect(0, h - 18, w, 8); g.fillStyle = '#d61a1a'; g.fillRect(0, h - 10, w, 10); g.font = `900 118px ${OR}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffcc00'; g.fillText('DAYTONA', w / 2, h / 2 - 6); });
+  const dm = new THREE.MeshBasicMaterial({ map: dt, side: THREE.DoubleSide }); dynMats.neon.push(dm);
+  { const i = 0, f = wallLat(i) + out(i) * (wallY(i) * 1.7 + 8 + 30), [x, , z] = trackPt(T, i, f, 0), sg = new THREE.Mesh(new THREE.PlaneGeometry(150, 23), dm); sg.position.set(x, 64, z); sg.rotation.y = Math.atan2(-T.tz[i] * T.bsg[i], T.tx[i] * T.bsg[i]); scene.add(sg); }
+  // the catch fence on top of the outside wall all the way round, and the white SAFER barrier
+  const posts = [];
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n, yi = wallY(i) + 1.15, yj = wallY(j) + 1.15, u0 = i * T.step / 4, u1 = (i + 1) * T.step / 4;
+    fence.quad(trackPt(T, i, wallLat(i), yi), trackPt(T, j, wallLat(j), yj), trackPt(T, j, wallLat(j), yj + 5.5), trackPt(T, i, wallLat(i), yi + 5.5), [u0, 0, u1, 5.5 / 4]);
+    white.quad(trackPt(T, i, wallLat(i) - out(i) * .05, yi - 1.15), trackPt(T, j, wallLat(j) - out(j) * .05, yj - 1.15), trackPt(T, j, wallLat(j) - out(j) * .05, yj - .1), trackPt(T, i, wallLat(i) - out(i) * .05, yi - .1), [0, 0, 1, 1]);
+    if (i % 5 === 0) posts.push([...trackPt(T, i, wallLat(i) + out(i) * .15, yi - 1.15), 0, 1, 1, 1]);
+  }
+  const fm = new THREE.MeshStandardMaterial({ map: FENCE_TEX(), transparent: true, alphaTest: .35, side: THREE.DoubleSide, roughness: .5, metalness: .5 }); mk(fence, fm).castShadow = false;
+  mk(white, new THREE.MeshStandardMaterial({ color: 0xf4f5f7, roughness: .5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }));
+  instanced(new THREE.BoxGeometry(.18, 6.8, .18).translate(0, 3.4, 0), new THREE.MeshStandardMaterial({ color: 0x8a9099, metalness: .6, roughness: .4 }), posts);
+  // pit road and the garages inside the front stretch
+  for (let k = 0; k < front.length - 1; k++) {
+    const i = front[k], j = front[k + 1], a = T.bsg[i] * (hw + T.run + 2), b = T.bsg[i] * (hw + T.run + 16), aj = T.bsg[j] * (hw + T.run + 2), bj = T.bsg[j] * (hw + T.run + 16);
+    pit.quad(trackPt(T, i, a, .05), trackPt(T, i, b, .05), trackPt(T, j, bj, .05), trackPt(T, j, aj, .05), [0, k / 4, 1, (k + 1) / 4]);
+    if (k % 6 === 0 && Math.abs(lx(i)) < 380) { const [x, , z] = trackPt(T, i, T.bsg[i] * (hw + T.run + 30), 0); obox(white, x, 0, z, 14, 6, 11, Math.atan2(T.tx[i], T.tz[i])); }
+  }
+  mk(pit, new THREE.MeshStandardMaterial({ map: TRACK_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -1 }));
+  // Lake Lloyd in the infield, with a sandy shore
+  const lake = new THREE.Shape(), shore = new THREE.Shape(), LX = T.cx, LZ = T.cz - 150;
+  for (let k = 0; k <= 48; k++) { const a = k / 48 * Math.PI * 2, r = 1 + .1 * Math.sin(3 * a + .7) + .06 * Math.sin(7 * a), x = Math.cos(a) * 380 * r, z = Math.sin(a) * 92 * r; k ? lake.lineTo(x, z) : lake.moveTo(x, z); k ? shore.lineTo(x * 1.04 + Math.sign(x) * 6, z * 1.12 + Math.sign(z) * 4) : shore.moveTo(x * 1.04 + 6, z * 1.12); }
+  for (const [sh, col, y, rough] of [[shore, 0xd8c79a, .035, 1], [lake, 0x1f6f9a, .05, .06]]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: col, roughness: rough, metalness: rough < .5 ? .25 : 0, side: THREE.DoubleSide })); m.position.set(LX, y, LZ); m.receiveShadow = true; scene.add(m); }
+  // the DAYTONA 500 logo on the grass of the tri-oval
+  const lt = canvasTex(1024, 512, (g, w, h) => { g.clearRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.font = `900 210px ${OR}`; g.lineWidth = 26; g.strokeStyle = '#0b2a6b'; g.strokeText('500', w / 2, h * .66); g.fillStyle = '#d61a1a'; g.fillText('500', w / 2, h * .66); g.font = `900 120px ${OR}`; g.strokeText('DAYTONA', w / 2, h * .22); g.fillStyle = '#ffcc00'; g.fillText('DAYTONA', w / 2, h * .22); });
+  const logo = new THREE.Mesh(new THREE.PlaneGeometry(150, 75), new THREE.MeshBasicMaterial({ map: lt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 })); logo.rotation.x = -Math.PI / 2; logo.position.set(T.cx, .07, T.cz + 230); scene.add(logo);
+  // palm trees round the outside and by the lake
+  const palms = [], rnd = mulberry32(500);
+  for (let k = 0; k < 110; k++) { const a = rnd() * Math.PI * 2, x = T.cx + Math.cos(a) * (900 + rnd() * 120), z = T.cz + Math.sin(a) * (440 + rnd() * 90); if (z > T.cz + 380 && Math.abs(x - T.cx) < 520) continue; palms.push([x, 0, z, rnd() * 6, .8 + rnd() * .5]); }
+  for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2, x = LX + Math.cos(a) * 420, z = LZ + Math.sin(a) * 125; palms.push([x, 0, z, rnd() * 6, .7 + rnd() * .4]); }
+  palmTrees(palms);
+}
+// Yas Marina Circuit, Abu Dhabi: the Yas hotel over the track with its glowing gridshell roof that changes colour,
+// the marina with yachts, the pit building, grandstands, the red roof of a theme park, palm trees and floodlights
+function buildYas(T, signM) {
+  const n = T.n, hw = T.w / 2, side = i => -Math.sign(T.k[(i + n) % n]) || 1, P = (i, lat, y) => trackPt(T, i, lat, y), H = i => Math.atan2(T.tx[i], T.tz[i]);
+  const mk = (gb, m, sh = true) => { if (gb.empty) return null; const me = new THREE.Mesh(gb.build(), m); me.castShadow = sh; me.receiveShadow = true; scene.add(me); return me; };
+  const white = new GB(), glassG = new GB(), stands = new GB(), roofG = new GB(), dark = new GB();
+  const near = (x, z) => trackNearest(T, T.cx + x * 1.4, T.cz + z * 1.4, -1).i;   // a sample near a point of the plan
+  // the pit building on the inside of the start straight, and the main grandstand across from it
+  const i0 = near(0, 120), i1 = near(0, -300);
+  for (let i = Math.min(i0, i1); i < Math.max(i0, i1); i += 4) {   // (the start straight runs north: -lat is the infield)
+    const j = i + 4, a = -(hw + T.run + 4), o = hw + T.run + 6, [x, , z] = P(i + 2, a - 11, 0);
+    obox(white, x, 0, z, 22, 12, T.step * 4.1, H(i));
+    glassG.quad(P(i, a + .05, 7), P(j, a + .05, 7), P(j, a + .05, 11), P(i, a + .05, 11), [0, 0, 1, 1]);
+    stands.quad(P(i, o, 4), P(j, o, 4), P(j, o + 34, 24), P(i, o + 34, 24), [i / 8, 0, j / 8, 1]);
+    roofG.quad(P(i, o + 4, 32), P(j, o + 4, 32), P(j, o + 38, 32), P(i, o + 38, 32), [0, 0, 1, 1]);
+    dark.quad(P(i, o + 34, 0), P(j, o + 34, 0), P(j, o + 34, 32), P(i, o + 34, 32), [0, 0, 1, 1]);
+  }
+  // grandstands at T1, the hairpin and the long straights (on the outside of the corners)
+  for (const [px, pz, len] of [[-60, -470, 70], [-470, -470, 60], [-430, -60, 120], [80, 470, 110]]) {
+    const c = near(px, pz), sd = side(c);
+    for (let i = c - len; i < c + len; i += 4) { const a = (i + n) % n, j = (i + 4 + n) % n;
+      stands.quad(P(a, sd * (hw + T.run + 4), 3), P(j, sd * (hw + T.run + 4), 3), P(j, sd * (hw + T.run + 26), 16), P(a, sd * (hw + T.run + 26), 16), [i / 8, 0, (i + 4) / 8, 1]);
+      dark.quad(P(a, sd * (hw + T.run + 26), 0), P(j, sd * (hw + T.run + 26), 0), P(j, sd * (hw + T.run + 26), 16), P(a, sd * (hw + T.run + 26), 16), [0, 0, 1, 1]); }
+  }
+  const crowdT = CROWD_TEX();
+  mk(white, new THREE.MeshStandardMaterial({ color: 0xf4f5f7, roughness: .5 })); mk(glassG, glassMat, false);
+  mk(stands, new THREE.MeshStandardMaterial({ map: crowdT, roughness: .9, side: THREE.DoubleSide })); mk(dark, new THREE.MeshStandardMaterial({ color: 0x2b2f38, roughness: .7, side: THREE.DoubleSide }));
+  mk(roofG, new THREE.MeshStandardMaterial({ color: 0xe9ebef, roughness: .4, metalness: .3, side: THREE.DoubleSide }));
+  // the Yas hotel: two towers either side of the track joined by a bridge over it, under one long glowing gridshell
+  const hi = near(330, 170), hh = H(hi), [hx, , hz] = P(hi, 0, 0), hotel = new THREE.Group(); hotel.position.set(hx, 0, hz); hotel.rotation.y = hh; scene.add(hotel);
+  const hotelM = new THREE.MeshStandardMaterial({ color: 0xdfe3ea, roughness: .35, metalness: .2 }), winM = new THREE.MeshStandardMaterial({ map: WIN_TEX('#5f6f80', '#cfe6ff'), emissiveMap: WIN_EMIS(), emissive: 0xffffff, emissiveIntensity: 0, roughness: .2, metalness: .4 }); dynMats.windows.push(winM);
+  for (const sd of [-1, 1]) {   // (local x = across the track)
+    const b = new THREE.Mesh(new THREE.BoxGeometry(34, 30, 120), winM); b.position.set(sd * (hw + 30), 15, 0); b.castShadow = b.receiveShadow = true; hotel.add(b);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(36, 3, 122), hotelM); base.position.set(sd * (hw + 30), 1.5, 0); hotel.add(base);
+  }
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(2 * (hw + 30), 7, 26), hotelM); bridge.position.set(0, 26, 0); bridge.castShadow = true; hotel.add(bridge);
+  const bwin = new THREE.Mesh(new THREE.BoxGeometry(2 * (hw + 13), 3, 26.2), winM); bwin.position.set(0, 26.5, 0); hotel.add(bwin);
+  // the gridshell: a long curving lattice roof of diamond panels lit by LEDs; its colour drifts round the rainbow
+  const SU = 64, SV = 24, pos = [], uv = [], idx = [];
+  for (let a = 0; a <= SU; a++) for (let b = 0; b <= SV; b++) {
+    const u = a / SU * 2 - 1, v = b / SV * 2 - 1, half = 1 - Math.abs(u) ** 3, x = v * (hw + 58) * (.75 + .25 * half), y = 18 + 22 * (1 - v * v) * half + 12 * half, z = u * 112;
+    pos.push(x, y, z); uv.push(a / SU * 18, b / SV * 7);
+  }
+  for (let a = 0; a < SU; a++) for (let b = 0; b < SV; b++) { const k = a * (SV + 1) + b; idx.push(k, k + 1, k + SV + 1, k + 1, k + SV + 2, k + SV + 1); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); sg.setIndex(idx); sg.computeVertexNormals();
+  const ledT = canvasTex(128, 128, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = '#ffffff'; g.lineWidth = 7; g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w, h / 2); g.lineTo(w / 2, h); g.lineTo(0, h / 2); g.closePath(); g.stroke(); g.fillStyle = 'rgba(255,255,255,.18)'; g.fill(); for (const [x, y] of [[w / 2, 0], [w, h / 2], [w / 2, h], [0, h / 2]]) { g.beginPath(); g.arc(x, y, 6, 0, 7); g.fillStyle = '#fff'; g.fill(); } }, { repeat: true });
+  const ledM = new THREE.MeshBasicMaterial({ map: ledT, color: 0xb14bff, transparent: true, opacity: .9, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const gs = new THREE.Mesh(sg, ledM); hotel.add(gs);
+  gs.onBeforeRender = () => ledM.color.setHSL((performance.now() / 14000) % 1, .9, .55);
+  const frameM = new THREE.MeshStandardMaterial({ color: 0xd6dbe3, metalness: .7, roughness: .3, transparent: true, opacity: .25, side: THREE.DoubleSide, depthWrite: false }); hotel.add(new THREE.Mesh(sg, frameM));
+  // the marina beside the hotel: water, pontoons and moored yachts
+  const mx = T.cx + 410, mz = T.cz + 470, water = new THREE.Mesh(new THREE.PlaneGeometry(340, 170), new THREE.MeshStandardMaterial({ color: 0x1d6c8f, roughness: .08, metalness: .3 }));
+  water.rotation.x = -Math.PI / 2; water.position.set(mx, .05, mz); water.receiveShadow = true; scene.add(water);
+  const pontoon = new GB(), hulls = [], cabins = [], masts = [];
+  for (let r = 0; r < 3; r++) { const z0 = mz - 60 + r * 60; pontoon.flat(mx - 160, z0 - 2, mx + 150, z0 + 2, .6, [0, 0, 1, 1]);
+    for (let k = 0; k < 11; k++) { if ((k * 7 + r * 3) % 5 === 0) continue; const x = mx - 145 + k * 28, sd = k % 2 ? 1 : -1, len = 14 + ((k * 13 + r * 5) % 4) * 4, z = z0 + sd * (len / 2 + 4);
+      hulls.push([x, .2, z, 0, 1, 1, len / 20]); cabins.push([x, 1.9, z + sd * -1, 0, 1, 1, len / 20]); if ((k + r) % 3 === 0) masts.push([x, 2, z, 0, 1, len / 18, 1]); } }
+  mk(pontoon, new THREE.MeshStandardMaterial({ color: 0xc9b38a, roughness: .9 }));
+  instanced(new THREE.BoxGeometry(5, 2.6, 20).translate(0, 1.3, 0), new THREE.MeshStandardMaterial({ color: 0xf6f7f9, roughness: .3, metalness: .1 }), hulls);
+  instanced(new THREE.BoxGeometry(3.6, 2, 9), new THREE.MeshStandardMaterial({ color: 0x1b2430, roughness: .15, metalness: .5 }), cabins);
+  instanced(new THREE.CylinderGeometry(.12, .16, 18, 6).translate(0, 9, 0), new THREE.MeshStandardMaterial({ color: 0xdfe3ea, metalness: .6, roughness: .3 }), masts);
+  // a theme park's huge red roof north of the track
+  const red = new THREE.Mesh(new THREE.SphereGeometry(110, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .35, metalness: .2 }));
+  red.scale.set(1.5, .22, 1); red.position.set(T.bx1 + 230, 0, T.cz - 200); red.castShadow = true; scene.add(red);
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(150, 160, 4, 48), new THREE.MeshStandardMaterial({ color: 0xd9c08c, roughness: 1 })); ped.scale.set(1.3, 1, .85); ped.position.set(T.bx1 + 230, 0, T.cz - 200); scene.add(ped);
+  // palm trees along the straights and round the hotel
+  const palms = [], rnd = mulberry32(777);
+  for (let i = 0; i < n; i += 22) { const sd = (i / 22) % 2 ? 1 : -1, [x, , z] = P(i, sd * (hw + T.run + 14 + rnd() * 6), 0); if (Math.hypot(x - hx, z - hz) < 110) continue; palms.push([x, 0, z, rnd() * 6, .8 + rnd() * .4]); }
+  palmTrees(palms);
+  // a big sign on the start straight
+  const ys = canvasTex(1024, 192, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#2a0b4a'); gr.addColorStop(1, '#0b1f4a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.font = `900 92px ${OR}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffffff'; g.fillText('YAS MARINA', w / 2, h * .44); g.font = `700 38px ${OR}`; g.fillStyle = '#d6b4ff'; g.fillText('ABU DHABI · أبوظبي', w / 2, h * .82); });
+  const ym = new THREE.MeshBasicMaterial({ map: ys, side: THREE.DoubleSide }); dynMats.neon.push(ym);
+  { const i = near(0, -100), [x, , z] = P(i, -(hw + T.run + 24), 0), b = new THREE.Mesh(new THREE.PlaneGeometry(60, 11), ym); b.position.set(x, 38, z); b.rotation.y = H(i) - Math.PI / 2; scene.add(b); }
+  void signM;
 }
 function buildRaceMarkers() {
   for (const T of TRACKS) {
@@ -4477,8 +4657,10 @@ function buildRaceMarkers() {
     beam.position.set(m.x, 160, m.z); scene.add(beam);
     const sm = new THREE.MeshBasicMaterial({ map: trackSignTex(T, true) }); dynMats.neon.push(sm);
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), sm);
-    sign.position.set(m.x + Math.sin(m.h) * 14, 7, m.z + Math.cos(m.h) * 14); sign.rotation.y = m.h + Math.PI; scene.add(sign);
-    for (const sd of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.4, 4, .4), blackMat); p.position.set(sign.position.x + Math.cos(m.h) * sd * 5, 2, sign.position.z - Math.sin(m.h) * sd * 5); scene.add(p); }
+    if (m.sign) { sign.position.set(m.sign[0], 7, m.sign[1]); sign.rotation.y = m.sign[2]; }   // (in a country town: beside the street)
+    else { sign.position.set(m.x + Math.sin(m.h) * 14, 7, m.z + Math.cos(m.h) * 14); sign.rotation.y = m.h + Math.PI; }
+    scene.add(sign); const ry = sign.rotation.y;
+    for (const sd of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.4, 4, .4), blackMat); p.position.set(sign.position.x + Math.cos(ry) * sd * 5, 2, sign.position.z - Math.sin(ry) * sd * 5); scene.add(p); }
     landmarks.push({ x: m.x, z: m.z, c: T.col, n: T.name });
   }
 }
@@ -4503,6 +4685,7 @@ class RaceAI {
     const tx = lerp(T.tx[i], T.tx[j], u), tz = lerp(T.tz[i], T.tz[j], u);
     this.x = lerp(T.x[i], T.x[j], u) - tz * this.off; this.z = lerp(T.z[i], T.z[j], u) + tx * this.off; this.h = Math.atan2(tx, tz);
     const g = this.car.group; g.position.set(this.x, 0, this.z); g.rotation.y = this.h;
+    if (T.bank) { const b = lerp(T.bank[i], T.bank[j], u), sg = T.bsg[i]; g.position.y = Math.max(0, b * (T.w / 2 - sg * this.off)); g.rotation.order = 'YXZ'; g.rotation.z = Math.atan(b * sg); }   // up on the banking, leaning in
     for (const w of this.car.wheels) { w.spin.rotation.z -= this.v / w.R * dt; if (w.front) w.pivot.rotation.y = -clamp(T.k[i] * 2.6, -.4, .4); }
   }
   update(dt, others) {
@@ -4512,7 +4695,7 @@ class RaceAI {
     const m = Math.ceil(Math.min(420, this.v * this.v / (2 * dec) + 40) / T.step);
     for (let k = 0; k < m; k += 2) {
       const kk = Math.abs(T.k[(i0 + k) % T.n]); if (kk < 2e-4) continue;
-      const R = 1 / kk; let vc = Math.sqrt(latA(30) * R); vc = Math.sqrt(latA(vc) * R);
+      const R = 1 / kk, bk = T.bank ? 1 + 2.4 * T.bank[(i0 + k) % T.n] : 1; let vc = Math.sqrt(latA(30) * bk * R); vc = Math.sqrt(latA(vc) * bk * R);
       allow = Math.min(allow, Math.sqrt(vc * vc + 2 * dec * k * T.step));
     }
     const band = clamp(1 + (race.p.prog - this.prog) / 2500, .95, 1.05);
@@ -4566,6 +4749,12 @@ function raceReset() {
 }
 function trackCollide(p) {
   const T = race.T, nr = trackNearest(T, p.x, p.z, race.p.hint); race.p.hint = nr.i;
+  p.gx = p.gz = 0; p.bankK = 1;
+  if (T.bank) {   // on the banking: the height and tilt of the road, and the extra grip a banked turn gives
+    const b = T.bank[nr.i], sg = T.bsg[nr.i], on = T.w / 2 - sg * nr.lat > 0, dy = on ? -b * sg : 0;
+    p.y = trackY(T, nr.i, nr.lat); p.gx = -T.tz[nr.i] * dy; p.gz = T.tx[nr.i] * dy; p.slope = p.gx * Math.sin(p.heading) + p.gz * Math.cos(p.heading);
+    p.bankK = on ? 1 + 2.4 * b : 1;
+  }
   const lim = T.w / 2 + T.run - 1.15; if (Math.abs(nr.lat) <= lim) return 0;
   const sd = Math.sign(nr.lat), nx = -T.tz[nr.i] * sd, nz = T.tx[nr.i] * sd, pen = Math.abs(nr.lat) - lim;
   p.x -= nx * pen; p.z -= nz * pen;
@@ -4709,7 +4898,7 @@ function crazyStart(R) {
   const T = R.T, g = new THREE.Group(); scene.add(g);
   const mat = new THREE.MeshStandardMaterial({ map: BOX_TEX(), emissive: 0xffffff, emissiveMap: BOX_TEX(), emissiveIntensity: .5, transparent: true, opacity: .9 }), geo = new THREE.BoxGeometry(1.4, 1.4, 1.4);
   const boxes = [];
-  for (const f of [.12, .37, .62, .87]) { const i = Math.floor(f * T.n); for (const off of [-T.w / 3, 0, T.w / 3]) { const [x, , z] = trackPt(T, i, off, 0), m = new THREE.Mesh(geo, mat); m.position.set(x, 1.3, z); g.add(m); boxes.push({ m, x, z, i, t: 0 }); } }
+  for (const f of [.12, .37, .62, .87]) { const i = Math.floor(f * T.n); for (const off of [-T.w / 3, 0, T.w / 3]) { const [x, y0, z] = trackBankPt(T, i, off, 0), m = new THREE.Mesh(geo, mat); m.position.set(x, y0 + 1.3, z); g.add(m); boxes.push({ m, x, z, i, t: 0, y0 }); } }
   R.cz = { g, boxes, bananas: [], item: null, boost: 0, shield: 0, bubble: null, ai: R.ais.map(() => ({ item: null, useT: 0, stun: 0, boost: 0, spin: 0 })) };
   if (!$('itemHud')) { const d = document.createElement('div'); d.id = 'itemHud'; d.style.cssText = 'position:fixed;left:50%;top:84px;transform:translateX(-50%);padding:8px 18px;border:2px solid #ffc21f;border-radius:12px;background:rgba(10,12,18,.8);color:#fff;font:900 20px Orbitron,sans-serif;letter-spacing:2px;z-index:20;pointer-events:auto;cursor:pointer;text-align:center'; d.onclick = () => useItem(); document.body.appendChild(d); }
   crazyHud();
@@ -4720,6 +4909,7 @@ function dropBanana(C, x, z, h) {
   const arc = new THREE.Mesh(new THREE.TorusGeometry(.5, .16, 8, 16, Math.PI), y); arc.rotation.z = Math.PI; arc.position.y = .55; b.add(arc);
   const tip = new THREE.Mesh(new THREE.SphereGeometry(.07, 6, 4), new THREE.MeshStandardMaterial({ color: 0x3a2a10 })); tip.position.set(.5, .55, 0); b.add(tip);
   b.position.set(x - Math.sin(h) * 3.2, 0, z - Math.cos(h) * 3.2); b.rotation.y = h; C.g.add(b); C.bananas.push(b);
+  if (race?.T.bank) { const nr = trackNearest(race.T, b.position.x, b.position.z, -1); b.position.y = trackY(race.T, nr.i, nr.lat); }
   if (C.bananas.length > 14) C.g.remove(C.bananas.shift());
 }
 function useItem() {
@@ -4736,7 +4926,7 @@ function updateCrazy(dt) {
   // boxes spin, and come back 3 s after someone takes them
   for (const b of C.boxes) {
     if (b.t > 0) { b.t -= dt; b.m.visible = b.t <= 0; continue; }
-    b.m.rotation.set(now * 1.3, now * 1.7, 0); b.m.position.y = 1.3 + Math.sin(now * 3 + b.i) * .25;
+    b.m.rotation.set(now * 1.3, now * 1.7, 0); b.m.position.y = b.y0 + 1.3 + Math.sin(now * 3 + b.i) * .25;
     if (Math.hypot(p.x - b.x, p.z - b.z) < 2.6) { b.t = 3; b.m.visible = false; if (!C.item) { const pos = R.order ? R.order.findIndex(e => e.me) : 0; C.item = randItem(pos); audio.beep(1200, .1); toast('🎁 ITEM!', ITEMS[C.item] + ' · PRESS I'); crazyHud(); } }
     R.ais.forEach((a, k) => { if (b.t <= 0 && Math.hypot(a.x - b.x, a.z - b.z) < 2.6) { b.t = 3; b.m.visible = false; if (!C.ai[k].item) { C.ai[k].item = Math.random() < .55 ? 'banana' : 'rocket'; C.ai[k].useT = 1 + Math.random() * 5; } } });
   }
@@ -4769,7 +4959,7 @@ function crazyEnd(R) {
 }
 function endRace(toCity) {
   if (!race) return; const T = race.T;
-  race.ais.forEach(a => a.dispose()); T.lights.forEach(m => m.emissiveIntensity = 0); ghostDrop(race); crazyEnd(race);
+  race.ais.forEach(a => a.dispose()); T.lights.forEach(m => m.emissiveIntensity = 0); ghostDrop(race); crazyEnd(race); player.bankK = 1; player.gx = player.gz = 0;
   $('racehud').classList.add('hidden'); $('rBoard').classList.add('hidden'); $('count').style.opacity = 0; $('results').classList.add('hidden');
   race = null;
   if (toCity) {
@@ -14310,7 +14500,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
