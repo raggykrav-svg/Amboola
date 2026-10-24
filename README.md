@@ -504,6 +504,27 @@ Crash into almost anything except a building and it breaks!
   - **🚗 MY CAR:** try the trail in your own car.
 - **Bumpy dirt:** nobody goes much faster than 80 km/h on the rocky trail.
 
+### AMBOOLA Hotels 🏨 and walking 🚶
+
+![Getting out at the Cyprus hotel, the reception, relaxing on the sofa, and the Swiss Alps hotel](media/hotels.jpg)
+
+- **A hotel in every country:** Tokyo (just across the road from where you start), Cyprus, Italy, Dubai, Paris, New York, the Swiss Alps, London, Egypt and a Jungle Lodge in South Africa. Each has a glass lobby, its name in lights and a car park out front. Find them on the map: they are the **H** squares, and *AMBOOLA Hotel …* in the place list.
+- **The car park is full of cars:** 12 parked cars of every kind, from McLarens and Ferraris to Teslas and Toyotas, different every time you come.
+- **🚶 GO OUT:** stop on the ring in the car park and press the **GO OUT** button (or Enter). You climb out of your car and walk!
+  - **W / S** walk, **A / D** turn, **SHIFT** runs, **SPACE** jumps. On a phone: the pedals walk and steering turns.
+  - The glass doors slide open when you walk up. The lady at the reception waves hello.
+- **😌 RELAX:** sit on the sofa or in the bubbling **🫧 hot tub** and relax. When you feel great, the hotel valet fills your tank and washes your car (and you get $500).
+- **🛏 SLEEP:** at the reception you can sleep in a cosy room upstairs until the morning.
+- **🚗 SIT:** walk back to your car and press **SIT** to get back in and drive on.
+
+### People on the streets 🚶‍♀️ and traffic jams 🚧
+
+![A traffic jam after a crash, road works with a digger, people on the pavements, and the GPS going round a jam](media/people-and-jams.jpg)
+
+- **Lots of people** walk on the pavements in Tokyo and in all the country towns, in all kinds of clothes. Some stop to chat. If you drive at them, they **jump out of the way** with their arms in the air, so **nobody ever gets hurt**.
+- **Traffic jams:** sometimes there is a **crash** (two crashed cars and a police car with flashing lights) or **road works** (barriers, cones, a digger and a worker) on a Tokyo street. The cars wait behind it in both lanes, **up to 50 cars**, and city cars that drive up join the back of the queue. When it is cleared, they all drive off one after another.
+- **On the map:** a jam is a **red line** with a **!** sign on the minimap and the big map. The **GPS finds another way round** it, and tells you if a new jam is on your way.
+
 ### The sea 🌊
 
 ![Waves, under the sea, and coming out wet](media/sea.jpg)
