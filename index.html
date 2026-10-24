@@ -19,9 +19,9 @@
   #loading { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:radial-gradient(ellipse at center,#1a1020 0%,#05060a 70%); z-index:50; gap:18px; }
   #loading .logo { font-family:'Orbitron',sans-serif; font-weight:900; font-size:clamp(42px,9vw,110px); letter-spacing:.18em;
-    background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    color:#0b0b0e; -webkit-text-stroke:2px #e0101a; filter:drop-shadow(0 0 16px rgba(224,16,26,.65)); }   /* the AMBOOLA logo: black and red */
   #loading .bar { width:min(420px,70vw); height:4px; background:#222; border-radius:2px; overflow:hidden; }
-  #loading .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .2s; }
+  #loading .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,#3a0408,#e0101a); transition:width .2s; }
   #loading .msg { color:var(--dim); letter-spacing:.2em; font-size:14px; text-transform:uppercase; }
 
   /* ---------- garage menu ---------- */
@@ -29,8 +29,7 @@
   #menu > * { pointer-events:auto; }
   #brand { position:absolute; top:22px; left:28px; }
   #brand h1 { margin:0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:clamp(34px,5vw,64px); letter-spacing:.2em;
-    background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;
-    filter:drop-shadow(0 0 18px rgba(255,90,31,.35)); }
+    color:#0b0b0e; -webkit-text-stroke:2px #e0101a; filter:drop-shadow(0 0 14px rgba(224,16,26,.6)); }
   #brand p { margin:2px 0 0; color:var(--dim); letter-spacing:.35em; font-size:13px; text-transform:uppercase; }
   #carlist { position:absolute; left:28px; top:130px; bottom:28px; width:290px; overflow-y:auto; padding-right:6px; }
   #carlist::-webkit-scrollbar { width:4px; } #carlist::-webkit-scrollbar-thumb { background:#444; }
@@ -2452,6 +2451,16 @@ const CALIPERS = [{ n: 'Stock' }, { n: 'Red', c: '#c8141b' }, { n: 'Yellow', c: 
   { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }, { n: 'Black', c: '#141416' }, { n: 'Silver', c: '#b9bcc1' }];
 const TINTS = [{ n: 'Stock' }, { n: 'Light', sw: '#3c4a58' }, { n: 'Limo black', sw: '#000' }, { n: 'Blue mirror', sw: '#3a78c8' }, { n: 'Gold mirror', sw: '#c9a13a' }, { n: 'Oil slick', sw: 'linear-gradient(135deg,#7a2bd6,#1fb7c9,#d6c22b)' }];
 const DECALS = [{ n: 'None' }, { n: 'Racing stripes' }, { n: 'Side stripe' }, { n: 'Race number' }, { n: 'Flames' }, { n: 'Tokyo livery' }, { n: 'Checker' }, { n: 'Sponsor stickers' }, { n: 'Amboola tiger' }];
+// the inside: seat leather, stitching and accents, the trim on the dash and doors, ambient lights round the cabin
+const SEATS = [{ n: 'Stock' }, { n: 'Black', c: '#141416' }, { n: 'Racing red', c: '#a3121a' }, { n: 'Tan', c: '#a26b3c' }, { n: 'Cream', c: '#d9cdb0' }, { n: 'White', c: '#ecebe6' },
+  { n: 'Ocean blue', c: '#1d3f7a' }, { n: 'Mint', c: '#7fc8a9' }, { n: 'Purple', c: '#4e2378' }, { n: 'Orange', c: '#e2601a' }, { n: 'Pink', c: '#e05a9a' }];
+const STITCH = [{ n: 'Stock' }, { n: 'Red', c: '#d1121c' }, { n: 'Yellow', c: '#f2c200' }, { n: 'Lime', c: '#8fe02a' }, { n: 'Cyan', c: '#2fe0ff' }, { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }, { n: 'White', c: '#f4f4f2' }, { n: 'Gold', c: '#e2b33c' }];
+const TRIMS = [{ n: 'Stock' }, { n: 'Carbon fibre', c: '#121315', m: .3, r: .22 }, { n: 'Brushed aluminium', c: '#b9bdc4', m: 1, r: .32 }, { n: 'Gold', c: '#c9a13a', m: 1, r: .22 }, { n: 'Piano black', c: '#060607', m: .1, r: .08 }, { n: 'Red', c: '#b3121a', m: .3, r: .25 }];
+const AMBIENT = [{ n: 'Off' }, { n: 'Ice blue', c: '#5ac8ff' }, { n: 'Neon pink', c: '#ff2bd6' }, { n: 'Red', c: '#ff2a2a' }, { n: 'Purple', c: '#9b5cff' }, { n: 'Lime', c: '#7dff3a' }, { n: 'Amber', c: '#ffb020' }, { n: 'White', c: '#f2f6ff' }];
+// which materials of the brand cockpits (models/blender/interiors.py) are leather, stitching/accent and trim
+const INT_SEAT = new Set(['Alcantara', 'Arctic', 'BlackFabric', 'Cognac', 'DashBlack', 'JetBlack', 'Leather', 'Merino', 'Nappa', 'Nero', 'Tan', 'VeganWhite']);
+const INT_STITCH = new Set(['AMGRed', 'AdrenalineRed', 'Cream', 'DarkHorseBlue', 'GRRed', 'Gold', 'GuardsYellow', 'MRed', 'NismoRed', 'Papaya', 'RSRed', 'RedLeather', 'RossoStitch', 'VerdeStitch', 'AmbAccent']);
+const INT_TRIM = new Set(['Alu', 'Carbon', 'Chrome', 'MilledAlu', 'PolishedAlu', 'Satin', 'Titanium']);
 const DCOLS = [{ n: 'White', c: '#f4f4f2' }, { n: 'Black', c: '#111113' }, { n: 'Red', c: '#d1121c' }, { n: 'Gold', c: '#e2b33c' }, { n: 'Cyan', c: '#2fe0ff' },
   { n: 'Lime', c: '#8fe02a' }, { n: 'Orange', c: '#ff6a13' }, { n: 'Pink', c: '#ff3fa4' }];
 /* =====================================================================
@@ -2522,13 +2531,13 @@ function openBadges() {
   $('meetList').innerHTML = BADGES.map(b => { const got = LVL.badges.includes(b.id); return `<div class="meetRow" style="--glow:${got ? '#ffc21f' : '#555'};opacity:${got ? 1 : .55}"><div class="mGlow"></div><div class="mInfo"><b>${got ? b.n : '🔒 ' + b.n.slice(b.n.indexOf(' ') + 1)}</b><span>${b.d}</span><small>${got ? 'EARNED · +50 ★' : 'NOT YET'}</small></div></div>`; }).join('');
   $('meetPanel').classList.remove('hidden');
 }
-const CUST0 = { rim: 0, cal: 0, tint: 0, decal: 0, dcol: 0, glow: 0, wing: 0, kit: 0, wneon: 0, exhaust: 0 };
+const CUST0 = { rim: 0, cal: 0, tint: 0, decal: 0, dcol: 0, glow: 0, wing: 0, kit: 0, wneon: 0, exhaust: 0, seat: 0, stitch: 0, trim: 0, amb: 0 };
 const CUST_DEFAULT = { amboolataxi: { decal: 8, dcol: 2 } };   // the Mega Taxi comes in its red tiger stripes
 const custBase = id => ({ ...CUST0, ...(CUST_DEFAULT[id] || {}) });
 function custOf(id) {
   let v = null; try { v = JSON.parse(localStorage.getItem('amboola.custom.' + id)); } catch (e) { }
   const c = custBase(id);
-  if (v && typeof v === 'object') for (const [k, L] of [['rim', RIMS], ['cal', CALIPERS], ['tint', TINTS], ['decal', DECALS], ['dcol', DCOLS], ['glow', GLOWS], ['wing', WINGS], ['kit', KITS], ['wneon', GLOWS], ['exhaust', EXHAUSTS]]) if (Number.isInteger(v[k]) && L[v[k]]) c[k] = v[k];
+  if (v && typeof v === 'object') for (const [k, L] of [['rim', RIMS], ['cal', CALIPERS], ['tint', TINTS], ['decal', DECALS], ['dcol', DCOLS], ['glow', GLOWS], ['wing', WINGS], ['kit', KITS], ['wneon', GLOWS], ['exhaust', EXHAUSTS], ['seat', SEATS], ['stitch', STITCH], ['trim', TRIMS], ['amb', AMBIENT]]) if (Number.isInteger(v[k]) && L[v[k]]) c[k] = v[k];
   return c;
 }
 function saveCust(id, c) { const b = custBase(id); if (Object.keys(CUST0).every(k => c[k] === b[k])) localStorage.removeItem('amboola.custom.' + id); else localStorage.setItem('amboola.custom.' + id, JSON.stringify(c)); }
@@ -2680,6 +2689,7 @@ function applyCustom(car, id) {
     if (k === 'rim' && R.c) { o.material.color.set(R.c); o.material.metalness = R.m; o.material.roughness = R.r; }
     else if (k === 'cal' && K.c) o.material.color.set(K.c);
     else if (o.material === glassMat) o.material = tintMat(c.tint);
+    else if (c.seat && (o.material === cabinMats.Leather || o.material === cabinMats.Alcantara)) { o.material = o.material.clone(); o.material.color.set(SEATS[c.seat].c); }
     else if (o.material === clearMat) o.material = tintClear(c.tint);
   });
   if (c.decal) { const G = carGeom(car); if (G) decalPaint(car, G, decalTex(id, G, c.decal, DCOLS[c.dcol].c)); }
@@ -3446,7 +3456,7 @@ function earn(usd, why) {
 }
 const owns = c => wallet.owned.has(c.id);
 function buyCar(c) {
-  if (owns(c) || c.prize || wallet.usd < c.usd) return false;
+  if (owns(c) || !c.usd || wallet.usd < c.usd) return false;   // (prize cars too: win them, or buy them like every other car)
   wallet.usd -= c.usd; wallet.owned.add(c.id); saveWallet(); checkMissions(); return true;
 }
 /* ---- upgrades: 5 engine + 5 tyre levels per owned car (saved per car id) */
@@ -3789,8 +3799,52 @@ function buildInterior(car, spec, G, zr, key, IM, hide) {
   if (sm) { const S = planeCanvas(sm, 384); drawScreen(S, key, spec); }
   const paint = car.paint?.userData.base || car.paint?.color;   // AMBOOLA's accent parts (seats, gear knob) in the car's own colour
   if (paint) g.traverse(o => { if (o.isMesh && o.material?.name === 'AmbAccent') { o.material = o.material.clone(); o.material.color.copy(paint); } });
+  interiorCustom(g, spec, [[-.82, .82, -.3, .66], [-.93, -.93, -.24, .6, .55, -.5], [.93, .93, -.24, .6, .55, -.5]]);
   g.visible = false; car.group.add(g);
   return { g, E, spin: wheel, q0: wheel?.quaternion.clone(), ang: 0, gauge, style: DIALS[key], hide, on: false };
+}
+// the interior choices from the garage (custOf): leather, stitching and trim recoloured (per car: the materials are cloned),
+// and thin strips of ambient light along the dash and the doors; strips = [x0, x1, y, z0(, ?, z1)] in cockpit space
+const ambMats = {};
+function interiorCustom(g, spec, strips) {
+  const c = custOf(spec.id), map = [[c.seat, SEATS, INT_SEAT], [c.stitch, STITCH, INT_STITCH], [c.trim, TRIMS, INT_TRIM]], done = new Map();
+  if (map.some(([v]) => v)) g.traverse(o => {
+    if (!o.isMesh || !o.material?.name) return;
+    for (const [v, L, names] of map) if (v && names.has(o.material.name)) {
+      if (!done.has(o.material)) { const m = o.material.clone(); m.color.set(L[v].c); if (L[v].m != null) { m.metalness = L[v].m; m.roughness = L[v].r; } done.set(o.material, m); }
+      o.material = done.get(o.material); break;
+    }
+  });
+  if (!c.amb) return;
+  const m = ambMats[c.amb] ??= new THREE.MeshBasicMaterial({ color: new THREE.Color(AMBIENT[c.amb].c).multiplyScalar(2.2), toneMapped: false });
+  for (const [x0, x1, y, z0, , z1] of strips) {
+    const along = z1 != null, len = along ? Math.abs(z1 - z0) : Math.abs(x1 - x0), b = new THREE.Mesh(new THREE.BoxGeometry(along ? .012 : len, .012, along ? len : .012), m);
+    b.position.set((x0 + x1) / 2, y, along ? (z0 + z1) / 2 : z0); g.add(b);
+  }
+}
+// an F1 onboard: your eyes in the helmet, the halo's pillar and the nose ahead, the steering wheel with its screen and
+// shift lights in your hands
+function buildF1Cockpit(car) {
+  const g = new THREE.Group(), carb = new THREE.MeshStandardMaterial({ color: 0x141518, roughness: .35, metalness: .2 }), rub = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: .9 });
+  const wheel = new THREE.Group(); wheel.position.set(0, .655, .6); g.add(wheel);
+  const face = new THREE.Group(); face.rotation.x = -.45; wheel.add(face);
+  face.add(new THREE.Mesh(new THREE.BoxGeometry(.28, .13, .035), carb));
+  for (const s of [-1, 1]) { const gr = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .15, 12), rub); gr.position.set(s * .155, -.01, 0); face.add(gr); }
+  const cols = ['#ff2a2a', '#2fa0ff', '#ffc21f', '#7dff3a', '#ff6a13', '#ffffff'];
+  cols.forEach((col, k) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.009, .009, .01, 10), new THREE.MeshStandardMaterial({ color: col, roughness: .4 })); b.rotation.x = Math.PI / 2; b.position.set((k % 2 ? 1 : -1) * (.085 + (k >> 1) * .012), .035 - (k >> 1) * .025, -.019); face.add(b); });
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(.11, .055), new THREE.MeshBasicMaterial({ map: t, toneMapped: false })); scr.position.set(0, .005, -.0185); scr.rotation.y = Math.PI; face.add(scr);
+  g.visible = false; car.group.add(g);
+  return { g, E: new THREE.Vector3(0, .8, .33), spin: wheel, ang: 0, gauge: null, hide: [], on: false, f1: { x: cv.getContext('2d'), t, T: 0, key: '' } };
+}
+function drawF1Wheel(S, p) {
+  const key = `${Math.round(p.speed * 3.6)}|${p.gear}|${Math.round(p.rpm / 300)}|${p.reverse}`; if (key === S.key) return; S.key = key;
+  const x = S.x, f = clamp((p.rpm || 0) / (p.spec.redline || 1), 0, 1);
+  x.fillStyle = '#05070a'; x.fillRect(0, 0, 256, 128);
+  for (let k = 0; k < 15; k++) { const on = f > .55 + k * .03; x.fillStyle = on ? (k < 5 ? '#3cff4a' : k < 10 ? '#ff2a2a' : '#3a7dff') : '#1a1d22'; x.beginPath(); x.arc(14 + k * 16.4, 14, 6, 0, 7); x.fill(); }
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#ffffff'; x.font = '900 70px Orbitron, Arial'; x.fillText(p.reverse ? 'R' : p.speed < .5 && !p.throttle ? 'N' : String(p.gear), 128, 76);
+  x.font = '700 24px Orbitron, Arial'; x.fillStyle = '#ffc21f'; x.fillText(String(Math.round(p.speed * 3.6)), 40, 76); x.fillStyle = '#7dff3a'; x.fillText('DRS', 216, 76);
+  x.font = '600 14px Arial'; x.fillStyle = '#9aa3b2'; x.fillText('KM/H', 40, 100); x.fillText('ERS 100%', 216, 100); S.t.needsUpdate = true;
 }
 function drawScreen(S, key, spec) {
   const x = S.x, W = S.c.width, H = S.c.height, [name, col] = BRAND_SCREEN[key] || ['AMBOOLA', '#2fe0ff'], f = Math.min(W, H * 1.6);
@@ -3865,6 +3919,7 @@ function drawDials(D, p, style) {
   D.t.needsUpdate = true;
 }
 function buildCockpit(car, spec) {
+  if (spec.f1) return buildF1Cockpit(car);
   const G = carGeom(car); if (!G) return null;
   // the highest part of the body is the roof over the seats: the driver's head goes just under it
   const inv = new THREE.Matrix4().copy(car.group.matrixWorld).invert(), M = new THREE.Matrix4(), v = new THREE.Vector3(); let zs = 0, n = 0;
@@ -3943,6 +3998,7 @@ function updateCockpit(dt, p) {
   const ck = p.car.cockpit; if (!ck?.on) return;
   if (ck.q0) { ck.ang = damp(ck.ang, (p.steer || 0) * 2.3, 14, dt); ck.spin.quaternion.copy(ck.q0).multiply(CK_Q.setFromAxisAngle(CK_Z, ck.ang)); }   // the model's wheel turns about its own axis
   else if (ck.spin) ck.spin.rotation.z = damp(ck.spin.rotation.z, -(p.steer || 0) * 2.3, 14, dt);   // turn right: the wheel turns clockwise (its axis points at you)
+  if (ck.f1) { ck.f1.T -= dt; if (ck.f1.T <= 0) { ck.f1.T = .07; drawF1Wheel(ck.f1, p); } return; }
   const G = ck.gauge; if (!G) return; const key = `${Math.round(p.speed * 3.6)}|${p.gear}|${Math.round(p.rpm / 150)}|${p.reverse}`;
   G.T -= dt; if (key === G.key || G.T > 0) return; G.key = key; G.T = .07;
   drawDials(G, p, ck.style);
@@ -4305,19 +4361,19 @@ function updateMenu() {
   const c = CARS[carIdx];
   document.querySelectorAll('.caritem').forEach(d => {
     const cc = CARS[+d.dataset.i], own = owns(cc); d.classList.toggle('sel', +d.dataset.i === carIdx); d.classList.toggle('locked', !own);
-    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : cc.prize ? '🧩 PRIZE' : fmtUSD(cc.usd);
+    const t = d.querySelector('i'); t.className = own ? 'own' : ''; t.textContent = own ? 'OWNED' : cc.prize ? `🧩 ${fmtUSD(cc.usd)}` : fmtUSD(cc.usd);
   });
   $('walletV').textContent = fmtUSD(wallet.usd);
   const own = owns(c), pr = $('price'), dv = $('drive');
   const u = upgOf(c), t = tunedSpec(c);
-  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : c.prize ? c.prizeTag || '🧩 JUNGLE HUNT PRIZE' : `PRICE ${fmtUSD(c.usd)}`;
+  pr.className = own ? 'own' : ''; pr.textContent = own ? `OWNED · 所有${t !== c ? ` · 🔧 ${UPG_KINDS.reduce((a, K) => a + u[K.k], 0)}/${UPG_KINDS.reduce((a, K) => a + K.max, 0)}` : ''}` : c.prize ? `${c.prizeTag || '🧩 JUNGLE HUNT PRIZE'} · OR ${fmtUSD(c.usd)}` : `PRICE ${fmtUSD(c.usd)}`;
   $('upgBtn').classList.toggle('hidden', !own || !!c.jet); $('custBtn').classList.toggle('hidden', !own);
   const rc0 = own ? repairCost(c) : 0, rb = $('repairBtn'); rb.classList.toggle('hidden', !rc0);
   if (rc0) rb.innerHTML = `🔧 REPAIR DENTS · ${fmtUSD(rc0)}<small>${Object.entries(dmgZones(c.id)).filter(([, v]) => v > .02).map(([k, v]) => `${DMG_ZONES[k]} ${Math.round(v * 100)}%`).join(' · ')}</small>`;
   const sb = $('sellBtn'); sb.classList.toggle('hidden', !own || wallet.owned.size <= 1); sb.classList.remove('confirm'); sb.textContent = `SELL FOR ${fmtUSD(sellValue(c))}`;
   $('misCount').textContent = `${ST.done.length}/${MISSIONS.length}`;
-  dv.className = own ? '' : wallet.usd >= c.usd && !c.prize ? 'buy' : 'locked';
-  dv.textContent = own ? 'DRIVE' : c.prize || (wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`);
+  dv.className = own ? '' : wallet.usd >= c.usd ? 'buy' : 'locked';
+  dv.textContent = own ? 'DRIVE' : wallet.usd >= c.usd ? `BUY ${fmtUSD(c.usd)}` : `NEED ${fmtUSD(c.usd - wallet.usd)} MORE`;
   for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own && !c.jet ? 1 : .35;
   if (c.jet && own) dv.textContent = c.heli ? '🚁 FLY' : '✈ FLY';
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
@@ -5264,6 +5320,8 @@ function renderCust() {
     sw('rim', RIMS, metal, 'Rims') + sw('cal', CALIPERS, metal, 'Brake calipers') + sw('tint', TINTS, o => o.sw ?? '#2a2d35', 'Window tint') +
     `<div class="crow"><small>Decals &amp; stickers <b>${DECALS[cu.decal].n}</b></small><div class="cdec">${DECALS.map((o, i) => `<div data-k="decal" data-i="${i}" class="${i === cu.decal ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>` +
     sw('dcol', DCOLS, o => o.c, 'Decal colour').replace('>✕<', '><') + sw('glow', GLOWS, o => o.c ? `radial-gradient(circle, #fff 0%, ${o.c} 45%, #000 110%)` : '#2a2d35', 'Neon underglow') +
+    `<div class="crow"><small>🪑 INTERIOR · 内装 <b style="font-weight:400">(see it from the driver's seat: press C)</b></small></div>` + sw('seat', SEATS, o => o.c ?? '#2a2d35', 'Seats & leather') + sw('stitch', STITCH, o => o.c ?? '#2a2d35', 'Stitching & accents') +
+    sw('trim', TRIMS, metal, 'Dash & door trim') + sw('amb', AMBIENT, o => o.c ? `radial-gradient(circle, #fff 0%, ${o.c} 45%, #000 110%)` : '#2a2d35', 'Ambient lights') +
     `<div class="crow"><small>🔧 TUNING SHOP</small></div>` + txt('wing', WINGS, 'Rear wing') + txt('kit', KITS, 'Body kit') + sw('wneon', GLOWS, o => o.c ? `radial-gradient(circle, #111 30%, ${o.c} 50%, #000 110%)` : '#2a2d35', 'Neon wheels') + txt('exhaust', EXHAUSTS, 'Exhaust') +
     `<div class="crow"><small>Horn (press J) <b>${HORNS[horn].n}</b></small><div class="cdec">${HORNS.map((o, i) => `<div data-k="horn" data-i="${i}" class="${i === horn ? 'sel' : ''}" style="${lockedFor(o) ? 'opacity:.45' : ''}">${lockedFor(o) ? '🔒 ' : ''}${o.n}${lockedFor(o) ? ' · LV ' + o.lvl : ''}</div>`).join('')}</div></div>` +
     `<div class="crow"><small>Pet that rides along <b>${PETS[pet].n}</b></small><div class="cdec">${PETS.map((o, i) => `<div data-k="pet" data-i="${i}" class="${i === pet ? 'sel' : ''}">${o.n}</div>`).join('')}</div></div>`;

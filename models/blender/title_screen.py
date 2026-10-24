@@ -120,15 +120,15 @@ def podium():
 
 # ---------------------------------------------------------------- the logo
 def logo():
-    face, chrome = mat('LogoFace', '#ff4a12', .28, .35, emit=.9), mat('LogoChrome', '#dfe3ea', .14, 1.)
+    face, chrome = mat('LogoFace', '#0b0b0e', .18, .55), mat('LogoChrome', '#d0101a', .2, .7, emit=.6)   # black letters with red edges
     o = text('AMBOOLA', 2.7, .34, .055, face, (0, 8.5, 5.0), tilt=82, name='Logo', spacing=1.06)
     o.data.materials.append(chrome)
     fwd = Vector((0, -math.cos(math.radians(8)), math.sin(math.radians(8))))   # the way the letters face (toward the camera)
     for p in o.data.polygons: p.material_index = 0 if p.normal.dot(fwd) > .92 else 1
-    glow = text('AMBOOLA', 2.7, .03, 0, mat('LogoGlow', '#2fe0ff', emit=6), (0, 9.05, 5.08), tilt=82, offset=.1, name='LogoGlow', spacing=1.06)
+    glow = text('AMBOOLA', 2.7, .03, 0, mat('LogoGlow', '#ff1a24', emit=6), (0, 9.05, 5.08), tilt=82, offset=.1, name='LogoGlow', spacing=1.06)
     white = mat('Subtitle', '#ffffff', emit=3.5)
     sub = text('TOKYO  OPEN  WORLD', .58, .03, 0, white, (0, 8.0, 2.85), tilt=86, name='Subtitle', spacing=1.25)
-    w = sub.dimensions.x / 2 + .6; red = mat('RingOrange', '#ff5a1f')
+    w = sub.dimensions.x / 2 + .6; red = mat('LogoBar', '#e0101a', emit=2)
     bars = [box((s * (w + 2.6 - i * .55), 8.0, 2.85 + (i - 1) * .2), (5 - i * 1.1, .05, .09), red, 'bar') for s in (-1, 1) for i in range(3)]
     join([sub] + bars, 'Subtitle')
 
