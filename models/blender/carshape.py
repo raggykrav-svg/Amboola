@@ -118,3 +118,28 @@ def build(k, P, F, R, crease=None, glass=True):
     xm = (ws1 + rw1) / 2
     k.interior(xm, S.roofw(xm) * 2, S.belt(xm) - 0.2, l=max(0.8, ws0 - rw1), h=0.32, seats_x=xm - 0.2, seat_z=S.belt(xm) - 0.1)
     return S
+
+
+def scaled(P, L=None, W=None, H=None, WB=None, fo=None, **over):
+    """the same design stretched to another car's real size: the nose, the wheelbase and the tail stretch separately
+    (so the axles land where they should), heights follow H and widths follow W; `over` replaces any other key"""
+    L0, W0, H0, WB0, fo0 = P['L'], P['W'], P['H'], P['WB'], P['fo']
+    L, W, H, WB, fo = L or L0, W or W0, H or H0, WB or WB0, fo or fo0
+    ro0, ro = L0 - WB0 - fo0, L - WB - fo
+    def X(x):
+        if x >= WB0 / 2: return WB / 2 + (x - WB0 / 2) * fo / fo0
+        if x <= -WB0 / 2: return -WB / 2 + (x + WB0 / 2) * ro / ro0
+        return x * WB / WB0
+    zk, wk = H / H0, W / W0
+    Q = dict(P, L=L, W=W, H=H, WB=WB, fo=fo)
+    Q['top'] = [(X(x), z * zk) for x, z in P['top']]
+    Q['belt'] = [(X(x), z * zk) for x, z in P['belt']]
+    Q['plan'] = [(X(x), w * wk) for x, w in P['plan']]
+    Q['roof'] = [(X(x), w * wk) for x, w in P['roof']]
+    Q['cab'] = tuple(X(x) for x in P['cab'])
+    if isinstance(P.get('bulge'), list): Q['bulge'] = [(X(x), b) for x, b in P['bulge']]
+    for key in ('side', 'doors', 'pillars'):
+        if key in P: Q[key] = tuple(X(x) for x in P[key])
+    if 'mirror_x' in P: Q['mirror_x'] = X(P['mirror_x'])
+    Q.update(over)
+    return Q
