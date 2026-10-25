@@ -16,7 +16,7 @@ Everything is in one file, `index.html`: the city, the cars, the physics and the
 
 ![The title screen, Settings and Challenges](media/title-screen.jpg)
 
-The game opens on a night-time Tokyo stage made in Blender: a big chrome-and-orange 3D **AMBOOLA** logo, a striped sunset sun, the city with lit windows and Tokyo Tower, a neon grid floor, two checkered flags and two searchlights sweeping the sky. Your own car (the one you picked last time, in its paint) spins on the podium. Three buttons:
+The game opens on a night-time Tokyo stage made in Blender: a big 3D **AMBOOLA** logo in black and red, a striped sunset sun, the city with lit windows and Tokyo Tower, a neon grid floor, two checkered flags and two searchlights sweeping the sky. Your own car (the one you picked last time, in its paint) spins on the podium. Three buttons:
 
 - **▶ PLAY**: go to your garage (press Enter too).
 - **⚙ SETTINGS**:
@@ -108,6 +108,11 @@ Pick a car you own in the garage and press **🎨 CUSTOMIZE**. Everything is fre
 - **Window tint:** light, limo black, blue mirror, gold mirror or an oil-slick rainbow.
 - **Decals & stickers:** racing stripes, a side stripe, a race number (each car has its own number), flames, a Tokyo livery with 東京 on the doors, a checkered band, or a set of sponsor stickers. Choose from 8 decal colours.
 - **Neon underglow:** a glowing light under the car in pink, cyan, lime, purple, red, gold or ice white. It looks best at night.
+- **Interior:** pick the colours inside the car, then look with the inside view (**V**):
+  - **Seats:** black, racing red, tan, cream, white, ocean blue, mint, purple, orange or pink.
+  - **Stitching:** red, yellow, lime, cyan, orange, pink, white or gold.
+  - **Trim:** carbon fibre, brushed aluminium, gold, piano black or red.
+  - **Ambient light:** glowing strips along the dashboard and doors in ice blue, neon pink, red, purple, lime, amber or white.
 - **RESET** puts the car back to stock. Selling a car also clears its customizing.
 
 The decals are painted inside the car's own paint, so they follow every curve and never flicker or float off the body.
@@ -206,6 +211,7 @@ In the game you can still change the paint, the brake lights and headlights stil
   - **Details:** glass, vents and lights projected onto the body surface.
   - **Parts:** wings, swan necks, mirrors, exhausts and wheels.
   - **Finishing:** see-through windows with a cabin behind them (`open_cabin`) and number plates (`number_plates`), added to every car automatically.
+- [`models/blender/carshape.py`](models/blender/carshape.py) draws a body from a car's real measurements and a few outline points (see [Real shapes](#real-shapes-for-every-car-)).
 - [`models/blender/porsches.py`](models/blender/porsches.py) describes each car using those blocks.
 
 To change a car, edit its section and rebuild it ([Blender 4.2](https://www.blender.org/download/) or newer):
@@ -549,6 +555,7 @@ Crash into almost anything except a building and it breaks!
   | 🇪🇬 Egypt | 💰 **Pyramid Treasure**: drive over the new **causeway** to the pyramids and find 3 chests · 🦁 **Sphinx Riddle**: 3 riddles, drive to the right answer and stop on it | Lamborghini Urus Pharaoh |
   | 🇿🇦 South Africa | 🦁 **Lion Escape**: drive 3 people back to the camp while lions chase you · 🐒 **Monkey Mischief**: get your 5 bananas back from the monkeys | Toyota Land Cruiser Safari |
 
+- **🧩 Can't win one?** Every prize car is also for sale in the garage, like any other car (its price has a 🧩 next to it).
 - **🏆 CHALLENGES board:** in the pause menu. It shows your stars for every challenge, and **GO** sets the GPS to one.
 - **Smarter GPS in the towns:** the route now follows the streets (round the stunt loops and the Empire State Building) instead of going straight through the houses.
 
@@ -745,6 +752,19 @@ There are six race tracks just outside the city. You can see them from the city 
 | **Akagi Mountain Pass** | North-east | 3.41 km, narrow, with hairpins and walls right at the edge | 2 |
 | **Kanto Short Circuit** | North-west | 1.93 km, tight club circuit | 4 |
 | **Sakura Ring** | Far east | 8.54 km, flowing endurance loop | 1 |
+| **Daytona International Speedway** 🇺🇸 | Far south | 3.9 km tri-oval with 31° banked turns: flat out all the way round | 3 |
+| **Yas Marina Circuit** 🇦🇪 | South-east, in the sand | 5.1 km Formula 1 circuit under the lights, with the marina and the Yas hotel | 2 |
+
+**Daytona:** the turns lean over like a wall, so you can go round them very fast. There are big grandstands and the tall start tower.
+
+**Yas Marina:** the track goes **under the Yas hotel**, like the real one. It has the real hotel's shape, looked up on the web:
+- two oval towers, one on each side of the track
+- a steel bridge over the track joining them
+- a huge wavy roof made of diamond-shaped glass panels; at night it glows and changes colour
+
+There are pit garages, grandstands, the marina with boats, and a theme-park roof next to the track.
+
+**Formula 1 cars 🏎:** seven F1 cars (Ferrari, Red Bull, Mercedes, McLaren, Aston Martin, Alpine and AMBOOLA colours), at the bottom of the garage for $9,000,000 each. They have 1,026 PS, weigh only 798 kg and do 0–100 km/h in 2.3 s. F1 cars race other F1 cars. The inside view puts you in the cockpit with the halo and a steering wheel with its own screen.
 
 **How to start a race:**
 - **From the garage:** pick your car, press **🏁 RACES**, and choose a track.
@@ -754,6 +774,15 @@ There are six race tracks just outside the city. You can see them from the city 
 You race against 5 AI rivals whose power-to-weight is close to your car's. The rivals follow a racing line, brake for corners and overtake. There is a start-light countdown, then a live position and lap display, standings, a wrong-way warning, and **R** to reset onto the track.
 
 After the finish you get a results table and skill points: 5,000 for a win, 3,000 for 2nd, 2,000 for 3rd. Your best race time and best lap for each track are saved. **P → LEAVE RACE** takes you back to the city.
+
+## Lots of traffic 🚗🚗🚗
+
+In **Settings → TRAFFIC**, or with the 🚗 **TRAFFIC** button in the pause menu, you can fill Tokyo with cars: **Normal, 1,000, 3,000, 6,000 or 10,000**.
+- The cars follow their lanes and queue behind each other.
+- They stop at red lights: one road is green for 18 seconds, then the crossing road.
+- They also stop behind you, so you can make a jam.
+
+The game only draws the cars near you, so even 10,000 cars stay smooth.
 
 ## Taxi jobs
 
@@ -884,6 +913,31 @@ Every car's body is also sculpted by the kit (`Car.sculpt()`, run just before th
 - **Low parts:** a carbon splitter lip under the nose and fins in the rear diffuser.
 
 Buses and trucks only get a light version. A car script can set `k.flare_amt` (0 turns the sculpting off).
+
+### Real shapes for every car 📐
+
+Before, most cars were the same Ferrari body stretched to a new size, so they looked alike. Now every real car has its own shape, worked out from its real size and the way it really looks:
+
+1. **Looked up on the web:** each car's length, width, height and wheelbase, and its design features (the F8's S-duct, the 812's slotted rear window, the GT-R's four round tail lights, the Bugattis' C-line, and so on).
+2. **Drawn as a few outlines** in [`models/blender/carshape.py`](models/blender/carshape.py):
+   - the side view down the middle (bonnet, windscreen, roof, tail)
+   - the shoulder line along the doors
+   - the body seen from above
+   - the roof seen from above
+3. **Built by the shape maker:** it turns those outlines into the body, the glass, the mirrors and the cabin.
+4. **Sister cars share one design:** `scaled()` stretches it to each car's real size. Examples:
+   - all McLarens from the 750S
+   - all Bugattis from the Chiron
+   - the Koenigseggs from the Jesko
+
+That covers every Ferrari, Lamborghini, McLaren, Bugatti, Koenigsegg, Toyota, BMW, Audi, Mercedes-AMG, Rolls-Royce and Tesla, plus the Mustang, Corvette, GT-R, NSX, Pagani and Devel. Some cars keep the special shapes they already had:
+- the Porsches, traced from a real drawing
+- the G 63 brick
+- the Cybertruck and Cybercab
+- the 2008 Roadster
+- the made-up AMBOOLA cars
+
+**No more see-through roofs:** on some cars the side windows reached up onto the roof, so cutting the windows open also cut the roof away, and the car looked like a convertible. The side glass now stops where the body turns into the roof.
 
 ### Traffic cars from Blender 🚕
 

@@ -146,7 +146,6 @@ def nsx(k):
     k.decal('grille', 'Gloss', 'front', -0.46, 0.46, 0.22, 0.44, 16, 5)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.56, s * 0.82, 0.20, 0.42, 8, 5))
     k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.13, 0.18, 30, 2)
-    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.55, 1.85, s * 0.10, s * 0.32, 6, 4))
     # rear: C-shaped tail lights at the corners, full-width black mesh, carbon diffuser, four pipes
     for s in (1, -1):
         k.fan('tailC', 'Taillight', -1.7, 0.855, 0.885, s * 0.42, s * 0.92, 14, 2, off=.007)
