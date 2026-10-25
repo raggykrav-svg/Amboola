@@ -3,88 +3,93 @@
 #   blender -b --factory-startup --python models/blender/koenigsegg.py -- --car all
 #
 # Koenigsegg look: narrow bubble canopy with a carbon targa roof, slanted lights in the fender tips, big side intakes
-# behind the dihedral doors, ring-shaped tail lights and a high centre exhaust. Bodies remap the mid-engine table.
+# behind the dihedral doors, ring-shaped tail lights and a high centre exhaust.
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main
-from supercars import TFER, remap
-from hypercars import glasshouse
+from carshape import build, scaled
 
-def kx_table(xs, ys, zf, canopy=0.85):
-    rows = remap(TFER, xs, ys, zf)
-    return [r[:8] + (r[8] * (canopy if -0.75 < r[0] < 0.85 else 1.0),) + r[9:] for r in rows]
+# Jesko Attack: 4.63 x 2.03 x 1.21 m, 2.70 m wheelbase, drawn from photos (carshape.build); carshape.scaled stretches
+# it to every other Koenigsegg's real length, width, height, wheelbase and overhang.
+PJESKO = dict(L=4.626, W=2.03, H=1.21, WB=2.70, fo=1.02, clear=0.11, nose_zb=0.22, tail_zb=0.40,
+              top=[(2.37, 0.46), (2.27, 0.54), (2.0, 0.61), (1.6, 0.68), (1.25, 0.75), (0.95, 0.81), (0.5, 1.0), (0.1, 1.18),
+                   (-0.2, 1.21), (-0.6, 1.16), (-0.95, 1.07), (-1.5, 1.03), (-2.0, 1.02), (-2.256, 0.95)],
+              belt=[(2.37, 0.44), (2.1, 0.60), (1.6, 0.74), (1.0, 0.81), (0.4, 0.84), (-0.4, 0.87), (-1.0, 0.97), (-1.6, 1.0),
+                    (-2.1, 0.98), (-2.256, 0.88)],
+              plan=[(2.37, 0.40), (2.27, 0.68), (2.0, 0.88), (1.35, 1.0), (0.6, 0.96), (0.0, 0.955), (-0.7, 1.0), (-1.35, 1.015),
+                    (-1.9, 0.99), (-2.2, 0.88), (-2.256, 0.80)],
+              roof=[(0.95, 0.60), (0.4, 0.52), (-0.2, 0.48), (-0.6, 0.42), (-0.95, 0.34)],
+              cab=(0.95, 0.10, -0.62, -0.95), bulge=[(0.0, 0.02), (1.0, 0.05), (2.0, 0.04)], hip=0.06, side=(0.88, -0.85),
+              doors=(0.86,), mirror_x=0.80, rw_w=0.9, rw_bulge=0.0)
+WK = (dict(r=0.34, w=0.265, rim=0.254), dict(r=0.36, w=0.325, rim=0.267))
 
-KX = [(-2.33, -2.31), (-1.30, -1.33), (1.36, 1.37), (2.31, 2.30)]
-KZ = lambda z: z + max(0.0, z - 0.90) * 0.08
-TK = kx_table(KX, 1.025, KZ)
-WK = dict(F=dict(x=1.37, r=0.34, w=0.265, y=0.86, rim=0.254), R=dict(x=-1.33, r=0.36, w=0.325, y=0.865, rim=0.267))
-
-def koenigsegg(k, rows=TK, X=lambda x: pl(KX, x), Z=KZ, wheels=WK, rings=True, cabin_l=1.2):
-    k.loft(stations(rows), crease_lines=0.5, crisp_front=-9, crisp=0.4, crease_front=0.6, crease_rear=0.8)
-    k.arches(wheels); k.surface()
-    glasshouse(k, X, Z, hw=0.92)
-    k.decal('roof', 'Carbon', 'top', X(-0.60), X(0.15), -0.42, 0.42, 12, 10, off=.003)            # removable targa roof
+def koenigsegg(k, P, wheels=WK, rings=True):
+    S = build(k, P, *wheels, crease=dict(crease_lines=0.5, crisp_front=-9, crisp=0.4, crease_front=0.6, crease_rear=0.8))
+    k.decal('roof', 'Carbon', 'top', -0.60, 0.12, -0.40, 0.40, 12, 10, off=.003)            # the removable targa roof
     for s in (1, -1):
-        k.decal('doorline', 'Black', side(s), X(0.70) - .004, X(0.70) + .004, 0.22, 0.84, 1, 12, off=.002)
-        k.slanted('sideintake', 'Gloss', s, X(-0.40), X(-1.00), 0.48, 0.86, lean=0.22, nu=8, nv=8)
-        k.decal('skirt', 'Carbon', side(s), X(-0.95), X(1.00), 0.13, 0.21, 30, 2)
-    # slanted lights in the fender tips, big carbon splitter and front mouth
-    k.headlight_quad((2.06, 0.70, 0.60), (0.72, 0.32, 0.52), 0.22, 0.09, slant=0.06, taper=0.3, dots='row')
-    k.decal('mouth', 'Gloss', 'front', -0.50, 0.50, 0.20, 0.36, 18, 4)
-    k.decal('splitter', 'Carbon', 'front', -0.92, 0.92, 0.14, 0.18, 30, 2)
-    k.fan('rearbg', 'Gloss', -1.70, 0.42, 0.74, -0.66, 0.66, 30, 5, off=.003)
-    k.fan('diffuser', 'Carbon', -1.70, 0.26, 0.42, -0.72, 0.72, 30, 3)
-    if rings:   # ring tail lights, two per side
+        k.slanted('sideintake', 'Gloss', s, -0.40, -1.00, 0.46, 0.88, lean=0.22, nu=8, nv=8, off=.006)
+        k.decal('skirt', 'Carbon', side(s), -0.95, 1.0, 0.11, 0.20, 30, 2)
+    # slanted lights in the fender tips, a big carbon splitter and the wide front mouth
+    k.headlight_quad((S.nose - 0.30, 0.70, 0.58), (0.66, 0.34, 0.52), 0.22, 0.09, slant=0.06, taper=0.3, dots='row')
+    k.decal('mouth', 'Gloss', 'front', -0.52, 0.52, 0.18, 0.36, 18, 4)
+    k.decal('splitter', 'Carbon', 'front', -0.94, 0.94, 0.12, 0.17, 30, 2)
+    k.fan('rearbg', 'Gloss', -1.7, 0.42, 0.76, -0.66, 0.66, 30, 5, off=.003)
+    k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.42, -0.72, 0.72, 30, 3)
+    if rings:   # ring tail lights, two a side
         for s in (1, -1):
             for y, r in ((0.52, 0.075), (0.72, 0.065)):
-                k.oval('tailring', 'Taillight', V(-2.10, s * y, 0.82), V(-1, s * 0.35 * y, 0.05), r, r, .006, ring=0.62)
-    k.mirrors(X(0.62), 1.08, 0.94, size=(0.13, 0.17, 0.08))
-    k.interior(X(-0.20), 1.14, Z(0.64), l=cabin_l + 0.3, h=0.32, seats_x=X(-0.42), seat_y=0.33, seat_z=Z(0.74))
+                k.oval('tailring', 'Taillight', V(S.tail + 0.12, s * y, 0.84), V(-1, s * 0.35 * y, 0.05), r, r, .006, ring=0.62)
+    return S
 
-def big_pipe(k, z=0.78, w=0.20, h=0.09):
+def big_pipe(k, z=0.80, w=0.20, h=0.09):
     k.exhaust(0.0, z, shape='rect', w=w, h=h, mirror=False)
 
-def jesko(k):          # Absolut: low-drag, no wing, twin rear fins
-    koenigsegg(k); big_pipe(k)
-    k.plate('fin', 'Carbon', [(-1.55, 0.98), (-1.75, 1.14), (-2.30, 1.10), (-2.30, 0.93)], 0.40, t=0.015)
+# ---- Jesko Absolut: 4.85 m long - the low-drag longtail, no wing, two fins at the back
+P_ABS = scaled(PJESKO, L=4.845, fo=1.02)
+def jesko(k):
+    S = koenigsegg(k, P_ABS); big_pipe(k)
+    for s in (1, -1): k.plate('fin', 'Carbon', [(-1.55, 1.0), (-1.75, 1.16), (S.tail + 0.05, 1.12), (S.tail + 0.05, 0.95)], s * 0.40, t=0.015)
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
-def jeskoattack(k):    # huge boomerang wing hung from swan necks, front canards
-    koenigsegg(k); big_pipe(k)
-    k.swan_wing(-1.88, 1.36, 0.46, 1.96, -1.78, 0.36, aoa=-10, flap=(-2.28, 1.45, 0.18, -26),
-                endplate=[(-1.82, 1.30), (-1.84, 1.48), (-2.42, 1.52), (-2.46, 1.34), (-2.26, 1.26)])
-    both(lambda s: k.box('canard', 'Carbon', (2.12, s * 0.86, 0.36), (0.18, 0.14, 0.012), rot=(0, math.radians(-8), 0)))
+# ---- Jesko Attack: the huge boomerang wing hung from swan necks and canards on the nose
+def jeskoattack(k):
+    S = koenigsegg(k, PJESKO); big_pipe(k)
+    k.swan_wing(S.tail + 0.38, 1.38, 0.46, 1.96, S.tail + 0.48, 0.36, aoa=-10, flap=(S.tail - 0.02, 1.47, 0.18, -26),
+                endplate=[(S.tail + 0.44, 1.32), (S.tail + 0.42, 1.50), (S.tail - 0.16, 1.54), (S.tail - 0.20, 1.36), (S.tail, 1.28)])
+    both(lambda s: k.box('canard', 'Carbon', (S.nose - 0.22, s * 0.88, 0.36), (0.18, 0.14, 0.012), rot=(0, math.radians(-8), 0)))
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
-def regera(k):         # grand tourer: active rear spoiler, softer face
-    koenigsegg(k); big_pipe(k, w=0.24)
-    k.spoiler(-2.02, 1.07, 0.30, 1.56, aoa=-8, mat='Carbon', strut_y=0.40)
+# ---- Regera: 4.56 x 2.05 x 1.11 m, 2.66 m wheelbase - the grand tourer with an active spoiler
+P_REG = scaled(PJESKO, L=4.56, W=2.05, H=1.11, WB=2.662, fo=1.0)
+def regera(k):
+    S = koenigsegg(k, P_REG); big_pipe(k, z=0.74, w=0.24)
+    k.spoiler(S.tail + 0.22, 1.0, 0.30, 1.56, aoa=-8, mat='Carbon', strut_y=0.40)
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts')
 
-def cc850(k):          # CC8S tribute: rounder lights, turbine wheels, small ducktail, no wing
-    rows = edit(edit(TK, TK[-2][0], zt=TK[-2][10] + .03), TK[-1][0], zt=TK[-1][10] + .05, zr=TK[-1][9] + .05)
-    koenigsegg(k, rows, rings=False); big_pipe(k, w=0.16)
+# ---- CC850: 4.36 x 2.02 x 1.13 m, 2.70 m wheelbase - the CC8S tribute: round lights, turbine wheels, a ducktail
+P_CC = scaled(PJESKO, L=4.364, W=2.024, H=1.127, WB=2.70, fo=0.86)
+def cc850(k):
+    S = koenigsegg(k, P_CC, rings=False); big_pipe(k, z=0.74, w=0.16)
     for s in (1, -1):
-        k.oval('headlight', 'Chrome', V(2.04, s * 0.68, 0.60), V(0.72, s * 0.32, 0.52), 0.10, 0.07, .007, n=8)
-        k.fan('tail', 'Taillight', -1.70, 0.78, 0.86, s * 0.45, s * 0.78, 8, 3, off=.006)
+        k.oval('headlight', 'Chrome', V(S.nose - 0.28, s * 0.68, 0.58), V(0.66, s * 0.34, 0.52), 0.10, 0.07, .007, n=8)
+        k.fan('tail', 'Taillight', -1.7, 0.80, 0.88, s * 0.45, s * 0.80, 8, 3, off=.006)
     k.join(); k.wheels(spokes=18, spoke_w=(0.012, 0.008))
 
-def agerars(k):        # fixed wing on posts, roof scoops on the canopy flanks
-    koenigsegg(k); big_pipe(k)
-    k.post_wing(-1.90, 1.22, 0.38, 1.80, -2.02, 0.42, aoa=-9,
-                endplate=[(-1.84, 1.17), (-1.86, 1.31), (-2.30, 1.34), (-2.34, 1.20), (-2.16, 1.15)])
+# ---- Agera RS: 4.29 x 2.05 x 1.12 m, 2.66 m wheelbase - short and wide, the fixed wing on posts
+P_AGR = scaled(PJESKO, L=4.293, W=2.05, H=1.12, WB=2.662, fo=0.88)
+def agerars(k):
+    S = koenigsegg(k, P_AGR); big_pipe(k, z=0.74)
+    k.post_wing(S.tail + 0.36, 1.16, 0.36, 1.80, S.tail + 0.24, 0.42, aoa=-9,
+                endplate=[(S.tail + 0.42, 1.11), (S.tail + 0.40, 1.25), (S.tail - 0.04, 1.28), (S.tail - 0.08, 1.14), (S.tail + 0.10, 1.09)])
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
-# Gemera: four-seat mega-GT, 4.98 m long, 3 m wheelbase, taller cabin with a glass roof
-GX = [(-2.33, -2.49), (-1.30, -1.45), (1.36, 1.55), (2.31, 2.49)]
-GZ = lambda z: z + max(0.0, z - 0.85) * 0.40
-TG = kx_table(GX, 0.985, GZ, canopy=0.95)
-WG = dict(F=dict(x=1.55, r=0.355, w=0.265, y=0.84, rim=0.267), R=dict(x=-1.45, r=0.365, w=0.295, y=0.845, rim=0.279))
+# ---- Gemera: 4.98 x 1.99 x 1.30 m, 3.0 m wheelbase - the four-seat mega-GT: a longer, roomier cabin with a glass roof
+P_GEM = scaled(PJESKO, L=4.975, W=1.988, H=1.295, WB=3.0, fo=1.0,
+               roof=[(x, w * 1.18) for x, w in scaled(PJESKO, WB=3.0, W=1.988)['roof']], pillars=(-0.45,), pillar_w=0.06)
 def gemera(k):
-    X = lambda x: pl(GX, x)
-    koenigsegg(k, TG, X, GZ, WG, cabin_l=2.0)
-    k.decal('roofglass', 'Glass', 'top', X(-0.55), X(0.10), -0.40, 0.40, 12, 10, off=.005)
-    big_pipe(k, z=0.80, w=0.16)
+    S = koenigsegg(k, P_GEM, (dict(r=0.355, w=0.265, rim=0.267), dict(r=0.365, w=0.295, rim=0.279)))
+    k.decal('roofglass', 'Glass', 'top', -0.60, 0.10, -0.40, 0.40, 12, 10, off=.005)
+    big_pipe(k, z=0.84, w=0.16)
     k.join(); k.wheels(spokes=10, nut='bolts')
 
 CARS = {
