@@ -67,109 +67,148 @@ TLAM = [
 ]
 WLAM = dict(F=dict(x=1.50, r=0.345, w=0.255, y=0.86, rim=0.254), R=dict(x=-1.28, r=0.37, w=0.355, y=0.86, rim=0.279))
 
-def lambo_v12(k, wing):
-    k.loft(stations(TLAM), **SHARP); k.arches(WLAM, gap=0.05); k.surface()
-    k.windscreen(0.95, 0.05, 0.82, 0.33, 0.66, 0.52, sweep=0.26)
-    k.side_glass([(0.92, 0.84), (0.55, 0.96), (0.20, 1.075), (-0.20, 1.105), (-0.60, 1.055), (-0.95, 0.965)],
-                 [(0.92, 0.835), (0.0, 0.85), (-0.95, 0.945)])
-    k.decal('roof', 'Carbon', 'top', -0.55, 0.05, -0.50, 0.50, 12, 10, off=.003)
-    for s in (1, -1):
-        k.decal('doorline', 'Black', side(s), 0.90 - .004, 0.90 + .004, 0.22, 0.83, 1, 12, off=.002)
-        k.slanted('sideintake', 'Gloss', s, -0.30, -0.95, 0.40, 0.80, lean=0.25, nu=8, nv=8)
-        k.decal('skirt', 'Carbon', side(s), -0.90, 1.05, 0.13, 0.22, 30, 2)
-        k.decal('scoop', 'Gloss', 'top', -1.05, -0.70, s * 0.72, s * 0.92, 4, 4)       # shoulder air scoops
-    for i in range(6):   # louvred engine cover
-        k.decal('louvre', 'Gloss', 'top', -2.15 + i * .14, -2.07 + i * .14, -0.55, 0.55, 2, 12)
-    y_lights(k, (2.18, 0.70, 0.62), (0.70, 0.30, 0.55))
-    k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.18, 0.30, 12, 4)
-    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.42, s * 0.88, 0.17, 0.40, 12, 6))
-    k.decal('splitter', 'Carbon', 'front', -0.92, 0.92, 0.14, 0.18, 30, 2)
-    k.fan('rearbg', 'Gloss', -1.80, 0.40, 0.92, -0.62, 0.62, 30, 8, off=.003)            # black rear grille
-    y_tails(k, -1.80, 0.80, 0.90, 0.40, 0.70)
-    k.fan('diffuser', 'Carbon', -1.80, 0.26, 0.40, -0.70, 0.70, 30, 3)
-    k.mirrors(0.70, 1.10, 0.92, size=(0.14, 0.18, 0.08))
-    k.interior(-0.20, 1.30, 0.62, h=0.30, seats_x=-0.45, seat_z=0.72)
-    wing(k)
+# Every Lamborghini below is built by carshape.build from its real measurements (the axles at +-wheelbase/2): the
+# one-line wedge from the low nose over the cabin to the tail, very flat windscreens, crisp creases.
 
+# ---- Revuelto: 4.95 x 2.03 x 1.16 m, 2.78 m wheelbase. Y-shaped lights, a huge side intake through the door, the
+# V12 showing through a gap in the engine cover, hexagon tail lights and two hexagonal pipes up high.
+PREV = dict(L=4.947, W=2.033, H=1.160, WB=2.779, fo=1.10, clear=0.11, nose_zb=0.22, tail_zb=0.40,
+            top=[(2.49, 0.42), (2.38, 0.50), (2.1, 0.58), (1.7, 0.66), (1.3, 0.74), (1.0, 0.80), (0.5, 1.0), (0.05, 1.13),
+                 (-0.25, 1.16), (-0.65, 1.12), (-1.1, 1.06), (-1.6, 1.03), (-2.1, 1.01), (-2.35, 1.0), (-2.457, 0.92)],
+            belt=[(2.49, 0.40), (2.2, 0.58), (1.6, 0.72), (1.0, 0.80), (0.4, 0.84), (-0.4, 0.87), (-1.0, 0.95), (-1.6, 0.99),
+                  (-2.2, 0.97), (-2.457, 0.86)],
+            plan=[(2.49, 0.36), (2.38, 0.66), (2.1, 0.88), (1.39, 1.0), (0.6, 0.96), (0.0, 0.955), (-0.7, 1.0), (-1.39, 1.016),
+                  (-2.0, 0.98), (-2.35, 0.88), (-2.457, 0.78)],
+            roof=[(1.0, 0.68), (0.4, 0.60), (-0.25, 0.56), (-0.65, 0.50), (-1.1, 0.44)],
+            cab=(1.0, 0.05, -0.65, -1.10), bulge=[(0.0, 0.02), (1.0, 0.05), (2.0, 0.04)], hip=0.04, side=(0.92, -0.92),
+            doors=(0.90,), mirror_x=0.84, rw_w=0.9, rw_bulge=0.0, roof_crown=0.04)
+def lambo_common(k, S, x0=-0.30, x1=-1.0):
+    for s in (1, -1):
+        k.slanted('sideintake', 'Gloss', s, x0, x1, 0.38, 0.82, lean=0.28, nu=8, nv=8, off=.006)
+        k.decal('skirt', 'Carbon', side(s), -0.95, 1.05, 0.11, 0.20, 30, 2)
+    k.decal('roof', 'Carbon', 'top', -0.55, 0.0, -0.46, 0.46, 12, 10, off=.003)
 def revuelto(k):
-    def wing(k):
-        hex_exhaust(k, 0.10, 0.66, r=0.06)
-        k.spoiler(-2.20, 1.04, 0.30, 1.50, aoa=-6, mat='Carbon', strut_y=0.40)
-    lambo_v12(k, wing)
+    S = build(k, PREV, dict(r=0.347, w=0.265, rim=0.254), dict(r=0.37, w=0.345, rim=0.267), crease=SHARP)
+    lambo_common(k, S)
+    y_lights(k, (2.24, 0.72, 0.58), (0.62, 0.36, 0.55))
+    k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.16, 0.30, 12, 4)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.44, s * 0.90, 0.15, 0.40, 12, 6))
+    k.decal('splitter', 'Carbon', 'front', -0.94, 0.94, 0.11, 0.16, 30, 2)
+    k.decal('enginegap', 'Gloss', 'top', -2.0, -1.45, -0.32, 0.32, 8, 6)      # the V12 shows through the cover
+    for i in range(4): k.decal('enginebar', 'Carbon', 'top', -1.95 + i * .14, -1.92 + i * .14, -0.30, 0.30, 1, 6, off=.008)
+    k.fan('rearbg', 'Gloss', -1.9, 0.40, 0.92, -0.66, 0.66, 30, 8, off=.003)
+    y_tails(k, -1.9, 0.82, 0.92, 0.42, 0.76)
+    k.fan('diffuser', 'Carbon', -1.9, 0.24, 0.40, -0.72, 0.72, 30, 3)
+    hex_exhaust(k, 0.10, 0.70, r=0.06)
+    k.spoiler(-2.30, 1.06, 0.26, 1.50, aoa=-6, mat='Carbon', strut_y=0.40)
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts', spoke_w=(0.03, 0.02))
 
+# ---- Aventador SVJ: 4.94 x 2.10 x 1.14 m, 2.70 m wheelbase. Lower and wider still: a carbon fin down the engine
+# cover, the huge wing on its uprights, Y lights, louvres and two big hex pipes.
+PSVJ = dict(PREV, L=4.943, W=2.098, H=1.136, WB=2.70, fo=1.17,
+            top=[(2.52, 0.40), (2.4, 0.48), (2.1, 0.56), (1.7, 0.64), (1.3, 0.72), (1.0, 0.78), (0.5, 0.98), (0.05, 1.11),
+                 (-0.25, 1.136), (-0.65, 1.10), (-1.1, 1.04), (-1.6, 1.01), (-2.1, 1.0), (-2.33, 0.99), (-2.423, 0.90)],
+            belt=[(2.52, 0.38), (2.2, 0.56), (1.6, 0.70), (1.0, 0.78), (0.4, 0.82), (-0.4, 0.85), (-1.0, 0.94), (-1.6, 0.98),
+                  (-2.2, 0.96), (-2.423, 0.85)],
+            plan=[(2.52, 0.36), (2.4, 0.68), (2.1, 0.90), (1.35, 1.03), (0.6, 0.98), (0.0, 0.975), (-0.7, 1.03), (-1.35, 1.049),
+                  (-2.0, 1.0), (-2.33, 0.90), (-2.423, 0.80)])
 def svj(k):
-    def wing(k):
-        hex_exhaust(k, 0.13, 0.68, r=0.065)
-        k.post_wing(-1.90, 1.22, 0.40, 1.86, -2.05, 0.42, aoa=-8,
-                    endplate=[(-1.84, 1.17), (-1.86, 1.32), (-2.36, 1.36), (-2.40, 1.22), (-2.22, 1.15)])
-        k.pod('fin', 'Carbon', [(-0.95, 0.0, 1.06, 0.01, 0.01), (-1.20, 0.0, 1.07, 0.012, 0.06), (-1.90, 0.0, 1.03, 0.012, 0.05)], mirror=False, sub=1)
-    lambo_v12(k, wing)
+    S = build(k, PSVJ, dict(r=0.33, w=0.255, rim=0.254), dict(r=0.355, w=0.355, rim=0.267), crease=SHARP)
+    lambo_common(k, S)
+    for s in (1, -1): k.decal('scoop', 'Gloss', 'top', -1.05, -0.70, s * 0.76, s * 0.96, 4, 4)       # shoulder scoops
+    for i in range(6): k.decal('louvre', 'Gloss', 'top', -2.15 + i * .12, -2.08 + i * .12, -0.55, 0.55, 2, 12)
+    y_lights(k, (2.26, 0.74, 0.56), (0.62, 0.36, 0.55))
+    k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.15, 0.28, 12, 4)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.42, s * 0.92, 0.14, 0.40, 12, 6))
+    k.decal('splitter', 'Carbon', 'front', -0.96, 0.96, 0.10, 0.15, 30, 2)
+    k.fan('rearbg', 'Gloss', -1.9, 0.38, 0.90, -0.66, 0.66, 30, 8, off=.003)
+    y_tails(k, -1.9, 0.80, 0.90, 0.42, 0.76)
+    k.fan('diffuser', 'Carbon', -1.9, 0.22, 0.38, -0.72, 0.72, 30, 3)
+    hex_exhaust(k, 0.13, 0.70, r=0.065)
+    k.post_wing(-1.95, 1.24, 0.40, 1.90, -2.10, 0.44, aoa=-8,
+                endplate=[(-1.89, 1.19), (-1.91, 1.34), (-2.41, 1.38), (-2.45, 1.24), (-2.27, 1.17)])
+    k.pod('fin', 'Carbon', [(-0.75, 0.0, 1.11, 0.01, 0.01), (-1.10, 0.0, 1.10, 0.012, 0.06), (-1.95, 0.0, 1.05, 0.012, 0.05)], mirror=False, sub=1)
     k.join(); k.wheels(spokes=10)
 
-# ======================================================================= Lamborghini V8/V10 (Temerario / Huracan STO / Sterrato)
-# front axle x=1.38, rear axle x=-1.24, 4.55 m long, 1.93 m wide, 1.22 m tall
-HX = [(-2.50, -2.30), (-1.28, -1.24), (1.50, 1.38), (2.47, 2.27)]
-def hx(x): return pl(HX, x)
-THUR = remap(TLAM, HX, ys=0.95, zf=lambda z: z + max(0.0, z - 0.85) * 0.32)
-WHUR = dict(F=dict(x=1.38, r=0.34, w=0.245, y=0.81, rim=0.254), R=dict(x=-1.24, r=0.35, w=0.305, y=0.815, rim=0.254))
-
-def huracan(k, wheels=WHUR, side_vents=True):
-    k.loft(stations(THUR), **SHARP); k.arches(wheels, gap=0.05); k.surface()
-    k.windscreen(hx(0.95), hx(0.05), 0.82, 0.38, 0.62, 0.50, sweep=0.24)
-    zc = lambda z: z + max(0.0, z - 0.85) * 0.32
-    k.side_glass([(hx(x), zc(z)) for x, z in [(0.92, 0.84), (0.55, 0.96), (0.20, 1.075), (-0.20, 1.105), (-0.60, 1.055), (-0.95, 0.965)]],
-                 [(hx(x), zc(z)) for x, z in [(0.92, 0.835), (0.0, 0.85), (-0.95, 0.945)]])
-    for s in (1, -1):
-        k.decal('doorline', 'Black', side(s), hx(0.90) - .004, hx(0.90) + .004, 0.22, 0.83, 1, 12, off=.002)
-        if side_vents: k.slanted('sideintake', 'Gloss', s, hx(-0.35), hx(-0.95), 0.45, 0.78, lean=0.2, nu=8, nv=8)
-    k.decal('intakeC', 'Gloss', 'front', -0.30, 0.30, 0.18, 0.30, 12, 4)
-    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.40, s * 0.82, 0.17, 0.40, 12, 6))
-    k.fan('rearbg', 'Gloss', -1.70, 0.40, 0.92, -0.62, 0.62, 30, 8, off=.003)
-    k.fan('diffuser', 'Carbon', -1.70, 0.26, 0.40, -0.70, 0.70, 30, 3)
-    k.mirrors(hx(0.70), 1.05, 0.95, size=(0.14, 0.18, 0.08))
-    k.interior(-0.20, 1.26, 0.66, h=0.30, seats_x=-0.45, seat_z=0.76)
-
+# ---- Temerario: 4.71 x 2.00 x 1.20 m, 2.66 m wheelbase. Hexagon DRLs, a clean wedge, hexagon tail lights, one big
+# hexagonal pipe in the middle and a ducktail spoiler.
+PTEM = dict(L=4.706, W=1.996, H=1.201, WB=2.658, fo=1.07, clear=0.11, nose_zb=0.22, tail_zb=0.40,
+            top=[(2.399, 0.44), (2.3, 0.52), (2.0, 0.60), (1.6, 0.68), (1.25, 0.76), (0.95, 0.82), (0.5, 1.01), (0.1, 1.17),
+                 (-0.2, 1.201), (-0.6, 1.16), (-1.0, 1.08), (-1.6, 1.04), (-2.1, 1.03), (-2.25, 1.04), (-2.307, 0.95)],
+            belt=[(2.399, 0.42), (2.1, 0.60), (1.6, 0.74), (1.0, 0.82), (0.4, 0.85), (-0.4, 0.88), (-1.0, 0.96), (-1.6, 0.99),
+                  (-2.2, 0.98), (-2.307, 0.88)],
+            plan=[(2.399, 0.38), (2.3, 0.66), (2.0, 0.87), (1.33, 0.985), (0.6, 0.95), (0.0, 0.945), (-0.7, 0.985), (-1.33, 0.998),
+                  (-1.95, 0.96), (-2.25, 0.86), (-2.307, 0.78)],
+            roof=[(0.95, 0.66), (0.4, 0.60), (-0.2, 0.55), (-0.6, 0.50), (-1.0, 0.44)],
+            cab=(0.95, 0.10, -0.62, -1.0), bulge=[(0.0, 0.02), (1.0, 0.05), (2.0, 0.04)], hip=0.04, side=(0.88, -0.88),
+            doors=(0.86,), mirror_x=0.80, rw_w=0.9, rw_bulge=0.0, roof_crown=0.04)
 def temerario(k):
-    huracan(k)
-    # hexagon-shaped LED headlights + hexagonal centre tailpipe and hexagon tail lights
-    k.headlight_quad((2.00, 0.66, 0.64), (0.70, 0.30, 0.55), 0.26, 0.10, slant=0.03, dots='row')
+    S = build(k, PTEM, dict(r=0.347, w=0.265, rim=0.254), dict(r=0.364, w=0.325, rim=0.267), crease=SHARP)
+    lambo_common(k, S, -0.35, -0.95)
+    k.headlight_quad((2.10, 0.68, 0.60), (0.62, 0.36, 0.55), 0.26, 0.08, slant=0.03, dots='row')
     for s in (1, -1):
-        k.oval('hexdrl', 'Headlight', V(1.98, s * 0.66, 0.66), V(0.70, s * 0.30, 0.55), 0.06, 0.05, .012, n=3)
-        k.fan('hextail', 'Taillight', -1.70, 0.74, 0.86, s * 0.38, s * 0.70, 6, 3, off=.006)
-    hex_exhaust(k, 0.0, 0.66, r=0.085, mirror=False)
-    k.spoiler(-1.98, 1.08, 0.28, 1.40, aoa=-6, mat='Carbon', strut_y=0.36)
+        k.oval('hexdrl', 'Headlight', V(2.08, s * 0.68, 0.62), V(0.62, s * 0.36, 0.55), 0.07, 0.06, .012, ring=0.6, n=6)
+        k.oval('hextail', 'Taillight', V(-2.25, s * 0.66, 0.84), V(-1, s * 0.3, 0.05), 0.09, 0.075, .007, ring=0.55, n=6)
+    k.decal('intakeC', 'Gloss', 'front', -0.32, 0.32, 0.16, 0.30, 12, 4)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.42, s * 0.86, 0.15, 0.40, 12, 6))
+    k.decal('splitter', 'Carbon', 'front', -0.90, 0.90, 0.11, 0.16, 30, 2)
+    k.fan('rearbg', 'Gloss', -1.8, 0.40, 0.76, -0.62, 0.62, 30, 6, off=.003)
+    k.fan('diffuser', 'Carbon', -1.8, 0.24, 0.40, -0.70, 0.70, 30, 3)
+    hex_exhaust(k, 0.0, 0.62, r=0.09, mirror=False)
+    k.spoiler(-2.18, 1.10, 0.24, 1.40, aoa=-6, mat='Carbon', strut_y=0.36)
     k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.026, 0.016))
 
+# ---- Huracán STO: 4.55 x 1.95 x 1.22 m, 2.62 m wheelbase. The one-piece "cofango" bonnet with vents, a roof snorkel,
+# a shark fin down the engine cover, a big fixed wing, Y lights and two pipes up high.
+PSTO = dict(L=4.549, W=1.945, H=1.22, WB=2.62, fo=1.03, clear=0.11, nose_zb=0.22, tail_zb=0.40,
+            top=[(2.34, 0.46), (2.24, 0.54), (1.95, 0.62), (1.6, 0.69), (1.25, 0.76), (0.95, 0.82), (0.5, 1.02), (0.1, 1.19),
+                 (-0.2, 1.22), (-0.6, 1.17), (-1.0, 1.08), (-1.6, 1.04), (-2.1, 1.03), (-2.209, 0.95)],
+            belt=[(2.34, 0.44), (2.05, 0.62), (1.6, 0.74), (1.0, 0.82), (0.4, 0.85), (-0.4, 0.88), (-1.0, 0.96), (-1.6, 0.99),
+                  (-2.1, 0.98), (-2.209, 0.88)],
+            plan=[(2.34, 0.40), (2.24, 0.66), (1.95, 0.86), (1.31, 0.96), (0.6, 0.93), (0.0, 0.925), (-0.7, 0.96), (-1.31, 0.9725),
+                  (-1.9, 0.94), (-2.15, 0.86), (-2.209, 0.78)],
+            roof=[(0.95, 0.64), (0.4, 0.58), (-0.2, 0.54), (-0.6, 0.49), (-1.0, 0.43)],
+            cab=(0.95, 0.10, -0.62, -1.0), bulge=[(0.0, 0.02), (1.0, 0.05), (2.0, 0.04)], hip=0.04, side=(0.88, -0.88),
+            doors=(0.86,), mirror_x=0.80, rw_w=0.9, rw_bulge=0.0, roof_crown=0.04)
+def huracan_face(k):
+    y_lights(k, (2.06, 0.66, 0.60), (0.62, 0.36, 0.55), size=0.13)
+    k.decal('intakeC', 'Gloss', 'front', -0.30, 0.30, 0.16, 0.30, 12, 4)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.40, s * 0.84, 0.15, 0.40, 12, 6))
+    k.fan('rearbg', 'Gloss', -1.7, 0.40, 0.92, -0.62, 0.62, 30, 8, off=.003)
+    y_tails(k, -1.7, 0.82, 0.92, 0.42, 0.72)
+    k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.40, -0.70, 0.70, 30, 3)
 def sto(k):
-    huracan(k)
-    y_lights(k, (2.00, 0.66, 0.64), (0.70, 0.30, 0.55), size=0.13)
-    y_tails(k, -1.70, 0.80, 0.90, 0.40, 0.70)
-    k.naca(1.35, 1.75, 0.16, 0.03, 0.14)
-    # roof snorkel, shark fin along the engine cover, big fixed wing, twin pipes
-    k.pod('snorkel', 'Paint', [(0.25, 0, 1.25, 0.04, 0.02), (0.10, 0, 1.30, 0.13, 0.07), (-0.40, 0, 1.28, 0.15, 0.06), (-0.70, 0, 1.20, 0.10, 0.03)], mirror=False, flat=0.7)
-    k.box('snorkelmouth', 'Gloss', (0.12, 0, 1.31), (0.02, 0.20, 0.06))
-    k.pod('fin', 'Paint', [(-0.75, 0.0, 1.16, 0.01, 0.01), (-1.00, 0.0, 1.13, 0.012, 0.07), (-1.80, 0.0, 1.03, 0.012, 0.05)], mirror=False, sub=1)
-    k.post_wing(-1.86, 1.20, 0.36, 1.70, -2.00, 0.40, aoa=-9,
-                endplate=[(-1.80, 1.15), (-1.82, 1.30), (-2.24, 1.33), (-2.28, 1.20), (-2.14, 1.13)])
+    S = build(k, PSTO, dict(r=0.3275, w=0.245, rim=0.254), dict(r=0.3455, w=0.305, rim=0.254), crease=SHARP)
+    lambo_common(k, S, -0.35, -0.95)
+    huracan_face(k)
+    k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.11, 0.16, 30, 2)
+    for i in range(5): both(lambda s, i=i: k.decal('cofangovent', 'Gloss', 'top', 1.10 + i * .07, 1.14 + i * .07, s * 0.55, s * 0.80, 1, 5))
+    k.naca(1.45, 1.85, 0.0, 0.05, 0.22)
+    k.pod('snorkel', 'Paint', [(0.10, 0, 1.24, 0.04, 0.02), (-0.02, 0, 1.29, 0.13, 0.07), (-0.45, 0, 1.27, 0.15, 0.06), (-0.75, 0, 1.18, 0.10, 0.03)], mirror=False, flat=0.7)
+    k.box('snorkelmouth', 'Gloss', (0.0, 0, 1.30), (0.02, 0.20, 0.06))
+    k.pod('fin', 'Paint', [(-0.80, 0.0, 1.15, 0.01, 0.01), (-1.05, 0.0, 1.12, 0.012, 0.07), (-1.85, 0.0, 1.05, 0.012, 0.05)], mirror=False, sub=1)
+    k.post_wing(-1.90, 1.22, 0.36, 1.70, -2.02, 0.40, aoa=-9,
+                endplate=[(-1.84, 1.17), (-1.86, 1.32), (-2.24, 1.35), (-2.28, 1.22), (-2.14, 1.15)])
     k.exhaust(0.16, 0.80, r=0.05)
     k.join(); k.wheels(spokes=10)
 
-STER_LIFT = 0.06
-WSTER = dict(F=dict(x=1.38, r=0.355, w=0.235, y=0.81, rim=0.24, cz=0.355 - STER_LIFT + 0.01, gap=0.07),
-             R=dict(x=-1.24, r=0.36, w=0.27, y=0.815, rim=0.24, cz=0.36 - STER_LIFT + 0.01, gap=0.07))
+# ---- Huracán Sterrato: 4.53 x 1.96 x 1.25 m - the STO's body lifted 44 mm for dirt, with black arch cladding,
+# light pods in the nose, roof rails, a roof scoop and all-terrain tyres.
+STER_LIFT = 0.044
+PSTER = dict(PSTO, L=4.525, W=1.956, H=1.248, WB=2.629, fo=1.0, clear=0.15, nose_zb=0.27, tail_zb=0.42)
 def sterrato(k):
-    huracan(k, WSTER)
-    y_lights(k, (2.00, 0.66, 0.64), (0.70, 0.30, 0.55), size=0.13)
-    y_tails(k, -1.70, 0.80, 0.90, 0.40, 0.70)
+    S = build(k, PSTER, dict(r=0.335, w=0.235, rim=0.241, cz=0.335 - STER_LIFT + 0.01, gap=0.07),
+              dict(r=0.355, w=0.285, rim=0.241, cz=0.355 - STER_LIFT + 0.01, gap=0.07), crease=SHARP)
+    lambo_common(k, S, -0.35, -0.95)
+    huracan_face(k)
     k.arch_trim(0.08)
-    both(lambda s: k.decal('cladding', 'Black', side(s), hx(-0.95), hx(1.05), 0.12, 0.30, 30, 3, off=.006))
-    k.decal('skid', 'Black', 'front', -0.60, 0.60, 0.14, 0.22, 20, 2, off=.006)
+    both(lambda s: k.decal('cladding', 'Black', side(s), -0.95, 1.05, 0.11, 0.30, 30, 3, off=.006))
+    k.decal('skid', 'Black', 'front', -0.60, 0.60, 0.13, 0.22, 20, 2, off=.006)
     for s in (1, -1):   # light pods on the nose, roof rails, roof scoop
-        k.cylinder('lightpod', 'Black', (2.05, s * 0.32, 0.60), 0.07, 0.10)
-        k.cylinder('lightpodlens', 'Headlight', (2.10, s * 0.32, 0.60), 0.058, 0.004)
-        k.blade('rail', 'Black', [(0.15, 0, k.deck_z(0.15, s * .50) + .03), (-0.20, 0, k.deck_z(-0.20, s * .50) + .045), (-0.55, 0, k.deck_z(-0.55, s * .50) + .03)], s * 0.50, 0.03, 0.03, 0.025)
-    k.pod('snorkel', 'Black', [(0.05, 0, 1.25, 0.04, 0.02), (-0.05, 0, 1.29, 0.12, 0.06), (-0.50, 0, 1.25, 0.13, 0.05)], mirror=False, flat=0.7)
+        k.cylinder('lightpod', 'Black', (2.10, s * 0.32, 0.58), 0.07, 0.10)
+        k.cylinder('lightpodlens', 'Headlight', (2.15, s * 0.32, 0.58), 0.058, 0.004)
+        k.blade('rail', 'Black', [(0.05, 0, k.deck_z(0.05, s * .48) + .03), (-0.25, 0, k.deck_z(-0.25, s * .48) + .045), (-0.60, 0, k.deck_z(-0.60, s * .48) + .03)], s * 0.48, 0.03, 0.03, 0.025)
+    k.pod('snorkel', 'Black', [(0.0, 0, 1.24, 0.04, 0.02), (-0.10, 0, 1.28, 0.12, 0.06), (-0.55, 0, 1.24, 0.13, 0.05)], mirror=False, flat=0.7)
     k.exhaust(0.16, 0.80, r=0.05)
     k.join(lift=STER_LIFT); k.wheels(spokes=10, spoke_w=(0.03, 0.02), nut='bolts', offroad=True)
 
@@ -193,30 +232,33 @@ TURUS = [
     (-2.48, .38, .87, .79, .85, 1.11, .59, 1.14, .41, 1.15, 1.16),
     (-2.57, .44, .67, .75, .65, 1.05, .47, 1.08, .29, 1.09, 1.09),
 ]
-WURUS = dict(F=dict(x=1.60, r=0.385, w=0.29, y=0.845, rim=0.292), R=dict(x=-1.40, r=0.385, w=0.32, y=0.85, rim=0.292))
+# ---- Urus Performante: 5.14 x 2.03 x 1.62 m, 3.01 m wheelbase. A super-SUV with a coupe roof: Y lights, a huge
+# hexagon grille and side intakes, a carbon roof and bonnet vents, Y tail lights, a roof spoiler and four pipes.
+PURUS = dict(L=5.137, W=2.026, H=1.618, WB=3.006, fo=1.04, clear=0.16, nose_zb=0.36, tail_zb=0.46,
+             top=[(2.543, 0.80), (2.45, 0.90), (2.15, 0.98), (1.503, 1.05), (1.0, 1.10), (0.75, 1.13), (0.3, 1.42), (-0.1, 1.60),
+                  (-0.6, 1.618), (-1.2, 1.59), (-1.7, 1.50), (-2.1, 1.36), (-2.35, 1.24), (-2.5, 1.20), (-2.594, 1.12)],
+             belt=[(2.543, 0.80), (2.15, 1.0), (1.5, 1.07), (0.75, 1.12), (-0.5, 1.15), (-1.5, 1.18), (-2.2, 1.18), (-2.594, 1.08)],
+             plan=[(2.543, 0.62), (2.45, 0.84), (2.15, 0.96), (1.503, 1.0), (0.6, 0.98), (-0.6, 0.98), (-1.503, 1.013),
+                   (-2.15, 0.98), (-2.45, 0.90), (-2.594, 0.80)],
+             roof=[(0.75, 0.74), (0.0, 0.68), (-0.8, 0.65), (-1.6, 0.58), (-2.1, 0.50)],
+             cab=(0.75, -0.10, -1.60, -2.15), bulge=0.04, hip=0.04, side=(0.68, -2.0), pillars=(-0.45, -1.55), pillar_w=0.07,
+             doors=(0.68, -0.45, -1.55), mirror_x=0.60, rw_w=0.85, mirror_size=(0.17, 0.22, 0.12))
 def urusp(k):
-    k.loft(stations(TURUS), **SHARP); k.arches(WURUS); k.surface()
-    k.windscreen(1.10, 0.32, 1.10, 0.62, 0.70, 0.62, sweep=0.26)
-    k.rear_window(-2.22, -1.15, 1.20, 0.27, 0.50, 0.58)
-    k.side_glass([(0.90, 1.12), (0.62, 1.30), (0.30, 1.52), (-0.30, 1.57), (-0.90, 1.50), (-1.45, 1.35), (-1.85, 1.19)],
-                 [(0.90, 1.11), (-0.60, 1.125), (-1.45, 1.15), (-1.85, 1.165)], pillars=[-0.15, -1.20], pillar_w=0.06)
-    k.decal('roof', 'Carbon', 'top', -1.10, 0.30, -0.58, 0.58, 16, 12, off=.003)
-    for s in (1, -1):
-        for xg in (0.90, -0.17, -1.25): k.decal('doorline', 'Black', side(s), xg - .004, xg + .004, 0.30, 1.12, 1, 14, off=.002)
-        k.decal('sill', 'Gloss', side(s), -1.02, 1.20, 0.22, 0.34, 30, 3, off=.005)
+    S = build(k, PURUS, dict(r=0.406, w=0.285, rim=0.292), dict(r=0.406, w=0.325, rim=0.292), crease=SHARP)
+    k.decal('roof', 'Carbon', 'top', -1.40, 0.10, -0.60, 0.60, 16, 12, off=.003)
+    both(lambda s: k.decal('hoodvent', 'Carbon', 'top', 1.40, 1.85, s * 0.20, s * 0.40, 6, 4, off=.006))
+    for s in (1, -1): k.decal('sill', 'Gloss', side(s), -1.30, 1.10, 0.22, 0.34, 30, 3, off=.005)
     k.arch_trim(0.05, mat='Gloss')
-    y_lights(k, (2.38, 0.70, 0.92), (0.72, 0.30, 0.50), size=0.16)
-    k.decal('grille', 'Gloss', 'front', -0.52, 0.52, 0.40, 0.70, 18, 6)
-    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.60, s * 0.88, 0.36, 0.66, 10, 8))
-    k.decal('lip', 'Carbon', 'front', -0.86, 0.86, 0.28, 0.36, 30, 2)
-    k.light_bar(-1.95, 1.04, 1.07, 0.84, bg=0.03, frac=0.5)
-    y_tails(k, -1.95, 1.00, 1.11, 0.60, 0.84)
-    k.fan('rearpanel', 'Gloss', -1.95, 0.52, 0.66, -0.62, 0.62, 30, 3)
-    k.fan('diffuser', 'Carbon', -1.95, 0.40, 0.52, -0.66, 0.66, 30, 3)
-    for y in (0.48, 0.62): k.exhaust(y, 0.46, r=0.05)
-    k.wing(-1.12, 1.505, 0.18, 1.10, aoa=-4, thick=0.08, mat='Carbon', camber=-0.02, name='roofspoiler')
-    k.mirrors(0.84, 1.07, 1.22, size=(0.17, 0.22, 0.12))
-    k.interior(-0.45, 1.5, 0.98, l=2.4, h=0.42, seats_x=-0.20, seat_z=1.06)
+    y_lights(k, (2.38, 0.72, 0.95), (0.72, 0.30, 0.50), size=0.16)
+    k.project('grille', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.50, 0.60, v), lerp(0.40, 0.74, v)), 16, 6, off=.006)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.64, s * 0.90, 0.36, 0.70, 10, 8))
+    k.decal('lip', 'Carbon', 'front', -0.88, 0.88, 0.32, 0.40, 30, 2)
+    k.light_bar(-2.1, 1.06, 1.09, 0.84, bg=0.03, frac=0.5)
+    y_tails(k, -2.1, 1.02, 1.13, 0.60, 0.84)
+    k.fan('rearpanel', 'Gloss', -2.1, 0.56, 0.70, -0.62, 0.62, 30, 3)
+    k.fan('diffuser', 'Carbon', -2.1, 0.44, 0.56, -0.66, 0.66, 30, 3)
+    for y in (0.48, 0.62): k.exhaust(y, 0.50, r=0.05)
+    k.wing(-1.62, 1.58, 0.18, 1.10, aoa=-4, thick=0.08, mat='Carbon', camber=-0.02, name='roofspoiler')
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts', caliper=(0.27, 0.09, 0.10))
 
 # ======================================================================= Ferrari mid-engine (SF90 / LaFerrari / 296 GTB / F8)
