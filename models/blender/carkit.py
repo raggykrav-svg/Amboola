@@ -325,6 +325,18 @@ class Car:
     def side_glass(self, top, bot, pillars=(), trim=0.022, pillar_w=0.025, frame='Gloss', nu=40):
         """side windows between a top and bottom outline [(x, z), ...]; `pillars` are x positions of black dividers"""
         x0, x1 = max(p[0] for p in bot + top), min(p[0] for p in bot + top)
+        if self.bvh is not None:
+            # the glass stops where the body turns over into the roof: seen from the side, a window drawn higher lands
+            # on the roof skin, and cutting the cabin open would then take the roof away too
+            def steep(x, z):
+                p, n = self.hit((x, 5, z), (0, -1, 0))
+                return p is None or abs(n.y) > 0.42
+            top2 = []
+            for i in range(25):
+                x = lerp(x0, x1, i / 24); z, zb = pl(top, x), pl(bot, x)
+                while z > zb + 0.04 and not steep(x, z): z -= 0.008
+                top2.append((x, max(z, zb + 0.012)))
+            top = top2
         def dlo(s, grow=0.0):
             def fn(u, v):
                 x = lerp(x0 + grow * 1.6, x1 - grow * 1.8, u)
