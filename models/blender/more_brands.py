@@ -14,7 +14,7 @@ from supercars import TFER, remap, SOFT, SHARP
 from toyota import gt_coupe
 from hypercars import glasshouse
 from bmw_audi import quad_pipes
-from profile import build
+from carshape import build
 
 
 # ---- Ford Mustang Dark Horse (S650): 4.82 m long, 1.92 m wide, 1.41 m tall, 2.72 m wheelbase. The long bonnet with

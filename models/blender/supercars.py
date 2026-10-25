@@ -8,6 +8,7 @@
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main
+from carshape import build
 
 SHARP = dict(crease_lines=0.85, crisp_front=-9, crisp=0.75, crease_front=0.8, crease_rear=0.9)
 SOFT = dict(crease_lines=0.2, crisp_front=0.7, crisp=0.15, crease_front=0.45, crease_rear=0.6)
@@ -240,57 +241,121 @@ TFER = [
 ]
 WFER = dict(F=dict(x=1.36, r=0.34, w=0.245, y=0.835, rim=0.254), R=dict(x=-1.30, r=0.35, w=0.315, y=0.835, rim=0.254))
 
-def ferrari_mid(k, rows=TFER, tail_round=False):
-    k.loft(stations(rows), **SOFT); k.arches(WFER); k.surface()
-    k.windscreen(0.85, 0.20, 0.86, 0.45, 0.62, 0.52, sweep=0.24)
-    k.side_glass([(0.70, 0.86), (0.45, 0.98), (0.15, 1.12), (-0.25, 1.16), (-0.65, 1.10), (-1.0, 0.98)],
-                 [(0.70, 0.855), (-0.30, 0.87), (-1.0, 0.95)])
-    k.rear_window(-1.20, -0.82, 0.99, 0.30, 0.38, 0.42, bulge=0.02)
-    for s in (1, -1):
-        k.decal('doorline', 'Black', side(s), 0.70 - .004, 0.70 + .004, 0.22, 0.84, 1, 12, off=.002)
-        k.slanted('sideintake', 'Gloss', s, -0.70, -1.00, 0.55, 0.80, lean=0.10, nu=6, nv=6)
-        k.decal('skirt', 'Gloss', side(s), -0.95, 1.00, 0.13, 0.20, 30, 2)
-    # slim swept headlights, horizontal grille, splitter
-    k.headlight_quad((2.06, 0.68, 0.62), (0.72, 0.32, 0.52), 0.30, 0.085, slant=0.05, dots='row')
-    k.decal('grille', 'Gloss', 'front', -0.50, 0.50, 0.20, 0.34, 18, 4)
-    k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.15, 0.19, 30, 2)
-    if tail_round:   # F8: twin round tail lights per side
-        for s in (1, -1):
-            for y in (0.56, 0.74): k.oval('tailround', 'Taillight', V(-2.10, s * y, 0.84), V(-1, s * 0.25 * y, 0.1), 0.06, 0.06, .006, n=6)
-    else:
-        k.light_bar(-1.70, 0.83, 0.87, 0.80, bg=0.015, frac=0.6)
-        k.tail_clusters(-1.70, 0.80, 0.89, 0.50, 0.82)
-    k.fan('rearpanel', 'Gloss', -1.70, 0.44, 0.62, -0.62, 0.62, 30, 4)
-    k.fan('diffuser', 'Carbon', -1.70, 0.30, 0.44, -0.66, 0.66, 30, 3)
-    k.mirrors(0.62, 1.07, 0.93, size=(0.14, 0.18, 0.08))
-    k.interior(-0.20, 1.28, 0.64, h=0.32, seats_x=-0.42, seat_z=0.74)
+# Every Ferrari below is built by carshape.build from its real length, width, height and wheelbase and outline points
+# read off photos (see carshape.py); the axles sit at +-wheelbase/2.
 
+# ---- SF90 Stradale: 4.71 x 1.97 x 1.19 m, 2.65 m wheelbase. Slim lights, a wide mesh mouth, the teardrop cabin
+# over a glass engine cover, the "shut-off gurney" tail with two square lamps a side and high twin pipes.
+PSF90 = dict(L=4.71, W=1.972, H=1.186, WB=2.65, fo=1.05, clear=0.11, nose_zb=0.24, tail_zb=0.40,
+             top=[(2.375, 0.49), (2.27, 0.57), (2.0, 0.64), (1.6, 0.72), (1.25, 0.79), (0.95, 0.85), (0.5, 1.03), (0.12, 1.16),
+                  (-0.2, 1.186), (-0.6, 1.15), (-0.9, 1.07), (-1.3, 1.02), (-1.9, 1.0), (-2.2, 1.02), (-2.335, 0.95)],
+             belt=[(2.375, 0.47), (2.1, 0.63), (1.6, 0.76), (1.0, 0.84), (0.4, 0.86), (-0.4, 0.88), (-1.0, 0.96), (-1.6, 0.99),
+                   (-2.2, 0.97), (-2.335, 0.88)],
+             plan=[(2.375, 0.44), (2.27, 0.70), (2.0, 0.87), (1.33, 0.975), (0.6, 0.95), (0.0, 0.95), (-0.7, 0.975), (-1.33, 0.986),
+                   (-2.0, 0.95), (-2.25, 0.86), (-2.335, 0.76)],
+             roof=[(0.95, 0.66), (0.4, 0.60), (-0.2, 0.55), (-0.6, 0.50), (-0.9, 0.44)],
+             cab=(0.95, 0.12, -0.62, -0.95), bulge=[(0.0, 0.02), (1.0, 0.06), (2.0, 0.05)], hip=0.04, side=(0.86, -0.85),
+             doors=(0.82, -0.35), mirror_x=0.78, rw_w=0.9, rw_bulge=0.0)
+def ferrari_sides(k, x0=-0.45, x1=-1.0, z0=0.50, z1=0.82):
+    for s in (1, -1):
+        k.slanted('sideintake', 'Gloss', s, x0, x1, z0, z1, lean=0.18, nu=8, nv=6, off=.006)
+        k.decal('skirt', 'Carbon', side(s), -0.95, 1.0, 0.11, 0.19, 30, 2)
 def sf90(k):
-    ferrari_mid(k)
+    build(k, PSF90, dict(r=0.343, w=0.255, rim=0.254), dict(r=0.349, w=0.315, rim=0.254), crease=SOFT)
+    ferrari_sides(k)
+    k.headlight_quad((2.10, 0.68, 0.62), (0.66, 0.36, 0.52), 0.30, 0.06, slant=0.06, taper=0.4, dots='row')
+    k.decal('grille', 'Gloss', 'front', -0.52, 0.52, 0.18, 0.36, 18, 5)
+    k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.12, 0.17, 30, 2)
+    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.55, 1.80, s * 0.12, s * 0.30, 6, 4))
+    for s in (1, -1):
+        for y in (0.56, 0.74): k.rect('tailsq', 'Taillight', V(-2.25, s * y, 0.88), V(-1, s * 0.25 * y, 0.1), 0.11, 0.06, .006, 6, 3)
+    k.decal('shutoff', 'Gloss', 'top', -2.28, -2.12, -0.60, 0.60, 4, 10)       # the shut-off gurney slot
+    k.fan('rearmesh', 'Gloss', -1.7, 0.42, 0.74, -0.70, 0.70, 30, 5)
+    k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.42, -0.66, 0.66, 30, 3)
     for s in (1, -1): k.exhaust(s * 0.13, 0.80, r=0.045, mirror=False)        # high-exit pipes
-    k.decal('shutoff', 'Gloss', 'top', -2.20, -2.05, -0.55, 0.55, 4, 10)       # shut-off gurney slot
-    k.naca(1.40, 1.75, 0.0, 0.05, 0.30)
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts')
 
-TLAF = [tuple(r[:9]) + (r[9] - max(0, r[9] - .9) * .25, r[10] - max(0, r[10] - .9) * .25) for r in TFER]
+# ---- LaFerrari: 4.70 x 1.99 x 1.12 m, 2.65 m wheelbase. Very low, a drooping central nose between tall front
+# fenders, a small teardrop canopy, big rear haunches, a deployable spoiler and three pipes in the middle.
+PLAF = dict(L=4.702, W=1.992, H=1.116, WB=2.65, fo=1.03, clear=0.10, nose_zb=0.22, tail_zb=0.40,
+            top=[(2.355, 0.42), (2.25, 0.50), (2.0, 0.56), (1.6, 0.62), (1.2, 0.70), (0.95, 0.76), (0.5, 0.95), (0.1, 1.09),
+                 (-0.2, 1.116), (-0.6, 1.08), (-0.95, 1.0), (-1.5, 0.97), (-2.0, 0.96), (-2.25, 0.97), (-2.347, 0.90)],
+            belt=[(2.355, 0.44), (2.1, 0.64), (1.6, 0.78), (1.2, 0.82), (0.6, 0.80), (-0.2, 0.82), (-0.9, 0.93), (-1.5, 0.98),
+                  (-2.1, 0.97), (-2.347, 0.88)],
+            plan=[(2.355, 0.40), (2.25, 0.70), (2.0, 0.88), (1.33, 0.99), (0.6, 0.94), (0.0, 0.93), (-0.7, 0.985), (-1.33, 0.996),
+                  (-2.0, 0.95), (-2.25, 0.84), (-2.347, 0.72)],
+            roof=[(0.95, 0.62), (0.4, 0.55), (-0.2, 0.50), (-0.6, 0.44), (-0.95, 0.36)],
+            cab=(0.95, 0.10, -0.62, -0.95), bulge=[(0.0, 0.02), (1.0, 0.10), (1.9, 0.10), (2.3, 0.04)], hip=0.06, side=(0.86, -0.85),
+            doors=(0.82, -0.40), mirror_x=0.80, rw_w=0.9, rw_bulge=0.0)
 def laferrari(k):
-    ferrari_mid(k, TLAF)
+    build(k, PLAF, dict(r=0.321, w=0.265, rim=0.241), dict(r=0.358, w=0.345, rim=0.254), crease=SOFT)
+    ferrari_sides(k, -0.35, -1.0, 0.40, 0.78)
+    k.headlight_quad((2.02, 0.70, 0.62), (0.55, 0.40, 0.62), 0.30, 0.05, slant=0.07, taper=0.5, dots='row')
+    k.decal('nosevalley', 'Gloss', 'top', 1.30, 2.0, -0.12, 0.12, 8, 3)
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.24, s * 0.70, 0.16, 0.38, 10, 5))
+    k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.11, 0.16, 30, 2)
+    for s in (1, -1):
+        for y in (0.56, 0.76): k.oval('tailround', 'Taillight', V(-2.20, s * y, 0.86), V(-1, s * 0.3 * y, 0.1), 0.07, 0.05, .006, n=6)
+    k.fan('rearmesh', 'Gloss', -1.7, 0.38, 0.74, -0.66, 0.66, 30, 5)
+    k.fan('diffuser', 'Carbon', -1.7, 0.22, 0.38, -0.66, 0.66, 30, 3)
     k.exhaust(0.0, 0.62, r=0.05, mirror=False); k.exhaust(0.12, 0.62, r=0.05)   # three centre pipes
-    k.spoiler(-2.05, 1.0, 0.24, 1.30, aoa=-6, mat='Paint', strut_y=0.35)
-    both(lambda s: k.decal('bonnetduct', 'Gloss', 'top', 1.55, 1.85, s * 0.08, s * 0.30, 6, 5))
+    k.spoiler(-2.10, 1.03, 0.24, 1.30, aoa=-6, mat='Paint', strut_y=0.35)
     k.join(); k.wheels(spokes=10, nut='bolts')
 
-T296 = edit(edit(TFER, -2.24, zt=.985, zr=.98, zg=.97), -2.33, zt=.99, zr=.985, zg=.96, zbl=.91)   # ducktail
+# ---- 296 GTB: 4.57 x 1.96 x 1.19 m, 2.60 m wheelbase - the most compact Ferrari. Visor windscreen, teardrop lights,
+# a small upright rear screen between flying buttresses, a sharp Kammback tail with the spoiler in the bumper and
+# a single centre pipe up high.
+P296 = dict(L=4.565, W=1.958, H=1.187, WB=2.60, fo=1.04, clear=0.11, nose_zb=0.24, tail_zb=0.40,
+            top=[(2.34, 0.50), (2.25, 0.58), (2.0, 0.645), (1.6, 0.72), (1.3, 0.78), (0.95, 0.84), (0.5, 1.03), (0.12, 1.165),
+                 (-0.2, 1.187), (-0.55, 1.16), (-0.72, 1.08), (-1.0, 1.02), (-1.6, 1.0), (-2.1, 1.0), (-2.225, 0.96)],
+            belt=[(2.34, 0.48), (2.1, 0.64), (1.6, 0.77), (1.0, 0.845), (0.4, 0.86), (-0.3, 0.88), (-0.9, 0.96), (-1.6, 0.99),
+                  (-2.1, 0.98), (-2.225, 0.92)],
+            plan=[(2.34, 0.44), (2.25, 0.70), (2.0, 0.87), (1.3, 0.97), (0.6, 0.945), (0.0, 0.94), (-0.7, 0.97), (-1.3, 0.979),
+                  (-1.9, 0.95), (-2.15, 0.88), (-2.225, 0.80)],
+            roof=[(0.95, 0.66), (0.4, 0.60), (-0.2, 0.56), (-0.55, 0.52), (-0.75, 0.48)],
+            cab=(0.95, 0.12, -0.55, -0.75), bulge=[(0.0, 0.02), (1.0, 0.06), (2.0, 0.05)], hip=0.04, side=(0.86, -0.62),
+            doors=(0.82, -0.35), mirror_x=0.78, rw_w=0.75, rw_bulge=0.0)
 def gtb296(k):
-    ferrari_mid(k, T296)
-    k.exhaust(0.0, 0.86, r=0.06, mirror=False)                                  # single centre high pipe
+    build(k, P296, dict(r=0.34, w=0.245, rim=0.254), dict(r=0.361, w=0.305, rim=0.254), crease=SOFT)
+    ferrari_sides(k, -0.40, -0.95, 0.52, 0.82)
+    for s in (1, -1):
+        k.oval('teardrop', 'Gloss', V(2.06, s * 0.68, 0.62), V(0.66, s * 0.36, 0.52), 0.16, 0.07, .004, n=10)
+        k.rect('drl', 'Headlight', V(2.06, s * 0.68, 0.64), V(0.66, s * 0.36, 0.52), 0.20, 0.014, .009, 6, 1, slant=s * 0.03)
+        k.decal('buttress', 'Gloss', side(s), -0.55, -0.80, 0.98, 1.06, 6, 3, off=.004)
+        k.fan('tail', 'Taillight', -1.7, 0.88, 0.91, s * 0.50, s * 0.86, 10, 2, off=.007)
+    k.decal('grille', 'Gloss', 'front', -0.50, 0.50, 0.18, 0.34, 18, 4)
+    k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.12, 0.17, 30, 2)
     both(lambda s: k.decal('bonnetvent', 'Gloss', 'top', 1.60, 1.88, s * 0.10, s * 0.26, 6, 4))
+    k.fan('rearband', 'Gloss', -1.7, 0.66, 0.80, -0.70, 0.70, 30, 3)          # the active spoiler slot in the bumper
+    k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.46, -0.66, 0.66, 30, 3)
+    k.exhaust(0.0, 0.86, r=0.06, mirror=False)                                  # single centre high pipe
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts')
 
+# ---- F8 Tributo: 4.61 x 1.98 x 1.21 m, 2.65 m wheelbase. The S-duct through the nose, slim swept lights, scooped
+# intakes in the rear fenders, a louvred Lexan engine cover, two round tail lights a side and outboard pipes.
+PF8 = dict(L=4.611, W=1.979, H=1.206, WB=2.65, fo=1.03, clear=0.11, nose_zb=0.24, tail_zb=0.40,
+           top=[(2.355, 0.50), (2.25, 0.58), (2.0, 0.645), (1.6, 0.72), (1.25, 0.79), (0.95, 0.845), (0.5, 1.03), (0.12, 1.18),
+                (-0.2, 1.206), (-0.6, 1.17), (-0.92, 1.08), (-1.4, 1.03), (-1.9, 1.01), (-2.15, 1.02), (-2.256, 0.95)],
+           belt=[(2.355, 0.48), (2.1, 0.64), (1.6, 0.765), (1.0, 0.84), (0.4, 0.86), (-0.4, 0.88), (-1.0, 0.96), (-1.6, 0.99),
+                 (-2.15, 0.97), (-2.256, 0.89)],
+           plan=[(2.355, 0.44), (2.25, 0.70), (2.0, 0.87), (1.33, 0.98), (0.6, 0.95), (0.0, 0.945), (-0.7, 0.98), (-1.33, 0.99),
+                 (-1.95, 0.95), (-2.2, 0.86), (-2.256, 0.77)],
+           roof=[(0.95, 0.66), (0.4, 0.60), (-0.2, 0.55), (-0.6, 0.50), (-0.92, 0.44)],
+           cab=(0.95, 0.12, -0.62, -0.92), bulge=[(0.0, 0.02), (1.0, 0.06), (2.0, 0.05)], hip=0.04, side=(0.86, -0.85),
+           doors=(0.82, -0.35), mirror_x=0.78, rw_w=0.9, rw_bulge=0.0)
 def f8(k):
-    ferrari_mid(k, T296, tail_round=True)
-    k.naca(1.30, 1.75, 0.0, 0.10, 0.36)                                         # S-duct
-    for s in (1, -1): k.exhaust(s * 0.55, 0.48, r=0.05, mirror=False)
+    build(k, PF8, dict(r=0.34, w=0.245, rim=0.254), dict(r=0.346, w=0.305, rim=0.254), crease=SOFT)
+    ferrari_sides(k, -0.40, -1.0, 0.50, 0.84)
+    k.headlight_quad((2.08, 0.68, 0.62), (0.66, 0.36, 0.52), 0.30, 0.06, slant=0.06, taper=0.45, dots='row')
+    k.naca(1.45, 2.10, 0.0, 0.14, 0.40)                                         # the S-duct
+    k.decal('grille', 'Gloss', 'front', -0.50, 0.50, 0.18, 0.34, 18, 4)
+    k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.12, 0.17, 30, 2)
+    for i in range(3): k.decal('louvre', 'Gloss', 'top', -1.55 + i * .2, -1.47 + i * .2, -0.42, 0.42, 2, 10, off=.006)
+    for s in (1, -1):
+        for y in (0.56, 0.74): k.oval('tailround', 'Taillight', V(-2.15, s * y, 0.86), V(-1, s * 0.25 * y, 0.1), 0.06, 0.06, .006, n=6)
+        k.exhaust(s * 0.55, 0.50, r=0.05, mirror=False)
+    k.fan('rearmesh', 'Gloss', -1.7, 0.44, 0.74, -0.62, 0.62, 30, 4)
+    k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.44, -0.66, 0.66, 30, 3)
     k.join(); k.wheels(spokes=10, nut='bolts')
 
 # ======================================================================= Ferrari front-engine V12 (812 Competizione / 12Cilindri)
@@ -312,69 +377,83 @@ TFGT = [
     (-2.38, .33, .72, .62, .70, .89, .46, .91, .28, .905, .905),
 ]
 WFGT = dict(F=dict(x=1.62, r=0.345, w=0.275, y=0.82, rim=0.254), R=dict(x=-1.10, r=0.355, w=0.315, y=0.83, rim=0.254))
-def ferrari_gt(k, rows=TFGT):
-    k.loft(stations(rows), **SOFT); k.arches(WFGT); k.surface()
-    k.windscreen(0.36, -0.22, 0.93, 0.55, 0.62, 0.54, sweep=0.22)
-    k.side_glass([(0.30, 0.93), (0.10, 1.06), (-0.20, 1.215), (-0.60, 1.24), (-1.00, 1.15), (-1.35, 1.00)],
-                 [(0.30, 0.925), (-0.60, 0.94), (-1.35, 0.975)])
-    for s in (1, -1):
-        k.decal('doorline', 'Black', side(s), 0.32 - .004, 0.32 + .004, 0.22, 0.88, 1, 12, off=.002)
-        k.slanted('fendervent', 'Gloss', s, 0.95, 0.80, 0.45, 0.72, lean=0.06, nu=4, nv=6)
-        k.decal('skirt', 'Gloss', side(s), -0.90, 1.20, 0.13, 0.20, 30, 2)
-    k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.15, 0.19, 30, 2)
-    k.mirrors(0.24, 1.06, 0.98, size=(0.14, 0.18, 0.08))
-    k.fan('rearpanel', 'Gloss', -1.80, 0.44, 0.60, -0.62, 0.62, 30, 4)
-    k.fan('diffuser', 'Carbon', -1.80, 0.30, 0.44, -0.66, 0.66, 30, 3)
-    k.interior(-0.50, 1.30, 0.68, h=0.34, seats_x=-0.75, seat_z=0.78)
-
-T812 = edit(edit(TFGT, -2.20, zt=1.0, zr=.995, zg=.98), -2.38, zt=1.0, zr=.99, zg=.96, zbl=.92)   # ducktail
+# ---- 812 Competizione: 4.70 x 1.97 x 1.28 m, 2.72 m wheelbase. A long bonnet over the front-mid V12 with a carbon
+# blade across it, the cabin set well back, an aluminium rear "window" cut by sabre-like slots, a ducktail, twin
+# lamps a side and four pipes.
+P812 = dict(L=4.696, W=1.971, H=1.276, WB=2.72, fo=0.97, clear=0.12, nose_zb=0.26, tail_zb=0.40,
+            top=[(2.33, 0.58), (2.24, 0.66), (1.9, 0.74), (1.36, 0.81), (0.8, 0.87), (0.30, 0.92), (-0.05, 1.10), (-0.40, 1.25),
+                 (-0.70, 1.276), (-1.05, 1.24), (-1.4, 1.13), (-1.75, 1.02), (-2.15, 0.99), (-2.30, 1.0), (-2.366, 0.93)],
+            belt=[(2.33, 0.56), (2.0, 0.76), (1.36, 0.85), (0.3, 0.90), (-0.6, 0.93), (-1.36, 0.98), (-2.0, 0.98), (-2.366, 0.90)],
+            plan=[(2.33, 0.58), (2.24, 0.80), (1.9, 0.93), (1.36, 0.975), (0.5, 0.95), (-0.5, 0.95), (-1.36, 0.986), (-2.0, 0.95),
+                  (-2.30, 0.85), (-2.366, 0.75)],
+            roof=[(0.30, 0.68), (-0.4, 0.60), (-1.0, 0.56), (-1.5, 0.48), (-1.75, 0.44)],
+            cab=(0.30, -0.40, -1.05, -1.75), bulge=0.05, hip=0.04, side=(0.22, -1.30), doors=(0.24,), mirror_x=0.18, rw_w=0.85)
 def c812(k):
-    ferrari_gt(k, T812)
-    k.rear_window(-1.85, -0.85, 0.99, 0.24, 0.42, 0.50, bulge=0.02)
-    for i in range(7):   # louvred carbon rear "window" of the Competizione
-        k.decal('blade', 'Carbon', 'top', -1.78 + i * .13, -1.72 + i * .13, -0.44, 0.44, 2, 10, off=.009)
-    k.headlight_quad((2.10, 0.72, 0.64), (0.70, 0.32, 0.55), 0.30, 0.09, slant=0.04, dots='row')
-    k.decal('grille', 'Gloss', 'front', -0.62, 0.62, 0.20, 0.38, 18, 5)
-    k.tail_clusters(-1.80, 0.80, 0.88, 0.45, 0.80)
-    for y in (0.46, 0.60): k.exhaust(y, 0.42, r=0.045)
+    build(k, P812, dict(r=0.35, w=0.275, rim=0.254), dict(r=0.364, w=0.315, rim=0.254), crease=SOFT)
+    for i in range(6):   # the slotted aluminium rear "window"
+        k.decal('blade', 'Gloss', 'top', -1.70 + i * .11, -1.66 + i * .11, -0.40, 0.40, 2, 10, off=.006)
+    k.decal('bonnetblade', 'Carbon', 'top', 0.95, 1.15, -0.62, 0.62, 4, 12, off=.006)
+    for s in (1, -1):
+        k.slanted('fendervent', 'Gloss', s, 1.05, 0.88, 0.48, 0.74, lean=0.06, nu=4, nv=6)
+        k.decal('skirt', 'Carbon', side(s), -1.0, 1.0, 0.12, 0.20, 30, 2)
+        for y in (0.56, 0.74): k.oval('tailround', 'Taillight', V(-2.30, s * y, 0.88), V(-1, s * 0.25 * y, 0.1), 0.065, 0.055, .006, n=6)
+    k.headlight_quad((2.10, 0.70, 0.66), (0.70, 0.34, 0.52), 0.32, 0.07, slant=0.05, taper=0.4, dots='row')
+    k.decal('grille', 'Gloss', 'front', -0.64, 0.64, 0.20, 0.40, 18, 5)
+    k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.13, 0.18, 30, 2)
+    k.fan('rearpanel', 'Gloss', -1.9, 0.42, 0.62, -0.62, 0.62, 30, 4)
+    k.fan('diffuser', 'Carbon', -1.9, 0.26, 0.42, -0.66, 0.66, 30, 3)
+    for y in (0.44, 0.58): k.exhaust(y, 0.44, r=0.045)
     k.join(); k.wheels(spokes=10, nut='bolts')
 
+# ---- 12Cilindri: 4.73 x 2.03 x 1.29 m, 2.70 m wheelbase. The black band across the nose holding the slim lights
+# (a nod to the 365 GTB/4 Daytona), a long clamshell bonnet, a fastback with a black delta behind the rear glass,
+# thin tail lights and twin pipes a side.
+P12C = dict(L=4.733, W=2.03, H=1.292, WB=2.70, fo=0.99, clear=0.12, nose_zb=0.26, tail_zb=0.40,
+            top=[(2.34, 0.60), (2.25, 0.68), (1.9, 0.76), (1.35, 0.82), (0.8, 0.875), (0.30, 0.93), (-0.05, 1.10), (-0.40, 1.26),
+                 (-0.70, 1.292), (-1.05, 1.25), (-1.5, 1.10), (-1.85, 1.02), (-2.25, 1.0), (-2.393, 0.93)],
+            belt=[(2.34, 0.58), (2.0, 0.77), (1.35, 0.86), (0.3, 0.91), (-0.6, 0.935), (-1.35, 0.97), (-2.0, 0.98), (-2.393, 0.90)],
+            plan=[(2.34, 0.60), (2.25, 0.82), (1.9, 0.96), (1.35, 1.0), (0.5, 0.975), (-0.5, 0.975), (-1.35, 1.015), (-2.0, 0.98),
+                  (-2.3, 0.88), (-2.393, 0.77)],
+            roof=[(0.30, 0.70), (-0.4, 0.62), (-1.0, 0.58), (-1.5, 0.50), (-1.85, 0.44)],
+            cab=(0.30, -0.40, -1.05, -1.85), bulge=0.04, hip=0.04, side=(0.22, -1.30), doors=(0.24,), mirror_x=0.18, rw_w=0.85)
 def cil12(k):
-    ferrari_gt(k)
-    k.rear_window(-1.85, -0.85, 0.99, 0.24, 0.42, 0.50, bulge=0.02)
-    k.decal('delta', 'Gloss', 'top', -1.95, -1.70, -0.55, 0.55, 6, 12)          # black delta behind the rear glass
-    # the 12Cilindri's black band across the nose with slim lights at its ends
-    k.fan('band', 'Gloss', 1.20, 0.60, 0.66, -0.62, 0.62, 40, 2, rear=False)
-    k.drl_strip((2.12, 0.70, 0.65), (0.75, 0.30, 0.40), 0.28, 0.035)
-    k.decal('grille', 'Gloss', 'front', -0.45, 0.45, 0.22, 0.34, 18, 4)
-    k.light_bar(-1.80, 0.84, 0.86, 0.80, bg=0.015, frac=1.0)
-    for y in (0.48, 0.60): k.exhaust(y, 0.42, r=0.045)
+    build(k, P12C, dict(r=0.363, w=0.275, rim=0.267), dict(r=0.377, w=0.315, rim=0.267), crease=SOFT)
+    k.decal('delta', 'Gloss', 'top', -2.15, -1.85, -0.55, 0.55, 6, 12)          # black delta behind the rear glass
+    k.fan('band', 'Gloss', 1.20, 0.60, 0.68, -0.66, 0.66, 40, 2, rear=False)    # the black band across the nose
+    k.drl_strip((2.14, 0.72, 0.66), (0.75, 0.30, 0.40), 0.28, 0.03)
+    k.decal('grille', 'Gloss', 'front', -0.46, 0.46, 0.22, 0.36, 18, 4)
+    k.decal('splitter', 'Gloss', 'front', -0.88, 0.88, 0.13, 0.18, 30, 2)
+    for s in (1, -1):
+        k.decal('skirt', 'Gloss', side(s), -1.0, 1.0, 0.12, 0.20, 30, 2)
+        k.fan('tail', 'Taillight', -1.9, 0.86, 0.885, s * 0.40, s * 0.86, 12, 2, off=.007)
+    k.fan('rearpanel', 'Gloss', -1.9, 0.42, 0.62, -0.62, 0.62, 30, 4)
+    for y in (0.48, 0.60): k.exhaust(y, 0.44, r=0.045)
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts')
 
-# ======================================================================= Ferrari Purosangue
-# front axle x=1.72, rear axle x=-1.30, 4.97 m long, 2.03 m wide, 1.59 m tall
-PX = [(-2.57, -2.50), (-1.40, -1.30), (1.60, 1.72), (2.56, 2.48)]
-def px(x): return pl(PX, x)
-TPURO = remap(TURUS, PX, ys=1.0, zf=lambda z: z * 0.97)
-WPURO = dict(F=dict(x=1.72, r=0.38, w=0.275, y=0.86, rim=0.279), R=dict(x=-1.30, r=0.385, w=0.315, y=0.865, rim=0.292))
+# ---- Purosangue: 4.97 x 2.03 x 1.59 m, 3.02 m wheelbase - Ferrari's four-door. A low bonnet, slim DRLs over lamps
+# set low in the big intakes, a fastback roof, rear-hinged back doors, a black tail panel with a thin light and four
+# pipes; 22-inch wheels at the front, 23 at the back.
+PPURO = dict(L=4.973, W=2.028, H=1.589, WB=3.018, fo=0.97, clear=0.185, nose_zb=0.36, tail_zb=0.46,
+             top=[(2.479, 0.78), (2.40, 0.86), (2.1, 0.93), (1.509, 1.0), (1.0, 1.05), (0.65, 1.09), (0.2, 1.38), (-0.15, 1.555),
+                  (-0.6, 1.589), (-1.2, 1.565), (-1.55, 1.52), (-1.85, 1.40), (-2.1, 1.22), (-2.35, 1.18), (-2.494, 1.08)],
+             belt=[(2.479, 0.78), (2.1, 0.95), (1.5, 1.02), (0.65, 1.08), (-0.5, 1.11), (-1.5, 1.15), (-2.1, 1.17), (-2.494, 1.05)],
+             plan=[(2.479, 0.62), (2.40, 0.82), (2.1, 0.95), (1.509, 1.0), (0.6, 0.985), (-0.6, 0.985), (-1.509, 1.014),
+                   (-2.1, 0.98), (-2.40, 0.90), (-2.494, 0.80)],
+             roof=[(0.65, 0.74), (0.0, 0.68), (-0.8, 0.66), (-1.5, 0.62), (-2.1, 0.55)],
+             cab=(0.65, -0.15, -1.55, -2.1), bulge=0.04, hip=0.04, side=(0.58, -1.95), pillars=(-0.40, -1.45), pillar_w=0.07,
+             doors=(0.58, -0.40, -1.45), mirror_x=0.52, rw_w=0.85, mirror_size=(0.17, 0.22, 0.12))
 def purosangue(k):
-    k.loft(stations(TPURO), **SOFT); k.arches(WPURO); k.surface()
-    k.windscreen(px(1.10), px(0.32), 1.07, 0.62, 0.70, 0.62, sweep=0.26)
-    k.rear_window(px(-2.22), px(-1.15), 1.16, 0.27, 0.50, 0.58)
-    z = lambda v: v * 0.97
-    k.side_glass([(px(x), z(v)) for x, v in [(0.90, 1.12), (0.62, 1.30), (0.30, 1.52), (-0.30, 1.57), (-0.90, 1.50), (-1.45, 1.35), (-1.85, 1.19)]],
-                 [(px(x), z(v)) for x, v in [(0.90, 1.11), (-0.60, 1.125), (-1.45, 1.15), (-1.85, 1.165)]], pillars=[px(-0.15), px(-1.20)], pillar_w=0.06)
+    build(k, PPURO, dict(r=0.368, w=0.255, rim=0.279), dict(r=0.387, w=0.315, rim=0.292), crease=SOFT)
     for s in (1, -1):
-        for xg in (px(0.90), px(-0.17), px(-1.25)): k.decal('doorline', 'Black', side(s), xg - .004, xg + .004, 0.30, 1.10, 1, 14, off=.002)
-        k.decal('sill', 'Gloss', side(s), px(-1.02), px(1.20), 0.22, 0.34, 30, 3, off=.005)
+        k.decal('sill', 'Gloss', side(s), -1.30, 1.10, 0.24, 0.34, 30, 3, off=.005)
+        k.fan('tail', 'Taillight', -2.0, 1.04, 1.07, s * 0.30, s * 0.86, 12, 2, off=.007)
     k.arch_trim(0.05, mat='Gloss')
-    k.headlight_quad((2.30, 0.70, 0.88), (0.75, 0.32, 0.45), 0.30, 0.08, slant=0.04, dots='row')
-    k.decal('grille', 'Gloss', 'front', -0.50, 0.50, 0.40, 0.62, 18, 5)
-    k.light_bar(-1.95, 1.02, 1.05, 0.80, bg=0.02, frac=1.0)
-    k.fan('rearpanel', 'Gloss', -1.95, 0.48, 0.64, -0.62, 0.62, 30, 3)
-    for y in (0.50, 0.64): k.exhaust(y, 0.44, r=0.045)
-    k.mirrors(px(0.84), 1.08, 1.18, size=(0.17, 0.22, 0.12))
-    k.interior(-0.45, 1.5, 0.95, l=2.4, h=0.42, seats_x=-0.20, seat_z=1.03)
+    k.drl_strip((2.36, 0.72, 0.92), (0.78, 0.30, 0.30), 0.30, 0.03)
+    k.headlight_quad((2.40, 0.66, 0.70), (0.85, 0.30, 0.10), 0.18, 0.07, dots='row')
+    k.decal('grille', 'Gloss', 'front', -0.52, 0.52, 0.42, 0.66, 18, 5)
+    k.fan('rearpanel', 'Gloss', -2.0, 0.80, 1.02, -0.66, 0.66, 30, 4)
+    k.fan('diffuser', 'Gloss', -2.0, 0.46, 0.62, -0.62, 0.62, 30, 3)
+    for y in (0.50, 0.64): k.exhaust(y, 0.52, r=0.045)
     k.join(); k.wheels(spokes=5, pairs=True, nut='bolts', caliper=(0.26, 0.085, 0.10))
 
 # ======================================================================= registry
