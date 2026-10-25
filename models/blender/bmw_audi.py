@@ -2,18 +2,13 @@
 #
 #   blender -b --factory-startup --python models/blender/bmw_audi.py -- --car all
 #
-# Bodies remap existing station tables: the front-engine GT for the M2 and M4 CSL, the Taycan sedan for the M5 and
-# the RS e-tron GT, the Cayenne for the RS 6 Avant, the XM and the RS Q8, the mid-engine table for the R8 and the
-# Devel Sixteen. The faces carry the brands: BMW's twin kidneys, Audi's big hexagonal Singleframe with four rings,
+# Bodies come from carshape: each car's real measurements and outline. The faces carry the brands: BMW's twin kidneys, Audi's big hexagonal Singleframe with four rings,
 # and the Devel's long fighter-jet canopy, fins and a huge V16 exhaust.
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main
-from supercars import TFER, remap, SOFT, SHARP
-from porsches import TTAY, TCAY, TCAY_SUV
-from teslas import glass, TAY_WS, TAY_RW, TAY_TOP, TAY_BOT
-from toyota import gt_coupe, hatch, CAY_TOP, CAY_BOT, CAY_RW, SUV_TOP, SUV_BOT, SUV_RW
-from hypercars import glasshouse
+from supercars import SOFT, SHARP
+from carshape import build, scaled
 
 # ----------------------------------------------------------------------------------------------- faces
 def kidneys(k, gap, w, z0, z1, slats=6, frame='Chrome'):
@@ -60,158 +55,198 @@ def quad_pipes(k, y, z, r=0.045, oval=False):
             else: k.exhaust(s * (y + d), z, r=r, mirror=False)
 
 # ----------------------------------------------------------------------------------------------- BMW
-# M2 (G87): short, wide, boxy arches, horizontal-frame kidneys
-def m2(k):
-    X = gt_coupe(k, [(-2.38, -2.29), (-1.10, -1.37), (1.62, 1.37), (2.36, 2.29)], 0.98, lambda z: z * 1.02 + max(0.0, z - 0.90) * 0.10,
-                 dict(F=dict(x=1.37, r=0.335, w=0.255, y=0.83, rim=0.241), R=dict(x=-1.37, r=0.345, w=0.285, y=0.835, rim=0.254)), duck_lift=0.04)
-    bmw_face(k, ((2.10, 0.66, 0.66), (0.72, 0.30, 0.55), 0.26, 0.07), (0.03, 0.30, 0.27, 0.48, 7), (0.80, 0.16, 0.26))
-    k.tail_clusters(X(-1.80), 0.82, 0.90, 0.45, 0.82)
-    k.fan('diffuser', 'Gloss', X(-1.80), 0.26, 0.42, -0.62, 0.62, 30, 3)
-    quad_pipes(k, 0.42, 0.34)
-    k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.024, 0.016))
+# Every car below is built by carshape.build from its real length, width, height and wheelbase and outline points read
+# off photos (the axles at +-wheelbase/2); carshape.scaled stretches a sister car's outline to another's real size.
 
-# M4 CSL: long bonnet, tall kidneys, carbon roof and bonnet, ducktail, red-ringed laser lights
+# M4 CSL: 4.79 x 1.89 x 1.39 m, 2.86 m wheelbase. A long bonnet, a three-box coupe roof, carbon roof and bonnet, a
+# ducktail, tall kidneys and the red-ringed laser lights
+PM4 = dict(L=4.794, W=1.887, H=1.393, WB=2.857, fo=0.90, clear=0.12, nose_zb=0.27, tail_zb=0.38,
+           top=[(2.3285, 0.66), (2.24, 0.74), (1.95, 0.81), (1.4285, 0.87), (0.9, 0.93), (0.55, 0.97), (0.15, 1.20), (-0.25, 1.36),
+                (-0.55, 1.393), (-0.85, 1.385), (-1.15, 1.33), (-1.45, 1.19), (-1.75, 1.06), (-2.2, 1.03), (-2.40, 1.05), (-2.4655, 0.98)],
+           belt=[(2.3285, 0.64), (1.95, 0.83), (1.4285, 0.90), (0.55, 0.97), (-0.5, 0.99), (-1.4285, 1.01), (-2.2, 1.01), (-2.4655, 0.95)],
+           plan=[(2.3285, 0.58), (2.24, 0.78), (1.95, 0.89), (1.4285, 0.935), (0.5, 0.91), (-0.5, 0.915), (-1.4285, 0.9435), (-2.1, 0.92),
+                 (-2.40, 0.84), (-2.4655, 0.76)],
+           roof=[(0.55, 0.68), (-0.25, 0.62), (-0.85, 0.60), (-1.3, 0.56), (-1.75, 0.50)],
+           cab=(0.55, -0.25, -1.15, -1.75), bulge=0.03, hip=0.04, side=(0.48, -1.45), pillars=(-1.05,), doors=(0.50,),
+           mirror_x=0.44, rw_w=0.85)
 def m4csl(k):
-    X = gt_coupe(k, [(-2.38, -2.40), (-1.10, -1.43), (1.62, 1.43), (2.36, 2.40)], 0.97, lambda z: z * 1.0 + max(0.0, z - 0.90) * 0.06,
-                 dict(F=dict(x=1.43, r=0.34, w=0.27, y=0.83, rim=0.254), R=dict(x=-1.43, r=0.35, w=0.295, y=0.835, rim=0.254)), duck_lift=0.07, crease=SHARP)
-    bmw_face(k, ((2.18, 0.66, 0.66), (0.72, 0.30, 0.55), 0.26, 0.07), (0.03, 0.25, 0.22, 0.53, 7), (0.80, 0.16, 0.24))
-    k.decal('roof', 'Carbon', 'top', X(-0.95), X(-0.20), -0.45, 0.45, 12, 10, off=.003)
-    k.decal('bonnet', 'Carbon', 'top', 1.30, 1.95, -0.45, 0.45, 12, 10, off=.003)
+    S = build(k, PM4, dict(r=0.337, w=0.275, rim=0.241), dict(r=0.34, w=0.285, rim=0.254), crease=SHARP)
+    bmw_face(k, ((2.18, 0.66, 0.70), (0.72, 0.30, 0.55), 0.26, 0.07), (0.03, 0.25, 0.26, 0.57, 7), (0.80, 0.18, 0.28))
+    k.decal('roof', 'Carbon', 'top', -1.10, -0.30, -0.45, 0.45, 12, 10, off=.003)
+    k.decal('bonnet', 'Carbon', 'top', 1.20, 1.95, -0.45, 0.45, 12, 10, off=.003)
     k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.14, 0.18, 30, 2)
-    k.tail_clusters(X(-1.85), 0.82, 0.90, 0.45, 0.82)
-    k.fan('diffuser', 'Carbon', X(-1.85), 0.26, 0.42, -0.62, 0.62, 30, 3)
-    quad_pipes(k, 0.40, 0.34)
+    for s in (1, -1): k.decal('skirt', 'Gloss', side(s), -1.0, 1.1, 0.12, 0.20, 30, 2)
+    k.tail_clusters(-2.0, 0.88, 0.96, 0.45, 0.82)
+    k.fan('diffuser', 'Carbon', -2.0, 0.26, 0.42, -0.62, 0.62, 30, 3)
+    quad_pipes(k, 0.40, 0.36)
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
-def bmw_sedan(k, xs, ys, zf, wheels, kid, light, tail_z):
-    X = lambda x: pl(xs, x)
-    k.loft(stations(remap(TTAY, xs, ys, zf)), **SOFT); k.arches(wheels); k.surface()
-    glass(k, X, zf, TAY_WS, TAY_RW, TAY_TOP, TAY_BOT, pillars=[-0.07, -1.08])
-    for s in (1, -1):
-        for xg in (0.80, -0.08, -1.12): k.decal('doorline', 'Black', side(s), X(xg) - .004, X(xg) + .004, 0.25, zf(0.92), 1, 12, off=.002)
-        for xh in (0.15, -0.85): k.decal('handle', 'Chrome', side(s), X(xh) - .14, X(xh), zf(0.86), zf(0.86) + .018, 4, 1, off=.003)
-        k.decal('skirt', 'Gloss', side(s), X(-1.0), X(1.05), 0.16, 0.24, 30, 2)
-    k.mirrors(X(0.74), 1.0 * ys + .04, zf(1.0), size=(0.13, 0.18, 0.09))
-    k.interior(X(-0.40), 1.38 * ys, zf(0.74), l=2.2, h=0.38, seats_x=X(-0.20), seat_z=zf(0.84))
-    return X
+# M2 (G87): 4.58 x 1.89 x 1.40 m, 2.75 m wheelbase - shorter and boxier, with square-framed kidneys
+PM2 = scaled(PM4, L=4.58, W=1.887, H=1.403, WB=2.747, fo=0.82)
+def m2(k):
+    S = build(k, PM2, dict(r=0.335, w=0.255, rim=0.241), dict(r=0.345, w=0.285, rim=0.254), crease=SHARP)
+    bmw_face(k, ((2.06, 0.66, 0.70), (0.72, 0.30, 0.55), 0.26, 0.07), (0.03, 0.30, 0.30, 0.52, 7), (0.80, 0.18, 0.28))
+    for s in (1, -1): k.decal('skirt', 'Gloss', side(s), -1.0, 1.05, 0.12, 0.20, 30, 2)
+    k.tail_clusters(-1.9, 0.88, 0.96, 0.45, 0.82)
+    k.fan('diffuser', 'Gloss', -1.9, 0.26, 0.42, -0.62, 0.62, 30, 3)
+    quad_pipes(k, 0.42, 0.36)
+    k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.024, 0.016))
 
-# M5 (G90): long four-door super saloon, wide kidneys, quad pipes, small boot lip
+# M5 (G90): 5.10 x 1.97 x 1.51 m, 3.01 m wheelbase - the long four-door super saloon: wide kidneys, a boot lip, quad pipes
+PM5 = dict(L=5.096, W=1.97, H=1.51, WB=3.006, fo=0.92, clear=0.13, nose_zb=0.28, tail_zb=0.40,
+           top=[(2.423, 0.72), (2.33, 0.80), (2.0, 0.88), (1.503, 0.94), (1.0, 1.0), (0.70, 1.04), (0.3, 1.28), (-0.1, 1.48),
+                (-0.5, 1.51), (-1.1, 1.50), (-1.55, 1.43), (-1.85, 1.30), (-2.15, 1.12), (-2.5, 1.09), (-2.62, 1.10), (-2.673, 1.03)],
+           belt=[(2.423, 0.70), (2.0, 0.90), (1.503, 0.97), (0.70, 1.04), (-0.5, 1.06), (-1.503, 1.09), (-2.3, 1.10), (-2.673, 1.02)],
+           plan=[(2.423, 0.62), (2.33, 0.82), (2.0, 0.93), (1.503, 0.975), (0.5, 0.955), (-0.5, 0.96), (-1.503, 0.985), (-2.2, 0.96),
+                 (-2.55, 0.88), (-2.673, 0.80)],
+           roof=[(0.70, 0.72), (0.0, 0.68), (-0.9, 0.66), (-1.5, 0.62), (-2.15, 0.55)],
+           cab=(0.70, -0.10, -1.55, -2.15), bulge=0.03, hip=0.04, side=(0.62, -1.95), pillars=(-0.35, -1.50), pillar_w=0.07,
+           doors=(0.62, -0.35), mirror_x=0.56, rw_w=0.85)
 def m5(k):
-    xs = [(-2.50, -2.53), (-1.40, -1.50), (1.50, 1.52), (2.48, 2.53)]
-    zf = lambda z: z + max(0.0, z - 0.90) * 0.10
-    X = bmw_sedan(k, xs, 1.0, zf, dict(F=dict(x=1.52, r=0.36, w=0.275, y=0.84, rim=0.267), R=dict(x=-1.50, r=0.365, w=0.305, y=0.845, rim=0.267)),
-                  None, None, None)
-    bmw_face(k, ((2.26, 0.66, 0.66), (0.72, 0.30, 0.52), 0.30, 0.07), (0.03, 0.32, 0.33, 0.58, 8), (0.84, 0.18, 0.30))
-    k.tail_clusters(X(-1.90), 0.86, 0.95, 0.45, 0.86)
-    k.fan('diffuser', 'Gloss', X(-1.90), 0.30, 0.44, -0.62, 0.62, 30, 3)
-    k.spoiler(X(-2.40), 1.00, 0.10, 1.20, aoa=-4, thick=0.05, mat='Gloss', strut_y=0.35)
-    quad_pipes(k, 0.46, 0.36)
+    S = build(k, PM5, dict(r=0.368, w=0.285, rim=0.254), dict(r=0.37, w=0.295, rim=0.267), crease=SOFT)
+    bmw_face(k, ((2.26, 0.66, 0.74), (0.72, 0.30, 0.52), 0.30, 0.07), (0.03, 0.32, 0.36, 0.64, 8), (0.84, 0.20, 0.34))
+    for s in (1, -1):
+        for xh in (0.20, -0.75): k.decal('handle', 'Chrome', side(s), xh - .14, xh, 0.98, 0.998, 4, 1, off=.003)
+        k.decal('skirt', 'Gloss', side(s), -1.1, 1.1, 0.14, 0.22, 30, 2)
+    k.tail_clusters(-2.2, 0.94, 1.03, 0.45, 0.86)
+    k.fan('diffuser', 'Gloss', -2.2, 0.30, 0.46, -0.62, 0.62, 30, 3)
+    k.spoiler(S.tail + 0.10, 1.11, 0.10, 1.20, aoa=-4, thick=0.05, mat='Gloss', strut_y=0.35)
+    quad_pipes(k, 0.46, 0.38)
     k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.026, 0.018))
 
-# XM: big, square-jawed performance SUV with huge chrome-framed kidneys and split lights
+# XM: 5.11 x 2.01 x 1.76 m, 3.11 m wheelbase - the big square-jawed SUV: huge lit kidneys, split lights, a sloping rear
+PXM = dict(L=5.11, W=2.005, H=1.755, WB=3.105, fo=0.92, clear=0.21, nose_zb=0.42, tail_zb=0.48, nose_run=0.10,
+           top=[(2.4725, 0.98), (2.40, 1.08), (2.1, 1.15), (1.5525, 1.20), (1.0, 1.24), (0.75, 1.27), (0.35, 1.53), (0.0, 1.72),
+                (-0.4, 1.755), (-1.3, 1.74), (-1.95, 1.68), (-2.3, 1.52), (-2.5, 1.30), (-2.6375, 1.22)],
+           belt=[(2.4725, 0.96), (2.1, 1.16), (1.5525, 1.22), (0.75, 1.27), (-0.5, 1.29), (-1.5525, 1.31), (-2.3, 1.32), (-2.6375, 1.20)],
+           plan=[(2.4725, 0.76), (2.40, 0.90), (2.1, 0.97), (1.5525, 1.0), (0.5, 0.985), (-0.5, 0.985), (-1.5525, 1.0025), (-2.3, 0.98),
+                 (-2.55, 0.92), (-2.6375, 0.84)],
+           roof=[(0.75, 0.80), (0.0, 0.76), (-1.0, 0.75), (-1.95, 0.72), (-2.35, 0.66)],
+           cab=(0.75, 0.0, -1.95, -2.45), bulge=0.03, hip=0.03, side=(0.68, -2.20), pillars=(-0.45, -1.55), pillar_w=0.08,
+           doors=(0.68, -0.45, -1.55), mirror_x=0.60, rw_w=0.85, roof_crown=0.04, mirror_size=(0.18, 0.24, 0.13))
 def xm(k):
-    zf = lambda z: z * 1.03 + 0.04
-    X = hatch(k, TCAY_SUV, [(-2.48, -2.55), (-1.40, -1.50), (1.50, 1.60), (2.46, 2.55)], 1.01, zf,
-              dict(F=dict(x=1.60, r=0.40, w=0.29, y=0.86, rim=0.292, gap=0.07), R=dict(x=-1.50, r=0.40, w=0.31, y=0.865, rim=0.292, gap=0.07)),
-              SUV_TOP, SUV_BOT, SUV_RW, [-0.15, -1.25], crease=SHARP)
-    bmw_face(k, ((2.34, 0.70, zf(0.92)), (0.80, 0.25, 0.30), 0.30, 0.05), (0.03, 0.40, zf(0.42), zf(0.86), 8), (0.86, zf(0.24), zf(0.40)))
-    k.headlight_quad((2.40, 0.72, zf(0.68)), (0.80, 0.25, 0.30), 0.22, 0.07, slant=0.02, dots='row')   # the lower half of the split lights
-    both(lambda s: k.decal('cladding', 'Gloss', side(s), X(-1.00), X(1.05), zf(0.22), zf(0.34), 30, 3, off=.006))
-    k.tail_clusters(X(-1.95), zf(0.98), zf(1.10), 0.60, 0.86)
-    k.fan('rearbumper', 'Gloss', X(-1.95), zf(0.30), zf(0.46), -0.66, 0.66, 30, 3)
-    quad_pipes(k, 0.46, zf(0.36), oval=True)
+    S = build(k, PXM, dict(r=0.389, w=0.275, rim=0.279, gap=0.07), dict(r=0.39, w=0.315, rim=0.279, gap=0.07), crease=SHARP)
+    k.arch_trim(0.06, mat='Gloss')
+    bmw_face(k, ((2.38, 0.72, 1.14), (0.85, 0.25, 0.30), 0.30, 0.05), (0.03, 0.42, 0.60, 1.08, 8), (0.88, 0.34, 0.54))
+    k.headlight_quad((2.42, 0.74, 0.86), (0.85, 0.25, 0.30), 0.22, 0.07, slant=0.02, dots='row')   # the lower half of the split lights
+    both(lambda s: k.decal('cladding', 'Gloss', side(s), -1.10, 1.15, 0.24, 0.38, 30, 3, off=.006))
+    k.tail_clusters(-2.2, 1.18, 1.30, 0.60, 0.86)
+    k.fan('rearbumper', 'Gloss', -2.2, 0.48, 0.64, -0.66, 0.66, 30, 3)
+    quad_pipes(k, 0.46, 0.54, oval=True)
     k.join(); k.wheels(spokes=6, pairs=True, nut='bolts', spoke_w=(0.034, 0.024))
 
 # ----------------------------------------------------------------------------------------------- Audi
-# R8 V10 GT: mid-engine, the big carbon "sideblade" behind the doors, fixed wing
-RX = [(-2.33, -2.24), (-1.30, -1.32), (1.36, 1.33), (2.31, 2.19)]
+# R8 V10 GT: 4.43 x 1.94 x 1.24 m, 2.65 m wheelbase - mid-engine, the big carbon "sideblade" behind the doors, a fixed wing
+PR8 = dict(L=4.429, W=1.94, H=1.24, WB=2.65, fo=1.0, clear=0.11, nose_zb=0.24, tail_zb=0.40,
+           top=[(2.325, 0.50), (2.23, 0.58), (1.95, 0.65), (1.6, 0.71), (1.25, 0.78), (0.95, 0.84), (0.5, 1.03), (0.1, 1.20),
+                (-0.2, 1.24), (-0.6, 1.20), (-0.95, 1.10), (-1.5, 1.05), (-1.95, 1.03), (-2.104, 0.97)],
+           belt=[(2.325, 0.48), (2.05, 0.64), (1.6, 0.76), (1.0, 0.84), (0.4, 0.87), (-0.4, 0.90), (-1.0, 0.97), (-1.6, 1.0),
+                 (-2.0, 0.98), (-2.104, 0.90)],
+           plan=[(2.325, 0.44), (2.23, 0.70), (1.95, 0.87), (1.325, 0.96), (0.6, 0.935), (0.0, 0.93), (-0.7, 0.96), (-1.325, 0.97),
+                 (-1.85, 0.94), (-2.05, 0.86), (-2.104, 0.78)],
+           roof=[(0.95, 0.66), (0.4, 0.60), (-0.2, 0.56), (-0.6, 0.52), (-0.95, 0.46)],
+           cab=(0.95, 0.10, -0.62, -0.95), bulge=[(0.0, 0.02), (1.0, 0.05), (2.0, 0.04)], hip=0.04, side=(0.88, -0.85),
+           doors=(0.86,), mirror_x=0.80, rw_w=0.9, rw_bulge=0.0)
 def r8(k):
-    X = lambda x: pl(RX, x); Z = lambda z: z + max(0.0, z - 0.90) * 0.06
-    k.loft(stations(remap(TFER, RX, 1.0, Z)), **SHARP); k.arches(dict(F=dict(x=1.33, r=0.335, w=0.255, y=0.83, rim=0.254), R=dict(x=-1.32, r=0.35, w=0.31, y=0.835, rim=0.254))); k.surface()
-    glasshouse(k, X, Z)
+    S = build(k, PR8, dict(r=0.335, w=0.255, rim=0.254), dict(r=0.35, w=0.31, rim=0.254), crease=SHARP)
     for s in (1, -1):
-        k.decal('doorline', 'Black', side(s), X(0.70) - .004, X(0.70) + .004, 0.22, 0.84, 1, 12, off=.002)
-        k.slanted('sideblade', 'Carbon', s, X(-0.45), X(-1.05), 0.30, 0.90, lean=0.10, nu=8, nv=10, off=.006)
-        k.slanted('sideintake', 'Gloss', s, X(-0.62), X(-0.95), 0.58, 0.82, lean=0.08, nu=6, nv=6, off=.009)
-        k.decal('skirt', 'Carbon', side(s), X(-0.95), X(1.00), 0.13, 0.20, 30, 2)
-    audi_face(k, ((2.00, 0.66, 0.60), (0.72, 0.32, 0.52), 0.30, 0.08), (0.42, 0.50, 0.18, 0.46, 0.43), (0.62, 0.84, 0.18, 0.34))
-    k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.14, 0.18, 30, 2)
-    k.light_bar(X(-1.70), 0.82, 0.86, 0.80, bg=0.015, frac=0.6)
-    k.fan('rearpanel', 'Gloss', X(-1.70), 0.44, 0.62, -0.62, 0.62, 30, 4)
-    k.fan('diffuser', 'Carbon', X(-1.70), 0.28, 0.44, -0.66, 0.66, 30, 3)
-    for s in (1, -1): k.exhaust(s * 0.58, 0.36, shape='rect', w=0.16, h=0.08, mirror=False)
-    k.post_wing(-1.86, 1.20, 0.34, 1.76, -1.98, 0.44, aoa=-8,
-                endplate=[(-1.80, 1.15), (-1.82, 1.28), (-2.22, 1.30), (-2.26, 1.18), (-2.10, 1.14)])
-    k.mirrors(X(0.62), 1.07, 0.93, size=(0.14, 0.18, 0.08))
-    k.interior(X(-0.20), 1.28, Z(0.64), h=0.32, seats_x=X(-0.42), seat_z=Z(0.74))
+        k.slanted('sideblade', 'Carbon', s, -0.45, -1.05, 0.30, 0.92, lean=0.10, nu=8, nv=10, off=.006)
+        k.slanted('sideintake', 'Gloss', s, -0.62, -0.95, 0.60, 0.84, lean=0.08, nu=6, nv=6, off=.009)
+        k.decal('skirt', 'Carbon', side(s), -0.95, 1.0, 0.11, 0.19, 30, 2)
+    audi_face(k, ((2.04, 0.66, 0.62), (0.66, 0.34, 0.52), 0.30, 0.08), (0.42, 0.50, 0.18, 0.48, 0.45), (0.62, 0.86, 0.16, 0.36))
+    k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.12, 0.17, 30, 2)
+    k.light_bar(-1.7, 0.88, 0.92, 0.80, bg=0.015, frac=0.6)
+    k.fan('rearpanel', 'Gloss', -1.7, 0.46, 0.66, -0.62, 0.62, 30, 4)
+    k.fan('diffuser', 'Carbon', -1.7, 0.26, 0.46, -0.66, 0.66, 30, 3)
+    for s in (1, -1): k.exhaust(s * 0.58, 0.38, shape='rect', w=0.16, h=0.08, mirror=False)
+    k.post_wing(S.tail + 0.30, 1.22, 0.34, 1.76, S.tail + 0.18, 0.44, aoa=-8,
+                endplate=[(S.tail + 0.36, 1.17), (S.tail + 0.34, 1.30), (S.tail - 0.06, 1.32), (S.tail - 0.10, 1.20), (S.tail + 0.06, 1.16)])
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
-# RS 6 Avant GT: a very fast estate car: long roof, flared arches, oval pipes
+# RS 6 Avant GT: 5.00 x 1.95 x 1.46 m, 2.93 m wheelbase - the very fast estate: a long roof, flared arches, oval pipes
+PRS6 = dict(L=4.995, W=1.951, H=1.46, WB=2.927, fo=0.93, clear=0.12, nose_zb=0.27, tail_zb=0.38, tail_run=0.12,
+            top=[(2.3935, 0.70), (2.30, 0.78), (2.0, 0.86), (1.4635, 0.92), (1.0, 0.97), (0.70, 1.01), (0.3, 1.25), (-0.1, 1.43),
+                 (-0.5, 1.46), (-1.4, 1.45), (-2.05, 1.40), (-2.35, 1.30), (-2.50, 1.12), (-2.6015, 1.04)],
+            belt=[(2.3935, 0.68), (2.0, 0.88), (1.4635, 0.95), (0.70, 1.01), (-0.5, 1.03), (-1.4635, 1.06), (-2.3, 1.08), (-2.6015, 1.0)],
+            plan=[(2.3935, 0.62), (2.30, 0.82), (2.0, 0.93), (1.4635, 0.9755), (0.5, 0.945), (-0.5, 0.95), (-1.4635, 0.9755), (-2.2, 0.95),
+                  (-2.5, 0.88), (-2.6015, 0.80)],
+            roof=[(0.70, 0.70), (0.0, 0.65), (-1.0, 0.63), (-2.0, 0.60), (-2.35, 0.56)],
+            cab=(0.70, -0.10, -2.05, -2.45), bulge=0.05, hip=0.05, side=(0.62, -2.20), pillars=(-0.35, -1.45), pillar_w=0.07,
+            doors=(0.62, -0.35), mirror_x=0.56, rw_w=0.85, roof_crown=0.04)
 def rs6(k):
-    zf = lambda z: z * 0.86
-    X = hatch(k, TCAY_SUV, [(-2.48, -2.50), (-1.40, -1.45), (1.50, 1.48), (2.46, 2.50)], 0.995, zf,
-              dict(F=dict(x=1.48, r=0.355, w=0.275, y=0.845, rim=0.267), R=dict(x=-1.45, r=0.36, w=0.295, y=0.85, rim=0.267)),
-              SUV_TOP, SUV_BOT, SUV_RW, [-0.15, -1.25])
-    audi_face(k, ((2.30, 0.66, zf(0.84)), (0.80, 0.28, 0.40), 0.30, 0.06), (0.46, 0.52, zf(0.26), zf(0.70), zf(0.64)), (0.66, 0.88, zf(0.24), zf(0.44)))
-    k.wing(X(-1.93), zf(1.63), 0.18, 1.15, aoa=-6, thick=0.08, mat='Gloss', camber=-0.02, name='roofspoiler')
-    k.light_bar(X(-1.95), zf(1.02), zf(1.06), 0.86, bg=0.015, frac=1.0)
-    k.fan('diffuser', 'Gloss', X(-1.95), 0.26, 0.42, -0.62, 0.62, 30, 3)
+    S = build(k, PRS6, dict(r=0.365, w=0.285, rim=0.279), dict(r=0.365, w=0.285, rim=0.279), crease=SOFT)
+    audi_face(k, ((2.24, 0.66, 0.76), (0.80, 0.28, 0.40), 0.30, 0.06), (0.46, 0.54, 0.24, 0.62, 0.56), (0.66, 0.88, 0.22, 0.42))
+    k.wing(-2.06, 1.42, 0.18, 1.15, aoa=-6, thick=0.08, mat='Gloss', camber=-0.02, name='roofspoiler')
+    k.light_bar(-2.2, 1.02, 1.06, 0.86, bg=0.015, frac=1.0)
+    k.fan('diffuser', 'Gloss', -2.2, 0.26, 0.42, -0.62, 0.62, 30, 3)
     for s in (1, -1): k.exhaust(s * 0.60, 0.34, shape='rect', w=0.17, h=0.08, mirror=False)
     k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.026, 0.018))
 
-# RS e-tron GT performance: the electric GT (Taycan cousin), closed Singleframe, full-width light bar
+# RS e-tron GT performance: 5.00 x 1.96 x 1.37 m, 2.90 m wheelbase - the low electric fastback: big rear haunches, a
+# closed Singleframe, a carbon roof, a full-width light bar
+PETRON = dict(L=4.997, W=1.964, H=1.369, WB=2.90, fo=0.98, clear=0.12, nose_zb=0.26, tail_zb=0.38,
+              top=[(2.43, 0.62), (2.34, 0.70), (2.0, 0.78), (1.45, 0.86), (0.95, 0.92), (0.70, 0.96), (0.3, 1.18), (-0.1, 1.34),
+                   (-0.5, 1.369), (-1.0, 1.35), (-1.45, 1.26), (-1.85, 1.12), (-2.2, 1.03), (-2.45, 1.03), (-2.567, 0.96)],
+              belt=[(2.43, 0.60), (2.0, 0.80), (1.45, 0.89), (0.70, 0.96), (-0.5, 0.99), (-1.45, 1.02), (-2.2, 1.03), (-2.567, 0.94)],
+              plan=[(2.43, 0.56), (2.34, 0.80), (2.0, 0.92), (1.45, 0.975), (0.5, 0.94), (-0.5, 0.945), (-1.45, 0.982), (-2.2, 0.95),
+                    (-2.48, 0.86), (-2.567, 0.76)],
+              roof=[(0.70, 0.68), (0.0, 0.62), (-0.9, 0.58), (-1.45, 0.52), (-1.85, 0.46)],
+              cab=(0.70, -0.10, -1.10, -1.85), bulge=0.05, hip=0.06, side=(0.62, -1.65), pillars=(-0.40,), pillar_w=0.07,
+              doors=(0.62, -0.40), mirror_x=0.56, rw_w=0.85)
 def rsetrongt(k):
-    xs = [(-2.50, -2.495), (-1.40, -1.40), (1.50, 1.50), (2.48, 2.495)]
-    zf = lambda z: z * 0.99
-    X = bmw_sedan(k, xs, 1.0, zf, dict(F=dict(x=1.50, r=0.355, w=0.27, y=0.84, rim=0.267), R=dict(x=-1.40, r=0.36, w=0.305, y=0.845, rim=0.267)), None, None, None)
-    k.decal('roof', 'Carbon', 'top', X(-1.05), X(0.25), -0.52, 0.52, 16, 12, off=.003)
-    audi_face(k, ((2.22, 0.64, 0.68), (0.70, 0.30, 0.55), 0.30, 0.07), (0.40, 0.48, 0.20, 0.50, 0.46), (0.62, 0.86, 0.18, 0.36))
-    k.light_bar(X(-1.90), 0.90, 0.93, 0.86, bg=0.02, frac=1.0)
-    k.fan('diffuser', 'Carbon', X(-1.90), 0.30, 0.44, -0.66, 0.66, 30, 3)
-    k.spoiler(X(-2.30), 1.02, 0.20, 1.30, aoa=-5, mat='Carbon', strut_y=0.40)
+    S = build(k, PETRON, dict(r=0.36, w=0.265, rim=0.267), dict(r=0.358, w=0.305, rim=0.267), crease=SOFT)
+    k.decal('roof', 'Carbon', 'top', -1.10, 0.20, -0.52, 0.52, 16, 12, off=.003)
+    audi_face(k, ((2.20, 0.64, 0.70), (0.70, 0.30, 0.55), 0.30, 0.07), (0.40, 0.48, 0.20, 0.52, 0.48), (0.62, 0.86, 0.18, 0.38))
+    k.light_bar(-2.1, 0.94, 0.97, 0.86, bg=0.02, frac=1.0)
+    k.fan('diffuser', 'Carbon', -2.1, 0.30, 0.46, -0.66, 0.66, 30, 3)
+    k.spoiler(S.tail + 0.20, 1.04, 0.20, 1.30, aoa=-5, mat='Carbon', strut_y=0.40)
     k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.026, 0.016))
 
-# RS Q8 performance: coupe-SUV, huge black Singleframe, wide arches
+# RS Q8 performance: 5.01 x 2.01 x 1.69 m, 3.00 m wheelbase - the coupe-SUV: a huge black Singleframe, wide arches and
+# a roof that slopes down to the tailgate
+PRSQ8 = scaled(PXM, L=5.012, W=2.007, H=1.692, WB=2.998, fo=0.97,
+               top=[(2.469, 0.94), (2.39, 1.04), (2.1, 1.10), (1.499, 1.15), (1.0, 1.19), (0.75, 1.22), (0.35, 1.48), (0.0, 1.66),
+                    (-0.4, 1.692), (-1.0, 1.67), (-1.6, 1.58), (-2.0, 1.44), (-2.3, 1.30), (-2.45, 1.26), (-2.543, 1.18)],
+               cab=(0.75, 0.0, -1.60, -2.30))
 def rsq8(k):
-    zf = lambda z: z * 1.0 + 0.02
-    X = hatch(k, TCAY, [(-2.48, -2.50), (-1.40, -1.50), (1.50, 1.50), (2.46, 2.50)], 1.0, zf,
-              dict(F=dict(x=1.50, r=0.39, w=0.29, y=0.85, rim=0.292, gap=0.07), R=dict(x=-1.50, r=0.39, w=0.31, y=0.855, rim=0.292, gap=0.07)),
-              CAY_TOP, CAY_BOT, CAY_RW, [-0.60], crease=SHARP)
-    audi_face(k, ((2.32, 0.70, zf(0.86)), (0.80, 0.25, 0.30), 0.30, 0.06), (0.52, 0.58, zf(0.30), zf(0.80), zf(0.72)), (0.72, 0.92, zf(0.26), zf(0.46)))
-    both(lambda s: k.decal('cladding', 'Gloss', side(s), X(-1.00), X(1.05), zf(0.22), zf(0.34), 30, 3, off=.006))
-    k.light_bar(X(-1.90), zf(1.00), zf(1.04), 0.86, bg=0.015, frac=1.0)
-    k.fan('rearbumper', 'Gloss', X(-1.90), zf(0.30), zf(0.46), -0.66, 0.66, 30, 3)
-    for s in (1, -1): k.exhaust(s * 0.62, zf(0.36), shape='rect', w=0.18, h=0.08, mirror=False)
+    S = build(k, PRSQ8, dict(r=0.39, w=0.29, rim=0.292, gap=0.07), dict(r=0.39, w=0.31, rim=0.292, gap=0.07), crease=SHARP)
+    k.arch_trim(0.06, mat='Gloss')
+    audi_face(k, ((2.32, 0.70, 1.06), (0.80, 0.25, 0.30), 0.30, 0.06), (0.52, 0.60, 0.40, 0.98, 0.90), (0.72, 0.94, 0.34, 0.56))
+    both(lambda s: k.decal('cladding', 'Gloss', side(s), -1.10, 1.15, 0.24, 0.38, 30, 3, off=.006))
+    k.light_bar(-2.1, 1.16, 1.20, 0.86, bg=0.015, frac=1.0)
+    k.fan('rearbumper', 'Gloss', -2.1, 0.46, 0.62, -0.66, 0.66, 30, 3)
+    for s in (1, -1): k.exhaust(s * 0.62, 0.52, shape='rect', w=0.18, h=0.08, mirror=False)
     k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.028, 0.018))
 
 # ----------------------------------------------------------------------------------------------- Devel Sixteen
-# A 5.4 m jet-fighter of a car: low wide body, a long narrow bubble canopy far forward, two tall rear fins,
-# big side intakes and an enormous round V16 exhaust in the middle of the tail
-DX = [(-2.33, -2.70), (-1.30, -1.58), (1.36, 1.55), (2.31, 2.70)]
-DZ = lambda z: z * 0.97 + max(0.0, z - 0.90) * 0.18
+# 5.30 x 2.11 x 1.27 m: a jet fighter of a car - a long, low, wide body, a narrow bubble canopy far forward, two tall
+# rear fins, big side intakes and an enormous round V16 pipe in the middle of the tail
+PDEVEL = dict(L=5.304, W=2.11, H=1.272, WB=3.10, fo=1.15, clear=0.11, nose_zb=0.22, tail_zb=0.40,
+              top=[(2.70, 0.46), (2.58, 0.54), (2.2, 0.62), (1.8, 0.69), (1.4, 0.76), (1.10, 0.82), (0.6, 1.02), (0.15, 1.22),
+                   (-0.25, 1.272), (-0.75, 1.22), (-1.2, 1.10), (-1.8, 1.04), (-2.3, 1.02), (-2.5, 1.02), (-2.604, 0.95)],
+              belt=[(2.70, 0.44), (2.3, 0.62), (1.8, 0.76), (1.1, 0.84), (0.4, 0.87), (-0.4, 0.89), (-1.1, 0.97), (-1.8, 1.0),
+                    (-2.4, 0.98), (-2.604, 0.90)],
+              plan=[(2.70, 0.42), (2.58, 0.72), (2.2, 0.94), (1.55, 1.04), (0.7, 1.0), (0.0, 0.99), (-0.8, 1.04), (-1.55, 1.055),
+                    (-2.2, 1.02), (-2.5, 0.92), (-2.604, 0.82)],
+              roof=[(1.10, 0.50), (0.4, 0.42), (-0.25, 0.38), (-0.75, 0.32), (-1.2, 0.26)],
+              cab=(1.10, 0.15, -0.75, -1.20), bulge=0.06, hip=0.06, side=(1.0, -1.0), doors=(0.98,), mirror_x=0.92, rw_w=0.85,
+              rw_bulge=0.0)
 def devel16(k):
-    X = lambda x: pl(DX, x)
-    rows = remap(TFER, DX, 1.06, DZ)
-    rows = [r[:8] + (r[8] * (0.62 if -0.95 < r[0] < 0.60 else 1.0),) + r[9:] for r in rows]   # a narrow canopy
-    k.loft(stations(rows), crease_lines=0.55, crisp_front=-9, crisp=0.45, crease_front=0.7, crease_rear=0.85)
-    k.arches(dict(F=dict(x=1.55, r=0.36, w=0.28, y=0.90, rim=0.267), R=dict(x=-1.58, r=0.38, w=0.36, y=0.905, rim=0.292))); k.surface()
-    glasshouse(k, X, DZ, hw=0.70)
-    k.decal('canopy', 'Glass', 'top', X(-0.70), X(0.55), -0.30, 0.30, 16, 8, off=.005)   # all-glass fighter canopy
+    S = build(k, PDEVEL, dict(r=0.36, w=0.28, rim=0.267), dict(r=0.38, w=0.36, rim=0.292),
+              crease=dict(crease_lines=0.55, crisp_front=-9, crisp=0.45, crease_front=0.7, crease_rear=0.85))
     for s in (1, -1):
-        k.slanted('sideintake', 'Gloss', s, X(-0.30), X(-1.05), 0.40, 0.88, lean=0.25, nu=8, nv=8, off=.006)
-        k.decal('skirt', 'Carbon', side(s), X(-1.00), X(1.05), 0.12, 0.20, 30, 2)
-        k.decal('stripe', 'Gloss', side(s), X(0.40), X(1.30), 0.56, 0.60, 20, 1, off=.005)
-        k.plate('fin', 'Carbon', [(X(-1.15), DZ(0.97)), (X(-1.75), DZ(1.16)), (X(-2.22), DZ(1.18)), (X(-2.30), DZ(0.95))], s * 0.62, t=0.015)
-    k.headlight_quad((2.40, 0.74, 0.58), (0.72, 0.34, 0.52), 0.30, 0.06, slant=0.06, taper=0.4, dots='row')
-    k.decal('mouth', 'Gloss', 'front', -0.62, 0.62, 0.18, 0.34, 20, 4)
-    k.decal('splitter', 'Carbon', 'front', -1.0, 1.0, 0.12, 0.16, 30, 2)
-    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.50, 2.00, s * 0.20, s * 0.44, 6, 4))
-    k.light_bar(X(-1.85), 0.86, 0.89, 0.85, bg=0.015, frac=0.85)
-    k.fan('rearpanel', 'Gloss', X(-1.85), 0.42, 0.80, -0.70, 0.70, 30, 5)
-    k.fan('diffuser', 'Carbon', X(-1.85), 0.24, 0.42, -0.74, 0.74, 30, 3)
-    k.exhaust(0.0, 0.60, r=0.15, mirror=False)                                                    # the giant V16 pipe
-    k.mirrors(X(0.55), 0.98, DZ(0.95), size=(0.13, 0.16, 0.08))
-    k.interior(X(-0.10), 0.90, DZ(0.64), l=1.4, h=0.30, seats_x=X(-0.30), seat_y=0.24, seat_z=DZ(0.74))
+        k.slanted('sideintake', 'Gloss', s, -0.30, -1.10, 0.40, 0.88, lean=0.25, nu=8, nv=8, off=.006)
+        k.decal('skirt', 'Carbon', side(s), -1.10, 1.15, 0.11, 0.19, 30, 2)
+        k.decal('stripe', 'Gloss', side(s), 0.40, 1.40, 0.58, 0.62, 20, 1, off=.005)
+        k.plate('fin', 'Carbon', [(-1.30, 1.04), (-1.95, 1.26), (S.tail + 0.25, 1.28), (S.tail + 0.15, 1.0)], s * 0.62, t=0.015)
+    k.headlight_quad((2.44, 0.76, 0.58), (0.66, 0.36, 0.52), 0.30, 0.06, slant=0.06, taper=0.4, dots='row')
+    k.decal('mouth', 'Gloss', 'front', -0.64, 0.64, 0.16, 0.34, 20, 4)
+    k.decal('splitter', 'Carbon', 'front', -1.0, 1.0, 0.11, 0.15, 30, 2)
+    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.60, 2.10, s * 0.20, s * 0.46, 6, 4))
+    k.light_bar(-2.1, 0.90, 0.93, 0.85, bg=0.015, frac=0.85)
+    k.fan('rearpanel', 'Gloss', -2.1, 0.44, 0.82, -0.70, 0.70, 30, 5)
+    k.fan('diffuser', 'Carbon', -2.1, 0.24, 0.44, -0.74, 0.74, 30, 3)
+    k.exhaust(0.0, 0.62, r=0.15, mirror=False)                                                    # the giant V16 pipe
     k.join(); k.wheels(spokes=10, spoke_w=(0.024, 0.016))
 
 CARS = {
