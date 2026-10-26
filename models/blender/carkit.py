@@ -1192,6 +1192,7 @@ class Car:
 
 def main(cars, script):
     """shared command line: -- --car id[,id]|all [--renders DIR --samples N --views a,b --sheet] [--blend F] [--no-export]
+    [--photo DIR --looks studio,sunset,neon --views front34,... --samples N --size WxH] (HD photos, see photo.py; no export)
     cars = {id: (builder, preview paint, rim, caliper)}"""
     import sys
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -1206,5 +1207,10 @@ def main(cars, script):
             sheet = '--sheet' in argv
             k.renders(arg('--renders'), views, int(arg('--samples', '48')), (640, 360) if sheet else (1280, 720),
                       sheet=os.path.join(arg('--renders'), f'{cid}-sheet.png') if sheet else None)
+        if arg('--photo'):
+            import photo
+            photo.shoot(k, arg('--photo'), arg('--looks', 'studio').split(','), arg('--views', 'front34').split(','),
+                        int(arg('--samples', '128')), tuple(int(v) for v in arg('--size', '1920x1080').split('x')))
+            continue
         if arg('--blend'): bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(arg('--blend')))
         if '--no-export' not in argv: k.export(os.path.join(repo, 'models', f'{cid}.glb'))

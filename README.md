@@ -326,6 +326,33 @@ The Mercedes cars have the vertical-slat grille with the three-pointed star. The
 ### Ford, Chevrolet, Nissan, Honda and Pagani
 Made in Blender (`models/blender/more_brands.py`): the **Ford Mustang Dark Horse** (5.0 V8, manual, three-bar tail lights, $60,000), the **Chevrolet Corvette Z06** (mid-engine flat-plane V8, 680 PS, $115,000), the **Nissan GT-R NISMO** "Godzilla" (four round tail lights, 600 PS, $220,000), the **Honda NSX Type S** (hybrid V6, 608 PS, $170,000) and the **Pagani Utopia** (twin-turbo V12 with a manual gearbox and the four-pipe exhaust, 864 PS, $3,100,000).
 
+### HD photos from Blender 📸
+
+The game's own car models, photographed in Blender's Cycles renderer at full HD (1920 × 1080), like the pictures in a car magazine. Every picture is in [`media/hd-cars/`](media/hd-cars/).
+
+![HD Blender photos of 12 Amboola cars](media/hd-cars.jpg)
+
+![The 911 GT3 RS at golden hour](media/hd-cars/gt3rs-sunset.jpg)
+
+![The Koenigsegg Jesko on a wet neon street](media/hd-cars/jesko-neon.jpg)
+
+![The McLaren W1 in the photo studio](media/hd-cars/w1-studio.jpg)
+
+There are three sets to shoot a car on:
+- **Studio:** a dark photo studio with a big soft light overhead, long strip lights that draw bright lines along the car's sides, blue and orange rim lights, and a glowing backdrop, on a glossy floor.
+- **Sunset:** golden hour on an empty desert road, with a low sun, long shadows, puddles that mirror the car, and mountains in the haze.
+- **Neon:** a wet street at night with pink and blue neon tubes reflecting in the paint and the puddles.
+
+Every car gets real car-paint shading for the photos: tiny metal flakes under a mirror-smooth clear coat, see-through windows with the seats and dashboard behind them, carbon-fibre weave, rubber tyres and glowing lamps. The front wheels are turned towards the camera, and the number plates show the same Japanese number as in the game.
+
+To take a photo of any car (Blender 4.2):
+
+```bash
+blender -b --factory-startup --python models/blender/supercars.py -- --car sf90 --photo photos/ --looks studio,sunset,neon --views front34,rear34
+```
+
+`--looks` picks the sets, and `--views` picks the angles (`front34`, `rear34`, `side`, `low`, `front`, `top`). `--samples` and `--size` set the quality (default 128 and `1920x1080`). A full-quality photo takes about 6–8 minutes on a 4-core computer, so try `--samples 16 --size 960x540` first for a quick preview.
+
 ## 🤖 The Tesla Cybercab ($20,000)
 
 The Cybercab drives itself!

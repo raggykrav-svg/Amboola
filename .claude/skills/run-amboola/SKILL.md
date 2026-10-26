@@ -278,6 +278,31 @@ Model gotchas:
 - **Garage or scene renders completely black for one car**: a degenerate triangle in an extruded body gave a zero-length normal, which becomes NaN in the shader, and bloom smears NaN over the whole frame. `extrude()` now replaces zero normals. To check a car, scan `normal` attributes for length 0 via `eval`.
 - **Loading stuck on "Starting engine…"**: the three.js modules failed to load. Check that `/tmp/amboola-three/package/build/three.module.js` exists, and that the three version in the `index.html` import map matches the cache (delete the cache dir to refetch).
 
+## HD photos of the cars (Blender)
+
+`models/blender/photo.py` takes 1920×1080 Cycles photos of any car. It runs from any car script's command line; a `--photo` run never exports the model:
+
+```bash
+B=/tmp/blender/blender-4.2.3-linux-x64/blender
+$B -b --factory-startup --python models/blender/supercars.py -- --car sf90 --photo /tmp/p --looks studio,sunset,neon --views front34,rear34
+$B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x540     # ~20 s preview: check the look before a full render
+```
+
+- **Speed:** a full frame (128 samples, adaptive, OIDN denoise) takes about 7–8 minutes on this container's 4 CPUs. Preview at `--samples 16 --size 960x540` while changing a set.
+- `shoot(k, folder, looks, views, samples, size)` is called by `carkit.main()` after the builder. It deletes carkit's own preview set, then:
+  - `upgrade_materials()` rebuilds the game materials by name. Paint, Livery, Stripe and AmbAccent become a metallic base with Voronoi flakes in the base normal under a 0.012-rough clear coat. `GlassClear` becomes Transparent mixed with Glossy by Layer Weight Fresnel, so the cabin shows. Carbon becomes a checker twill that drives the anisotropy rotation. Lamps are emissive. Tyres get a rubber micro-bump.
+  - `steer()` turns `Wheel_FL/FR` and `Caliper_FL/FR` about their hubs: +16° for front views, −10° for rear ones.
+  - `paint_plates(id)` puts green lettering on the outer face of each `Plate` slab, using Blender's own `Noto Sans CJK Regular.woff2` and `plate_number()`, a port of the game's `plateNumber()`. Each line is measured and stretched to fit its box.
+  - `frame_camera()` fits the camera to a sample of the car's real vertices, not the bounding box: 76% of the width or 62% of the height. It centres the car with lens shift (slightly low in the frame), sets DOF f/5.6 focused at the 20th-percentile depth, and uses `clip_end` 20 km so the mountains show.
+- **Looks** (each set is built round the camera direction):
+  - `studio`: a curved cyclorama, a 2000 W softbox overhead (spread 100°), strip lights along the flanks (spread 45°, so the floor doesn't mirror them), cool and warm rim lights, a spot that makes the backdrop glow, exposure −0.35.
+  - `sunset`: a painted world (a Generated-Z colour ramp plus a sun glow and disc from the dot product with the sun direction). Nishita looked olive at a 3° sun. The sun sits 9° off the view axis so it is in the picture; a warm Sun lamp and a soft fill from the camera side. A road with markings over a desert plane, and two rings of emissive haze mountains (5.2 km and 3 km out).
+  - `neon`: a wet street (`wet_ground`, puddles = mirror patches where the noise peaks), a wall with pink and blue tubes, blue key and pink rim area lights.
+- **Exposure:** the exposure is per look; light paints (luminance over 0.35) get `1.2 × (lum − 0.35)` less, so white cars keep their shading.
+- **Lens:** the compositor adds Fog Glow (threshold 1.2), Lens Distortion dispersion 0.012 and a blurred-ellipse vignette. The view transform is AgX Punchy.
+- **Views** (`VIEWS`): `front34`, `rear34`, `side`, `low` (40 mm at 0.42 m), `front`, `top`.
+- **Pictures:** the finished ones are in `media/hd-cars/<id>-<look>.jpg` (JPEG q90), plus the contact sheet `media/hd-cars.jpg`.
+
 ## Car kit details pass
 
 `Car.join()` calls `Car.details()` before it merges the parts.
