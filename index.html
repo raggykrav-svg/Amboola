@@ -523,7 +523,7 @@
     <div class="optlbl">Weather</div>
     <div class="opts" id="optWx"><div class="opt" data-v="clear">☀ Clear</div><div class="opt" data-v="rain">🌧 Rain</div></div>
     <div class="optlbl">Graphics</div>
-    <div class="opts" id="optQ"><div class="opt" data-v="ultra">Ultra</div><div class="opt" data-v="high">High</div><div class="opt" data-v="low">Low</div></div>
+    <div class="opts" id="optQ"><div class="opt" data-v="hd">HD</div><div class="opt" data-v="ultra">Ultra</div><div class="opt" data-v="high">High</div><div class="opt" data-v="low">Low</div></div>
   </div>
   <button id="dragBtn">🚦 DRAG RACE</button>
   <button id="raceBtn">🏁 RACES</button>
@@ -598,7 +598,7 @@
   <div id="tiHint">PRESS ENTER TO PLAY · エンターでスタート</div>
 </div>
 <div id="tiSettings" class="tiPanel hidden"><h2>⚙ SETTINGS · 設定</h2>
-  <div class="tiRow"><b>GRAPHICS</b><div class="tiOpts" id="tiGfx"><button data-v="low">LOW</button><button data-v="high">HIGH</button><button data-v="ultra">ULTRA</button></div><small id="tiGfxInfo"></small></div>
+  <div class="tiRow"><b>GRAPHICS</b><div class="tiOpts" id="tiGfx"><button data-v="low">LOW</button><button data-v="high">HIGH</button><button data-v="ultra">ULTRA</button><button data-v="hd">HD</button></div><small id="tiGfxInfo"></small></div>
   <div class="tiRow"><b>GAME MODE</b><div class="tiOpts" id="tiDiff"><button data-v="easy">😊 EASY</button><button data-v="medium">🙂 MEDIUM</button><button data-v="hard">😈 HARD</button></div><small id="tiDiffInfo"></small></div>
   <div class="tiRow"><b>TRAFFIC</b><div class="tiOpts" id="tiTraffic"><button data-v="0">NORMAL</button><button data-v="1000">1,000</button><button data-v="3000">3,000</button><button data-v="6000">6,000</button><button data-v="10000">10,000</button></div><small>Extra cars on the Tokyo streets. Lots of cars need a strong computer.</small></div>
   <div class="tiRow"><b>SOUND</b><div class="tiOpts" id="tiSound"><button data-v="on">🔊 ON</button><button data-v="off">🔇 OFF</button></div></div>
@@ -684,6 +684,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { mergeGeometries, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -871,18 +872,22 @@ const gScene = new THREE.Scene();
 const gCamera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 200);
 
 let composer, renderPass, bloomPass, smaaPass, quality = localStorage.getItem('amboola.q') || (isTouch ? 'low' : 'high');
-const qualityPR = () => quality === 'ultra' ? Math.min(devicePixelRatio, 2) : quality === 'high' ? Math.min(devicePixelRatio, 1.25) : Math.min(devicePixelRatio, 1);
+// HD renders at least 1.5× the screen's pixels (a supersampled picture even on an ordinary 1080p screen), up to 2×
+const qualityPR = () => quality === 'hd' ? Math.min(Math.max(devicePixelRatio, 1.5), 2) : quality === 'ultra' ? Math.min(devicePixelRatio, 2) : quality === 'high' ? Math.min(devicePixelRatio, 1.25) : Math.min(devicePixelRatio, 1);
+const qUltra = () => quality === 'ultra' || quality === 'hd';   // HD has everything Ultra has
 function setupComposer() {
   const pr = qualityPR();
   renderer.setPixelRatio(pr);
   renderer.setSize(innerWidth, innerHeight, false);
   if (composer) composer.dispose();
-  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth * pr, innerHeight * pr, { type: THREE.HalfFloatType, samples: quality === 'ultra' ? 4 : 0 }));
+  const hd = quality === 'hd';   // HD keeps the depth for the ambient occlusion pass
+  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth * pr, innerHeight * pr, { type: THREE.HalfFloatType, samples: qUltra() ? 4 : 0, depthTexture: hd ? new THREE.DepthTexture() : null }));
   // EffectComposer takes a supplied target's size as the *CSS* size and multiplies by the pixel ratio again, so on
   // high-DPI screens every pass came out pr× too big (picture squeezed into a corner). Re-size it from CSS pixels.
   composer.setPixelRatio(pr);
   renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
+  if (hd) composer.addPass(aoPass ??= new AOPass());
   bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.55, 0.85);
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
@@ -890,7 +895,7 @@ function setupComposer() {
   if (quality !== 'low') { smaaPass = new SMAAPass(innerWidth * pr, innerHeight * pr); composer.addPass(smaaPass); }
   composer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = quality !== 'low';
-  if (sun) { sun.shadow.mapSize.setScalar(quality === 'ultra' ? 4096 : 2048); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  if (sun) { sun.shadow.mapSize.setScalar(qUltra() ? 4096 : 2048); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   scene.traverse(o => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; });
 }
 /* =====================================================================
@@ -983,9 +988,9 @@ function hzSet(G, rain) {   // a time of day's grade (rain: greyer, no sun)
 const CAR_ENV = { rt: null, cam: null, face: 0, ready: false, mats: [], car: null, frame: 0, size: 0 };
 function carReflect() {
   if (quality === 'low' || !player?.car) { carEnvRelease(); return; }
-  const size = quality === 'ultra' ? 256 : 128;
+  const size = quality === 'hd' ? 512 : quality === 'ultra' ? 256 : 128;
   if (CAR_ENV.size !== size) { CAR_ENV.rt?.dispose(); CAR_ENV.rt = new THREE.WebGLCubeRenderTarget(size, { type: THREE.HalfFloatType }); CAR_ENV.cam = new THREE.CubeCamera(1, 700, CAR_ENV.rt); CAR_ENV.size = size; CAR_ENV.ready = false; CAR_ENV.face = 0; carEnvRelease(); }
-  if (++CAR_ENV.frame % (quality === 'ultra' ? 1 : 2)) return;
+  if (++CAR_ENV.frame % (qUltra() ? 1 : 2)) return;
   const C = CAR_ENV.cam, p = player;
   if (C.coordinateSystem !== renderer.coordinateSystem) { C.coordinateSystem = renderer.coordinateSystem; C.updateCoordinateSystem(); }
   C.position.set(p.x, (p.y || 0) + 1.1, p.z); C.updateMatrixWorld(true);
@@ -1005,6 +1010,75 @@ function carEnvApply(car) {
   CAR_ENV.car = car;
 }
 function carEnvRelease() { if (!CAR_ENV.mats.length && !CAR_ENV.car) return; CAR_ENV.mats.forEach(m => { m.envMap = null; m.needsUpdate = true; }); CAR_ENV.mats = []; CAR_ENV.car = null; }
+/* ---- HD ambient occlusion: soft contact shadows wherever things meet (tyres on the road, car bodies over the tarmac,
+   kerbs, building corners, the garage floor). Read straight from the main render's depth, so the scene is not drawn a
+   second time: a half-size pass rebuilds each pixel's position and normal from the depth and looks round it for
+   nearby surfaces in front of it, then a full-size pass blurs that (only across similar depths, so edges stay
+   sharp) and darkens the picture with it. It fades out with distance and spares the sky and bright lights. */
+const AO = { radius: 1.2, power: 4, strength: 1, fade: 140 };
+let aoPass = null;
+const AO_HEAD = `#include <packing>
+  uniform sampler2D tDepth; uniform mat4 proj, invProj; uniform float near, far; varying vec2 vUv;
+  vec3 viewPos(vec2 uv){ float d = texture2D(tDepth, uv).x; vec4 v = invProj * vec4(uv * 2. - 1., d * 2. - 1., 1.); return v.xyz / v.w; }
+  float viewDepth(vec2 uv){ return -perspectiveDepthToViewZ(texture2D(tDepth, uv).x, near, far); }`;
+const AO_VERT = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
+class AOPass extends Pass {
+  constructor() {
+    super();
+    this.rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
+    const u = () => ({ tDepth: { value: null }, proj: { value: new THREE.Matrix4() }, invProj: { value: new THREE.Matrix4() }, near: { value: .1 }, far: { value: 1000 }, px: { value: new THREE.Vector2() } });
+    this.aoMat = new THREE.ShaderMaterial({ uniforms: { ...u(), radius: { value: AO.radius }, power: { value: AO.power }, fade: { value: AO.fade } }, vertexShader: AO_VERT, depthTest: false, depthWrite: false,
+      fragmentShader: `${AO_HEAD} uniform vec2 px; uniform float radius, power, fade;
+      void main(){
+        vec2 uv = (floor(vUv / px) + .5) * px;   // a half-size pixel's centre falls between depth texels: snap to one, or the neighbour taps can land on it too
+        float d = texture2D(tDepth, uv).x;
+        if (d > .99999) { gl_FragColor = vec4(1., 1e4, 0., 1.); return; }
+        vec3 P = viewPos(uv), l = viewPos(uv - vec2(px.x, 0.)), r = viewPos(uv + vec2(px.x, 0.)), b = viewPos(uv - vec2(0., px.y)), t = viewPos(uv + vec2(0., px.y));
+        vec3 dx = abs(P.z - l.z) < abs(r.z - P.z) ? P - l : r - P, dy = abs(P.z - b.z) < abs(t.z - P.z) ? P - b : t - P;
+        vec3 N = normalize(cross(dx, dy));
+        float z = -P.z, ruv = min(radius * proj[1][1] * .5 / z, .1), aspect = px.x / px.y;
+        float k = 1. - smoothstep(fade * .5, fade, z);
+        if (ruv < px.y * 2. || k <= 0.) { gl_FragColor = vec4(1., z, 0., 1.); return; }
+        float n = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(.06711056, .00583715)))), occ = 0.;
+        for (int i = 0; i < 12; i++) {   // a golden-angle spiral round the pixel, turned by a per-pixel noise the blur hides
+          float s = (float(i) + n) / 12., a = n * 6.2832 + float(i) * 2.39996;
+          vec3 v = viewPos(uv + vec2(cos(a) * aspect, sin(a)) * ruv * s) - P;
+          float vv = dot(v, v), fall = max(1. - vv / (radius * radius), 0.);
+          occ += max(dot(v, N) * inversesqrt(vv + 1e-6) - .25, 0.) * fall;   // (creases flatter than ~15° don't count: the faceted car shells would band)
+        }
+        gl_FragColor = vec4(1. - clamp(occ / 12. * power, 0., .85) * k, z, 0., 1.);
+      }` });
+    this.mixMat = new THREE.ShaderMaterial({ uniforms: { ...u(), tDiffuse: { value: null }, tAO: { value: null }, strength: { value: AO.strength } }, vertexShader: AO_VERT, depthTest: false, depthWrite: false,
+      fragmentShader: `${AO_HEAD} uniform sampler2D tDiffuse, tAO; uniform vec2 px; uniform float strength;
+      void main(){
+        vec4 c = texture2D(tDiffuse, vUv);
+        if (texture2D(tDepth, vUv).x > .99999) { gl_FragColor = c; return; }
+        float z = viewDepth(vUv), sum = .5, w = .5;   // (a little 'no shadow' in the mix, for when no tap is at this depth)
+        for (int y = -1; y <= 2; y++) for (int x = -1; x <= 2; x++) {   // 4×4 taps over the half-size AO, weighted by how close in depth they are
+          vec2 s = texture2D(tAO, vUv + (vec2(x, y) - .5) * px).xy; float ww = 1. / (.02 + abs(s.y - z) / max(z, .1) * 40.);
+          sum += s.x * ww; w += ww;
+        }
+        float ao = w > 0. ? sum / w : 1., L = dot(c.rgb, vec3(.2126, .7152, .0722));
+        ao = mix(ao, 1., smoothstep(1., 4., L));   // lamps, neon and the sun stay bright
+        gl_FragColor = vec4(c.rgb * mix(1., ao, strength), c.a);
+      }` });
+    this.quad = new FullScreenQuad(null);
+  }
+  setSize(w, h) { this.rt.setSize(Math.max(1, Math.ceil(w / 2)), Math.max(1, Math.ceil(h / 2))); }
+  render(renderer, writeBuffer, readBuffer) {
+    const cam = renderPass.camera, depth = readBuffer.depthTexture;
+    for (const m of [this.aoMat, this.mixMat]) {
+      const U = m.uniforms; U.tDepth.value = depth; U.near.value = cam.near; U.far.value = cam.far;
+      U.proj.value.copy(cam.projectionMatrix); U.invProj.value.copy(cam.projectionMatrixInverse);
+    }
+    this.aoMat.uniforms.px.value.set(1 / readBuffer.width, 1 / readBuffer.height); const AU = this.aoMat.uniforms; AU.radius.value = AO.radius; AU.power.value = AO.power; AU.fade.value = AO.fade;
+    const M = this.mixMat.uniforms; M.tDiffuse.value = readBuffer.texture; M.tAO.value = this.rt.texture; M.px.value.set(1 / this.rt.width, 1 / this.rt.height);
+    M.strength.value = depth && cam.isPerspectiveCamera ? AO.strength : 0;
+    if (M.strength.value) { renderer.setRenderTarget(this.rt); this.quad.material = this.aoMat; this.quad.render(renderer); }
+    renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer); this.quad.material = this.mixMat; this.quad.render(renderer);
+  }
+  dispose() { this.rt.dispose(); this.aoMat.dispose(); this.mixMat.dispose(); this.quad.dispose(); }
+}
 let sun = null;
 addEventListener('resize', () => {
   camera.aspect = gCamera.aspect = innerWidth / innerHeight;
@@ -1486,7 +1560,7 @@ const WET_SHADER = {
 function buildWetFilm() {
   if (WX.film) { scene.remove(WX.film); WX.film.dispose?.(); WX.film.material.dispose(); WX.film = null; }
   WX.filmQ = quality;
-  const geo = new THREE.PlaneGeometry(720, 720), pr = renderer.getPixelRatio(), k = quality === 'ultra' ? .6 : .42;
+  const geo = new THREE.PlaneGeometry(720, 720), pr = renderer.getPixelRatio(), k = quality === 'hd' ? .7 : quality === 'ultra' ? .6 : .42;
   let film;
   if (quality === 'low') {
     film = new THREE.Mesh(geo, new THREE.ShaderMaterial({ ...WET_SHADER, uniforms: THREE.UniformsUtils.clone(WET_SHADER.uniforms) }));
@@ -8069,7 +8143,7 @@ function upgradeTokyo() {
 // detailed modules on the buildings near the camera, plain ones on the rest (refilled when the camera moves 25 m)
 function updateTokyoLOD(force) {
   const C = TOKYO.city; if (!C) return;
-  const cx = camera.position.x, cz = camera.position.z, R = quality === 'low' ? 0 : TOKYO_NEAR;
+  const cx = camera.position.x, cz = camera.position.z, R = quality === 'low' ? 0 : TOKYO_NEAR * (quality === 'hd' ? 1.6 : 1);
   C.grp.visible = Math.abs(cx) < 7000 && cz > -7000 && cz < 9000;   // far off in the countries Tokyo is not drawn
   if (!C.grp.visible || (!force && C.at && Math.hypot(C.at[0] - cx, C.at[1] - cz) < 25 && C.R === R)) return;
   C.at = [cx, cz]; C.R = R;
@@ -8612,7 +8686,7 @@ function updateCountryCulling(dt) {
     if (C.city) for (const g of C.city.trees || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 1300;
     if (C.city) for (const g of C.city.cells) {   // detailed houses near the camera, the plain ones further out
       const dc = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz), lo = g.userData.lo;
-      const near = quality === 'low' ? 0 : CITY_NEAR;   // graphics LOW: only the plain houses
+      const near = quality === 'low' ? 0 : CITY_NEAR * (quality === 'hd' ? 1.5 : 1);   // graphics LOW: only the plain houses
       g.visible = dc < (lo ? near : 1700); if (lo) lo.visible = dc >= near && dc < 1700;
     }
   }
@@ -14534,7 +14608,7 @@ function titleSettings() {
   const mark = (id, v) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('sel', b.dataset.v === v));
   document.querySelector('#tiMusic [data-v=spotify]').textContent = spotMix() ? '🦂 SCORPIONS' : '🎸 SPOTIFY';
   mark('tiGfx', quality); mark('tiDiff', diff); mark('tiTraffic', String(MASS.n)); mark('tiSound', audio.muted ? 'off' : 'on'); mark('tiMusic', music.mode);
-  $('tiGfxInfo').textContent = { low: 'Fastest. Best for phones and older computers.', high: 'Sharp, with shadows and shiny car reflections.', ultra: 'The prettiest. Needs a strong computer.' }[quality];
+  $('tiGfxInfo').textContent = { low: 'Fastest. Best for phones and older computers.', high: 'Sharp, with shadows and shiny car reflections.', ultra: 'Very pretty. Needs a strong computer.', hd: 'HD: super-sharp picture, soft shadows in every corner and the sharpest reflections. Needs a gaming computer.' }[quality];
   $('tiDiffInfo').textContent = DIFFS[diff].d;
 }
 function challengeLists() {
@@ -14690,7 +14764,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

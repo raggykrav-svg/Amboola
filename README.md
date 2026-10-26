@@ -20,7 +20,7 @@ The game opens on a night-time Tokyo stage made in Blender: a big 3D **AMBOOLA**
 
 - **▶ PLAY**: go to your garage (press Enter too).
 - **⚙ SETTINGS**:
-  - **Graphics:** Low, High or Ultra.
+  - **Graphics:** Low, High, Ultra or **HD**.
   - **Game mode:** 😊 Easy, 🙂 Medium or 😈 Hard. On Easy, race rivals drive slower, drag racers start late and the jungle lions and monkeys run slower. On Hard, everyone is quicker.
   - **Sound:** on or off.
   - **Race music:** the AMBOOLA songs, 🦂 Scorpions songs on Spotify (or your own playlist), or off.
@@ -797,7 +797,17 @@ In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI 
 
 ## Graphics
 
-Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
+Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick HD, Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.
+
+**HD graphics 🖥️** (the top setting, for gaming computers):
+
+![High and HD graphics side by side](media/hd-graphics.jpg)
+
+- **Super-sharp picture:** the game draws at least 1.5× your screen's pixels (up to 2×), so even a normal 1080p screen gets a supersampled picture, plus 4× MSAA and SMAA on top for smooth edges.
+- **Ambient occlusion:** soft contact shadows wherever things meet: under the cars and round the tyres, along kerbs, in building corners and on the garage floor. It reads the depth the game already drew, so the world isn't drawn twice. It fades out in the distance and leaves the sky, lamps and neon alone.
+- **4K sun shadows** (4096 × 4096, like Ultra).
+- **Sharpest reflections:** your car's live street reflection is 512 px a side and updates every frame, and the wet-road reflections are drawn at 70% of the screen size.
+- **More detail further away:** the detailed Tokyo buildings reach 1.6× further, the detailed country houses 1.5× further.
 
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 
