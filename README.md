@@ -338,6 +338,8 @@ The game's own car models, photographed in Blender's Cycles renderer at full HD 
 
 ![The McLaren W1 in the photo studio](media/hd-cars/w1-studio.jpg)
 
+**In the garage:** a car with HD photos shows them as small pictures in its info panel. Tap one to see it full screen, then flip through all of them with the arrows (or ← →). **🚗 SEE IT IN THE GARAGE** picks the car in the photo, and Esc closes. Every other car has a **📸 HD PHOTO GALLERY** button.
+
 There are three sets to shoot a car on:
 - **Studio:** a dark photo studio with a big soft light overhead, long strip lights that draw bright lines along the car's sides, blue and orange rim lights, and a glowing backdrop, on a glossy floor.
 - **Sunset:** golden hour on an empty desert road, with a low sun, long shadows, puddles that mirror the car, and mountains in the haze.

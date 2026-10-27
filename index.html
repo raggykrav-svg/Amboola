@@ -254,6 +254,20 @@
   #upgBtn:hover { filter:brightness(1.15); } #upgBtn.hidden { display:none; }
   #custBtn { display:block; width:100%; margin:0 0 6px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.12em;
     color:#111; background:linear-gradient(90deg,#ff3fa4,#ffd02d); border:none; cursor:pointer; } #custBtn:hover { filter:brightness(1.15); } #custBtn.hidden { display:none; }
+  #hdStrip { display:flex; gap:5px; margin:0 0 10px; flex-wrap:wrap; } #hdStrip.hidden { display:none; }
+  #hdStrip img { width:calc(33.3% - 4px); aspect-ratio:16/9; object-fit:cover; cursor:pointer; border:1px solid rgba(255,255,255,.15); border-radius:3px; transition:transform .15s, border-color .15s; }
+  #hdStrip img:hover { transform:scale(1.04); border-color:#ffd02d; }
+  #hdStrip button { flex:1 1 100%; padding:5px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:11px; letter-spacing:.1em; color:#ffd02d; background:transparent; border:1px solid #ffd02d; cursor:pointer; }
+  #hdStrip button:hover { background:rgba(255,208,45,.15); }
+  #hdView { position:fixed; inset:0; z-index:90; background:rgba(4,5,8,.94); display:flex; align-items:center; justify-content:center; padding-bottom:104px; box-sizing:border-box; }
+  #hdView img { max-width:calc(100vw - 140px); max-height:calc(100vh - 140px); box-shadow:0 10px 60px rgba(0,0,0,.8); border-radius:4px; }
+  #hdView .hdBtn { position:absolute; top:50%; transform:translateY(-50%); width:54px; height:54px; border-radius:50%; font-size:30px; line-height:1; color:#fff; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); cursor:pointer; }
+  #hdView .hdBtn:hover { background:rgba(255,208,45,.3); } #hdPrev { left:22px; } #hdNext { right:22px; }
+  #hdClose { position:absolute; top:16px; right:20px; width:44px; height:44px; border-radius:50%; font-size:20px; color:#fff; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); cursor:pointer; }
+  #hdCap { position:absolute; left:0; right:0; bottom:18px; text-align:center; font-family:'Orbitron',sans-serif; letter-spacing:.1em; }
+  #hdCap b { display:block; font-size:20px; } #hdCap small { color:var(--dim); font-size:12px; letter-spacing:.2em; }
+  #hdGo { margin-top:6px; padding:6px 14px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:11px; letter-spacing:.1em; color:#111; background:#ffd02d; border:none; cursor:pointer; }
+  @media (max-width: 760px) { #hdView img { max-width:100vw; max-height:calc(100vh - 150px); border-radius:0; } #hdView .hdBtn { top:auto; bottom:84px; transform:none; width:44px; height:44px; font-size:24px; } }
   #adRow { display:flex; gap:6px; margin:0 0 6px; } #adRow button { flex:1; padding:6px 4px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:11px; letter-spacing:.08em; color:#fff; background:transparent; border:1px solid #2fd0ff; cursor:pointer; } #adRow button:hover { background:rgba(47,208,255,.2); }
   #repairBtn { display:block; width:100%; margin:0 0 6px; padding:7px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:12px; letter-spacing:.1em;
     color:#fff; background:linear-gradient(90deg,#c8141b,#ff8a1a); border:none; cursor:pointer; } #repairBtn:hover { filter:brightness(1.15); } #repairBtn.hidden { display:none; }
@@ -512,7 +526,7 @@
   <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
   <div id="carlist"></div>
   <div id="stats">
-    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="custBtn">🎨 CUSTOMIZE · カスタム</button><div id="adRow"><button id="adBtn">📺 ITS AD</button><button id="allAdBtn">📺 ALL CARS AD</button></div><button id="repairBtn" class="hidden">🔧 REPAIR</button><button id="sellBtn">SELL</button>
+    <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="hdStrip" class="hidden"></div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="custBtn">🎨 CUSTOMIZE · カスタム</button><div id="adRow"><button id="adBtn">📺 ITS AD</button><button id="allAdBtn">📺 ALL CARS AD</button></div><button id="repairBtn" class="hidden">🔧 REPAIR</button><button id="sellBtn">SELL</button>
     <div class="stat"><div class="lbl">Power <b id="vPow"></b></div><div class="track"><i id="bPow"></i></div></div>
     <div class="stat"><div class="lbl">Top speed <b id="vTop"></b></div><div class="track"><i id="bTop"></i></div></div>
     <div class="stat"><div class="lbl">0–100 km/h <b id="vAcc"></b></div><div class="track"><i id="bAcc"></i></div></div>
@@ -590,6 +604,7 @@
 <div id="misPanel" class="hidden"><h2>MISSIONS · ミッション</h2><div id="misHead"></div><div id="misList"></div><button id="misClose">BACK</button></div>
 <div id="dailyScreen" class="hidden"><h2>DAILY BONUS · 毎日ボーナス</h2><div id="dailyInfo"></div><button id="dailyGet">COLLECT</button></div>
 <div id="achv"></div>
+<div id="hdView" class="hidden"><img id="hdImg" alt=""><button class="hdBtn" id="hdPrev" aria-label="Previous photo">‹</button><button class="hdBtn" id="hdNext" aria-label="Next photo">›</button><button id="hdClose" aria-label="Close">✕</button><div id="hdCap"></div></div>
 <div id="camFlash"></div>
 <div id="camShot" class="hidden"><img alt=""><div></div></div>
 <div id="title" class="hidden">
@@ -853,6 +868,10 @@ const CARS = [
   // the Troodos Hill Climb prize: an off-road truck you race up the Troodos mountains in Cyprus, and win
   { id: 'troodos', name: 'AMBOOLA Troodos 4×4', brand: 'Amboola', cat: 'AMBOOLA', body: 'troodos', crawler: true, wing: 'none', kw: 380, redline: 6500, mass: 2350, vmax: 185, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 5.9, grip: 1.1, aero: .05, paint: 3, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto · low range', usd: 260000, prize: '⛰️ WIN THE TROODOS HILL CLIMB IN CYPRUS', prizeTag: '⛰️ TROODOS HILL CLIMB PRIZE', desc: 'Rock crawler · 35-inch tyres · climbs 40° slopes', jp: 'トロードス' },
 ];
+// HD photos taken in Blender (models/blender/photo.py): media/hd-cars/<id>-<set>.jpg, thumbnails in media/hd-cars/thumbs/
+const HD_PHOTOS = { gt3rs: ['studio', 'sunset', 'neon'], w1: ['studio'], sf90: ['sunset'], revuelto: ['neon'], jesko: ['neon'], chironss: ['studio', 'sunset'],
+  grsupra: ['sunset'], m4csl: ['studio'], spectre: ['sunset'], gtr: ['neon'], utopia: ['studio'], torazero: ['neon'] };
+const HD_SETS = { studio: '📷 PHOTO STUDIO', sunset: '🌅 GOLDEN HOUR', neon: '🌃 NEON NIGHT' };
 
 /* =====================================================================
    RENDERER / SCENES
@@ -4532,6 +4551,34 @@ function bootAd(done) {
 }
 // garage mode buttons only work with a car you own
 const ownedOnly = fn => () => { if (!owns(CARS[carIdx]) || CARS[carIdx].jet) { const d = $('drive'); d.animate([{ transform: 'translateX(-8px)' }, { transform: 'translateX(8px)' }, { transform: 'none' }], 250); return; } fn(); };
+/* ---- HD photos in the garage: thumbnails of the selected car's Blender photos, and a full-screen viewer that flips
+   through every HD photo (arrows / ← →, Esc closes; "see it in the garage" picks a photo's car) */
+const HD = { list: [], i: 0 };
+function hdList() { return HD.list.length ? HD.list : (HD.list = CARS.flatMap((c, ci) => (HD_PHOTOS[c.id] || []).map(set => ({ ci, c, set, f: `${c.id}-${set}.jpg` })))); }
+function hdStrip(c) {
+  const el = $('hdStrip'), sets = HD_PHOTOS[c.id] || [];
+  el.innerHTML = sets.map(set => `<img src="media/hd-cars/thumbs/${c.id}-${set}.jpg" alt="${c.name} · ${HD_SETS[set]}" title="${HD_SETS[set]}" data-f="${c.id}-${set}.jpg">`).join('')
+    + `<button>📸 ${sets.length ? 'HD PHOTOS' : 'HD PHOTO GALLERY'} · ${hdList().length}</button>`;
+  el.classList.remove('hidden');
+  el.querySelectorAll('img').forEach(im => im.onclick = () => hdOpen(hdList().findIndex(p => p.f === im.dataset.f)));
+  el.querySelector('button').onclick = () => hdOpen(sets.length ? hdList().findIndex(p => p.c === c) : 0);
+}
+function hdOpen(i) { HD.i = Math.max(0, i); $('hdView').classList.remove('hidden'); hdShow(); }
+function hdClose() { $('hdView').classList.add('hidden'); }
+function hdShow() {
+  const L = hdList(), p = L[HD.i = (HD.i + L.length) % L.length];
+  $('hdImg').src = `media/hd-cars/${p.f}`; $('hdImg').alt = `${p.c.name} · ${HD_SETS[p.set]}`;
+  $('hdCap').innerHTML = `<b>${p.c.name}</b><small>${HD_SETS[p.set]} · HD BLENDER PHOTO ${HD.i + 1} / ${L.length}</small>${p.ci !== carIdx ? '<br><button id="hdGo">🚗 SEE IT IN THE GARAGE</button>' : ''}`;
+  $('hdGo')?.addEventListener('click', () => { hdClose(); selectCar(p.ci); });
+  new Image().src = `media/hd-cars/${L[(HD.i + 1) % L.length].f}`;   // the next one is ready when you flip
+}
+$('hdPrev').onclick = () => { HD.i--; hdShow(); }; $('hdNext').onclick = () => { HD.i++; hdShow(); }; $('hdClose').onclick = hdClose;
+$('hdView').onclick = e => { if (e.target === $('hdView')) hdClose(); };
+addEventListener('keydown', e => {   // while the viewer is open it gets the keys, not the garage behind it
+  if ($('hdView').classList.contains('hidden')) return;
+  if (e.code === 'Escape') hdClose(); else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') { HD.i--; hdShow(); } else if (e.code === 'ArrowRight' || e.code === 'ArrowDown') { HD.i++; hdShow(); }
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
 function selectCar(i) { closeCust(); carIdx = i; paintIdx = savedPaint(CARS[i]); localStorage.setItem('amboola.car', i); updateMenu(); showGarageCar(); }
 function updateMenu() {
   const c = CARS[carIdx];
@@ -4553,7 +4600,7 @@ function updateMenu() {
   for (const b of ['raceBtn', 'taxiBtn', 'outlawBtn', 'policeBtn', 'dragBtn']) $(b).style.opacity = own && !c.jet ? 1 : .35;
   if (c.jet && own) dv.textContent = c.heli ? '🚁 FLY' : '✈ FLY';
   document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' });
-  $('sName').textContent = c.name; $('sSub').textContent = c.heli ? 'Helicopter · 250 km/h · lands on any roof · rescue jobs' : c.jet ? 'Twin-engine jet · Mach 16 · lands at every airport' : `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
+  hdStrip(c); $('sName').textContent = c.name; $('sSub').textContent = c.heli ? 'Helicopter · 250 km/h · lands on any roof · rescue jobs' : c.jet ? 'Twin-engine jet · Mach 16 · lands at every airport' : `${c.drive} · ${ENGINE_LABEL[c.engine]}${c.hybrid ? ' hybrid' : ''} · ${c.engine === 'ev' ? (c.brand === 'Tesla' ? 'single-speed' : '2-speed') : (c.box || c.gears + '-speed ' + (c.manual ? 'manual' : c.brand ? 'DCT' : 'PDK'))}`;
   const z = t === c ? c.zero : c.zero * simSprint(t).t100 / simSprint(c).t100;
   $('vPow').textContent = `${Math.round(t.kw * 1.36)} PS`; $('bPow').style.width = clamp(t.kw / 7.6, 5, 100) + '%';
   $('vTop').textContent = `${t.vmax} km/h`; $('bTop').style.width = clamp((t.vmax - 180) / 1.7, 5, 100) + '%';

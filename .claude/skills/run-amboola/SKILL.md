@@ -301,6 +301,7 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - **Exposure:** the exposure is per look; light paints (luminance over 0.35) get `1.2 × (lum − 0.35)` less, so white cars keep their shading.
 - **Lens:** the compositor adds Fog Glow (threshold 1.2), Lens Distortion dispersion 0.012 and a blurred-ellipse vignette. The view transform is AgX Punchy.
 - **Views** (`VIEWS`): `front34`, `rear34`, `side`, `low` (40 mm at 0.42 m), `front`, `top`.
+- **In the garage:** `HD_PHOTOS` (after `CARS` in index.html) lists each car's sets. `hdStrip(c)` (called from `updateMenu`) fills `#hdStrip` with `media/hd-cars/thumbs/` thumbnails (384×216) and a button. `hdOpen(i)` / `hdShow()` drive the full-screen viewer `#hdView` over `hdList()` (every photo in `CARS` order); `#hdGo` calls `selectCar`. A capture-phase keydown listener gives the viewer ← → and Esc before the garage sees them. A new photo needs its JPG, its thumbnail and an `HD_PHOTOS` entry. To test it headless, hide `#gl` first (`display:none`) and set `__manualFrames`, or page screenshots time out on the WebGL canvas.
 - **Pictures:** the finished ones are in `media/hd-cars/<id>-<look>.jpg` (JPEG q90), plus the contact sheet `media/hd-cars.jpg`.
 
 ## Car kit details pass
