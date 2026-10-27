@@ -485,20 +485,28 @@ Crash into almost anything except a building and it breaks!
 
 ![Inside a Porsche, Ferrari, Bugatti, Pagani, Mercedes-AMG and Rolls-Royce](media/brand-interiors.jpg)
 
-- **🏎 Real brand interiors:** each brand has its own cockpit, made in Blender from photos of the real cars (`models/blender/interiors.py`). The dials are drawn live in that brand's style.
-  - **Porsche:** five round dials and a yellow stripe on the wheel.
+- **🏎 Real brand interiors:** each brand has its own cockpit, made in Blender from photos and descriptions of the real cars (`models/blender/interiors.py`). The dials are drawn live in that brand's style.
+- **✨ HD cockpits:** every cockpit is sculpted, not built from boxes:
+  - **Dashboard:** smooth and curved round you, with contrast stitching along its edge, a metal or carbon trim band, and (in the cars that have it) a thin line of ambient light.
+  - **Dials:** a stitched, curved hood over them.
+  - **Doors:** rolled, stitched tops with chrome handles.
+  - **Around you:** rounded pillars, sun visors, a frameless mirror, cup holders, and sculpted bucket seats (carbon shells in the track cars).
+  - **Steering wheel:** thumb grips, stitching, an airbag pad, button panels and metal shift paddles.
+
+  In the game the materials look real too. The leather has a soft sheen and a fine grain, Alcantara and Race-Tex look velvety, carbon fibre shows its woven pattern under a clear coat, the metal is finely brushed and piano black is glossy. A soft daylight fills the cabin (it follows the time of day), and the glossy parts reflect the street. On Ultra and HD graphics the dials and screens are drawn twice as sharp.
+  - **Porsche 911 GT3 RS:** five round dials, a Race-Tex dash with yellow stitching, carbon bucket seats, and four mode dials and a yellow stripe on the wheel.
   - **Tesla:** a yoke and one big screen (the Cybercab has no steering wheel at all!).
-  - **Lamborghini:** a hexagon of light for the revs and a red flip cover over the start switch.
-  - **Ferrari:** shift lights on the wheel, a red start button and a yellow rev counter.
-  - **McLaren:** the dial pod on the steering column and a floating screen.
-  - **Bugatti:** the silver C-line and watch-like dials up to 500 km/h.
-  - **Koenigsegg:** a little screen on the wheel that turns with you.
+  - **Lamborghini Revuelto:** a hexagon of light for the revs, the Y-shaped frame round the middle screen, the passenger's own screen, four rotary dials on the wheel and a red flip cover over the start switch.
+  - **Ferrari SF90:** the curved 16-inch dial screen, shift lights and haptic touch pads on the wheel, a red start button and a yellow rev counter.
+  - **McLaren W1:** the dial pod on the steering column, a floating screen, and the W1's smaller wheel, flat at the top and bottom, with just two buttons (BOOST and AERO) and shift lights in the rim.
+  - **Bugatti:** the silver C-line with its glowing light strip, four console knobs with little screens and watch-like dials up to 500 km/h.
+  - **Koenigsegg:** carbon everywhere, orange leather and a little screen on the wheel that turns with you.
   - **Toyota GR:** big round vents and red stitching.
   - **BMW M:** red M1/M2 buttons and the blue-purple-red M stripe.
   - **Audi Sport:** a wide Virtual Cockpit and a red start button.
   - **Devel Sixteen:** fighter-jet switches and green displays.
   - **Mercedes-AMG:** four round turbine vents.
-  - **Rolls-Royce:** hundreds of stars in the roof.
+  - **Rolls-Royce:** hundreds of stars in the roof and more in the passenger's side of the dash (the Illuminated Fascia).
   - **Ford Mustang:** one glass panel for both screens and a cue-ball gear knob.
   - **Chevrolet Corvette:** the squared-off wheel and the wall of buttons.
   - **Honda NSX:** the big round mode dial.

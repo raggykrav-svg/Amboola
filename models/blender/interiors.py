@@ -1,24 +1,33 @@
-# Car interiors for the INSIDE camera: one cockpit per brand, modelled from photos of the real cars' cabins.
-# A shared kit (dashboard, doors, pillars, roof lining, seats, console, steering wheels) plus each brand's signature
-# parts:
-#   porsche     five round dials under a curved hood, a flat dash with a silver line, slim screen, toggle row
+# Car interiors for the INSIDE camera: one cockpit per brand, modelled from photos and descriptions of the real cars'
+# cabins. A shared kit, plus each brand's signature parts:
+#   - a smooth dashboard (the brand's profile rounded off with chaikin() and swept across the car by sweep(), bent by
+#     wrap() so it curves round you), contrast stitching along its edge (dashes()), a metal or carbon trim band and,
+#     for brands that have it, a line of ambient light (c['amb'])
+#   - a curved, stitched hood over the dials; doors with a rolled, stitched top, an insert panel, ambient light, an
+#     armrest, a chrome handle and a speaker; rounded pillars, sun visors and a frameless mirror
+#   - a steering wheel with thumb grips, stitching, a sculpted airbag pad, button panels (c['buttons']), metal paddles
+#     and a column shroud
+#   - a console with cup holders, and a sculpted passenger seat (a carbon bucket shell with c['seatshell'])
+# The brands:
+#   porsche     GT3 RS: five round dials under a curved hood, a Race-Tex dash, carbon buckets, four mode dials on the
+#               wheel, slim screen, toggle row
 #   tesla       a long dash strip, one big landscape screen, the yoke
-#   lambo       angular dash, hexagon cluster hood, a Y-shaped frame round a tall screen, a red flip cover over the
-#               start switch and aviation toggles
-#   ferrari     shift lights along the top of the wheel, a red start button and the manettino on it, the gated
-#               console "bridge", a passenger display
-#   mclaren     a thin dash, the dial pod on the steering column, a floating portrait screen, a plain button-free
-#               wheel with a papaya stripe, overhead switches
-#   bugatti     the C-line (a silver C from the roof down between the seats), a skeleton console with four round
-#               knobs, watch-like dials, a flat-topped wheel, tan leather
-#   koenigsegg  carbon everywhere, the small SmartCluster screen on the wheel (it turns with you), orange details
+#   lambo       Revuelto: angular dash, hexagon cluster hood, a Y-shaped frame round a tall screen, the passenger's own
+#               screen, four rotors on the wheel, a red flip cover over the start switch and aviation toggles
+#   ferrari     SF90: the 16-inch curved dial screen, shift lights along the top of the wheel, haptic touch pads, a red
+#               start button and the manettino on it, the gated console "bridge", a passenger display
+#   mclaren     W1: a thin dash, the dial pod on the steering column, a floating portrait screen, a smaller wheel flat
+#               at the top and bottom with only BOOST and AERO buttons and shift lights in the rim, overhead switches
+#   bugatti     the C-line (a silver C from the roof down between the seats, with its light conductor glowing), a
+#               skeleton console with four round knobs with little screens, watch-like dials, a flat-topped wheel, tan leather
+#   koenigsegg  carbon everywhere, the small screen on the wheel (it turns with you), orange leather and details
 #   toyota      GR86: big round turbine vents at the ends of the dash, three climate knobs, a manual gear lever
 #   bmw         one long curved screen from the dials to the middle, red M1/M2 buttons, the M-stripe
 #   audi        a wide Virtual Cockpit hood, a red start button on the wheel, round vents, honeycomb seats
 #   devel       a fighter-jet cockpit: guarded toggle switches on the console and the roof, green jet displays
 #   amg         four round turbine vents in a row, a wide screen on top, V8-style console buttons, wheel dials
-#   rolls       the Starlight roof (hundreds of little stars), a glass gallery dash with a clock, organ-stop vent
-#               pulls, a big thin wheel, white leather
+#   rolls       the Starlight roof (hundreds of little stars), the Illuminated Fascia (stars in the passenger's dash),
+#               a glass gallery dash with a clock, organ-stop vent pulls, a big thin wheel, white leather
 #   ford        Mustang: one glass panel with two screens, a cue-ball gear knob, blue Dark Horse details
 #   chevy       Corvette C8: the squared-off wheel and the tall "wall of buttons" between the seats
 #   honda       NSX: the big round Dynamic Mode dial on a floating console and P/R/N/D push buttons, red seats
@@ -28,7 +37,7 @@
 #   amboola     the game's own cars: neon light lines, a see-through hologram speed display over the dash, a gold
 #               tiger start button, the AMBOOLA name in light; the accent parts take the car's paint colour (AmbAccent)
 #
-#   blender -b --factory-startup --python models/blender/interiors.py -- [--brand NAME|all] [--render DIR]
+#   blender -b --factory-startup --python models/blender/interiors.py -- [--brand NAME|all] [--render DIR] [--no-export]
 #
 # Writes models/int_<brand>.glb and .glb.js (key 'int_<brand>'). Space: the origin is the car's centre line at the
 # driver's eye height and eye position; the driver sits on the right (Japan) with the eye at x = -0.40; forward is
@@ -67,8 +76,10 @@ def link(o, parent=None, m=None):
 def box(c, s, m, rot=(0, 0, 0), bevel=0., parent=None, name='box'):
     bpy.ops.mesh.primitive_cube_add(size=1, location=c, rotation=rot); o = bpy.context.active_object; o.name = name; o.scale = s
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)   # keep the origin at the part, so turning it later turns it in place
-    if bevel:
-        md = o.modifiers.new('b', 'BEVEL'); md.width = bevel; md.segments = 2; bpy.ops.object.modifier_apply(modifier='b')
+    if bevel:   # rounded edges, shaded smooth (weighted normals keep the flat faces flat)
+        md = o.modifiers.new('b', 'BEVEL'); md.width = min(bevel, min(s) * .49); md.segments = 3; md.harden_normals = True
+        bpy.ops.object.modifier_apply(modifier='b')
+        for p in o.data.polygons: p.use_smooth = True
     return link(o, parent, m)
 
 
@@ -134,6 +145,72 @@ def text(body, c, size, m, rot=(math.radians(90), 0, math.pi)):
     return link(o, None, m)
 
 
+def chaikin(pts, n=2, closed=True):
+    """round off a polygon's corners (each pass cuts every corner in two)"""
+    for _ in range(n):
+        m, out = len(pts), []
+        for i in range(m if closed else m - 1):
+            p, q = Vector(pts[i]), Vector(pts[(i + 1) % m])
+            out += [tuple(p * .75 + q * .25), tuple(p * .25 + q * .75)]
+        pts = out if closed else [pts[0]] + out + [pts[-1]]
+    return pts
+
+
+WRAP = dict(bow=.035, droop=.015)   # how much the dash curves back towards the doors and drops at its ends (a wraparound cockpit)
+def wrap(x, y, z, half=.95):
+    """a point on the dash bent like the dash itself (see sweep)"""
+    t = x / half; return (x, y + WRAP['bow'] * t * t, z - WRAP['droop'] * t * t)
+
+
+def sweep(profile, x0, x1, m, name='panel', segs=24, smooth=True, bend=True):
+    """a closed (y, z) profile swept across the car from x0 to x1, bent with wrap() so long dash parts curve round
+    the driver; smooth-shaded with crisp corners kept"""
+    bm = bmesh.new(); rings = []
+    for i in range(segs + 1):
+        x = x0 + (x1 - x0) * i / segs
+        rings.append([bm.verts.new(wrap(x, y, z) if bend else (x, y, z)) for y, z in profile])
+    n = len(profile)
+    for a, b in zip(rings, rings[1:]):
+        for k in range(n): bm.faces.new((a[k], a[(k + 1) % n], b[(k + 1) % n], b[k]))
+    bm.faces.new(rings[0][::-1]); bm.faces.new(rings[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); o = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(o)
+    if smooth:
+        for p in me.polygons: p.use_smooth = True
+        for x in bpy.context.selected_objects: x.select_set(False)
+        bpy.context.view_layer.objects.active = o; o.select_set(True); bpy.ops.object.shade_smooth_by_angle(angle=math.radians(50))
+    return link(o, None, m)
+
+
+def dashes(path, m, step=.009, length=.0045, w=.0022, name='Stitch', normal=None):
+    """contrast stitching: little dashes along a polyline (one mesh), lying on a surface facing `normal`"""
+    bm = bmesh.new(); pts = [Vector(p) for p in path]
+    for a, b in zip(pts, pts[1:]):
+        d = b - a; L = d.length
+        if L < 1e-6: continue
+        u = d / L; side = u.cross(Vector(normal) if normal is not None else Vector((0, 0, 1)))
+        if side.length < .1: side = u.cross(Vector((1, 0, 0)))
+        side.normalize(); up = side.cross(u)   # (= the surface normal: the stitches sit just proud of it)
+        s = 0.
+        while s < L:
+            c = a + u * s; v = [bm.verts.new(c + u * dx + side * dy + up * w * .4) for dx, dy in ((0, -w), (length, -w), (length, w), (0, w))]
+            bm.faces.new(v); s += step
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); o = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(o)
+    return link(o, None, m)
+
+
+def vent_slots(c, w, h, frame, m_in, facing=(0, 1, 0), slats=5, chrome=None, parent=None):
+    """a rectangular air vent: a rounded bezel, a dark inside and horizontal slats (with bright tips)"""
+    rot = Vector(facing).to_track_quat('Z', 'Y').to_euler()
+    o = box(c, (w + .02, h + .02, .02), frame, rot=rot, bevel=.008, parent=parent)
+    n = Vector(facing).normalized(); cc = Vector(c) + n * .004
+    box(cc, (w, h, .012), m_in, rot=rot, parent=parent)
+    for k in range(slats):
+        z = (k + .5) / slats - .5
+        s = box(cc + n * .006, (w * .96, .006, .014), chrome or frame, rot=rot, parent=parent); s.location += Vector((0, 0, z * h))
+    return o
+
+
 def beam(a, b, t, m, parent=None):
     a, b = Vector(a), Vector(b); d = b - a
     o = box((a + b) / 2, (t, t, d.length), m, parent=parent, name='beam')
@@ -154,44 +231,66 @@ def vent_round(c, r, m_ring, m_in, facing=(0, 1, 0), parent=None, fins=5):
 def cabin(c):
     """dash, doors, pillars, roof, floor, console and the passenger seat in the brand's colours"""
     L, A, T = c['leather'], c['accent'], c['trim']
-    dark = c.get('dashmat', L)
-    # the dashboard: a profile (forward is -y) pushed across the car
+    dark = c.get('dashmat', L); amb = c.get('amb') and mat('AmbLight', c['amb'], .3, emit=4.)
+    # the dashboard: the brand's profile (forward is -y), rounded off and swept across the car, curving round you
     dt = c.get('dash_top', -0.26)
     prof = c.get('dash_prof') or [(-0.70, -0.66), (-0.72, dt - .05), (-0.78, dt), (-0.96, dt - .015), (-1.18, dt - .06), (-1.18, -0.66)]
-    extrude(prof, -0.95, 0.95, dark, 'Dash')
-    if c.get('dash_line', True):   # a trim line along the dash face
-        box((0, -0.705, dt - .12), (1.86, .012, .018), T)
-    # doors: panel, rounded top, armrest, handle, speaker
+    sweep(chaikin(prof, 2), -0.95, 0.95, dark, 'Dash')
+    # contrast stitching along the dash's top edge (where the smoothed surface touches the profile's edge)
+    (y1, z1), (y2, z2) = prof[1], prof[2]; ym, zm = (y1 + y2) / 2, (z1 + z2) / 2
+    n = Vector((0, -(z2 - z1), y2 - y1)).normalized(); n = n if n.y > 0 else -n   # pointing at you
+    xs = [-0.93 + k * .062 for k in range(31)]
+    dashes([wrap(x, ym + n.y * .003, zm + n.z * .003) for x in xs], A, normal=Vector((0, n.y, n.z)))
+    if c.get('dash_line', True):   # a trim band across the dash face, and a thin line of ambient light under it
+        (fy0, fz0), (fy1, fz1) = prof[0], prof[1]; zb = dt - .12
+        yf = fy0 + (fy1 - fy0) * (zb - fz0) / ((fz1 - fz0) or 1)
+        sweep(chaikin([(yf + .009, zb - .013), (yf + .009, zb + .013), (yf - .004, zb + .013), (yf - .004, zb - .013)], 1), -0.93, 0.93, T, 'TrimBand')
+        if amb: sweep([(yf + .006, zb - .02), (yf + .006, zb - .016), (yf, zb - .016), (yf, zb - .02)], -0.9, 0.9, amb, 'AmbLine', smooth=False)
+    # doors: a padded card, a rolled top with stitching, ambient light, an armrest, a chrome handle and a speaker
     for s in (-1, 1):
         x = s * 0.93
-        box((x, 0.1, (FLOOR + BELT) / 2), (.07, 1.8, BELT - FLOOR), L, bevel=.02)
-        box((x - s * .03, 0.1, BELT + .005), (.1, 1.8, .05), dark, bevel=.02)
-        box((x - s * .08, 0.05, BELT - .17), (.08, .55, .05), c.get('arm', dark), bevel=.015)
-        box((x - s * .05, -0.28, BELT - .06), (.025, .13, .03), T, bevel=.008)
-        cyl((x - s * .035, 0.35, BELT - .42), .07, .01, c.get('speaker', T), (0, math.pi / 2, 0), 18)
-    # windscreen pillars, the bar over the windscreen, the roof lining, the pillars behind and the mirror
-    hz = -0.55
+        box((x, 0.1, (FLOOR + BELT) / 2), (.07, 1.8, BELT - FLOOR), L, bevel=.025)
+        tube([(x - s * .045, -0.8, BELT + .012), (x - s * .05, -0.2, BELT + .014), (x - s * .045, 0.98, BELT + .012)], .034, dark, name='DoorTop')
+        dashes([(x - s * .082, -0.72, BELT - .004), (x - s * .086, 0.95, BELT - .004)], A, normal=Vector((-s, 0, .4)))
+        box((x - s * .045, 0.15, BELT - .1), (.02, 1.5, .1), c.get('doorinsert', c.get('seat', L)), bevel=.008)   # the insert panel
+        if amb: box((x - s * .056, 0.12, BELT - .04), (.005, 1.55, .005), amb)
+        box((x - s * .08, 0.05, BELT - .2), (.09, .55, .05), c.get('arm', dark), bevel=.02)
+        tube([(x - s * .04, -0.36, BELT - .04), (x - s * .07, -0.32, BELT - .055), (x - s * .072, -0.22, BELT - .055), (x - s * .04, -0.18, BELT - .04)], .007, T, name='Handle')
+        torus((x - s * .036, 0.35, BELT - .42), .07, .006, T, (0, math.pi / 2, 0), seg=32)
+        cyl((x - s * .033, 0.35, BELT - .42), .066, .006, c.get('speaker', mat('Grille', '#1a1b1e', .7, .4)), (0, math.pi / 2, 0), 32)
+    # rounded windscreen pillars, the header over the windscreen, sun visors, the roof lining, the pillar beside your head
+    hz = -0.55; pm = c.get('pillar', dark)
     for s in (-1, 1):
-        beam((s * 0.86, -1.10, dt), (s * 0.80, hz, TOP - .03), .085, c.get('pillar', dark))
-        box((s * 0.88, 0.55, (TOP + BELT) / 2), (.08, .16, TOP - BELT), c.get('pillar', dark))   # the pillar beside your head
-    box((0, hz, TOP - .05), (1.64, .1, .07), c.get('pillar', dark))
-    box((0, hz + .75, TOP - .015), (1.68, 1.5, .03), c['roofmat'])
-    box((0, hz + .02, TOP - .1), (.02, .02, .07), T)
-    mir = box((0, hz + .04, TOP - .155), (.24, .03, .07), dark, bevel=.01)
-    box((0, hz + .056, TOP - .155), (.22, .004, .055), MAT_MIRROR())
-    # floor and the middle console (between the seats)
+        tube([(s * 0.87, -1.12, dt - .02), (s * 0.85, -0.85, (dt + TOP) / 2 - .02), (s * 0.80, hz, TOP - .035)], .042, pm, name='Pillar')
+        box((s * 0.88, 0.55, (TOP + BELT) / 2), (.08, .16, TOP - BELT), pm, bevel=.03)
+        box((s * 0.42, hz + .13, TOP - .05), (.4, .17, .026), c.get('visor', c['roofmat']), bevel=.012)
+    box((0, hz, TOP - .05), (1.66, .1, .07), pm, bevel=.03)
+    box((0, hz + .75, TOP - .015), (1.68, 1.5, .03), c['roofmat'], bevel=.01)
+    # a frameless rear-view mirror on a short stem
+    box((0, hz - .02, TOP - .085), (.016, .016, .06), T, bevel=.005)
+    mir = cyl((0, hz - .02, TOP - .13), .085, .024, dark, (math.radians(90), 0, 0), 40); mir.scale = (1.25, .5, .36); bpy.ops.object.transform_apply(scale=True)
+    gl = cyl((0, hz - .008, TOP - .13), .081, .004, MAT_MIRROR(), (math.radians(90), 0, 0), 40); gl.scale = (1.25, .46, .33); bpy.ops.object.transform_apply(scale=True)
+    # floor and the middle console (between the seats), with two cup holders behind the gear selector
     box((0, -0.1, FLOOR), (1.9, 2.4, .02), c.get('floor', mat('Carpet', '#141416', 1)))
     if c.get('console', True):
-        box((0, -0.15, -0.76), (.26, 1.0, .32), c.get('consolemat', dark), bevel=.02)
-        box((0, -0.15, -0.6), (.22, .9, .015), T)
+        box((0, -0.15, -0.76), (.26, 1.0, .32), c.get('consolemat', dark), bevel=.04)
+        box((0, -0.15, -0.6), (.22, .9, .015), T, bevel=.006)
+        for sx in (-1, 1):
+            torus((sx * .055, 0.12, -0.59), .034, .004, T, seg=28); cyl((sx * .055, 0.12, -0.592), .031, .004, mat('CupHole', '#050506', .6), v=28)
     if c.get('stack', True):
         (y0, z0), (y1, z1) = STACK
-        extrude([(y0, z0), (y0, -0.66), (y1, -0.66), (y1, z1)], -0.14, 0.14, c.get('consolemat', dark), 'Stack')
-    # the passenger seat (its back is level with your shoulders, beside you)
-    pb = c.get('seat', L)
-    box((-EX, 0.25, -0.35), (.5, .14, .7), pb, rot=(math.radians(-14), 0, 0), bevel=.05)
-    box((-EX, -0.05, -0.68), (.5, .5, .12), pb, bevel=.04)
-    if c.get('seat_stripe'): box((-EX, 0.175, -0.33), (.07, .01, .62), c['seat_stripe'], rot=(math.radians(-14), 0, 0))
+        sweep(chaikin([(y0, z0), (y0, -0.66), (y1, -0.66), (y1, z1)], 1), -0.14, 0.14, c.get('consolemat', dark), 'Stack', segs=2, bend=False)
+    # the passenger seat beside you: a sculpted bucket with side bolsters (its back is level with your shoulders)
+    pb = c.get('seat', L); shell = c.get('seatshell')
+    tilt = (math.radians(-14), 0, 0)
+    box((-EX, 0.25, -0.35), (.46, .12, .66), pb, rot=tilt, bevel=.05)
+    for sx in (-1, 1):
+        box((-EX + sx * .23, 0.21, -0.38), (.08, .17, .56), shell or pb, rot=(math.radians(-14), 0, sx * math.radians(-12)), bevel=.035)   # the side bolsters
+        box((-EX + sx * .2, -0.08, -0.64), (.09, .48, .12), shell or pb, bevel=.035)                                                    # thigh bolsters
+    box((-EX, -0.06, -0.68), (.36, .48, .1), pb, bevel=.035)
+    box((-EX, 0.32, 0.03), (.26, .1, .17), shell or pb, rot=tilt, bevel=.04)   # the headrest
+    if shell: box((-EX, 0.33, -0.15), (.5, .08, .95), shell, rot=tilt, bevel=.04)   # a carbon shell round the back
+    if c.get('seat_stripe'): box((-EX, 0.185, -0.33), (.07, .01, .6), c['seat_stripe'], rot=tilt, bevel=.003)
     return dt
 
 
@@ -208,13 +307,18 @@ def on_stack(y, up=0.):
 
 
 def gauge(c, center=None, w=.42, h=.158, parent=None, hood=True, hood_w=None):
-    """the dial screen (the game draws the live dials on it) and the hood over it"""
+    """the dial screen (the game draws the live dials on it) and the curved, stitched hood over it"""
     cc = Vector(center or (EX, -0.62, -0.245))
     g = plane_to('Gauge', cc, (EX, 0, 0), w, h, mat('GaugeGlass', '#05070a', .2), parent)
     if hood:
         pm = c.get('dashmat', c['leather']); hw = hood_w or w + .04
-        box((cc.x, cc.y - .07, cc.z + .085), (hw, .18, .04), pm, bevel=.012, parent=parent)   # the hood over the dials
-        box((cc.x, cc.y - .06, cc.z - .01), (hw, .1, h + .1), pm, bevel=.01, parent=parent)   # the pod behind them
+        # a visor: its lip over the dials, curving forward and down into the dash (a crescent swept across)
+        shell = [(.03, .085), (0, .1), (-.06, .105), (-.12, .09), (-.17, .03), (-.17, -.06), (-.152, -.06), (-.152, .024), (-.11, .072), (-.06, .087), (0, .082), (.03, .067)]
+        prof = chaikin([(cc.y + y, cc.z + z) for y, z in shell], 1)
+        o = sweep(prof, cc.x - hw / 2, cc.x + hw / 2, pm, 'Hood', segs=4, bend=False)
+        if parent: link(o, parent)
+        dashes([(cc.x - hw / 2 + .01, cc.y + .03, cc.z + .079), (cc.x + hw / 2 - .01, cc.y + .03, cc.z + .079)], c['accent'], normal=Vector((0, .6, .8)))
+        box((cc.x, cc.y - .06, cc.z - .01), (hw - .01, .1, h + .1), pm, bevel=.02, parent=parent)   # the pod behind the dials
     return g
 
 
@@ -226,9 +330,9 @@ def ring(c, r, m, dx=0., width=.006):
 
 def screen(c, center=(0, -0.66, -0.36), w=.26, h=.16, frame=True):
     s = plane_to('Screen', center, (EX, 0, 0), w, h, mat('ScreenGlass', '#04060a', .15))
-    if frame:
+    if frame:   # a thin rounded bezel just behind the glass
         n = (Vector((EX, 0, 0)) - Vector(center)).normalized()
-        plane_to('ScreenFrame', Vector(center) - n * .006, (EX, 0, 0), w + .025, h + .025, c.get('bezel', mat('Bezel', '#0b0b0c', .3)))
+        box(Vector(center) - n * .009, (w + .022, h + .022, .014), c.get('bezel', mat('Bezel', '#0b0b0c', .3)), rot=n.to_track_quat('Z', 'Y').to_euler(), bevel=.007)
     return s
 
 
@@ -250,22 +354,36 @@ def wheel(c, shape='round', R=.175, thick=.026, extra=None):
     sit on its +y side) under an empty called Wheel, which is then moved into place and tilted; the game turns it
     about its own axis. extra(W) adds the brand's buttons and lights in the same frame."""
     W = bpy.data.objects.new('Wheel', None); bpy.context.collection.objects.link(W); bpy.context.view_layer.update()
-    rimm = c.get('rim', mat('WheelLeather', '#141416', .55)); face = (math.radians(90), 0, 0)
+    rimm = c.get('rim', mat('WheelLeather', '#141416', .55)); face = (math.radians(90), 0, 0); thick = thick * 1.12
     if shape == 'yoke':   # Tesla: open at the top
         pts = [(-R * 1.15, 0, R * .55), (-R * 1.15, 0, -R * .35), (-R * .9, 0, -R * .62), (R * .9, 0, -R * .62), (R * 1.15, 0, -R * .35), (R * 1.15, 0, R * .55)]
-        link(tube(pts, thick * 1.1, rimm), W)
+        link(tube(chaikin(pts, 2, False), thick * 1.1, rimm), W)
         for sx in (-1, 1): link(tube([(sx * R * 1.15, 0, R * .55), (sx * R * .92, 0, R * .62)], thick * 1.1, rimm), W)
     else:
-        link(tube(rim_points(shape, R), thick, rimm, closed=True), W)
+        rim = rim_points(shape, R); link(tube(rim, thick, rimm, closed=True), W)
+        for sx in (-1, 1): sph((sx * R * .99, .002, .018), thick * 1.12, rimm, (1, 1.1, 1.9), W)   # thumb grips at a quarter to three
+        # stitching round the inside of the rim, on your side
+        ring = [Vector(p) * ((R - thick * .62) / R) + Vector((0, thick * .62, 0)) for p in rim]
+        link(dashes([tuple(v) for v in ring[6:27]] , c['accent'], step=.008, normal=Vector((0, 1, 0))), W)
+        link(dashes([tuple(v) for v in ring[38:59]], c['accent'], step=.008, normal=Vector((0, 1, 0))), W)
+    spm = c.get('spokemat', rimm)
     for a in c.get('spokes', [0, math.pi, -math.pi / 2]):
-        box((math.cos(a) * R * .52, 0, math.sin(a) * R * .52), (R * .95, .022, .036), c.get('spokemat', rimm), rot=(0, -a, 0), parent=W)
-    cyl((0, 0, 0), R * .32, .06, c.get('hubmat', rimm), face, 24, W)
-    cyl((0, .032, 0), R * .14, .006, c['badge'], face, 24, W)
+        box((math.cos(a) * R * .56, -.004, math.sin(a) * R * .56 - .006), (R * .78, .03, .044), spm, rot=(0, -a, 0), bevel=.012, parent=W)
+        if abs(math.sin(a)) < .1 and c.get('buttons', True):   # a button panel on each side spoke: four rounded buttons
+            sx = 1 if math.cos(a) > 0 else -1
+            box((sx * R * .5, .016, -.006), (R * .34, .01, .062), mat('ButtonPanel', '#0a0a0b', .2, .1, coat=1.), bevel=.006, parent=W)
+            for bx in (-1, 1):
+                for bz in (-1, 1): box((sx * R * .5 + bx * R * .08, .022, -.006 + bz * .016), (R * .12, .008, .022), mat('Button', '#26272b', .35), bevel=.004, parent=W)
+    box((0, .012, -.012), (R * .82, .066, R * .64), c.get('hubmat', rimm), bevel=.028, parent=W)   # the airbag pad
+    cyl((0, .047, -.006), R * .13, .006, c['badge'], face, 32, W)
     if c.get('marker', True):   # the stripe at 12 o'clock (at the bottom of a yoke)
-        box((0, 0, R if shape != 'yoke' else -R * .62), (.03, thick * 2.3, thick * 2.3), c['marker_mat'], parent=W)
-    for sx in (-1, 1):   # your gloves
+        box((0, 0, R if shape != 'yoke' else -R * .62), (.03, thick * 2.35, thick * 2.35), c['marker_mat'], bevel=.004, parent=W)
+    if c.get('paddles', True) and shape != 'yoke':   # metal shift paddles behind the rim
+        for sx in (-1, 1): box((sx * R * .8, -.04, .04), (.07, .006, .1), c.get('paddlemat', mat('PaddleAlu', '#aeb4bb', .25, 1.)), rot=(0, sx * math.radians(-12), 0), bevel=.004, parent=W)
+    for sx in (-1, 1):   # your gloves, thumbs on the grips
         sph((R * (1.15 if shape == 'yoke' else 1.0) * sx, .012, .01), .036, c.get('glove', mat('Glove', '#d8261c', .8)), (1, .8, 1.3), W)
-    cyl((0, -.14, 0), .035, .26, mat('Column', '#121214', .6), face, 12, W)
+        sph((R * (1.06 if shape == 'yoke' else .88) * sx, .03, .03), .015, c.get('glove', mat('Glove', '#d8261c', .8)), (1, 1, 1.7), W)
+    cyl((0, -.15, 0), .06, .24, mat('Column', '#121214', .6), face, 24, W, r2=.042)   # the column shroud
     if extra: extra(W)
     W.location = WC; W.rotation_euler = (math.radians(18), 0, 0)   # the top leans away from you
     return W
@@ -274,8 +392,9 @@ def wheel(c, shape='round', R=.175, thick=.026, extra=None):
 # ---------------------------------------------------------------- the brands
 def porsche():
     L, A, T = mat('Leather', '#121214', .7), mat('GuardsYellow', '#f2c200', .5), mat('Alu', '#b9bdc4', .3, 1.)
-    c = dict(leather=L, accent=A, trim=T, roofmat=mat('RaceTex', '#1d1e21', 1), badge=mat('Crest', '#c89a2a', .4, .6), marker_mat=A, dashmat=L,
-             seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8))
+    race = mat('RaceTex', '#1d1e21', 1)
+    c = dict(leather=L, accent=A, trim=T, roofmat=race, badge=mat('Crest', '#c89a2a', .4, .6), marker_mat=A, dashmat=race, pillar=race,
+             seat_stripe=A, seatshell=mat('Carbon', '#121315', .25, .2), doorinsert=race, glove=mat('Glove', '#1a1a1c', .8), buttons=False)
     dt = cabin(c)
     # five round dials under one curved hood (the middle one is the real rev counter)
     gauge(c, w=.46, h=.15, hood_w=.56)
@@ -285,13 +404,17 @@ def porsche():
     for x in (-.08, .1): box((x, -0.66, -0.44), (.12, .02, .05), mat('Vent', '#0a0a0b', .5), bevel=.006)
     for k in range(5): box((-.08 + k * .045, -0.655, -0.5), (.022, .03, .012), T, rot=(math.radians(25), 0, 0))
     box((0, -0.25, -0.58), (.03, .06, .07), T, bevel=.01)   # the little gear selector
-    wheel(c, 'round')
+    def ex(W):   # the GT3 RS wheel: four mode dials on the spokes (drive modes, PASM, PTV, traction) in yellow and red
+        for k, (x, z, col) in enumerate(((-.1, .0, '#f2c200'), (-.09, -.05, '#d01020'), (.1, .0, '#f2c200'), (.09, -.05, '#5a5e66'))):
+            cyl((x, .028, z), .016, .018, mat('Knurl', '#c9ced5', .3, 1.), (math.radians(90), 0, 0), 20, W)
+            cyl((x, .038, z), .012, .004, mat('Dial' + col, col, .4), (math.radians(90), 0, 0), 20, W)
+    wheel(c, 'round', extra=ex)
 
 
 def tesla():
     L, W_, T = mat('VeganWhite', '#e8e6e1', .55), mat('Wood', '#5a3f2a', .45), mat('Chrome', '#c6ccd4', .2, 1.)
     c = dict(leather=mat('DashBlack', '#1a1b1d', .6), accent=W_, trim=T, roofmat=mat('Glass roof', '#0b0d10', .2), badge=mat('TLogo', '#c8141b', .4),
-             marker=False, dash_line=False, seat=L, glove=mat('Glove', '#1a1a1c', .8), console=True, consolemat=mat('PianoBlack', '#060607', .15),
+             marker=False, dash_line=False, seat=L, glove=mat('Glove', '#1a1a1c', .8), console=True, consolemat=mat('PianoBlack', '#060607', .15), amb='#e8f0ff',
              dash_prof=[(-0.68, -0.6), (-0.69, -0.33), (-0.76, -0.31), (-1.18, -0.33), (-1.18, -0.6)], dash_top=-0.31)
     cabin(c)
     box((0, -0.625, -0.42), (1.86, .02, .07), W_)   # the long wood strip with the hidden vent slot above it
@@ -307,9 +430,11 @@ def lambo():
     carbon = mat('Carbon', '#0f1012', .25, .2)
     c = dict(leather=L, accent=A, trim=T, roofmat=L, badge=mat('Bull', '#d4a72c', .4, .7), marker_mat=A, dashmat=carbon, seat_stripe=A,
              dash_prof=[(-0.68, -0.66), (-0.69, -0.33), (-0.75, -0.24), (-0.88, -0.25), (-1.18, -0.33), (-1.18, -0.66)], dash_top=-0.24,
-             glove=mat('Glove', '#1a1a1c', .8))
+             glove=mat('Glove', '#1a1a1c', .8), buttons=False, seatshell=carbon)
     cabin(c)
     gauge(c, w=.44, h=.15, hood=False)
+    plane_to('PassengerScreen', (0.5, -0.655, -0.31), (0.5, 0, -0.2), .24, .1, mat('PassengerGlow', '#1fd0ff', .3, emit=.6))   # the passenger's own screen
+    box((0.5, -0.664, -0.31), (.27, .012, .125), carbon, bevel=.006)
     # the sharp hexagon hood over the dials
     bm = bmesh.new(); top = []
     for k in range(6):
@@ -326,16 +451,18 @@ def lambo():
     box((0, -0.58, on_stack(-0.58, .03)), (.05, .07, .03), mat('RedCover', '#d0101a', .35), rot=(-SLOPE - math.radians(25), 0, 0), bevel=.006)
     for k in (-2, -1, 1, 2): box((k * .045, -0.58, on_stack(-0.58, .025)), (.012, .012, .05), T, rot=(-SLOPE, 0, 0))
     def ex(W):
-        for s in (-1, 1): sph((s * .1, .03, -.05), .014, mat('RedButton', '#e0101a', .3), parent=W)   # the red Anima buttons
+        for x, z, col in ((-.1, -.01, '#e0101a'), (-.08, -.06, '#26272b'), (.1, -.01, '#e0101a'), (.08, -.06, '#26272b')):   # four rotors: Anima, lift, wing, hybrid
+            cyl((x, .026, z), .018, .02, mat('Rotor', '#9da3ab', .35, 1.), (math.radians(90), 0, 0), 20, W)
+            cyl((x, .037, z), .013, .004, mat('Rotor' + col, col, .35), (math.radians(90), 0, 0), 20, W)
     wheel(c, 'flat', extra=ex)
 
 
 def ferrari():
     L, A, T = mat('Nero', '#111113', .7), mat('RossoStitch', '#d2141c', .5), mat('Carbon', '#121315', .25, .2)
     c = dict(leather=L, accent=A, trim=mat('Alu', '#b9bdc4', .3, 1.), roofmat=mat('Alcantara', '#1a1a1c', 1), badge=mat('Cavallino', '#f6c600', .4),
-             marker_mat=A, dashmat=L, seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8))
+             marker_mat=A, dashmat=L, seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8), buttons=False, seatshell=mat('Carbon', '#121315', .25, .2))
     cabin(c)
-    gauge(c, w=.46, h=.16, hood_w=.6)
+    gauge(c, w=.5, h=.17, hood_w=.62)   # the 16-inch curved screen
     plane_to('PassengerDisplay', (0.42, -0.66, -0.3), (0.42, 0, -0.2), .32, .07, mat('PassengerGlow', '#ff3a2a', .3, emit=1.2))   # the passenger's strip
     screen(c, (0.05, -0.66, -0.38), .18, .1)
     # the console "bridge": a gated gear selector in aluminium
@@ -347,6 +474,7 @@ def ferrari():
             sph((math.cos(a) * .19, .012, math.sin(a) * .19), .007, mat('LED' + col, col, .3, emit=3.), parent=W)
         sph((-.1, .03, -.06), .018, mat('StartRed', '#e0101a', .3, emit=.6), parent=W)   # ENGINE START
         cyl((.1, .03, -.06), .022, .02, mat('Manettino', '#c8141b', .4), (math.radians(90), 0, 0), 16, W)
+        for sx in (-1, 1): box((sx * .11, .026, .02), (.05, .006, .03), mat('TouchPad', '#0a0a0c', .1, .2, coat=1.), bevel=.004, parent=W)   # the haptic touch pads
     wheel(c, 'flat', extra=ex)
 
 
@@ -354,7 +482,7 @@ def mclaren():
     L, A, T = mat('Alcantara', '#141416', .9), mat('Papaya', '#ff8000', .5), mat('Carbon', '#101113', .25, .2)
     c = dict(leather=L, accent=A, trim=mat('Alu', '#aeb3ba', .3, 1.), roofmat=L, badge=mat('Speedmark', '#ff8000', .4), marker_mat=A, dashmat=T,
              seat_stripe=A, dash_prof=[(-0.70, -0.6), (-0.71, -0.34), (-0.78, -0.31), (-1.18, -0.35), (-1.18, -0.6)], dash_top=-0.31, dash_line=False,
-             spokes=[0, math.pi], glove=mat('Glove', '#1a1a1c', .8))
+             spokes=[0, math.pi], glove=mat('Glove', '#1a1a1c', .8), buttons=False, seatshell=T)
     cabin(c)
     # the dial pod sits on the steering column, not on the dash
     gauge(c, (EX, -0.62, -0.28), .3, .12, hood_w=.36)
@@ -367,7 +495,13 @@ def mclaren():
     # switches in the roof
     box((0, -0.3, TOP - .04), (.3, .16, .03), T, bevel=.008)
     for k in range(5): box((-.1 + k * .05, -0.3, TOP - .06), (.012, .03, .02), A)
-    wheel(c, 'round', R=.17)
+    def ex(W):
+        for sx, col in ((-1, '#ff8000'), (1, '#2a7bff')):   # BOOST and AERO, under your thumbs
+            cyl((sx * .09, .03, .0), .016, .014, mat('W1Btn' + col, col, .35, emit=.4), (math.radians(90), 0, 0), 20, W)
+        for k in range(10):   # shift lights in the top of the rim
+            a = math.radians(66 + k * 5.3); col = '#2fe05a' if k < 4 else '#ff2a1a' if k < 8 else '#2a7bff'
+            sph((math.cos(a) * .158, .014, math.sin(a) * .158 * .74), .006, mat('LED' + col, col, .3, emit=3.), parent=W)
+    wheel(c, 'flat2', R=.16, extra=ex)
 
 
 def bugatti():
@@ -377,9 +511,12 @@ def bugatti():
              dash_prof=[(-0.68, -0.66), (-0.69, -0.32), (-0.78, -0.27), (-1.18, -0.31), (-1.18, -0.66)], dash_top=-0.27)
     cabin(c)
     # the C-line: a polished C from the roof down the middle of the car
-    tube([(0, -0.62, TOP - .03), (0, -0.66, 0), (0, -0.68, -0.3), (0, -0.62, -0.55), (0, -0.3, -0.6), (0, 0.15, -0.62)], .022, T, name='Cline')
+    cl = [(0, -0.62, TOP - .03), (0, -0.66, 0), (0, -0.68, -0.3), (0, -0.62, -0.55), (0, -0.3, -0.6), (0, 0.15, -0.62)]
+    tube(chaikin(cl, 2, False), .022, T, name='Cline')
+    tube([(x, y + .02, z + .004) for x, y, z in chaikin(cl, 2, False)][1:-1], .005, mat('CLight', '#bfe4ff', .3, emit=5.), name='ClineLight')   # the glowing light conductor
     # the skeleton console with four round knobs standing up
-    for k in range(4): y = -0.64 + k * .075; cyl((0.0, y, on_stack(y, .03)), .022, .06, T, v=20); cyl((0.0, y, on_stack(y, .061)), .018, .006, mat('KnobFace', '#0a0b0d', .2), v=20)
+    for k in range(4):   # four knobs, each with a little screen on top
+        y = -0.64 + k * .075; cyl((0.0, y, on_stack(y, .03)), .022, .06, T, v=24); cyl((0.0, y, on_stack(y, .061)), .018, .006, mat('KnobFace', '#5aa8ff', .2, emit=.8), v=24)
     # watch-like dials fixed in the hub, the speedometer to 500 in the middle
     gauge(c, (EX, -0.6, -0.27), .3, .13, hood_w=.36)
     for x, r in ((-.09, .045), (0, .06), (.09, .045)): ring((EX, -0.6, -0.27), r, T, x)
@@ -389,7 +526,7 @@ def bugatti():
 def koenigsegg():
     carbon, A, T = mat('Carbon', '#101114', .2, .25), mat('Orange', '#ff6a13', .5), mat('Alu', '#c3c8cf', .25, 1.)
     c = dict(leather=mat('Alcantara', '#161618', .9), accent=A, trim=T, roofmat=carbon, badge=mat('Shield', '#e8e8ea', .3, .6), marker_mat=A,
-             dashmat=carbon, seat_stripe=A, pillar=carbon, glove=mat('Glove', '#1a1a1c', .8))
+             dashmat=carbon, seat_stripe=A, pillar=carbon, glove=mat('Glove', '#1a1a1c', .8), seat=mat('OrangeLeather', '#e2621c', .55), seatshell=carbon, doorinsert=mat('OrangeLeather', '#e2621c', .55))
     cabin(c)
     screen(c, (0.04, -0.66, -0.36), .22, .14)
     # the gated shifter of the CC850 (a silver gate) and chrome toggles
@@ -398,7 +535,7 @@ def koenigsegg():
     cyl((0, -0.55, on_stack(-0.55, .06)), .006, .1, T); sph((0, -0.55, on_stack(-0.55, .11)), .022, T)
     def ex(W):
         # the SmartCluster: a small screen on the wheel itself, it turns with you
-        plane_to('Gauge', (0, .045, .085), (0, 10, .085), .15, .075, mat('GaugeGlass', '#05070a', .2), W)
+        plane_to('Gauge', (0, .049, .085), (0, 10, .085), .15, .075, mat('GaugeGlass', '#05070a', .2), W)   # (just in front of the carbon frame)
         box((0, .035, .085), (.17, .02, .09), carbon, parent=W)
     wheel(c, 'flat', R=.165, extra=ex)
 
@@ -423,7 +560,7 @@ def toyota():
 def bmw():
     L, A, T = mat('Merino', '#151517', .7), mat('MRed', '#d2141c', .4), mat('Carbon', '#121315', .25, .2)
     c = dict(leather=L, accent=A, trim=mat('Alu', '#a9aeb5', .3, 1.), roofmat=mat('Anthracite', '#26272b', 1), badge=mat('Roundel', '#2a74d8', .3, .3),
-             marker_mat=A, dashmat=L, seat_stripe=mat('MBlue', '#1d5fd6', .5), glove=mat('Glove', '#1a1a1c', .8))
+             marker_mat=A, dashmat=L, seat_stripe=mat('MBlue', '#1d5fd6', .5), glove=mat('Glove', '#1a1a1c', .8), amb='#3a8bff', seatshell=T)
     cabin(c)
     # one long curved screen: the dials and the middle screen behind one piece of glass
     gauge(c, (EX + .02, -0.64, -0.21), .34, .12, hood=False)
@@ -439,7 +576,7 @@ def bmw():
 def audi():
     L, A, T = mat('Nappa', '#141416', .7), mat('RSRed', '#cc1020', .45), mat('Alu', '#aeb3ba', .3, 1.)
     c = dict(leather=L, accent=A, trim=T, roofmat=mat('Alcantara', '#202124', 1), badge=mat('Rings', '#cdd2d8', .25, 1.), marker_mat=A, dashmat=L,
-             seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8))
+             seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8), amb='#ff3a3a')
     dt = cabin(c)
     gauge(c, w=.5, h=.17, hood_w=.62)   # the wide Virtual Cockpit
     # the R8's big arch that sweeps round the driver
@@ -470,7 +607,7 @@ def devel():
 def amg():
     L, A, T = mat('Nappa', '#121214', .7), mat('AMGRed', '#cc1020', .45), mat('Chrome', '#cfd4da', .2, 1.)
     c = dict(leather=L, accent=A, trim=T, roofmat=mat('Microfibre', '#1f2023', 1), badge=mat('Star', '#cfd4da', .25, 1.), marker_mat=A, dashmat=L,
-             seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8))
+             seat_stripe=A, glove=mat('Glove', '#1a1a1c', .8), amb='#5aa8ff', rim=mat('Microfibre', '#1f2023', .95))
     dt = cabin(c)
     # one wide screen on top of the dash: the dials and the middle screen side by side
     gauge(c, (EX + .02, -0.66, -0.21), .3, .12, hood=False)
@@ -491,8 +628,14 @@ def rolls():
     stars = mat('Star', '#ffffff', .3, emit=6.)
     c = dict(leather=L, accent=A, trim=T, roofmat=mat('Starlight', '#14161c', 1), badge=mat('RR', '#d5dae0', .2, 1.), marker=False, dashmat=A,
              rim=mat('ThinRim', '#141416', .5), spokemat=T, hubmat=mat('Hub', '#1a1a1c', .5), seat=L, glove=mat('Glove', '#ece9e2', .8),
-             dash_prof=[(-0.68, -0.66), (-0.69, -0.3), (-0.76, -0.26), (-1.18, -0.3), (-1.18, -0.66)], dash_top=-0.26)
+             dash_prof=[(-0.68, -0.66), (-0.69, -0.3), (-0.76, -0.26), (-1.18, -0.3), (-1.18, -0.66)], dash_top=-0.26, amb='#fff2dc')
     cabin(c)
+    # the Illuminated Fascia: the passenger's side of the dash glows with its own stars
+    random.seed(9); bm = bmesh.new()
+    for _ in range(160):
+        x, z = random.uniform(0.15, 0.85), random.uniform(-0.6, -0.36); r = random.choice((.0025, .0025, .004))
+        v = [bm.verts.new(wrap(x + dx, -0.682, z + dz)) for dx, dz in ((-r, -r), (r, -r), (r, r), (-r, r))]; bm.faces.new(v)
+    me = bpy.data.meshes.new('Fascia'); bm.to_mesh(me); bm.free(); o = bpy.data.objects.new('Fascia', me); bpy.context.collection.objects.link(o); link(o, None, stars)
     # the Starlight Headliner: hundreds of tiny stars in the roof
     random.seed(4)
     bm = bmesh.new()
@@ -576,7 +719,7 @@ def nissan():
     L, A, T = mat('Alcantara', '#141416', .85), mat('NismoRed', '#d0101a', .45), mat('Alu', '#aab0b8', .3, 1.)
     carbon = mat('Carbon', '#111214', .22, .25)
     c = dict(leather=L, accent=A, trim=T, roofmat=mat('Headliner', '#1e1f22', 1), badge=mat('NissanBadge', '#cfd4da', .25, 1.), marker_mat=A,
-             dashmat=mat('DashLeather', '#17181b', .7), seat_stripe=A, consolemat=carbon, glove=mat('Glove', '#1a1a1c', .8))
+             dashmat=mat('DashLeather', '#17181b', .7), seat_stripe=A, consolemat=carbon, glove=mat('Glove', '#1a1a1c', .8), seatshell=carbon)
     dt = cabin(c)
     for s in (-1, 1): vent_round((s * 0.8, -0.7, dt - .08), .06, T, mat('VentIn', '#0a0a0b', .5), (0, 1, 0.1))   # round vents at both ends
     gauge(c, w=.4, h=.15, hood_w=.5)
@@ -600,7 +743,7 @@ def amboola():
     acc, neon, gold = mat('AmbAccent', '#c8141b', .45), mat('AmbNeon', '#2fe0ff', .3, emit=2.), mat('TigerGold', '#ffc21f', .3, .8)
     c = dict(leather=L, accent=acc, trim=T, roofmat=mat('AmbRoof', '#101218', .9), badge=gold, marker_mat=neon, dashmat=mat('Dash', '#14161c', .55), seat=acc,
              seat_stripe=neon, consolemat=mat('Gloss', '#0a0b0e', .15, .2, coat=1.), spokes=[0, math.pi], rim=mat('RimBlack', '#121318', .5),
-             glove=mat('Glove', '#1a1a1c', .8), dash_line=False)
+             glove=mat('Glove', '#1a1a1c', .8), dash_line=False, amb='#2fe0ff')
     dt = cabin(c)
     # neon light lines along the dash and both doors
     box((0, -0.706, dt - .04), (1.86, .008, .01), neon)
@@ -642,7 +785,9 @@ def export(key):
 
 def render(path):
     """the driver's view, to compare with the photos"""
-    scn = bpy.context.scene; scn.render.engine = 'CYCLES'; scn.cycles.samples = 20; scn.render.resolution_x, scn.render.resolution_y = 640, 360
+    scn = bpy.context.scene; scn.render.engine = 'CYCLES'; scn.cycles.samples = int(os.environ.get('SAMPLES', 20)); scn.cycles.use_denoising = True
+    scn.render.resolution_x, scn.render.resolution_y = (int(v) for v in os.environ.get('SIZE', '640x360').split('x'))
+    scn.view_settings.view_transform = 'AgX'; scn.view_settings.look = 'AgX - Punchy'
     cam_d = bpy.data.cameras.new('cam'); cam_d.sensor_fit = 'VERTICAL'; cam_d.angle = math.radians(70); cam = bpy.data.objects.new('cam', cam_d)
     bpy.context.collection.objects.link(cam); scn.camera = cam; cam.location = (EX, 0.0, 0.0)
     cam.rotation_euler = (Vector((EX + .05, -10, -1.6)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
@@ -658,4 +803,4 @@ if __name__ == '__main__':
     for key in (BRANDS if which == 'all' else which.split(',')):
         bpy.ops.wm.read_factory_settings(use_empty=True); MATS.clear(); BRANDS[key]()
         if '--render' in argv: render(os.path.join(argv[argv.index('--render') + 1], f'int_{key}.png'))
-        export(key)
+        if '--no-export' not in argv: export(key)

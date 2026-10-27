@@ -489,6 +489,19 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - Pets: the cat is sized to the car's height (`clamp(H * 1.3, .9, 1.6)`); a saved cat pet was switched off once (`amboola.catOff`).
 - **Brand interiors:** `models/blender/interiors.py` writes `int_<key>.glb(.js)` for the 19 keys in `INTERIORS` (Nissan and AMBOOLA included; AMBOOLA's `AmbAccent` material is tinted to the car's paint in `buildInterior`, and its `holo` dials are drawn see-through with additive blending) (brand → key; Porsches have no `brand` and count as Porsche). Interior space: the origin is the car's centre line at the eye height and eye position, the eye at x = -0.40 (right-hand drive), forward +z, nominal width 2.0 m. Nodes: `Wheel` (an empty; its axis is its local z), `Gauge` and `Screen` (planes with UVs). The script's `--render DIR` writes a driver's-eye picture per brand.
 - `INTERIOR_MODELS` are in `MODEL_FILES` but left out of the background loading: `buildCockpit` loads the brand's model the first time you go inside (the plain cockpit, `proc: true`, shows until then and is swapped out when it arrives). `buildInterior` clones it, stretches x by `clamp(xh, .85, 1.15)` (the wheel is scaled back so it stays round), places it at `E = (-0.4·sx, ey, ez)`, gives `Gauge`/`Screen` canvas materials (`planeCanvas`, `flipY` false for glTF UVs) and turns the wheel by `q0 · rotZ(-steer × 2.3)`. `drawDials(G, p, DIALS[key])` draws the brand's layout: `five`, `round`, `twin`, `hex`, `watch`, `analog`, `tesla`, `jet` or `bar`. The Cybercab hides the wheel and dials. `PLAIN_DIALS` is the style of the plain cockpit that shows while a brand's model loads.
+- **HD cockpit kit** (`interiors.py`):
+  - `chaikin()` rounds a profile, and `sweep()` sweeps it across the car, bent by `wrap()` (`WRAP` bow .035, droop .015), for the dash, trim band and ambient line. A part fixed to the dash near its ends must use `wrap(x, y, z)` too, or it sinks in; see the Rolls-Royce fascia stars.
+  - `dashes()` makes stitching that lies on a surface facing `normal`, in the brand's `accent` material (an `INT_STITCH` name, so the stitch colour in Customize still works).
+  - `vent_slots()` makes rectangular vents. `box(..., bevel=)` now rounds with 3 segments and hardened normals.
+  - Brand dict options: `amb` (ambient light colour), `buttons`, `paddles`, `seatshell`, `doorinsert`, `visor`, `paddlemat`.
+  - `--no-export` together with `--render DIR` previews without touching `models/` (`SIZE=WxH SAMPLES=n` env).
+- **In the game:**
+  - `interiorLook(g)` (in `buildInterior`, before `interiorCustom`) swaps the cockpit's materials, by name via `INT_LOOK`, for `MeshPhysicalMaterial`: leather sheen, fabric sheen, carbon or gloss clear coat. Near-black leather and fabric are lifted to luminance 0.014.
+  - `intDetail` (`onBeforeCompile`, `INT_KIND` 1–4 and `customProgramCacheKey 'int-detail-k'`) adds object-space detail with `vIP`/`vIN`: leather grain, fabric fuzz, the carbon 2×2 twill (albedo and bump) and brushed metal. Bump uses `iBump` (a copy of `perturbNormalArb`), and `iFade` fades it out below about 2 px per cell.
+  - `ck.fill` is a `PointLight` in the cabin. `updateCockpit` sets it to `hemi × .45 + sun × .05`, tinted by the hemisphere colour.
+  - `carEnvApply` runs again when the cockpit is built, so it gets the live reflections.
+  - On Ultra and HD, `planeCanvas` makes the gauge and screen canvases twice as big, with anisotropic filtering.
+- **Testing:** test the inside view with a capture script that owns the car, `selectCar`, `startDrive`, sets `camMode = CAM_INSIDE`, ticks until `player.car.cockpit` exists and isn't `proc`, then calls `toDataURL`. Between cars, click `#bGarage`, because `enterGarage` isn't exported. One early capture showed a big black block that a raycast never found again: a timing glitch, not a model fault.
 
 ## Race music
 

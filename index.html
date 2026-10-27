@@ -3965,8 +3965,8 @@ const interiorOf = spec => spec && !spec.jet ? INTERIORS[spec.brand || 'Porsche'
 function planeCanvas(mesh, base = 512) {
   const P = mesh.geometry.attributes.position, U = mesh.geometry.attributes.uv, pick = (fu, fv) => { for (let i = 0; i < U.count; i++) if ((U.getX(i) > .5) === fu && (U.getY(i) > .5) === fv) return new THREE.Vector3().fromBufferAttribute(P, i); return new THREE.Vector3(); };
   const o = pick(false, false), w = o.distanceTo(pick(true, false)), h = o.distanceTo(pick(false, true)) || w / 3;
-  const c = document.createElement('canvas'); c.width = base; c.height = clamp(Math.round(base * h / w), 64, 900);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;   // glTF UVs start at the top
+  const c = document.createElement('canvas'); c.width = base; c.height = clamp(Math.round(base * h / w), 64, 1800);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.flipY = false; t.anisotropy = maxAniso;   // glTF UVs start at the top
   mesh.material = new THREE.MeshBasicMaterial({ map: t, toneMapped: false }); return { c, x: c.getContext('2d'), t, key: '', T: 0 };
 }
 function buildInterior(car, spec, G, zr, key, IM, hide) {
@@ -3976,14 +3976,93 @@ function buildInterior(car, spec, G, zr, key, IM, hide) {
   g.traverse(o => { if (o.name === 'Wheel') wheel = o; if (o.isMesh) { o.receiveShadow = true; o.castShadow = false; if (o.name === 'Gauge') gm = o; else if (o.name === 'Screen') sm = o; } });
   if (wheel) wheel.scale.x = 1 / sx;   // the wheel stays round when the cabin is stretched
   if (spec.id === 'cybercab' && wheel) { wheel.visible = false; if (gm) gm.visible = false; }   // the Cybercab has no steering wheel at all
-  const gauge = gm ? planeCanvas(gm) : null;
+  const hd = qUltra() ? 2 : 1, gauge = gm ? planeCanvas(gm, 512 * hd) : null;   // Ultra/HD: twice as sharp dials and screens
   if (gauge && DIALS[key][0] === 'holo') Object.assign(gm.material, { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });   // AMBOOLA: a see-through hologram
-  if (sm) { const S = planeCanvas(sm, 384); drawScreen(S, key, spec); }
+  if (sm) { const S = planeCanvas(sm, 384 * hd); drawScreen(S, key, spec); }
   const paint = car.paint?.userData.base || car.paint?.color;   // AMBOOLA's accent parts (seats, gear knob) in the car's own colour
   if (paint) g.traverse(o => { if (o.isMesh && o.material?.name === 'AmbAccent') { o.material = o.material.clone(); o.material.color.copy(paint); } });
+  interiorLook(g);
   interiorCustom(g, spec, [[-.82, .82, -.3, .66], [-.93, -.93, -.24, .6, .55, -.5], [.93, .93, -.24, .6, .55, -.5]]);
+  const fill = new THREE.PointLight(0xfff4ea, 0, 2.8, 2); fill.position.set(0, .14, .42); g.add(fill);   // daylight bouncing round the cabin (see updateCockpit)
   g.visible = false; car.group.add(g);
-  return { g, E, spin: wheel, q0: wheel?.quaternion.clone(), ang: 0, gauge, style: DIALS[key], hide, on: false };
+  if (CAR_ENV.car === car) carEnvApply(car);   // the cockpit's glossy parts mirror the street too
+  return { g, E, spin: wheel, q0: wheel?.quaternion.clone(), ang: 0, gauge, style: DIALS[key], hide, on: false, fill };
+}
+/* ---- HD cockpit materials: every brand cockpit's materials are upgraded by name. Leathers get a soft sheen, Alcantara
+   and fabrics a velvety one, carbon a clear coat over a visible 2x2 twill, metals fine brushing, piano black a clear
+   coat. A small shader patch adds the surface detail from the part's own coordinates (no textures or UVs needed):
+   pebbled leather grain, fabric fuzz, the carbon weave (its tows catch the light in turn) and brushing lines. The
+   detail fades out where it would be finer than a pixel, so it never shimmers. Near-black trims are lifted a touch,
+   because real "black" leather is a dark grey that still shows its shape. */
+const INT_LOOK = {
+  leather: ['Leather', 'Nappa', 'Merino', 'Nero', 'Arctic', 'Tan', 'Cognac', 'VeganWhite', 'JetBlack', 'Black', 'DashLeather', 'Soft', 'RedLeather', 'DashBlack', 'WheelLeather', 'ThinRim', 'RimBlack', 'AmbAccent', 'Dash', 'Hub', 'Orange'],
+  fabric: ['Alcantara', 'BlackFabric', 'RaceTex', 'Microfibre', 'Suede', 'Headliner', 'Anthracite', 'TanRoof', 'AmbRoof', 'Carpet', 'RedCarpet', 'Starlight', 'Glove'],
+  carbon: ['Carbon'],
+  metal: ['Alu', 'Chrome', 'MilledAlu', 'PolishedAlu', 'Satin', 'Titanium', 'Magnesium', 'PaddleAlu', 'Knurl'],
+  gloss: ['PianoBlack', 'Gloss', 'GlossBlack', 'ButtonPanel', 'Bezel', 'Gallery', 'WideGlass'],
+};
+const INT_KIND = new Map(Object.entries(INT_LOOK).flatMap(([k, names]) => names.map(n => [n, k])));
+const INT_KIND_N = { leather: 1, fabric: 2, carbon: 3, metal: 4 };
+const intLooked = new WeakMap(), INT_WHITE = new THREE.Color(1, 1, 1);
+function interiorLook(g) {
+  g.traverse(o => {
+    if (!o.isMesh || !o.material?.isMeshStandardMaterial) return;
+    const m0 = o.material, kind = INT_KIND.get(m0.name.replace(/\.\d+$/, ''));
+    if (!kind) return;
+    if (!intLooked.has(m0)) {
+      const m = new THREE.MeshPhysicalMaterial({ name: m0.name, color: m0.color, roughness: m0.roughness, metalness: m0.metalness, emissive: m0.emissive, emissiveIntensity: m0.emissiveIntensity,
+        clearcoat: m0.clearcoat || 0, clearcoatRoughness: m0.clearcoatRoughness ?? .05 });
+      const L = m.color.r * .2126 + m.color.g * .7152 + m.color.b * .0722;
+      if ((kind === 'leather' || kind === 'fabric') && L < .014) m.color.multiplyScalar(.014 / Math.max(L, .002));   // lift pitch black to a dark grey
+      if (kind === 'leather') Object.assign(m, { roughness: clamp(m.roughness, .42, .62), sheen: .55, sheenRoughness: .45 });
+      if (kind === 'fabric') Object.assign(m, { roughness: Math.max(m.roughness, .88), sheen: 1, sheenRoughness: .8 });
+      if (kind === 'carbon') Object.assign(m, { roughness: .32, metalness: .25, clearcoat: 1, clearcoatRoughness: .03 });
+      if (kind === 'gloss') Object.assign(m, { roughness: Math.min(m.roughness, .15), clearcoat: 1, clearcoatRoughness: .02 });
+      if (m.sheen) m.sheenColor.copy(m.color).lerp(new THREE.Color(1, 1, 1), .35);
+      const k = INT_KIND_N[kind];
+      if (k) { m.defines = { ...m.defines, INT_KIND: k }; m.onBeforeCompile = intDetail; m.customProgramCacheKey = () => 'int-detail-' + k; }
+      intLooked.set(m0, m);
+    }
+    o.material = intLooked.get(m0);
+  });
+}
+function intDetail(sh) {
+  sh.vertexShader = 'varying vec3 vIP; varying vec3 vIN;\n' + sh.vertexShader
+    .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvIN = objectNormal;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvIP = transformed;');
+  sh.fragmentShader = `varying vec3 vIP; varying vec3 vIN;
+float ihash(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float inoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(ihash(i), ihash(i + vec3(1, 0, 0)), f.x), mix(ihash(i + vec3(0, 1, 0)), ihash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(ihash(i + vec3(0, 0, 1)), ihash(i + vec3(1, 0, 1)), f.x), mix(ihash(i + vec3(0, 1, 1)), ihash(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+vec3 iBump(vec3 sp, vec3 sn, vec2 dh, float fd) {   // three's perturbNormalArb (bump mapping from screen-space height slopes)
+  vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)), r1 = cross(sy, sn), r2 = cross(sn, sx);
+  float det = dot(sx, r1) * fd; return normalize(abs(det) * sn - sign(det) * (dh.x * r1 + dh.y * r2)); }
+float iFade(vec3 p) { return 1. - smoothstep(.35, .9, length(fwidth(p))); }   // fewer than ~2 pixels a cell: fade out
+vec2 iTwill(vec3 p, vec3 n) {   // the carbon weave: (height, which way the tow runs)
+  vec3 a = abs(n); vec2 uv = (a.x > a.y && a.x > a.z ? p.yz : a.y > a.z ? p.xz : p.xy) * 260.;
+  vec2 c = floor(uv), f = fract(uv); float dir = mod(c.x + floor(c.y * .5) * 2., 4.) < 2. ? 1. : 0.;
+  return vec2(sin((dir > .5 ? f.y : f.x) * 3.14159), dir); }
+` + sh.fragmentShader
+    .replace('#include <color_fragment>', `#include <color_fragment>
+#if INT_KIND == 3
+  { vec2 tw = iTwill(vIP, vIN); float fd = iFade(vIP * 260.); diffuseColor.rgb *= mix(1., mix(.62, 1.45, tw.y) * (.85 + .3 * tw.x), fd); }
+#elif INT_KIND == 2
+  diffuseColor.rgb *= mix(1., .88 + .24 * inoise(vIP * 1400.), iFade(vIP * 1400.));
+#endif`)
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+{
+#if INT_KIND == 1
+  float ih = (inoise(vIP * 520.) * .65 + inoise(vIP * 1300.) * .35) * .28 / 520. * iFade(vIP * 520.);
+#elif INT_KIND == 2
+  float ih = inoise(vIP * 1400.) * .2 / 1400. * iFade(vIP * 1400.);
+#elif INT_KIND == 3
+  float ih = iTwill(vIP, vIN).x * .18 / 260. * iFade(vIP * 260.);
+#else
+  float ih = inoise(vec3(vIP.x * 30., vIP.y * 2600., vIP.z * 2600.)) * .12 / 2600. * iFade(vIP * 2600.);
+#endif
+  normal = iBump(-vViewPosition, normal, vec2(dFdx(ih), dFdy(ih)), faceDirection);
+}`);
 }
 // the interior choices from the garage (custOf): leather, stitching and trim recoloured (per car: the materials are cloned),
 // and thin strips of ambient light along the dash and the doors; strips = [x0, x1, y, z0(, ?, z1)] in cockpit space
@@ -4207,6 +4286,7 @@ function cockpitView(p, on) {
 }
 function updateCockpit(dt, p) {
   const ck = p.car.cockpit; if (!ck?.on) return;
+  if (ck.fill) { ck.fill.intensity = hemi.intensity * .45 + sun.intensity * .05; ck.fill.color.copy(hemi.color).lerp(INT_WHITE, .6); }   // follows the time of day and the weather
   if (ck.q0) { ck.ang = damp(ck.ang, (p.steer || 0) * 2.3, 14, dt); ck.spin.quaternion.copy(ck.q0).multiply(CK_Q.setFromAxisAngle(CK_Z, ck.ang)); }   // the model's wheel turns about its own axis
   else if (ck.spin) ck.spin.rotation.z = damp(ck.spin.rotation.z, -(p.steer || 0) * 2.3, 14, dt);   // turn right: the wheel turns clockwise (its axis points at you)
   if (ck.f1) { ck.f1.T -= dt; if (ck.f1.T <= 0) { ck.f1.T = .07; drawF1Wheel(ck.f1, p); } return; }
