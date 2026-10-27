@@ -328,9 +328,9 @@ Made in Blender (`models/blender/more_brands.py`): the **Ford Mustang Dark Horse
 
 ### HD photos from Blender 📸
 
-The game's own car models, photographed in Blender's Cycles renderer at full HD (1920 × 1080), like the pictures in a car magazine. Every picture is in [`media/hd-cars/`](media/hd-cars/).
+The game's own car models, photographed in Blender's Cycles renderer at full HD (1920 × 1080), like the pictures in a car magazine. **Every car in the garage has one:** all 125, including the challenge special editions, the seven F1 teams, the AMBOOLA Helicopter and the AMBOOLA Jet, each in its own garage colour. Every picture is in [`media/hd-cars/`](media/hd-cars/).
 
-![HD Blender photos of 12 Amboola cars](media/hd-cars.jpg)
+![HD Blender photos of every car in the garage](media/hd-cars.jpg)
 
 ![The 911 GT3 RS at golden hour](media/hd-cars/gt3rs-sunset.jpg)
 
@@ -353,7 +353,16 @@ To take a photo of any car (Blender 4.2):
 blender -b --factory-startup --python models/blender/supercars.py -- --car sf90 --photo photos/ --looks studio,sunset,neon --views front34,rear34
 ```
 
-`--looks` picks the sets, and `--views` picks the angles (`front34`, `rear34`, `side`, `low`, `front`, `top`). `--samples` and `--size` set the quality (default 128 and `1920x1080`). A full-quality photo takes about 6–8 minutes on a 4-core computer, so try `--samples 16 --size 960x540` first for a quick preview.
+`--looks` picks the sets, and `--views` picks the angles (`front34`, `rear34`, `side`, `low`, `front`, `top`). `--samples` and `--size` set the quality (default 128 and `1920x1080`; the garage photos use 64, which is just as clean). A full-quality photo takes about 4–8 minutes on a 4-core computer, so try `--samples 16 --size 960x540` first for a quick preview.
+
+`--paint '#hex'` paints the car another colour, and `--key` saves the photo under another car's name. That's how the special editions and the F1 teams are photographed on their base car; the F1 teams also use `--livery '#hex' --helmet '#hex'`. The helicopter and the jet aren't car-kit models, so they have their own commands:
+
+```bash
+blender -b --factory-startup --python models/blender/photo.py -- --heli --photo photos/
+blender -b --factory-startup --python models/blender/photo.py -- --glb jet.glb --key amboolajet --photo photos/ --looks sunset
+```
+
+The jet only exists in the game's three.js code, so `jet.glb` is exported from the running game first (`.claude/skills/run-amboola/jet-export.js`). When a new photo is added to `media/hd-cars/` (with its thumbnail in `thumbs/`), `python3 .claude/skills/run-amboola/hd-photos.py` updates the garage's list.
 
 ## 🤖 The Tesla Cybercab ($20,000)
 
