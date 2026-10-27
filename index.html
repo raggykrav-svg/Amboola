@@ -869,8 +869,11 @@ const CARS = [
   { id: 'troodos', name: 'AMBOOLA Troodos 4×4', brand: 'Amboola', cat: 'AMBOOLA', body: 'troodos', crawler: true, wing: 'none', kw: 380, redline: 6500, mass: 2350, vmax: 185, drive: 'AWD', engine: 'v8tt', gears: 8, zero: 5.9, grip: 1.1, aero: .05, paint: 3, rim: '#1b1b1d', caliper: '#c8141b', box: '8-speed auto · low range', usd: 260000, prize: '⛰️ WIN THE TROODOS HILL CLIMB IN CYPRUS', prizeTag: '⛰️ TROODOS HILL CLIMB PRIZE', desc: 'Rock crawler · 35-inch tyres · climbs 40° slopes', jp: 'トロードス' },
 ];
 // HD photos taken in Blender (models/blender/photo.py): media/hd-cars/<id>-<set>.jpg, thumbnails in media/hd-cars/thumbs/
-const HD_PHOTOS = { gt3rs: ['studio', 'sunset', 'neon'], w1: ['studio'], sf90: ['sunset'], revuelto: ['neon'], jesko: ['neon'], chironss: ['studio', 'sunset'],
-  grsupra: ['sunset'], m4csl: ['studio'], spectre: ['sunset'], gtr: ['neon'], utopia: ['studio'], torazero: ['neon'] };
+const HD_PHOTOS = { '918': ['neon'], cayenneeh: ['studio'], cayennegt: ['neon'], chironss: ['studio', 'sunset'], dakar: ['sunset'], grsupra: ['sunset'], gt2rs: ['studio'],
+  gt3: ['studio'], gt3rs: ['studio', 'sunset', 'neon'], gt3t: ['sunset'], gt4rs: ['neon'], gtr: ['neon'], jesko: ['neon'], m4csl: ['studio'],
+  macanev: ['sunset'], model3p: ['sunset'], modelsplaid: ['studio'], modelxplaid: ['neon'], modelyp: ['studio'], revuelto: ['neon'],
+  roadster08: ['neon'], roadster2: ['sunset'], sf90: ['sunset'], spectre: ['sunset'], spyrs: ['studio'], st: ['neon'], taycangt: ['studio'],
+  torazero: ['neon'], turbos: ['studio'], utopia: ['studio'], w1: ['studio'] };
 const HD_SETS = { studio: '📷 PHOTO STUDIO', sunset: '🌅 GOLDEN HOUR', neon: '🌃 NEON NIGHT' };
 
 /* =====================================================================
@@ -13236,7 +13239,7 @@ function buildJet(spec, paintHex) {
   const red = new THREE.MeshStandardMaterial({ color: 0xc8141b, roughness: .4 }), dark = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: .5, metalness: .6 });
   // fuselage: a lathe from the needle nose to the twin-engine tail (built along +Z = forward)
   const prof = [[0, 11], [.25, 10], [.7, 8], [1.15, 5.5], [1.35, 2], [1.4, -3], [1.3, -7], [1.15, -9.6], [0, -9.7]].map(([r, z]) => new THREE.Vector2(r, z));
-  const fus = new THREE.Mesh(new THREE.LatheGeometry(prof, 28).rotateX(Math.PI / 2).rotateX(Math.PI), paint); fus.scale.set(1, .82, 1); fus.castShadow = true; body.add(fus);
+  const fus = new THREE.Mesh(new THREE.LatheGeometry(prof, 28).rotateX(Math.PI / 2), paint); fus.scale.set(1, .82, 1); fus.castShadow = true; body.add(fus);
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), glassMat); canopy.scale.set(.75, .55, 2.6); canopy.position.set(0, .95, 4.6); body.add(canopy);
   // delta wings and canards, tiger stripes on the wings
   const wingShape = new THREE.Shape(); wingShape.moveTo(0, 3); wingShape.lineTo(8.5, -5.5); wingShape.lineTo(8.5, -7.2); wingShape.lineTo(0, -7.2); wingShape.closePath();

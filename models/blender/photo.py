@@ -141,8 +141,9 @@ def upgrade_materials(lamps=6.0):
 
 
 # ------------------------------------------------------------------ the car
+PARTS = ('Body', 'Wheel_', 'Caliper_')   # the objects that make the car (a non-carkit model, e.g. the helicopter, sets its own)
 def car_objects():
-    return [o for o in bpy.context.scene.objects if o.type == 'MESH' and o.name.split('.')[0].startswith(('Body', 'Wheel_', 'Caliper_'))]
+    return [o for o in bpy.context.scene.objects if o.type == 'MESH' and o.name.split('.')[0].startswith(PARTS)]
 
 def steer(angle):
     """turn the front wheels (and their calipers) about their hubs; + = towards the car's left"""
@@ -255,7 +256,7 @@ def set_studio(cam_dir, size, g0):
     L, W = size
     _world((0.0008, 0.0009, 0.0011))
     # a curved backdrop (cyclorama) behind the car as the camera sees it, lit into a soft glow
-    f = Vector((-cam_dir.x, -cam_dir.y, 0)).normalized(); s = Vector((-f.y, f.x, 0)); back = 9.0; R = 4.0
+    f = Vector((-cam_dir.x, -cam_dir.y, 0)).normalized(); s = Vector((-f.y, f.x, 0)); back = max(9.0, max(L, W) / 2 + 4); R = 4.0   # (further back for the jet)
     bm = bmesh.new(); prof = [(-30, 0)] + [(back - R + R * math.sin(a * math.pi / 32), R - R * math.cos(a * math.pi / 32)) for a in range(17)] + [(back, 14)]
     rows = [[bm.verts.new(s * u + f * d + Vector((0, 0, g0 + z))) for d, z in prof] for u in (-40, 40)]
     for i in range(len(prof) - 1): bm.faces.new((rows[0][i], rows[0][i + 1], rows[1][i + 1], rows[1][i]))
@@ -321,7 +322,7 @@ def set_neon(cam_dir, size, g0):
     bm = bmesh.new(); bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=60); _obj('street', bm, wet_ground('WetStreet', (0.03, 0.03, 0.035), 0.4, 0.75, 1.0)).location.z = g0
     f = Vector((-cam_dir.x, -cam_dir.y, 0)).normalized(); s = Vector((-f.y, f.x, 0)); c = Vector((0, 0, g0))
     # a dark wall behind with neon tubes on it, and two tubes standing either side
-    bm = bmesh.new(); wc = c + f * 7.5
+    bm = bmesh.new(); wc = c + f * max(7.5, max(L, W) / 2 + 3)
     vs = [bm.verts.new(wc + s * u + Vector((0, 0, z))) for u, z in ((-25, 0), (25, 0), (25, 12), (-25, 12))]; bm.faces.new(vs)
     _obj('wall', bm, _mat('Concrete', (0.035, 0.035, 0.04), 0.7))
     pink, blue = (1.0, 0.08, 0.55), (0.08, 0.6, 1.0)
@@ -399,11 +400,17 @@ def clear_set():
         if o.type in ('LIGHT', 'CAMERA') or o.name.split('.')[0] in ('cyc', 'ground', 'road', 'edge', 'dash', 'mountains', 'street', 'wall', 'neon', 'floor'):
             bpy.data.objects.remove(o)
 
-def shoot(k, folder, looks=('studio',), views=('front34',), samples=128, size=(1920, 1080)):
-    """photograph the car the script just built: one picture per look x view, saved as <folder>/<id>-<look>-<view>.png"""
+def shoot(k, folder, looks=('studio',), views=('front34',), samples=128, size=(1920, 1080), colors=None):
+    """photograph the car the script just built: one picture per look x view, saved as <folder>/<id>-<look>-<view>.png
+    colors = {material name: '#hex'} repaints parts first (a special edition's paint, an F1 team's livery and helmet)"""
     scene = bpy.context.scene; os.makedirs(folder, exist_ok=True)
     for o in list(scene.objects):                                         # carkit's own preview set, if any
         if o.type in ('LIGHT', 'CAMERA') or o.name.split('.')[0] in ('floor', 'cam', 'tgt', 'l'): bpy.data.objects.remove(o)
+    for name, hexcol in (colors or {}).items():
+        m = bpy.data.materials.get(name); h = hexcol.lstrip('#')
+        if m and m.use_nodes and 'Principled BSDF' in m.node_tree.nodes:
+            c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+            m.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*[v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in c], 1)
     paint = bpy.data.materials.get('Paint'); col = _old(paint, 'Base Color', (0.3, 0.3, 0.3, 1))[:3] if paint else (0.3, 0.3, 0.3)
     bright = max(0.0, 0.2126 * col[0] + 0.7152 * col[1] + 0.0722 * col[2] - 0.35)   # white and silver cars get a little less exposure
     upgrade_materials(); paint_plates(k.key); setup_render(scene, samples, size)
@@ -422,3 +429,24 @@ def shoot(k, folder, looks=('studio',), views=('front34',), samples=128, size=(1
             bpy.ops.render.render(write_still=True); out.append(scene.render.filepath); print('photo', scene.render.filepath, flush=True)
         steer(-turn)
     return out
+
+
+if __name__ == '__main__':
+    # models that aren't carkit cars:
+    #   blender -b --factory-startup --python models/blender/photo.py -- --heli --photo DIR [--looks .. --samples ..]
+    #   blender -b --factory-startup --python models/blender/photo.py -- --glb jet.glb --key amboolajet --photo DIR ...
+    # (a glTF exported from the game, nose along glTF +Z, e.g. the AMBOOLA Jet, which only exists in three.js)
+    import sys, types
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+    arg = lambda n, d=None: argv[argv.index(n) + 1] if n in argv else d
+    if '--heli' in argv:
+        import heli; heli.build(); key = 'amboolaheli'                      # its nose is -Y
+    else:
+        bpy.ops.wm.read_factory_settings(use_empty=True); bpy.ops.import_scene.gltf(filepath=os.path.abspath(arg('--glb'))); key = arg('--key')
+    R = Matrix.Rotation(math.pi / 2, 4, 'Z')                                 # -Y (glTF +Z) to the photo's front, +X
+    for o in bpy.context.scene.objects:
+        if o.parent is None: o.matrix_world = R @ o.matrix_world
+    PARTS = ('',)                                                            # frame every part (rotors, wings)
+    shoot(types.SimpleNamespace(key=key), arg('--photo'), arg('--looks', 'studio').split(','), arg('--views', 'front34').split(','),
+          int(arg('--samples', '128')), tuple(int(v) for v in arg('--size', '1920x1080').split('x')))

@@ -1192,7 +1192,8 @@ class Car:
 
 def main(cars, script):
     """shared command line: -- --car id[,id]|all [--renders DIR --samples N --views a,b --sheet] [--blend F] [--no-export]
-    [--photo DIR --looks studio,sunset,neon --views front34,... --samples N --size WxH] (HD photos, see photo.py; no export)
+    [--photo DIR --looks studio,sunset,neon --views front34,... --samples N --size WxH --paint HEX --key ID --livery HEX --helmet HEX]
+    (HD photos, see photo.py; no export)
     cars = {id: (builder, preview paint, rim, caliper)}"""
     import sys
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -1201,6 +1202,7 @@ def main(cars, script):
     repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     for cid in ids:
         fn, paint, rim, cal = cars[cid]
+        if arg('--paint'): paint = arg('--paint')            # e.g. the game's default colour for the photo
         k = Car(cid, paint, rim, cal); k.script = script; fn(k)
         if arg('--renders'):
             views = arg('--views', 'front34,rear34,side,front,rear,top').split(',')
@@ -1209,8 +1211,10 @@ def main(cars, script):
                       sheet=os.path.join(arg('--renders'), f'{cid}-sheet.png') if sheet else None)
         if arg('--photo'):
             import photo
+            k.key = arg('--key', cid)                             # a special edition / F1 team photographed on its base model
             photo.shoot(k, arg('--photo'), arg('--looks', 'studio').split(','), arg('--views', 'front34').split(','),
-                        int(arg('--samples', '128')), tuple(int(v) for v in arg('--size', '1920x1080').split('x')))
+                        int(arg('--samples', '128')), tuple(int(v) for v in arg('--size', '1920x1080').split('x')),
+                        {n: arg('--' + n.lower()) for n in ('Livery', 'Helmet') if arg('--' + n.lower())})
             continue
         if arg('--blend'): bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(arg('--blend')))
         if '--no-export' not in argv: k.export(os.path.join(repo, 'models', f'{cid}.glb'))
