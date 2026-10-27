@@ -487,6 +487,9 @@ Crash into almost anything except a building and it breaks!
 
 - **🏎 Real brand interiors:** each brand has its own cockpit, made in Blender from photos and descriptions of the real cars (`models/blender/interiors.py`). The dials are drawn live in that brand's style.
 - **✨ HD cockpits:** every cockpit is sculpted, not built from boxes:
+
+  ![The 911 GT3 RS cockpit before and after the HD redesign](media/inside-view-hd.jpg)
+
   - **Dashboard:** smooth and curved round you, with contrast stitching along its edge, a metal or carbon trim band, and (in the cars that have it) a thin line of ambient light.
   - **Dials:** a stitched, curved hood over them.
   - **Doors:** rolled, stitched tops with chrome handles.
