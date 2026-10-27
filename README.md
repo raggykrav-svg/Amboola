@@ -141,6 +141,8 @@ Gamepads work too: RT/LT for throttle and brake, the left stick steers, A is the
 
 ## Cars
 
+**🔍 Search:** the box above the car list in the garage finds any car. Type a name, a brand or a kind of car (`lambo`, `911`, `ferrari sf`, `electric`, `suv`, `f1`) and the list shows only the cars that match. Press Enter to pick the first one, Esc or ✕ to show all the cars again, and **/** to jump to the box.
+
 **GT:** 911 GT3 RS · 911 GT3 · 911 GT3 Touring · 911 S/T · 911 GT2 RS · 911 Turbo S · 718 Cayman GT4 RS · 718 Spyder RS · 911 Dakar
 **Hypercar:** 918 Spyder
 **Electric:** Taycan Turbo GT

@@ -31,7 +31,13 @@
   #brand h1 { margin:0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:clamp(34px,5vw,64px); letter-spacing:.2em;
     color:#0b0b0e; -webkit-text-stroke:2px #e0101a; filter:drop-shadow(0 0 14px rgba(224,16,26,.6)); }
   #brand p { margin:2px 0 0; color:var(--dim); letter-spacing:.35em; font-size:13px; text-transform:uppercase; }
-  #carlist { position:absolute; left:28px; top:130px; bottom:28px; width:290px; overflow-y:auto; padding-right:6px; }
+  #carsearch { position:absolute; left:28px; top:130px; width:296px; display:flex; gap:6px; z-index:2; }
+  #carq { flex:1; min-width:0; padding:8px 10px; font:700 13px 'Orbitron',sans-serif; letter-spacing:.08em; color:#fff; background:rgba(12,14,20,.85); border:1px solid #3a3f4b; border-radius:6px; outline:none; }
+  #carq:focus { border-color:#ffd02d; box-shadow:0 0 0 2px rgba(255,208,45,.25); } #carq::placeholder { color:#8a909c; }
+  #carqx { width:34px; font-size:14px; color:#fff; background:rgba(12,14,20,.85); border:1px solid #3a3f4b; border-radius:6px; cursor:pointer; }
+  #carlist [hidden] { display:none !important; }
+  #carqn { padding:14px 6px; color:var(--dim); font-size:13px; letter-spacing:.12em; }
+  #carlist { position:absolute; left:28px; top:174px; bottom:28px; width:290px; overflow-y:auto; padding-right:6px; }
   #carlist::-webkit-scrollbar { width:4px; } #carlist::-webkit-scrollbar-thumb { background:#444; }
   .cat { font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:.3em; color:var(--accent2); margin:14px 0 6px; }
   .caritem { background:var(--panel); border:1px solid rgba(255,255,255,.06); border-left:3px solid transparent; padding:9px 12px; margin-bottom:6px;
@@ -274,7 +280,7 @@
   #repairBtn small { display:block; font-family:'Rajdhani',sans-serif; font-size:12px; letter-spacing:.06em; font-weight:700; opacity:.9; margin-top:2px; }
   #custPanel { position:fixed; left:28px; top:130px; bottom:28px; width:330px; z-index:31; overflow-y:auto; background:var(--panel); border:1px solid rgba(255,255,255,.08);
     backdrop-filter:blur(8px); padding:14px 16px; } #custPanel.hidden { display:none; }
-  #menu.customizing #carlist, #menu.customizing #misBtn { visibility:hidden; }
+  #menu.customizing #carlist, #menu.customizing #carsearch, #menu.customizing #misBtn { visibility:hidden; }
   #custPanel h2 { margin:0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:22px; letter-spacing:.2em; }
   #custCar { color:var(--dim); font-size:13px; letter-spacing:.15em; text-transform:uppercase; margin-bottom:4px; }
   .crow { margin-top:12px; } .crow > small { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.25em; color:var(--dim); text-transform:uppercase; } .crow > small b { color:#fff; letter-spacing:.08em; }
@@ -415,7 +421,8 @@
   #tpause { right:50%; top:10px; width:48px!important; height:48px!important; transform:translateX(50%); }
   #tcam { right:calc(50% + 36px); top:10px; width:48px!important; height:48px!important; font-size:22px!important; }
   @media (max-width: 760px) {
-    #carlist { top:auto; bottom:236px; left:12px; right:12px; width:auto; height:120px; display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; }
+    #carsearch { top:auto; bottom:334px; left:12px; right:12px; width:auto; } #carq { padding:6px 10px; font-size:12px; }
+    #carlist { top:auto; bottom:236px; left:12px; right:12px; width:auto; height:94px; display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; }
     .cat { display:none; } .caritem { min-width:150px; }
     #stats { left:12px; right:12px; width:auto; top:auto; bottom:366px; padding:10px 14px; }
     #stats .stat, #stats .optlbl, #stats .opts { display:none; }
@@ -524,6 +531,7 @@
 <div id="menu" class="hidden">
   <div id="brand"><h1>AMBOOLA</h1><p>Tokyo Open World · 東京</p></div>
   <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
+  <div id="carsearch"><input id="carq" type="text" enterkeyhint="search" placeholder="🔍 SEARCH CARS…" autocomplete="off" spellcheck="false" aria-label="Search cars"><button id="carqx" aria-label="Clear search">✕</button></div>
   <div id="carlist"></div>
   <div id="stats">
     <h2 id="sName">—</h2><div class="sub" id="sSub">—</div><div id="hdStrip" class="hidden"></div><div id="price">—</div><button id="upgBtn">🔧 UPGRADE · チューニング</button><button id="custBtn">🎨 CUSTOMIZE · カスタム</button><div id="adRow"><button id="adBtn">📺 ITS AD</button><button id="allAdBtn">📺 ALL CARS AD</button></div><button id="repairBtn" class="hidden">🔧 REPAIR</button><button id="sellBtn">SELL</button>
@@ -4459,12 +4467,16 @@ function showGarageCar() {
 }
 function buildMenu() {
   const list = $('carlist'); list.innerHTML = '';
-  let lastCat = '';
+  let lastCat = '', head = '';
   CARS.forEach((c, i) => {
     if (c.hidden && !owns(c)) return;   // secret prizes only show up once you have won them
     if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', FORD: 'FORD', CHEVROLET: 'CHEVROLET', NISSAN: 'NISSAN · NISMO', HONDA: 'HONDA', F1: 'FORMULA 1 · F1', PAGANI: 'PAGANI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
-    const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i; list.appendChild(d);
+    const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i;
+    if (list.lastElementChild?.className === 'cat') head = list.lastElementChild.textContent;
+    d.dataset.q = carText(`${c.name} ${c.brand || 'porsche'} ${c.cat} ${head} ${c.desc} ${c.jp || ''} ${c.id} ${c.engine === 'ev' ? 'electric ev' : ''} ${c.jet ? 'plane fly' : ''}`);
+    list.appendChild(d);
   });
+  carFilter();
   const pw = $('paints'); pw.innerHTML = '';
   PAINTS.forEach((p, i) => { const s = document.createElement('div'); s.className = 'sw'; s.style.background = `radial-gradient(circle at 35% 30%, #fff8, ${p.c} 45%, #000 120%)`; s.title = p.n + (p.lvl ? ` · LEVEL ${p.lvl}` : ''); if (lockedFor(p)) { s.textContent = '🔒'; s.style.cssText += ';display:flex;align-items:center;justify-content:center;font-size:12px;filter:grayscale(.6)'; } s.onclick = () => { if (lockedFor(p)) { toast('🔒 ' + p.n.toUpperCase(), `UNLOCKS AT LEVEL ${p.lvl}`); return; } paintIdx = i; localStorage.setItem('amboola.paint.' + CARS[carIdx].id, i); updateMenu(); showGarageCar(); }; pw.appendChild(s); });
   document.querySelectorAll('#optTime .opt').forEach(o => o.onclick = () => { applyTime(o.dataset.v); updateMenu(); });
@@ -4473,6 +4485,30 @@ function buildMenu() {
   $('drive').onclick = garageGo;
   updateMenu();
 }
+// the garage search: every word you type must appear in a car's name, brand, type or description (accents and case
+// don't matter); brand headings with no match hide, Enter picks the first car found, Esc clears, / jumps to the box
+const carText = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function carFilter() {
+  const words = carText($('carq').value).split(/\s+/).filter(Boolean), list = $('carlist'); let head = null, headHit = false, first = null;
+  for (const el of list.children) {
+    if (el.className === 'cat') { if (head) head.hidden = !headHit; head = el; headHit = false; continue; }
+    if (!el.dataset.q) continue;
+    const hit = words.every(w => el.dataset.q.includes(w)); el.hidden = !hit; if (hit) { headHit = true; first ??= el; }
+  }
+  if (head) head.hidden = !headHit;
+  let none = $('carqn'); if (!first && !none) { none = document.createElement('div'); none.id = 'carqn'; none.textContent = 'NO CARS FOUND · 見つかりません'; list.appendChild(none); }
+  if (none) none.hidden = !!first;
+  $('carqx').style.visibility = words.length ? 'visible' : 'hidden';
+  return first;
+}
+$('carq').addEventListener('input', () => { carFilter(); $('carlist').scrollTop = 0; $('carlist').scrollLeft = 0; });
+$('carq').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { const f = carFilter(); if (f) { selectCar(+f.dataset.i); $('carq').blur(); } }
+  if (e.key === 'Escape') { $('carq').value = ''; carFilter(); $('carq').blur(); document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' }); }
+  e.stopPropagation();
+});
+$('carqx').onclick = () => { $('carq').value = ''; carFilter(); document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' }); };
+addEventListener('keydown', e => { if (state === 'garage' && e.key === '/' && document.activeElement !== $('carq') && $('hdView').classList.contains('hidden')) { e.preventDefault(); $('carq').focus(); } });
 const ENGINE_LABEL = { v12tt: 'Twin-turbo V12', i4t: 'Turbo four-cylinder', f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
 // garage DRIVE button: drive an owned car, buy one you can afford, otherwise explain what's missing
 function garageGo() {

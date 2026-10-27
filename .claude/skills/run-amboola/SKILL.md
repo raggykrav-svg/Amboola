@@ -112,6 +112,12 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade spend.
 - **Testing:** the driver always starts from a fresh context, so pick `{"car":54}` (the GR86) or call `window.amboola.earn(n)` and then `updateMenu()` before `garageGo()`. Otherwise DRIVE/RACES/TAXI do nothing on locked cars.
 
+## Garage search
+
+- `#carq` (in `#carsearch`, above `#carlist`) filters the list. `buildMenu` gives every `.caritem` a `data-q` (name, brand, category, its heading, description, `jp`, id, plus `electric ev` and `plane fly`, all through `carText`: no accents, lower case). `carFilter()` hides items unless every typed word matches, hides empty `.cat` headings, shows `#carqn` when nothing matches, and returns the first match.
+- Keys: Enter selects that first match, Esc clears, and **/** focuses the box in the garage. The box's keydown stops propagation, so typing doesn't drive the garage's arrow and Enter keys.
+- Test: set `#carq`'s value, dispatch an `input` event, then read the visible `.caritem b` texts.
+
 ## Customizing
 
 - **Data:** `custOf(id)` / `saveCust(id, c)` keep `{rim, cal, tint, decal, dcol}` (indices into `RIMS`, `CALIPERS`, `TINTS`, `DECALS`, `DCOLS`; 0 = stock) in `amboola.custom.<id>`. Bad or old values fall back to stock. `sellCar()` clears them.
