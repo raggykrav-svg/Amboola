@@ -3244,6 +3244,7 @@ class Player {
   doShift(dir) {
     const n = this.spec.ratios.length; const ng = clamp(this.gear + dir, 1, n); if (ng === this.gear) return;
     this.gear = ng; this.shiftT = this.spec.shiftTime; audio.shift(dir > 0, this.throttle);
+    if (this === player) { this.kick = dir > 0 ? -.9 * (this.throttle || 0) : .6; feelBuzz(dir > 0 ? .55 * (this.throttle || 0) : .35, 90); }   // the shift jolt
     if (dir < 0 && Math.random() < .7) setTimeout(() => audio.pop(.5), 60);
   }
   sync(dt) {
@@ -3263,7 +3264,12 @@ class Player {
     const ux = -Math.sin(r) * Math.cos(h) + Math.cos(r) * Math.sin(a) * Math.sin(h), uy = Math.cos(r) * Math.cos(a), uz = Math.sin(r) * Math.sin(h) + Math.cos(r) * Math.sin(a) * Math.cos(h);
     c.group.position.set(this.x - ux * hc, (this.y || 0) + hc - uy * hc, this.z - uz * hc);
     c.group.rotation.order = 'YXZ'; c.group.rotation.y = h; c.group.rotation.x = a; c.group.rotation.z = r;
-    this.pitch = damp(this.pitch, clamp(this.accel * .0045, -.045, .035), 7, dt);
+    // weight transfer on springs: the body squats under power and dives under braking, overshoots a little and settles
+    // (soft SUVs, trucks and limousines a lot, race cars hardly at all; see feelOf)
+    const fe = this.feel ??= feelOf(this.spec), ga = this.air ? 0 : this.accel;
+    this.gLong = damp(this.gLong || 0, clamp(ga, -40, 40), 6, dt); this.kick = damp(this.kick || 0, 0, 9, dt);
+    const pT = clamp(ga * .0042 * fe.soft, -.055 * fe.soft, .04 * fe.soft) + this.kick * .012 * fe.soft;
+    const pv0 = this.pv || 0, sdt = Math.min(dt, .05); this.pv = pv0 + (fe.w * fe.w * (pT - (this.pitch || 0)) - 2 * .42 * fe.w * pv0) * sdt; this.pitch = (this.pitch || 0) + this.pv * sdt;
     this.roll = damp(this.roll, clamp(this.vf * this.yawRate * .0055, -.06, .06), 7, dt);
     c.body.rotation.z = this.pitch; c.body.rotation.x = this.roll;
     c.body.position.y = Math.abs(this.roll) * .2;
@@ -4304,6 +4310,31 @@ function updateCockpit(dt, p) {
 }
 const CK_Q = new THREE.Quaternion(), CK_Z = new THREE.Vector3(0, 0, 1);
 let ckLook = 0;
+/* ---- FEEL: you feel the gas and the brake. Everything follows the car's real acceleration (p.gLong, m/s², smoothed),
+   so a Bugatti launch hits hard and a bus feels gentle:
+     body    weight transfer on springs (Player: feelOf(spec).soft and .w, the spring's stiffness)
+     chase   the camera falls back under power and surges forward under braking, the view widens on hard
+             acceleration, the camera tips down when you brake
+     inside  your head is pushed back into the seat under power and thrown forward under braking
+     shake   a jolt at every gear change, wheelspin shudder on a launch, ABS judder when you stamp on the brake
+     pad     a gamepad rumbles with all of it (and crashes); phones give a tiny buzz at each shift */
+function feelOf(sp) {
+  const soft = sp.f1 || sp.cat === 'F1' ? .35 : sp.body?.startsWith?.('amboolabus') || ['amboolabus', 'towtruck', 'firetruck', 'troodos'].includes(sp.id) ? 2.2
+    : sp.cat === 'SUV' || sp.cat === 'ROLLS' || sp.crawler || /urus|purosangue|cullinan|g63|lc300|xm|rsq8|modelx|modely|cayenne|macan|cyberbeast/.test(sp.id) ? 1.7
+    : sp.cat === 'HYPER' || sp.cat === 'BUGATTI' || sp.cat === 'KOENIGSEGG' || sp.cat === 'MCLAREN' || /gt3|gt2|senna|svj|sto|812c|w1|jesko|bolide|amgone|m4csl/.test(sp.id) ? .65 : 1;
+  return { soft, w: soft > 1.5 ? 7 : soft < .7 ? 13 : 10 };
+}
+const FEEL = { t: 0, pad: 0 };
+function feelBuzz(k, ms) {   // a short rumble: gamepad (both motors) and, for touch players, the phone
+  if (k < .05) return;
+  for (const gp of navigator.getGamepads ? navigator.getGamepads() : []) gp?.vibrationActuator?.playEffect?.('dual-rumble', { duration: ms, strongMagnitude: clamp(k, 0, 1), weakMagnitude: clamp(k * .7, 0, 1) }).catch?.(() => {});
+  if (isTouch && ms >= 80 && navigator.vibrate) try { navigator.vibrate(Math.round(10 + k * 15)); } catch (e) {}
+}
+function feelPad(dt, p) {   // the continuous rumbles: ABS judder and wheelspin, sent in short slices
+  FEEL.pad -= dt; if (FEEL.pad > 0) return;
+  const abs = p.brake > .5 && p.speed > 6 && !p.air ? clamp(-p.gLong / 12, 0, 1) * .6 : 0, spin = clamp((p.spin || 0) * 6, 0, 1) * (p.throttle || 0) * .7;
+  const k = Math.max(abs, spin); if (k > .05) { FEEL.pad = .09; for (const gp of navigator.getGamepads ? navigator.getGamepads() : []) gp?.vibrationActuator?.playEffect?.('dual-rumble', { duration: 100, strongMagnitude: abs * .8, weakMagnitude: Math.max(abs * .4, spin) }).catch?.(() => {}); }
+}
 function updateCamera(dt, p) {
   if (window.__camHook && window.__camHook(camera, dt)) return; // cinematic cameras (video recording)
   if (vp.on) return viewpointCamera(dt);
@@ -4320,19 +4351,20 @@ function updateCamera(dt, p) {
     const vx = p.speed > 3 ? p.vx / p.speed : fx, vz = p.speed > 3 ? p.vz / p.speed : fz;
     const bl = p.reverse ? 0 : p.air && p.speed > 3 ? 1 : .35;
     let dx = lerp(fx, vx, bl), dz = lerp(fz, vz, bl); const dl = Math.hypot(dx, dz); dx /= dl; dz /= dl;
-    const dist = (camMode ? 8.8 : 5.9) + (B.L - 4.5) + p.speed * .022, h = (camMode ? 2.9 : 1.75) + (B.roofY - 1.3);
+    const g = p.gLong || 0, dist = (camMode ? 8.8 : 5.9) + (B.L - 4.5) + p.speed * .022 + clamp(g * .065, -.9, 1.1), h = (camMode ? 2.9 : 1.75) + (B.roofY - 1.3) - clamp(g * .012, -.05, .18);   // FEEL: falls back under power, surges in under braking
     const py = p.y || 0, tx = p.x - dx * dist, tz = p.z - dz * dist, ty = h + py;
     camPos.x = damp(camPos.x, tx, 7, dt); camPos.z = damp(camPos.z, tz, 7, dt); camPos.y = damp(camPos.y, ty, 5, dt);
     // keep distance stable (prevents lag at speed)
     const ox = camPos.x - p.x, oz = camPos.z - p.z, od = Math.hypot(ox, oz); if (od > dist * 1.08) { camPos.x = p.x + ox / od * dist * 1.08; camPos.z = p.z + oz / od * dist * 1.08; }
     const lx = p.air ? dx : fx, lz = p.air ? dz : fz;
-    camLook.set(p.x + lx * 2.5, .95 + (B.roofY - 1.3) * .7 + py + (p.slope || 0) * 2.5, p.z + lz * 2.5);
+    camLook.set(p.x + lx * 2.5, .95 + (B.roofY - 1.3) * .7 + py + (p.slope || 0) * 2.5 + clamp(g * .018, -.32, .1), p.z + lz * 2.5);   // (and tips down under braking)
     if (py > -1 && (py > 0 || camPos.x < -HALF - 9 || Math.abs(camPos.z) > HALF + 9 || camPos.x > HALF + 9)) camPos.y = Math.max(camPos.y, mtnHeight(camPos.x, camPos.z) + 1.4, areaGround(camPos.x, camPos.z) + 1.4); // don't dip into the hillside (not in the undersea tunnel)
     camera.position.copy(camPos);
   } else if (camMode === CAM_INSIDE && p.car.cockpit && !p.car.cockpit.none) {   // in the driver's seat, looking a little into the turns
     const ck = p.car.cockpit, Mw = p.car.group.matrixWorld; p.car.group.updateMatrixWorld();
     ckLook = damp(ckLook, -(p.steer || 0) * 1.6, 3, dt);
-    camera.position.copy(ck.E).applyMatrix4(Mw); camLook.set(ck.E.x + ckLook, ck.E.y - 1.6, ck.E.z + 10).applyMatrix4(Mw);
+    const hg = clamp(-(p.gLong || 0) * .0045, -.06, .08) + (p.kick || 0) * .02;   // FEEL: your head: back into the seat under power, forward under braking
+    camera.position.set(ck.E.x, ck.E.y - Math.abs(hg) * .25, ck.E.z + hg).applyMatrix4(Mw); camLook.set(ck.E.x + ckLook, ck.E.y - 1.6 - clamp(-(p.gLong || 0) * .03, -.15, .5), ck.E.z + 10).applyMatrix4(Mw);
     camPos.copy(camera.position);
   } else {
     const off = camMode === 3 ? [.1, B.roofY + .05, .35] : [0, .45, B.L / 2 + .15];
@@ -4343,9 +4375,14 @@ function updateCamera(dt, p) {
   shakeT += dt;
   const sh = (clamp((p.speed - 40) / 60, 0, 1) * .03 + clamp(p.slip - .5, 0, 1) * .02) * (camMode === CAM_INSIDE ? .35 : 1);
   camera.position.x += Math.sin(shakeT * 37) * sh; camera.position.y += Math.sin(shakeT * 43) * sh;
+  // FEEL: ABS judder under hard braking, wheelspin shudder on a launch, the jolt of a gear change
+  const fk = camMode === CAM_INSIDE ? .6 : 1, abs = p.brake > .5 && p.speed > 6 && !p.air ? clamp(-(p.gLong || 0) / 12, 0, 1) * .014 : 0, spn = clamp((p.spin || 0) * 6, 0, 1) * (p.throttle || 0) * .02;
+  camera.position.y += (Math.sin(shakeT * 97) * abs + Math.sin(shakeT * 61) * spn) * fk; camera.position.x += Math.sin(shakeT * 71) * spn * .6 * fk;
+  if (p === player) feelPad(dt, p);
   camera.lookAt(camLook);
   const ins = camMode === CAM_INSIDE; camera.near = ins ? .1 : .25;   // the wheel and the dash are close to your eyes
-  camera.fov = damp(camera.fov, ins ? 70 + clamp(p.speed * 3.6 / 320, 0, 1) * 10 : 60 + clamp(p.speed * 3.6 / 320, 0, 1) * 20 + (camMode >= 3 ? 5 : 0), 4, dt); camera.updateProjectionMatrix();
+  const fg = clamp((p.gLong || 0) * .45, -3, 6) + (p.boosting ? 4 : 0);   // FEEL: the view widens as you surge forward
+  camera.fov = damp(camera.fov, (ins ? 70 + clamp(p.speed * 3.6 / 320, 0, 1) * 10 : 60 + clamp(p.speed * 3.6 / 320, 0, 1) * 20 + (camMode >= 3 ? 5 : 0)) + fg, 4, dt); camera.updateProjectionMatrix();
 }
 
 /* =====================================================================
@@ -8960,6 +8997,7 @@ let dentCool = 0;
 // called for every hard hit: (dvx, dvz) is how the hit changed the car's velocity, so the car was hit on the other side
 function carHit(p, dvx, dvz, hit, zone) {
   if (p === player && chal?.S.onHit) chal.S.onHit(hit);   // (the pizza tower)
+  if (p === player && hit > 2) feelBuzz(clamp(hit / 14, .2, 1), 220);   // FEEL: a crash thumps the gamepad
   if (NO_DAMAGE || !p?.car?.model || hit < 4.5 || p.spec.jet || dentCool > 0) return;
   const G = p.car.G ??= carGeom(p.car); if (!G) return;
   const fx = Math.sin(p.heading), fz = Math.cos(p.heading); let a = 0, b = 0;

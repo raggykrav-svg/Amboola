@@ -117,6 +117,19 @@ Pick a car you own in the garage and press **🎨 CUSTOMIZE**. Everything is fre
 
 The decals are painted inside the car's own paint, so they follow every curve and never flicker or float off the body.
 
+## Feel the gas and the brake 🏎💨
+
+Every car now *feels* its power and its brakes, and how much depends on the car:
+
+![A Porsche Cayenne parked, at full gas and braking hard](media/feel.jpg)
+
+- **The body moves.** Put your foot down and the car squats back on its springs. Brake hard and the nose dives, then bounces back when you stop. Soft cars (SUVs, the bus, the trucks, Rolls-Royces) move a lot, and race cars and hypercars barely move.
+- **The camera feels it.** Behind the car, the camera falls back as the car pulls away and the view widens. When you brake, the camera surges towards the car and tips down. Inside the car, your head is pushed back into the seat and thrown forward under braking.
+- **Shakes and jolts:** a kick at every gear change, wheelspin shudder on a hard launch, and ABS judder when you stamp on the brake at speed.
+- **Rumble:** a gamepad vibrates with all of it, and with crashes too. Phones give a tiny buzz at each gear change.
+
+Everything follows the car's real acceleration, so a Bugatti launch hits hard and the bus feels gentle.
+
 ## Controls
 
 | Key | Action |

@@ -112,6 +112,20 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
 - **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade spend.
 - **Testing:** the driver always starts from a fresh context, so pick `{"car":54}` (the GR86) or call `window.amboola.earn(n)` and then `updateMenu()` before `garageGo()`. Otherwise DRIVE/RACES/TAXI do nothing on locked cars.
 
+## Feel (gas and brake)
+
+- `Player` keeps `gLong` (smoothed `accel`, m/s², 0 in the air) and `kick` (set in `shift()`: −.9×throttle on an upshift, +.6 on a downshift; it fades away).
+- **Body:** `pitch` is a spring (natural frequency `feelOf(spec).w`, damping .42) towards `accel × .0042 × soft`, clamped from −.055×soft to +.04×soft, plus the kick.
+  - `feelOf` sets `soft`: .35 for F1, .65 for track and hyper cars, 1.7 for SUVs, Rolls-Royces and crawlers, and 2.2 for the bus and the trucks.
+  - `pv` must start at 0, or `pitch` becomes NaN for good.
+- **Camera:**
+  - Chase: distance `+ clamp(g × .065, −.9, 1.1)`, look point `+ clamp(g × .018, −.32, .1)`.
+  - Inside: the head moves along z by `clamp(−g × .0045, −.06, .08)`.
+  - FOV `+ clamp(g × .45, −3, 6)` (+4 with nitro).
+  - Shakes: ABS (brake > .5, above 6 m/s) and wheelspin (`spin × throttle`).
+- **Rumble:** `feelPad` (ABS and wheelspin, in 90 ms slices) and `feelBuzz(k, ms)` for shifts and crashes (from `carHit`) use `gamepad.vibrationActuator.playEffect('dual-rumble')`; touch devices `navigator.vibrate` on shifts.
+- **Test:** `__autoInput`, then `tick(1/30)` and read `player.pitch`, `gLong`, `camera.fov`. For example, at the GT3 RS launch the camera falls back about 1.3 m and the FOV rises about 5°; under braking it closes in about 1.5 m. The physics (`bench`) doesn't change.
+
 ## Garage search
 
 - `#carq` (in `#carsearch`, above `#carlist`) filters the list. `buildMenu` gives every `.caritem` a `data-q` (name, brand, category, its heading, description, `jp`, id, plus `electric ev` and `plane fly`, all through `carText`: no accents, lower case). `carFilter()` hides items unless every typed word matches, hides empty `.cat` headings, shows `#carqn` when nothing matches, and returns the first match.
