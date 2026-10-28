@@ -8235,7 +8235,78 @@ function cityParts(node, keep = false) {
     if (kind === 'misc') { const c = o.material.color, k = g.attributes.position.count, a = new Float32Array(k * 3); for (let i = 0; i < k; i++) a.set([c.r, c.g, c.b], i * 3); g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
     if (!buckets.has(kind)) buckets.set(kind, { geos: [], mat: o.material }); buckets.get(kind).geos.push(g);
   });
-  return [...buckets].map(([kind, b]) => ({ kind, geo: mergeGeometries(b.geos), mat: kind === 'win' ? cityMats.win : kind === 'glow' ? cityMats.glow : kind === 'misc' ? cityMats.misc : b.mat }));
+  return [...buckets].map(([kind, b]) => ({ kind, geo: mergeGeometries(b.geos), mat: cityLook(kind === 'win' ? cityMats.win : kind === 'glow' ? cityMats.glow : kind === 'misc' ? cityMats.misc : b.mat, kind) }));
+}
+/* ---- real-looking buildings: the city's shared materials get a shader patch that works in world space (so every
+   instanced building, Tokyo's and the countries', gets it at once, with no textures or UVs):
+     wall   concrete / plaster grain (colour and bump at two scales), rain streaks running down from the floors,
+            grime along the street and darker corners near the ground
+     roof   gravel and weathering
+     glass  real glass: smooth and mirror-like (it reflects the sky and its clouds), each pane a little different
+            in tint and flatness, so a tower's face breaks up like a real one
+     win    the same glass by day; at night every room is lit differently (bright, dim or dark, warm or cool) */
+const CITY_KIND = { wall: 1, roof: 2, glass: 3, win: 4 }, cityLooked = new WeakMap();
+function cityLook(m, kind) {
+  const k = CITY_KIND[kind]; if (!k || !m?.isMeshStandardMaterial) return m;
+  if (cityLooked.has(m)) return cityLooked.get(m);
+  if (k >= 3) { Object.assign(m, { roughness: .05, metalness: .85 }); m.color.lerp(new THREE.Color(.36, .44, .54), .55); }   // glass mirrors the sky (a dark mirror would look black)
+  m.defines = { ...m.defines, CITY_KIND: k }; m.onBeforeCompile = cityShader; m.customProgramCacheKey = () => 'city-' + k; m.needsUpdate = true;
+  cityLooked.set(m, m); return m;
+}
+function cityShader(sh) {
+  sh.vertexShader = 'varying vec3 vCW; varying vec3 vCN;\n' + sh.vertexShader.replace('#include <project_vertex>', `#include <project_vertex>
+  { mat4 cm = modelMatrix;
+  #ifdef USE_INSTANCING
+    cm = modelMatrix * instanceMatrix;
+  #endif
+    vCW = (cm * vec4(transformed, 1.)).xyz; vCN = normalize(mat3(cm) * objectNormal); }`);
+  sh.fragmentShader = `varying vec3 vCW; varying vec3 vCN;
+float chash(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float cnoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(chash(i), chash(i + vec3(1, 0, 0)), f.x), mix(chash(i + vec3(0, 1, 0)), chash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(chash(i + vec3(0, 0, 1)), chash(i + vec3(1, 0, 1)), f.x), mix(chash(i + vec3(0, 1, 1)), chash(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+float cfade(vec3 p) { return 1. - smoothstep(.4, 1., length(fwidth(p))); }
+vec3 cBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
+  vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)), r1 = cross(sy, sn), r2 = cross(sn, sx);
+  float det = dot(sx, r1) * fd; return normalize(abs(det) * sn - sign(det) * (dh.x * r1 + dh.y * r2)); }
+float cPane(vec3 p, vec3 n) {   // which room this is: a cell about 3.2 m wide and one storey tall (storeys start above the 5 m shop floor)
+  vec2 a = abs(n.x) > abs(n.z) ? vec2(p.z, p.y) : vec2(p.x, p.y);
+  return chash(vec3(floor(a.x / 3.2), floor((a.y - 5.) / 3.6), floor((abs(n.x) > abs(n.z) ? p.x : p.z) / 4.)));
+}
+` + sh.fragmentShader
+    .replace('#include <color_fragment>', `#include <color_fragment>
+{
+#if CITY_KIND == 1
+  float vert = 1. - smoothstep(.35, .7, abs(vCN.y));
+  float g = cnoise(vCW * 1.7) * .55 + cnoise(vCW * 7.) * .3 + cnoise(vCW * 30.) * .15 * cfade(vCW * 30.);
+  float streak = smoothstep(.5, .95, cnoise(vec3(vCW.x * 3.2, vCW.y * .035, vCW.z * 3.2))) * smoothstep(.15, .75, cnoise(vec3(vCW.x * .7, vCW.y * .25, vCW.z * .7)));   // long thin rain streaks
+  float grime = 1. - smoothstep(.0, 3.5, vCW.y);
+  diffuseColor.rgb *= (.86 + .26 * g) * (1. - .22 * streak * vert) * (1. - .28 * grime * vert);
+#elif CITY_KIND == 2
+  diffuseColor.rgb *= .78 + .3 * (cnoise(vCW * 2.5) * .6 + cnoise(vCW * 18.) * .4);
+#else
+  float pane = cPane(vCW, vCN);
+  diffuseColor.rgb *= .8 + .4 * pane; diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(.85, .95, 1.12), step(.6, fract(pane * 7.)));
+#endif
+}`)
+    .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+#if CITY_KIND == 1
+  roughnessFactor = clamp(roughnessFactor + (cnoise(vCW * 5.) - .5) * .2, .3, 1.);
+#elif CITY_KIND >= 3
+  roughnessFactor = .02 + .1 * cPane(vCW, vCN);
+#endif`)
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+#if CITY_KIND <= 2
+  { float h = (cnoise(vCW * 9.) * .5 + cnoise(vCW * 40.) * .5 * cfade(vCW * 40.)) * .006 * cfade(vCW * 9.);
+    normal = cBump(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection); }
+#else
+  { float w = (cPane(vCW, vCN) - .5) * .05; normal = normalize(normal + vec3(w, -w * .5, w * .7)); }   // each pane sits a hair off flat, so the reflections break
+#endif`)
+    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+#if CITY_KIND == 4
+  { float r = cPane(vCW, vCN), on = step(.28, r);   // about a quarter of the rooms are dark, the rest bright or dim, warm or cool
+    totalEmissiveRadiance *= on * mix(.35, 1.35, fract(r * 13.)) * mix(vec3(1.), vec3(.75, .9, 1.25), step(.72, fract(r * 5.))); }
+#endif`);
 }
 // one InstancedMesh per part for a list of [matrix, wallColour, roofColour]
 function cityInstances(parts, list, group, shadow = true) {

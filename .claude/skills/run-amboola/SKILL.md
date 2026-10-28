@@ -354,6 +354,16 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
   - `window.amboola.TOKYO.city` exists and every `TOKYO.meshes` is hidden.
   - At the start position, about 2.3 M triangles and 1,290 draw calls a frame, against 1.57 M and 1,014 for the old boxes.
 
+## Real-looking buildings
+
+- `cityParts()` passes each part's material through `cityLook(mat, kind)`. It patches each material once, and `CITY_KIND` covers wall 1, roof 2, glass 3 and win 4.
+- `cityShader` (`onBeforeCompile`, `customProgramCacheKey 'city-k'`) works in world space. `vCW`/`vCN` come from `modelMatrix * instanceMatrix`, so instanced Tokyo modules and country towns all get it without UVs.
+  - **Walls:** grain on the colour and the bump at 1.7, 7 and 30 per metre; long thin rain streaks on vertical faces; grime below 3.5 m.
+  - **Roofs:** gravel.
+  - **Glass and windows:** roughness 0.02–0.12 per pane, metalness .85, and the colour lerped 55% toward (.36, .44, .54) so they mirror the sky.
+  - **Rooms at night:** `cPane()` hashes a 3.2 m × one-storey room cell (storeys counted from 5 m). It gives each pane a little tilt, and it scales the windows' emissive: about 28% dark, the rest bright or dim, warm or cool.
+- `cfade` fades out any detail finer than about a pixel.
+
 ## Country towns (Blender)
 
 - **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:

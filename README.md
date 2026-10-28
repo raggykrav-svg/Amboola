@@ -860,6 +860,14 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - **Sharpest reflections:** your car's live street reflection is 512 px a side and updates every frame, and the wet-road reflections are drawn at 70% of the screen size.
 - **More detail further away:** the detailed Tokyo buildings reach 1.6× further, the detailed country houses 1.5× further.
 
+**Real-looking buildings 🏙** (every building in Tokyo and in the country towns):
+
+![Tokyo's buildings before and after, by day and by night](media/buildings-hd.jpg)
+
+- **Walls:** concrete and plaster with a fine grain and bumps you can see up close, rain streaks running down the walls, grime along the street, and gravel and weathering on the roofs.
+- **Glass:** windows and glass towers are real mirror-like glass. They reflect the sky and its clouds, and each pane is a little different, so a tower's face breaks up like a real one.
+- **At night:** every room is lit its own way. Some are bright, some dim and some dark, in warm and cool light, instead of all the windows glowing the same.
+
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 
 ![Before and after the Horizon look](media/horizon-look.jpg)
