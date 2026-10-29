@@ -1211,7 +1211,7 @@ vec3 rBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
       .replace('#include <color_fragment>', `#include <color_fragment>
   vec2 rp = vRW.xz; float rg = rnoise(rp * 40.) * rfade(rp * 40.), rg2 = rnoise(rp * 9.);
   float rl = dot(diffuseColor.rgb, vec3(.3, .59, .11));
-  diffuseColor.rgb = mix(diffuseColor.rgb * vec3(1.6, 1.52, 1.4), diffuseColor.rgb, smoothstep(.1, .4, rl));   // real asphalt is a warm mid-dark grey, not near-black (the paint stays as it is)
+  diffuseColor.rgb = mix(diffuseColor.rgb * vec3(2.5, 2.38, 2.2), diffuseColor.rgb, smoothstep(.1, .4, rl));   // real asphalt is a warm mid-dark grey, not near-black (the paint stays as it is)
   diffuseColor.rgb *= .9 + .2 * rg + .08 * (rg2 - .5);
 #if ${K} == 1
   float patchy = smoothstep(.64, .67, rnoise(rp * .08 + 3.1)), stain = smoothstep(.55, .9, rnoise(rp * .5 + 7.7)) * smoothstep(.4, .7, rnoise(rp * .07));
@@ -1972,7 +1972,7 @@ async function buildWorld() {
   const crownGeo = lumpyCrown(2.2); crownGeo.translate(0, 4.2, 0);
   const all = [...trees.map(t => [...t, 0]), ...sakura.map(t => [...t, 1])];
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), all.length);
-  const crown = new THREE.InstancedMesh(crownGeo, foliageLook(new THREE.MeshStandardMaterial({ roughness: .85 })), all.length); crown.customDepthMaterial = crown.material.userData.depth;
+  const crown = new THREE.InstancedMesh(crownGeo, foliageLook(new THREE.MeshStandardMaterial({ roughness: .85 }), 1, [4.4, 1.15]), all.length); crown.customDepthMaterial = crown.material.userData.depth;
   const cc = new THREE.Color();
   all.forEach(([x, z, s, sak], k) => {
     trunk.setMatrixAt(k, mat(x, 0, z, rand() * 6, s, s, s)); crown.setMatrixAt(k, mat(x, 0, z, rand() * 6, s * rr(.9, 1.2), s * rr(.8, 1.1), s * rr(.9, 1.2)));
@@ -8046,7 +8046,7 @@ function lumpyCrown(r, detail = 3) {
   for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const d = v.clone().normalize(); v.multiplyScalar(1 + .16 * n3(d.x * 2, d.y * 2, d.z * 2) - .12 * Math.max(0, -d.y)); P.setXYZ(i, v.x, v.y, v.z); }
   g.computeVertexNormals(); return g;
 }
-function foliageLook(m, sway = 1) {
+function foliageLook(m, sway = 1, crown = null) {   // crown [centre y, y squash]: light it like one soft rounded crown, not hard facets
   if (m.userData.foliage) return m; m.userData.foliage = true; m.flatShading = false;
   const swayGL = `#include <begin_vertex>
   { vec2 o = vec2(0.);
@@ -8062,6 +8062,8 @@ function foliageLook(m, sway = 1) {
   m.onBeforeCompile = sh => {
     sh.uniforms.uFolT = FOL.t; sh.uniforms.uFolSun = FOL_SUN; sh.uniforms.uFolDir = { value: ATMO.sun };
     sh.vertexShader = 'uniform float uFolT; varying vec3 vFW; varying float vFH;\n' + sh.vertexShader.replace('#include <begin_vertex>', swayGL + '\n  vFH = position.y;')
+      .replace('#include <beginnormal_vertex>', crown ? `#include <beginnormal_vertex>
+  objectNormal = normalize(mix(objectNormal, normalize((position - vec3(0., ${crown[0].toFixed(2)}, 0.)) * vec3(1., ${crown[1].toFixed(2)}, 1.)), .8));` : '#include <beginnormal_vertex>')
       .replace('#include <project_vertex>', `#include <project_vertex>
   { mat4 fm = modelMatrix;
   #ifdef USE_INSTANCING
@@ -8091,7 +8093,7 @@ vec3 fBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
   { float wn = (inverseTransformDirection(normal, viewMatrix)).y; float ao = mix(.45, 1., smoothstep(-.6, .7, wn)) * mix(.75, 1., smoothstep(.3, .7, fc));
     reflectedLight.indirectDiffuse *= ao; reflectedLight.directDiffuse *= mix(.7, 1., ao); }`);
   };
-  m.customProgramCacheKey = () => 'foliage-' + sway; m.needsUpdate = true; return m;
+  m.customProgramCacheKey = () => 'foliage-' + sway + (crown ? '-' + crown : ''); m.needsUpdate = true; return m;
 }
 function palmTrees(list) {
   const leaves = []; for (let k = 0; k < 8; k++) { const l = new THREE.ConeGeometry(.6, 4.2, 4); l.rotateX(Math.PI / 2); l.scale(1, .18, 1); l.translate(0, 0, 2.1); l.rotateX(.45); l.rotateY(k / 8 * Math.PI * 2); l.translate(1.2, 9, 0); leaves.push(l); }
@@ -8102,11 +8104,11 @@ function palmTrees(list) {
 function roundTrees(list, col) {
   const t = new THREE.CylinderGeometry(.18, .26, 2.6, 6); t.translate(0, 1.3, 0);
   const a = instanced(t, new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 }), list);
-  const b = instanced(lumpyCrown(2.2, 2).translate(0, 3.6, 0), foliageLook(new THREE.MeshStandardMaterial({ color: col, roughness: .9 })), list);
+  const b = instanced(lumpyCrown(2.2, 2).translate(0, 3.6, 0), foliageLook(new THREE.MeshStandardMaterial({ color: col, roughness: .9 }), 1, [3.6, 1]), list);
   return regBreakList(list, [a, b], 'tree', .45);
 }
 function cypressTrees(list) {
-  return regBreakList(list, [instanced(new THREE.ConeGeometry(1.1, 11, 16, 6).translate(0, 5.8, 0), foliageLook(new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9 }), .4), list)], 'cypress', .7);
+  return regBreakList(list, [instanced(new THREE.ConeGeometry(1.1, 11, 16, 6).translate(0, 5.8, 0), foliageLook(new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9 }), .4, [5.8, .25]), list)], 'cypress', .7);
 }
 function welcomeArch(C, text, col) {
   const mx = C.R.x[C.R.n - 1], g = new THREE.Group(); g.position.set(mx, 0, C.z0 + 30); scene.add(g);
