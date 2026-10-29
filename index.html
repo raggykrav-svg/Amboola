@@ -1215,7 +1215,8 @@ vec3 rBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
   diffuseColor.rgb *= .9 + .2 * rg + .08 * (rg2 - .5);
 #if ${K} == 1
   float patchy = smoothstep(.64, .67, rnoise(rp * .08 + 3.1)), stain = smoothstep(.55, .9, rnoise(rp * .5 + 7.7)) * smoothstep(.4, .7, rnoise(rp * .07));
-  float crack = (1. - smoothstep(.0, .018, abs(rnoise(rp * 1.4) - .5))) * smoothstep(.62, .75, rnoise(rp * .21 + 11.)) * rfade(rp * 1.4);
+  float cn = rnoise(rp * 1.4) - .5, cw = fwidth(cn);   // thin cracks, anti-aliased: they fade out instead of shimmering far away
+  float crack = (1. - smoothstep(.0, .018 + cw, abs(cn))) * .018 / (.018 + cw) * smoothstep(.62, .75, rnoise(rp * .21 + 11.)) * rfade(rp * 1.4);
   diffuseColor.rgb *= (1. - .16 * patchy) * (1. - .22 * stain) * (1. - .45 * crack);
 #endif`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
@@ -1971,7 +1972,7 @@ async function buildWorld() {
   const crownGeo = lumpyCrown(2.2); crownGeo.translate(0, 4.2, 0);
   const all = [...trees.map(t => [...t, 0]), ...sakura.map(t => [...t, 1])];
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), all.length);
-  const crown = new THREE.InstancedMesh(crownGeo, foliageLook(new THREE.MeshStandardMaterial({ roughness: .85 })), all.length);
+  const crown = new THREE.InstancedMesh(crownGeo, foliageLook(new THREE.MeshStandardMaterial({ roughness: .85 })), all.length); crown.customDepthMaterial = crown.material.userData.depth;
   const cc = new THREE.Color();
   all.forEach(([x, z, s, sak], k) => {
     trunk.setMatrixAt(k, mat(x, 0, z, rand() * 6, s, s, s)); crown.setMatrixAt(k, mat(x, 0, z, rand() * 6, s * rr(.9, 1.2), s * rr(.8, 1.1), s * rr(.9, 1.2)));
@@ -6360,7 +6361,7 @@ const routePt = (R, i, off, dy = 0) => new THREE.Vector3(R.x[i] - R.tz[i] * off,
 function instanced(geo, mat, list, shadow = true) {   // list of [x, y, z, rotY, sx, sy, sz]
   const im = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length)), M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), s = new THREE.Vector3();
   list.forEach(([x, y, z, ry = 0, sx = 1, sy = sx, sz = sx], k) => { M.compose(v.set(x, y, z), q.setFromAxisAngle(up, ry), s.set(sx, sy, sz)); im.setMatrixAt(k, M); });
-  im.count = list.length; im.castShadow = shadow; im.receiveShadow = true; scene.add(im); return im;
+  im.count = list.length; im.castShadow = shadow; im.receiveShadow = true; if (mat.userData?.depth) im.customDepthMaterial = mat.userData.depth; scene.add(im); return im;
 }
 const signTex = (w, h, bg, lines, border) => canvasTex(w, h, (g, W, H) => {
   g.fillStyle = bg; g.fillRect(0, 0, W, H); if (border) { g.strokeStyle = border; g.lineWidth = H * .05; g.strokeRect(H * .04, H * .04, W - H * .08, H * .08 > 0 ? H - H * .08 : H); }
@@ -8047,16 +8048,20 @@ function lumpyCrown(r, detail = 3) {
 }
 function foliageLook(m, sway = 1) {
   if (m.userData.foliage) return m; m.userData.foliage = true; m.flatShading = false;
-  m.onBeforeCompile = sh => {
-    sh.uniforms.uFolT = FOL.t; sh.uniforms.uFolSun = FOL_SUN; sh.uniforms.uFolDir = { value: ATMO.sun };
-    sh.vertexShader = 'uniform float uFolT; varying vec3 vFW; varying float vFH;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+  const swayGL = `#include <begin_vertex>
   { vec2 o = vec2(0.);
   #ifdef USE_INSTANCING
     o = instanceMatrix[3].xz;
   #endif
     float ph = o.x * .37 + o.y * .23, h = max(position.y - 1.2, 0.) * ${sway.toFixed(2)};
     transformed.x += (sin(uFolT * 1.3 + ph) * .05 + sin(uFolT * 3.1 + ph * 1.7 + position.y) * .015) * h;
-    transformed.z += (cos(uFolT * 1.1 + ph * 1.3) * .04 + sin(uFolT * 2.7 + position.x * 2.) * .012) * h; vFH = position.y; }`)
+    transformed.z += (cos(uFolT * 1.1 + ph * 1.3) * .04 + sin(uFolT * 2.7 + position.x * 2.) * .012) * h; }`;
+  const depth = m.userData.depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });   // the shadow sways with the leaves (else the crowns flicker with moving shadow acne)
+  depth.onBeforeCompile = sh => { sh.uniforms.uFolT = FOL.t; sh.vertexShader = 'uniform float uFolT;\n' + sh.vertexShader.replace('#include <begin_vertex>', swayGL); };
+  depth.customProgramCacheKey = () => 'foliage-depth-' + sway;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uFolT = FOL.t; sh.uniforms.uFolSun = FOL_SUN; sh.uniforms.uFolDir = { value: ATMO.sun };
+    sh.vertexShader = 'uniform float uFolT; varying vec3 vFW; varying float vFH;\n' + sh.vertexShader.replace('#include <begin_vertex>', swayGL + '\n  vFH = position.y;')
       .replace('#include <project_vertex>', `#include <project_vertex>
   { mat4 fm = modelMatrix;
   #ifdef USE_INSTANCING
@@ -13249,7 +13254,8 @@ void w(vec2 p, float f, vec2 dir, float a, float k, float c, inout vec3 d, inout
   { vec3 wn = inverseTransformDirection(normal, viewMatrix), vd = normalize(vSeaW - cameraPosition);
     float sss = smoothstep(-.1, .35, vSeaH) * pow(max(dot(vd, normalize(uSeaSun * vec3(1., 0., 1.) + vec3(0., .2, 0.))), 0.), 2.) * (1. - smoothstep(60., 600., seaD));
     totalEmissiveRadiance += vec3(.05, .42, .38) * uSeaSunC * sss * .55;   // the low sun shining through the thin wave tops: turquoise
-    vec3 rd = reflect(vd, wn); float gl = pow(max(dot(rd, uSeaSun), 0.), 900.) * step(.02, uSeaSun.y);
+    vec3 rd = reflect(vd, wn); float gsh = mix(900., 120., smoothstep(30., 250., seaD));   // far away the sparkles merge into a soft sun path, not flickering dots
+    float gl = pow(max(dot(rd, uSeaSun), 0.), gsh) * step(.02, uSeaSun.y) * mix(1., .15, smoothstep(30., 250., seaD));
     totalEmissiveRadiance += uSeaSunC * gl * 6.;   // glitter: tiny bright sparkles where a ripple points the sun at you
     diffuseColor.rgb = mix(diffuseColor.rgb * vec3(.55, .85, .9), diffuseColor.rgb, smoothstep(.05, .6, -vd.y)); }   // looking along it: deep blue-green; down into it: lighter`);
   };
