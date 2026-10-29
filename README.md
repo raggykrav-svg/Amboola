@@ -888,7 +888,8 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - **Air:** the haze is thicker down low and thinner up high, so far-off hills and towers fade into the sky like real air. Looking towards the sun the haze glows warm and golden, especially at sunset.
 - **Trees:** round, bumpy crowns with clumps of leaves, some greener and some yellower. They sway in the wind, and the sun shines through the leaves when it's behind them.
 - **Roads:** real asphalt with stones you can see up close, cracks, darker repaired patches and oil stains. The low sun catches the smoother bits, and the rain still makes the roads shiny. The pavements get a fine stone texture too.
-- **Sea:** the sun sparkles on the ripples, and when you look towards a low sun the wave tops glow turquoise where the light shines through them. Far out, the water turns deep blue-green.
+- **Sea:** clear turquoise water close by, turning deep blue further out. The ripples no longer repeat in a grid, the sun sparkles on them, and when you look towards a low sun the wave tops glow turquoise where the light shines through them.
+- **No glitching:** tree shadows now sway together with the leaves, so the crowns don't flicker. Thin details like road cracks, sea sparkles and ripples fade out smoothly in the distance instead of shimmering.
 
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 

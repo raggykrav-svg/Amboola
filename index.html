@@ -13249,12 +13249,23 @@ void w(vec2 p, float f, vec2 dir, float a, float k, float c, inout vec3 d, inout
   #ifdef USE_NORMALMAP
   vNormalMapUv = (normalMapTransform * vec3(vSeaW.xz * .045, 1.)).xy;
   #endif`);
-    sh.fragmentShader = 'uniform float uSeaQuay; uniform vec3 uSeaCam; uniform vec3 uSeaSun; uniform vec3 uSeaSunC; varying vec3 vSeaW; varying float vSeaH;\n' + sh.fragmentShader
+    sh.fragmentShader = 'uniform float uSeaQuay; uniform float uSeaT; uniform vec3 uSeaCam; uniform vec3 uSeaSun; uniform vec3 uSeaSunC; varying vec3 vSeaW; varying float vSeaH;\n' + sh.fragmentShader
       .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n  if (vSeaW.z < uSeaQuay) discard;   // north of the harbour is land')
       .replace('#include <color_fragment>', `#include <color_fragment>
   float seaD = distance(vSeaW.xz, uSeaCam.xz);
   diffuseColor.a *= mix(.6, 1., smoothstep(15., 260., seaD));   // see into the water close by
+  diffuseColor.rgb = mix(vec3(.06, .36, .4), diffuseColor.rgb, smoothstep(20., 160., seaD) * .6 + .4);   // clear turquoise close by, deep blue further out
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.82, .9, .95), smoothstep(.2, .42, vSeaH) * .55);   // white foam on the wave tops`)
+      .replace('#include <normal_fragment_maps>', `{   // ripples: three layers of the ripple map at different sizes, directions and speeds, so no repeating grid shows;
+    // they calm down with distance, so far water is a smooth sheen instead of a flickering pattern
+    vec2 q = vSeaW.xz;
+    vec2 r1 = texture2D(normalMap, q * .045 + vec2(uSeaT * .011, uSeaT * .007)).xy * 2. - 1.;
+    vec2 r2 = texture2D(normalMap, mat2(.8, -.6, .6, .8) * q * .017 + vec2(-uSeaT * .006, uSeaT * .004)).xy * 2. - 1.;
+    vec2 r3 = texture2D(normalMap, mat2(-.28, .96, -.96, -.28) * q * .11 + vec2(uSeaT * .02, -uSeaT * .013)).xy * 2. - 1.;
+    float rk = normalScale.x * mix(1., .3, smoothstep(40., 500., seaD));
+    vec2 rr = (r1 * .5 + mat2(.8, .6, -.6, .8) * r2 * .7 + mat2(-.28, -.96, .96, -.28) * r3 * .35 * (1. - smoothstep(20., 120., seaD))) * rk;
+    vec3 gw = inverseTransformDirection(normal, viewMatrix);
+    normal = normalize((viewMatrix * vec4(normalize(gw + vec3(rr.x, 0., rr.y)), 0.)).xyz); }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(roughnessFactor, .42, smoothstep(40., 500., seaD));   // far away: a smooth sheen, no sparkle noise')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
   { vec3 wn = inverseTransformDirection(normal, viewMatrix), vd = normalize(vSeaW - cameraPosition);

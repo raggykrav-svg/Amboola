@@ -390,7 +390,15 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - **Roads (`roadLook(mat, kind)`):** used on every road material (Tokyo roads, intersections, bridge decks, highways, mountain, snow and country-town roads) and, as `'pave'`, on the Tokyo pavement ground.
   - World-space `vRW.xz`: aggregate grain at 40 and 110 per metre (faded by `rfade`), repair patches, oil stains and thin cracks (asphalt only), roughness varying ±15% and smoother on stains, and a bump.
   - The roughness clamp goes down to .05, so `WX.wet` can still make the roads shiny.
-- **Sea (`buildOcean`):** turquoise light through the wave tops when looking towards a low sun, sun glitter (`pow(dot(reflect, sun), 900)`, only while the sun is up) and a deeper blue-green when looking along the water.
+- **Sea (`buildOcean`):**
+  - `normal_fragment_maps` is replaced: the ripple map is sampled three times (scales .045, .017 rotated, .11 rotated; each drifting with `uSeaT`) and added to the Gerstner normal in world space. The amplitude falls to 30% by 500 m and the finest layer fades out by 120 m, so there's no repeating grid and no far-off flicker. (`rip.offset`/`vNormalMapUv` are no longer used.)
+  - Turquoise close by, blending to the base blue by 160 m; turquoise light through the wave tops when looking towards a low sun.
+  - Sun glitter: `pow(dot(reflect, sun), 900 → 120)` and weaker with distance (30–250 m), only while the sun is up.
+- **Anti-flicker:**
+  - `foliageLook` also makes `m.userData.depth`, a `MeshDepthMaterial` with the same sway. `instanced()` and the Tokyo crown set it as `customDepthMaterial`, so the shadow moves with the leaves.
+  - Road cracks widen by `fwidth` and fade by the same amount.
+- **Grey shade:** `roadLook` takes 60% of the colour out of the indirect diffuse (and 45% of the indirect specular), so asphalt in the shade isn't navy. Dark albedo is also lifted ×2.4 (warm); paint (luma > .4) stays as it is.
+- **Tree crowns:** `foliageLook(m, sway, [cy, sy])` blends the normals 80% towards `normalize((p − (0, cy, 0)) × (1, sy, 1))`: Tokyo [4.4, 1.15], `roundTrees` [3.6, 1], cypress [5.8, .25].
 - **Check:** HD captures by day, at sunset and at night, in the street and at the quay (`x 4, z 815`), with no shader errors.
 
 ## Country towns (Blender)
