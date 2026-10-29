@@ -1222,7 +1222,11 @@ vec3 rBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
   roughnessFactor = clamp(roughnessFactor * (.82 + .3 * rnoise(rp * 2.3)) ${K === 1 ? "- .12 * stain" : ""}, .05, 1.);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-  { float h = (rnoise(rp * 40.) * rfade(rp * 40.) + rnoise(rp * 110.) * .5 * rfade(rp * 110.)) * ${K === 1 ? ".0035" : ".0025"}; normal = rBump(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection); }`);
+  { float h = (rnoise(rp * 40.) * rfade(rp * 40.) + rnoise(rp * 110.) * .5 * rfade(rp * 110.)) * ${K === 1 ? ".0035" : ".0025"}; normal = rBump(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection); }`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+  { vec3 L = vec3(.3, .59, .11);   // the blue sky fill tints dark asphalt navy; take most of the blue out so roads read grey
+    reflectedLight.indirectDiffuse = mix(reflectedLight.indirectDiffuse, vec3(dot(reflectedLight.indirectDiffuse, L)) * vec3(1.02, 1., .96), .6);
+    reflectedLight.indirectSpecular = mix(reflectedLight.indirectSpecular, vec3(dot(reflectedLight.indirectSpecular, L)), .45); }`);
   };
   m.customProgramCacheKey = () => 'road-' + K; return m;
 }
@@ -8082,7 +8086,7 @@ vec3 fBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
 ` + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
   float fc = fclump(vFW), fk = 1. - smoothstep(.4, 1., length(fwidth(vFW * 4.5)));
-  diffuseColor.rgb *= mix(1., mix(.55, 1.25, smoothstep(.28, .78, fc)), .45 + .55 * fk);   // clumps of leaves: dark gaps, light tips
+  diffuseColor.rgb *= mix(1., mix(.68, 1.3, smoothstep(.28, .78, fc)), .45 + .55 * fk);   // clumps of leaves: dark gaps, light tips
   diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.08, 1.12, .8), smoothstep(.6, .9, fnoise(vFW * .35)) * .5);   // some trees a little yellower`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
   { float h = fclump(vFW) * .12 * fk; normal = fBump(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection); }`)
