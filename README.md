@@ -883,7 +883,7 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 
 **A living world 🌳🌊** (made to look like Forza Horizon 5):
 
-![Amboola's streets and sea after the world upgrade](media/world-hd.jpg)
+![The turquoise sea by day, sun glitter on the sea at sunset, a Tokyo street at sunset, and sunset light glowing through the leaves](media/world-hd.jpg)
 
 - **Air:** the haze is thicker down low and thinner up high, so far-off hills and towers fade into the sky like real air. Looking towards the sun the haze glows warm and golden, especially at sunset.
 - **Trees:** round, bumpy crowns with clumps of leaves, some greener and some yellower. They sway in the wind, and the sun shines through the leaves when it's behind them.
