@@ -378,6 +378,21 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
   - **Rooms at night:** `cPane()` hashes a 3.2 m × one-storey room cell (storeys counted from 5 m). It gives each pane a little tilt, and it scales the windows' emissive: about 28% dark, the rest bright or dim, warm or cool.
 - `cfade` fades out any detail finer than about a pixel.
 
+## Living world (air, trees, roads, sea)
+
+- **Air (`ATMO`):** a global `THREE.ShaderChunk` patch of `fog_vertex`/`fog_fragment`, set up just before the renderer is made.
+  - It adds the `atmoSun`, `atmoCol` and `atmoP` uniforms to `UniformsLib.fog` and every `ShaderLib` entry. Their values are the plain `ATMO.sun`/`col`/`p` objects, shared by reference: `UniformsUtils.clone` copies vectors and colours but passes other objects through, so `applyTime` updates every material at once.
+  - EXP2 density falls off with the air's average height along the view (`atmoP.y` = 70 m scale, `atmoP.w` = how much). Fog is tinted towards `atmoCol` (the sun colour × .45 by day, .75 at sunset, .08 at night) near the sun's direction, and slightly cooler away from it.
+  - Don't declare a uniform named `atmo*` in a material's own shader: fog_pars_fragment already declares them, and a second declaration fails to compile. Pass the sun under another name (`uFolDir`, `uSeaSun`).
+- **Trees (`foliageLook(mat, sway)`):** used by the Tokyo street trees, palms, `roundTrees` and the cypresses. Crowns are `lumpyCrown(r, detail)`, a noise-displaced icosahedron.
+  - Vertex: wind sway from `FOL.t` (set in `hzUniforms`), with the phase taken from the instance position.
+  - Fragment: `fclump` leaf clumps on the colour and the bump, some yellower trees, sun glowing through the leaves (`uFolSun` = `FOL.sun`, set in `applyTime`) and crown AO.
+- **Roads (`roadLook(mat, kind)`):** used on every road material (Tokyo roads, intersections, bridge decks, highways, mountain, snow and country-town roads) and, as `'pave'`, on the Tokyo pavement ground.
+  - World-space `vRW.xz`: aggregate grain at 40 and 110 per metre (faded by `rfade`), repair patches, oil stains and thin cracks (asphalt only), roughness varying ±15% and smoother on stains, and a bump.
+  - The roughness clamp goes down to .05, so `WX.wet` can still make the roads shiny.
+- **Sea (`buildOcean`):** turquoise light through the wave tops when looking towards a low sun, sun glitter (`pow(dot(reflect, sun), 900)`, only while the sun is up) and a deeper blue-green when looking along the water.
+- **Check:** HD captures by day, at sunset and at night, in the street and at the quay (`x 4, z 815`), with no shader errors.
+
 ## Country towns (Blender)
 
 - **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:

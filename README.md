@@ -881,6 +881,15 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - **Glass:** windows and glass towers are real mirror-like glass. They reflect the sky and its clouds, and each pane is a little different, so a tower's face breaks up like a real one.
 - **At night:** every room is lit its own way. Some are bright, some dim and some dark, in warm and cool light, instead of all the windows glowing the same.
 
+**A living world 🌳🌊** (made to look like Forza Horizon 5):
+
+![Amboola's streets and sea after the world upgrade](media/world-hd.jpg)
+
+- **Air:** the haze is thicker down low and thinner up high, so far-off hills and towers fade into the sky like real air. Looking towards the sun the haze glows warm and golden, especially at sunset.
+- **Trees:** round, bumpy crowns with clumps of leaves, some greener and some yellower. They sway in the wind, and the sun shines through the leaves when it's behind them.
+- **Roads:** real asphalt with stones you can see up close, cracks, darker repaired patches and oil stains. The low sun catches the smoother bits, and the rain still makes the roads shiny. The pavements get a fine stone texture too.
+- **Sea:** the sun sparkles on the ripples, and when you look towards a low sun the wave tops glow turquoise where the light shines through them. Far out, the water turns deep blue-green.
+
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 
 ![Before and after the Horizon look](media/horizon-look.jpg)

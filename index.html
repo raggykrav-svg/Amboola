@@ -900,6 +900,32 @@ const HD_SETS = { studio: '📷 PHOTO STUDIO', sunset: '🌅 GOLDEN HOUR', neon:
 /* =====================================================================
    RENDERER / SCENES
    ===================================================================== */
+/* ---- FH5-style atmosphere (aerial perspective): three's fog chunks are patched for every material at once.
+   The haze lies thicker near the ground and thins with height (tower tops and hills stand out crisply above it),
+   and looking towards the sun it glows brighter and warmer (bluer and cooler away from it), like real air.
+   ATMO's values are plain objects shared by reference with every material's uniforms (three copies numbers and
+   vectors per material, but passes other objects through), so applyTime updates them all at once. */
+const ATMO = { sun: { x: 0, y: 1, z: 0 }, col: { x: .5, y: .4, z: .3 }, p: { x: .9, y: 70, z: 0, w: .75 } };   // p: sun glow, height scale (m), -, height effect
+{
+  const add = U => { if (U.fogColor && !U.atmoSun) Object.assign(U, { atmoSun: { value: ATMO.sun }, atmoCol: { value: ATMO.col }, atmoP: { value: ATMO.p } }); };
+  add(THREE.UniformsLib.fog); for (const k in THREE.ShaderLib) add(THREE.ShaderLib[k].uniforms);
+  const C = THREE.ShaderChunk;
+  C.fog_pars_vertex += '\n#ifdef USE_FOG\nvarying vec3 vFogWorld;\n#endif';
+  C.fog_vertex += '\n#ifdef USE_FOG\nvFogWorld = (vec4(mvPosition.xyz, 0.) * viewMatrix).xyz;\n#endif';
+  C.fog_pars_fragment += '\n#ifdef USE_FOG\nvarying vec3 vFogWorld; uniform vec3 atmoSun; uniform vec3 atmoCol; uniform vec4 atmoP;\n#endif';
+  C.fog_fragment = `#ifdef USE_FOG
+  #ifdef FOG_EXP2
+    float atmoH = max(cameraPosition.y + vFogWorld.y * .5, 0.);   // the air's average height along the view
+    float atmoD = fogDensity * mix(1., exp(-atmoH / max(atmoP.y, 1.)), atmoP.w);
+    float fogFactor = 1.0 - exp(- atmoD * atmoD * vFogDepth * vFogDepth);
+  #else
+    float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+  #endif
+  vec3 atmoDir = normalize(vFogWorld + vec3(0., 1e-4, 0.));
+  float atmoS = pow(max(dot(atmoDir, atmoSun), 0.), 5.) * atmoP.x;
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor * (1. - .12 * atmoP.x * (1. - atmoS)) + atmoCol * atmoS, fogFactor);
+#endif`;
+}
 const canvas = $('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
@@ -1010,7 +1036,7 @@ function makeHorizonPass() {
   return hzPass;
 }
 function hzUniforms() {
-  skyUniforms.time.value = performance.now() / 1000;
+  skyUniforms.time.value = FOL.t.value = performance.now() / 1000;   // (the clouds drift, the trees sway)
   const U = hzPass.uniforms, low = quality === 'low', cam = renderPass.camera;
   U.res.value.set(innerWidth, innerHeight); U.sat.value = HZ.sat; U.con.value = HZ.con; U.warm.value = HZ.warm; U.vig.value = HZ.vig;
   U.sharp.value = low ? 0 : .22; U.blur.value = low || state !== 'drive' ? 0 : HZ.blur;
@@ -1166,6 +1192,39 @@ const ROAD_TEX = () => canvasTex(512, 512, (g, w, h) => {
   for (const s of [-1, 1]) { const x = (8 + s * 3.95 - .07) * m; g.fillRect(x, 0, .14 * m, 6 * m); }
   g.fillStyle = '#e3b62e'; g.fillRect((8 - .32) * m, 0, .13 * m, h); g.fillRect((8 + .19) * m, 0, .13 * m, h);
 }, { repeat: true });
+/* ---- real asphalt: road materials get a world-space shader (no extra textures): aggregate grain you see up close,
+   darker repair patches and oil stains, thin cracks, and roughness that varies, so the low sun catches the polished
+   wheel tracks like in Forza Horizon. Pavements (kind 'pave') get the grain and a gentle bump only. */
+function roadLook(m, kind = 'asphalt') {
+  const K = kind === 'pave' ? 2 : 1;
+  m.onBeforeCompile = sh => {
+    sh.vertexShader = 'varying vec3 vRW;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vRW = (modelMatrix * vec4(transformed, 1.)).xyz;');
+    sh.fragmentShader = `varying vec3 vRW;
+float rhash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float rnoise(vec2 x) { vec2 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+  return mix(mix(rhash(i), rhash(i + vec2(1, 0)), f.x), mix(rhash(i + vec2(0, 1)), rhash(i + vec2(1, 1)), f.x), f.y); }
+float rfade(vec2 p) { return 1. - smoothstep(.4, 1., length(fwidth(p))); }
+vec3 rBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
+  vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)), r1 = cross(sy, sn), r2 = cross(sn, sx);
+  float det = dot(sx, r1) * fd; return normalize(abs(det) * sn - sign(det) * (dh.x * r1 + dh.y * r2)); }
+` + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  vec2 rp = vRW.xz; float rg = rnoise(rp * 40.) * rfade(rp * 40.), rg2 = rnoise(rp * 9.);
+  float rl = dot(diffuseColor.rgb, vec3(.3, .59, .11));
+  diffuseColor.rgb = mix(diffuseColor.rgb * vec3(1.6, 1.52, 1.4), diffuseColor.rgb, smoothstep(.1, .4, rl));   // real asphalt is a warm mid-dark grey, not near-black (the paint stays as it is)
+  diffuseColor.rgb *= .9 + .2 * rg + .08 * (rg2 - .5);
+#if ${K} == 1
+  float patchy = smoothstep(.64, .67, rnoise(rp * .08 + 3.1)), stain = smoothstep(.55, .9, rnoise(rp * .5 + 7.7)) * smoothstep(.4, .7, rnoise(rp * .07));
+  float crack = (1. - smoothstep(.0, .018, abs(rnoise(rp * 1.4) - .5))) * smoothstep(.62, .75, rnoise(rp * .21 + 11.)) * rfade(rp * 1.4);
+  diffuseColor.rgb *= (1. - .16 * patchy) * (1. - .22 * stain) * (1. - .45 * crack);
+#endif`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+  roughnessFactor = clamp(roughnessFactor * (.82 + .3 * rnoise(rp * 2.3)) ${K === 1 ? "- .12 * stain" : ""}, .05, 1.);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  { float h = (rnoise(rp * 40.) * rfade(rp * 40.) + rnoise(rp * 110.) * .5 * rfade(rp * 110.)) * ${K === 1 ? ".0035" : ".0025"}; normal = rBump(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection); }`);
+  };
+  m.customProgramCacheKey = () => 'road-' + K; return m;
+}
 const INTER_TEX = () => canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#2e2f32'; g.fillRect(0, 0, w, h); noise(g, w, h, 26); }, { repeat: true });
 const XWALK_TEX = () => canvasTex(512, 128, (g, w, h) => {
   g.clearRect(0, 0, w, h); const m = w / 16;
@@ -1464,6 +1523,7 @@ function applyTime(name) {
   sun.color.set(T.sunC); sun.intensity = T.sunI;
   hemi.color.set(T.hs); hemi.groundColor.set(T.hg); hemi.intensity = T.hI;
   scene.fog.color.set(T.fog); scene.fog.density = T.fogD;
+  { const c = new THREE.Color(T.sunC), k = name === 'night' ? .08 : name === 'sunset' ? .75 : .45; Object.assign(ATMO.sun, { x: sunDir.x, y: sunDir.y, z: sunDir.z }); Object.assign(ATMO.col, { x: c.r * k, y: c.g * k, z: c.b * k }); FOL.sun.copy(c).multiplyScalar(T.sunI / 3.5); }   // the haze glows with the sun's colour
   renderer.toneMappingExposure = T.exp;
   if (bloomPass) { bloomPass.threshold = T.bloomT; bloomPass.strength = T.bloomS; }
   dynMats.windows.forEach(m => m.emissiveIntensity = T.win);
@@ -1658,7 +1718,7 @@ async function buildWorld() {
 
   // ---- ground
   swTex.repeat.set((HALF * 2 + 80) / 4, (HALF * 2 + 80) / 4);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(HALF * 2 + 80, HALF * 2 + 80), new THREE.MeshStandardMaterial({ map: swTex, roughness: .92 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(HALF * 2 + 80, HALF * 2 + 80), roadLook(new THREE.MeshStandardMaterial({ map: swTex, roughness: .92 }), 'pave'));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground); seasonLook.ground = ground.material;
   const land = new THREE.Mesh(new THREE.PlaneGeometry(26000, 26000), new THREE.MeshStandardMaterial({ color: 0x3b4336, roughness: 1 }));
   land.rotation.x = -Math.PI / 2; land.position.set(0, -.2, -13000 + HALF + 40); scene.add(land); seasonLook.land = land.material;
@@ -1697,9 +1757,9 @@ async function buildWorld() {
     if (i === N / 2 && j === N / 2) continue;
     const x = rc(i), z = rc(j); ig.flat(x - 8, z - 8, x + 8, z + 8, Y_ROAD + .001, [0, 0, 1, 1]);
   }
-  const roadMat = new THREE.MeshStandardMaterial({ map: roadTex, roughness: .82, metalness: .05 });
+  const roadMat = roadLook(new THREE.MeshStandardMaterial({ map: roadTex, roughness: .82, metalness: .05 }));
   const roads = new THREE.Mesh(rg.build(), roadMat); roads.receiveShadow = true; scene.add(roads);
-  const inter = new THREE.Mesh(ig.build(), new THREE.MeshStandardMaterial({ map: interTex, roughness: .82 })); inter.receiveShadow = true; scene.add(inter);
+  const inter = new THREE.Mesh(ig.build(), roadLook(new THREE.MeshStandardMaterial({ map: interTex, roughness: .82 }))); inter.receiveShadow = true; scene.add(inter);
   const xw = new THREE.Mesh(xg.build(), new THREE.MeshStandardMaterial({ map: xwTex, transparent: true, roughness: .7, polygonOffset: true, polygonOffsetFactor: -2 })); xw.receiveShadow = true; scene.add(xw);
   const scr = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), new THREE.MeshStandardMaterial({ map: SCRAMBLE_TEX(), roughness: .8 }));
   scr.rotation.x = -Math.PI / 2; scr.position.set(0, Y_ROAD + .002, 0); scr.receiveShadow = true; scene.add(scr);
@@ -1908,10 +1968,10 @@ async function buildWorld() {
 
   // ---- trees / sakura / vending / antennas
   const trunkGeo = new THREE.CylinderGeometry(.14, .22, 3, 6); trunkGeo.translate(0, 1.5, 0);
-  const crownGeo = new THREE.IcosahedronGeometry(2.2, 1); crownGeo.translate(0, 4.2, 0);
+  const crownGeo = lumpyCrown(2.2); crownGeo.translate(0, 4.2, 0);
   const all = [...trees.map(t => [...t, 0]), ...sakura.map(t => [...t, 1])];
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), all.length);
-  const crown = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ roughness: .85, flatShading: true }), all.length);
+  const crown = new THREE.InstancedMesh(crownGeo, foliageLook(new THREE.MeshStandardMaterial({ roughness: .85 })), all.length);
   const cc = new THREE.Color();
   all.forEach(([x, z, s, sak], k) => {
     trunk.setMatrixAt(k, mat(x, 0, z, rand() * 6, s, s, s)); crown.setMatrixAt(k, mat(x, 0, z, rand() * 6, s * rr(.9, 1.2), s * rr(.8, 1.1), s * rr(.9, 1.2)));
@@ -2039,7 +2099,7 @@ function buildExpressway() {
   const m = new THREE.Mesh(g.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85 })); m.castShadow = m.receiveShadow = true; scene.add(m);
   const s = new THREE.Mesh(side.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .7 })); s.castShadow = true; scene.add(s);
   const topGeo = new THREE.PlaneGeometry(16, x1 - x0); topGeo.rotateX(-Math.PI / 2); topGeo.rotateY(Math.PI / 2);
-  const top = new THREE.Mesh(topGeo, new THREE.MeshStandardMaterial({ map: (() => { const t = ROAD_TEX(); t.repeat.set(1, (x1 - x0) / 16); return t; })(), roughness: .8 }));
+  const top = new THREE.Mesh(topGeo, roadLook(new THREE.MeshStandardMaterial({ map: (() => { const t = ROAD_TEX(); t.repeat.set(1, (x1 - x0) / 16); return t; })(), roughness: .8 })));
   top.position.set(0, y + 1.42, EXPRESS_Z); top.receiveShadow = true; scene.add(top);
   // green highway signs
   const signT = canvasTex(512, 256, (c, W, H) => { c.fillStyle = '#0d6b3a'; c.fillRect(0, 0, W, H); c.strokeStyle = '#fff'; c.lineWidth = 8; c.strokeRect(10, 10, W - 20, H - 20); c.fillStyle = '#fff'; c.font = `900 64px ${JP}`; c.fillText('首都高速', 40, 110); c.font = `700 40px ${OR}`; c.fillText('SHUTO EXPWY  →', 40, 190); });
@@ -6053,7 +6113,7 @@ function buildMountain() {
       if (i % 5 === 0) posts.push(pt(i, sd * (M.w / 2 + M.rail + .05), 0));
     }
   }
-  const roadMat = new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
+  const roadMat = roadLook(new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 })); WX.roads.push(roadMat);
   const rm = new THREE.Mesh(road.build(), roadMat); rm.receiveShadow = true; scene.add(rm);
   const railM = new THREE.Mesh(rail.build(), new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: .8, roughness: .35, side: THREE.DoubleSide })); railM.castShadow = true; scene.add(railM);
   const postGeo = new THREE.BoxGeometry(.12, .85, .12); postGeo.translate(0, .42, 0);
@@ -6357,7 +6417,7 @@ function buildWangan() {
   R.iMouth = iMouth;
   // road, barriers, deck
   const road = new GB(); ribbon(R, road, -12, 12, .06, .06, 0, iMouth + 4, 20);
-  const rm = new THREE.Mesh(road.build(), new THREE.MeshStandardMaterial({ map: HWY_TEX(), roughness: .75, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 })); rm.receiveShadow = true; scene.add(rm); WX.roads.push(rm.material);
+  const rm = new THREE.Mesh(road.build(), roadLook(new THREE.MeshStandardMaterial({ map: HWY_TEX(), roughness: .75, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }))); rm.receiveShadow = true; scene.add(rm); WX.roads.push(rm.material);
   const bar = new GB();
   for (const s of [-1, 1]) { ribbon(R, bar, s * 12, s * 12.25, .06, 1.05, i0, iMouth); ribbon(R, bar, s * 12.25, s * 12.45, 1.05, 1.05, i0, iMouth); ribbon(R, bar, s * 12.45, s * 12.45, 1.05, -2.6, i0, iMouth); }
   ribbon(R, bar, -.35, -.15, .06, .95, i0, iMouth); ribbon(R, bar, -.15, .15, .95, .95, i0, iMouth); ribbon(R, bar, .15, .35, .95, .06, i0, iMouth);
@@ -6532,7 +6592,7 @@ function buildBeachTown() {
     if (S.x0 === S.x1) { const l = S.z1 - S.z0; rg.quad([S.x0 - S.w / 2, .05, S.z0], [S.x0 + S.w / 2, .05, S.z0], [S.x0 + S.w / 2, .05, S.z1], [S.x0 - S.w / 2, .05, S.z1], [0, S.z0 / 16, 1, S.z1 / 16]); }
     else { const pts = [[S.x0, .05, S.z0 + S.w / 2], [S.x0, .05, S.z0 - S.w / 2], [S.x1, .05, S.z0 - S.w / 2], [S.x1, .05, S.z0 + S.w / 2]]; rg.quad(...pts, [0, S.x0 / 16, 1, S.x1 / 16]); }
   }
-  const rmesh = new THREE.Mesh(rg.build(), new THREE.MeshStandardMaterial({ map: roadTex, roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 })); rmesh.receiveShadow = true; scene.add(rmesh);
+  const rmesh = new THREE.Mesh(rg.build(), roadLook(new THREE.MeshStandardMaterial({ map: roadTex, roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }))); rmesh.receiveShadow = true; scene.add(rmesh);
   const onStreet = (x, z, m) => streets.some(S => S.x0 === S.x1 ? Math.abs(x - S.x0) < S.w / 2 + m && z > S.z0 - m && z < S.z1 + m : Math.abs(z - S.z0) < S.w / 2 + m && x > S.x0 - m && x < S.x1 + m);
   // buildings: pastel seaside houses, shops and hotels along the streets (each one solid)
   const tex = TOWN_TEX(), emis = TOWN_EMIS(); tex.repeat.set(1, 1); emis.repeat.set(1, 1);
@@ -6936,7 +6996,7 @@ function buildFujiArea() {
   const road = new GB(), rail = new GB();
   ribbon(R, road, -6, 6, .05, .05, 0, R.n - 1, 16);
   for (const s of [-1, 1]) { ribbon(R, rail, s * 6.15, s * 6.15, .3, .85, 3, iMouth); ribbon(R, rail, s * 6.15, s * 6.35, .85, .85, 3, iMouth); }
-  const roadMat = new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
+  const roadMat = roadLook(new THREE.MeshStandardMaterial({ map: MTN_ROAD_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -2 })); WX.roads.push(roadMat);
   const rm = new THREE.Mesh(road.build(), roadMat); rm.receiveShadow = true; g.add(rm);
   g.add(new THREE.Mesh(rail.build(), new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: .5, metalness: .4, side: THREE.DoubleSide })));
   const lamps = [], pools = [], posts = [];
@@ -6950,7 +7010,7 @@ function buildFujiArea() {
   const streets = [['x', -3480, F.z1 - 10, F.z0 + 20], ['z', -4400, F.x0 + 20, F.x1 - 20], ['z', F.z0 + 30, F.x0 + 20, F.x1 - 20], ['x', F.x0 + 120, -4400, F.z0 + 30]];
   const sg = new GB();
   for (const [a, v, s0, s1] of streets) { const lo = Math.min(s0, s1), hi = Math.max(s0, s1); a === 'x' ? sg.flat(v - 7, lo, v + 7, hi, .05, [0, lo / 16, 1, hi / 16]) : sg.quad([lo, .05, v + 7], [lo, .05, v - 7], [hi, .05, v - 7], [hi, .05, v + 7], [0, lo / 16, 1, hi / 16]); }
-  const sm = new THREE.Mesh(sg.build(), new THREE.MeshStandardMaterial({ map: ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 })); sm.receiveShadow = true; g.add(sm);
+  const sm = new THREE.Mesh(sg.build(), roadLook(new THREE.MeshStandardMaterial({ map: ROAD_TEX(), roughness: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }))); sm.receiveShadow = true; g.add(sm);
   const onStreet = (x, z, m) => streets.some(([a, v, s0, s1]) => a === 'x' ? Math.abs(x - v) < 7 + m && z > Math.min(s0, s1) - m && z < Math.max(s0, s1) + m : Math.abs(z - v) < 7 + m && x > Math.min(s0, s1) - m && x < Math.max(s0, s1) + m);
   // the airstrip for the jet (east of the entrance)
   const rw = new THREE.Mesh(new THREE.PlaneGeometry(260, 40), new THREE.MeshStandardMaterial({ map: TRACK_TEX(), roughness: .8, polygonOffset: true, polygonOffsetFactor: -1 }));
@@ -7712,7 +7772,7 @@ for (const C of COUNTRIES) C.P.air = true;   // free roam: cars can fly off the 
 for (const C of COUNTRIES) { C.P.sea = true; C.P.flat = C.P.rects.map((r, i) => i ? 0 : 40); }   // islands in the sea: a 40 m beach round each town (the desert slopes straight in)
 function buildBridgeRoad(R, P, label) {
   const conc = new THREE.MeshStandardMaterial({ color: 0xb9b7b0, roughness: .85, side: THREE.DoubleSide });
-  const roadMat = new THREE.MeshStandardMaterial({ map: HWY_TEX(), roughness: .75, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }); WX.roads.push(roadMat);
+  const roadMat = roadLook(new THREE.MeshStandardMaterial({ map: HWY_TEX(), roughness: .75, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 })); WX.roads.push(roadMat);
   const iMouth = (() => { for (let i = 0; i < R.n; i++) if (P.inside(R.x[i], R.z[i])) return i; return R.n - 1; })();
   const i0 = (() => { for (let i = 0; i < R.n; i++) if (R.z[i] > HALF + 8) return i; return 0; })();
   P.mouths.push({ x: R.x[iMouth], z: R.z[iMouth], r: R.w / 2 + 3 }); R.iMouth = iMouth;
@@ -7974,20 +8034,74 @@ function stepWreck(c, dt) {
   if (W.rest && Math.random() < dt * 3) dmgSmoke.emit(m.position.x + rr(-1, 1), m.position.z + rr(-1, 1), 0, 0, .5, .4);
   return W.t > 14 && (!player || Math.hypot(m.position.x - player.x, m.position.z - player.z) > 70);   // done: tow it away
 }
+/* ---- living trees: every tree material gets foliage shading. Crowns are lumpy leaf masses (lumpyCrown) instead of
+   faceted balls; in the shader the leaves bunch into clumps (darker gaps, lighter tips, a bumpy surface), the inside and
+   underside of a crown sit in shade, sunlight glows through the leaves when you look towards the sun, and the whole
+   tree sways in the wind (more at the top). Works for the instanced street trees, palms, cypresses and the Blender trees. */
+const FOL = { t: { value: 0 }, sun: new THREE.Color(1, .95, .85) }, FOL_SUN = { value: FOL.sun };
+function lumpyCrown(r, detail = 3) {
+  const g = new THREE.IcosahedronGeometry(r, detail), P = g.attributes.position, v = new THREE.Vector3();
+  const n3 = (x, y, z) => Math.sin(x * 2.1 + Math.sin(y * 1.7)) * Math.cos(z * 1.9 + Math.sin(x * 1.3)) + .5 * Math.sin(x * 4.3 + z * 3.7 + y * 2.9);
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const d = v.clone().normalize(); v.multiplyScalar(1 + .16 * n3(d.x * 2, d.y * 2, d.z * 2) - .12 * Math.max(0, -d.y)); P.setXYZ(i, v.x, v.y, v.z); }
+  g.computeVertexNormals(); return g;
+}
+function foliageLook(m, sway = 1) {
+  if (m.userData.foliage) return m; m.userData.foliage = true; m.flatShading = false;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uFolT = FOL.t; sh.uniforms.uFolSun = FOL_SUN; sh.uniforms.uFolDir = { value: ATMO.sun };
+    sh.vertexShader = 'uniform float uFolT; varying vec3 vFW; varying float vFH;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+  { vec2 o = vec2(0.);
+  #ifdef USE_INSTANCING
+    o = instanceMatrix[3].xz;
+  #endif
+    float ph = o.x * .37 + o.y * .23, h = max(position.y - 1.2, 0.) * ${sway.toFixed(2)};
+    transformed.x += (sin(uFolT * 1.3 + ph) * .05 + sin(uFolT * 3.1 + ph * 1.7 + position.y) * .015) * h;
+    transformed.z += (cos(uFolT * 1.1 + ph * 1.3) * .04 + sin(uFolT * 2.7 + position.x * 2.) * .012) * h; vFH = position.y; }`)
+      .replace('#include <project_vertex>', `#include <project_vertex>
+  { mat4 fm = modelMatrix;
+  #ifdef USE_INSTANCING
+    fm = modelMatrix * instanceMatrix;
+  #endif
+    vFW = (fm * vec4(transformed, 1.)).xyz; }`);
+    sh.fragmentShader = `uniform vec3 uFolSun; uniform vec3 uFolDir; varying vec3 vFW; varying float vFH;
+float fhash(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float fnoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(fhash(i), fhash(i + vec3(1, 0, 0)), f.x), mix(fhash(i + vec3(0, 1, 0)), fhash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(fhash(i + vec3(0, 0, 1)), fhash(i + vec3(1, 0, 1)), f.x), mix(fhash(i + vec3(0, 1, 1)), fhash(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+float fclump(vec3 p) { return fnoise(p * 1.6) * .6 + fnoise(p * 4.5) * .3 + fnoise(p * 11.) * .1; }
+vec3 fBump(vec3 sp, vec3 sn, vec2 dh, float fd) {
+  vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)), r1 = cross(sy, sn), r2 = cross(sn, sx);
+  float det = dot(sx, r1) * fd; return normalize(abs(det) * sn - sign(det) * (dh.x * r1 + dh.y * r2)); }
+` + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  float fc = fclump(vFW), fk = 1. - smoothstep(.4, 1., length(fwidth(vFW * 4.5)));
+  diffuseColor.rgb *= mix(1., mix(.55, 1.25, smoothstep(.28, .78, fc)), .45 + .55 * fk);   // clumps of leaves: dark gaps, light tips
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.08, 1.12, .8), smoothstep(.6, .9, fnoise(vFW * .35)) * .5);   // some trees a little yellower`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  { float h = fclump(vFW) * .12 * fk; normal = fBump(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)), faceDirection); }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+  { vec3 vd = normalize(vFW - cameraPosition); float back = pow(max(dot(vd, uFolDir), 0.), 3.);   // sunlight through the leaves
+    totalEmissiveRadiance += diffuseColor.rgb * uFolSun * back * .55 * smoothstep(.35, .8, fc); }`)
+      .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+  { float wn = (inverseTransformDirection(normal, viewMatrix)).y; float ao = mix(.45, 1., smoothstep(-.6, .7, wn)) * mix(.75, 1., smoothstep(.3, .7, fc));
+    reflectedLight.indirectDiffuse *= ao; reflectedLight.directDiffuse *= mix(.7, 1., ao); }`);
+  };
+  m.customProgramCacheKey = () => 'foliage-' + sway; m.needsUpdate = true; return m;
+}
 function palmTrees(list) {
   const leaves = []; for (let k = 0; k < 8; k++) { const l = new THREE.ConeGeometry(.6, 4.2, 4); l.rotateX(Math.PI / 2); l.scale(1, .18, 1); l.translate(0, 0, 2.1); l.rotateX(.45); l.rotateY(k / 8 * Math.PI * 2); l.translate(1.2, 9, 0); leaves.push(l); }
   const a = instanced(_stdTrunk(), new THREE.MeshStandardMaterial({ color: 0x7a5c3e, roughness: .9 }), list);
-  const b = instanced(mergeGeometries(leaves), new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, flatShading: true, side: THREE.DoubleSide }), list);
+  const b = instanced(mergeGeometries(leaves), foliageLook(new THREE.MeshStandardMaterial({ color: 0x2f7a35, roughness: .8, side: THREE.DoubleSide }), .6), list);
   return regBreakList(list, [a, b], 'palm', .45);
 }
 function roundTrees(list, col) {
   const t = new THREE.CylinderGeometry(.18, .26, 2.6, 6); t.translate(0, 1.3, 0);
   const a = instanced(t, new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 }), list);
-  const b = instanced(new THREE.IcosahedronGeometry(2.2, 0).translate(0, 3.6, 0), new THREE.MeshStandardMaterial({ color: col, roughness: .9, flatShading: true }), list);
+  const b = instanced(lumpyCrown(2.2, 2).translate(0, 3.6, 0), foliageLook(new THREE.MeshStandardMaterial({ color: col, roughness: .9 })), list);
   return regBreakList(list, [a, b], 'tree', .45);
 }
 function cypressTrees(list) {
-  return regBreakList(list, [instanced(new THREE.ConeGeometry(1.1, 11, 8).translate(0, 5.8, 0), new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9, flatShading: true }), list)], 'cypress', .7);
+  return regBreakList(list, [instanced(new THREE.ConeGeometry(1.1, 11, 16, 6).translate(0, 5.8, 0), foliageLook(new THREE.MeshStandardMaterial({ color: 0x1f4a2c, roughness: .9 }), .4), list)], 'cypress', .7);
 }
 function welcomeArch(C, text, col) {
   const mx = C.R.x[C.R.n - 1], g = new THREE.Group(); g.position.set(mx, 0, C.z0 + 30); scene.add(g);
@@ -8416,7 +8530,7 @@ function upgradeTokyo() {
     });
     return mergeGeometries(geos);
   };
-  if (TOKYO.trees && nodes.T_trunk && nodes.T_crown) { TOKYO.trees.trunk.geometry = merged(nodes.T_trunk); TOKYO.trees.crown.geometry = merged(nodes.T_crown); TOKYO.trees.crown.material.flatShading = false; TOKYO.trees.crown.material.needsUpdate = true; }
+  if (TOKYO.trees && nodes.T_trunk && nodes.T_crown) { TOKYO.trees.trunk.geometry = merged(nodes.T_trunk); TOKYO.trees.crown.geometry = merged(nodes.T_crown); TOKYO.trees.crown.material.flatShading = false; TOKYO.trees.crown.material.needsUpdate = true; }   // (its foliage shading stays)
   if (TOKYO.vend && nodes.V_body && nodes.V_glow) { TOKYO.vend.vm.geometry = merged(nodes.V_body, true); TOKYO.vend.vm.material.vertexColors = true; TOKYO.vend.vm.material.needsUpdate = true; TOKYO.vend.vmf.geometry = merged(nodes.V_glow); }
   // the landmarks
   for (const [key, L] of Object.entries(TOKYO.lm)) {
@@ -13106,7 +13220,7 @@ function buildOcean() {
   const m = new THREE.MeshStandardMaterial({ color: 0x1d4f73, roughness: .12, metalness: .55, normalMap: rip, normalScale: new THREE.Vector2(.22, .22), transparent: true, side: THREE.DoubleSide });
   const W = WAVES.map(([dx, dz, a, L]) => { const l = Math.hypot(dx, dz), k = Math.PI * 2 / L; return `w(p, f, vec2(${(dx / l).toFixed(4)}, ${(dz / l).toFixed(4)}), ${a.toFixed(3)}, ${k.toFixed(5)}, ${Math.sqrt(9.8 / k).toFixed(4)}, d, nn);`; }).join('\n    ');
   m.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, SEA.U);
+    Object.assign(sh.uniforms, SEA.U); sh.uniforms.uSeaSun = { value: ATMO.sun }; sh.uniforms.uSeaSunC = FOL_SUN;
     sh.vertexShader = `uniform float uSeaT; uniform vec3 uSeaCam; varying vec3 vSeaW; varying float vSeaH;
 void w(vec2 p, float f, vec2 dir, float a, float k, float c, inout vec3 d, inout vec3 nn) {
   float ph = k * (dot(dir, p) - c * uSeaT), A = a * f, Q = .8;
@@ -13124,13 +13238,20 @@ void w(vec2 p, float f, vec2 dir, float a, float k, float c, inout vec3 d, inout
   #ifdef USE_NORMALMAP
   vNormalMapUv = (normalMapTransform * vec3(vSeaW.xz * .045, 1.)).xy;
   #endif`);
-    sh.fragmentShader = 'uniform float uSeaQuay; uniform vec3 uSeaCam; varying vec3 vSeaW; varying float vSeaH;\n' + sh.fragmentShader
+    sh.fragmentShader = 'uniform float uSeaQuay; uniform vec3 uSeaCam; uniform vec3 uSeaSun; uniform vec3 uSeaSunC; varying vec3 vSeaW; varying float vSeaH;\n' + sh.fragmentShader
       .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n  if (vSeaW.z < uSeaQuay) discard;   // north of the harbour is land')
       .replace('#include <color_fragment>', `#include <color_fragment>
   float seaD = distance(vSeaW.xz, uSeaCam.xz);
   diffuseColor.a *= mix(.6, 1., smoothstep(15., 260., seaD));   // see into the water close by
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.82, .9, .95), smoothstep(.2, .42, vSeaH) * .55);   // white foam on the wave tops`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(roughnessFactor, .42, smoothstep(40., 500., seaD));   // far away: a smooth sheen, no sparkle noise');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(roughnessFactor, .42, smoothstep(40., 500., seaD));   // far away: a smooth sheen, no sparkle noise')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+  { vec3 wn = inverseTransformDirection(normal, viewMatrix), vd = normalize(vSeaW - cameraPosition);
+    float sss = smoothstep(-.1, .35, vSeaH) * pow(max(dot(vd, normalize(uSeaSun * vec3(1., 0., 1.) + vec3(0., .2, 0.))), 0.), 2.) * (1. - smoothstep(60., 600., seaD));
+    totalEmissiveRadiance += vec3(.05, .42, .38) * uSeaSunC * sss * .55;   // the low sun shining through the thin wave tops: turquoise
+    vec3 rd = reflect(vd, wn); float gl = pow(max(dot(rd, uSeaSun), 0.), 900.) * step(.02, uSeaSun.y);
+    totalEmissiveRadiance += uSeaSunC * gl * 6.;   // glitter: tiny bright sparkles where a ripple points the sun at you
+    diffuseColor.rgb = mix(diffuseColor.rgb * vec3(.55, .85, .9), diffuseColor.rgb, smoothstep(.05, .6, -vd.y)); }   // looking along it: deep blue-green; down into it: lighter`);
   };
   const o = new THREE.Mesh(g, m); o.frustumCulled = false; o.position.y = SEA.water;
   o.onBeforeRender = (r, sc, cam) => {   // follow whichever camera is drawing; the waves stay put in the world
