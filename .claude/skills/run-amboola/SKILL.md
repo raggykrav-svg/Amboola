@@ -401,6 +401,19 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - **Tree crowns:** `foliageLook(m, sway, [cy, sy])` blends the normals 80% towards `normalize((p − (0, cy, 0)) × (1, sy, 1))`: Tokyo [4.4, 1.15], `roundTrees` [3.6, 1], cypress [5.8, .25].
 - **Check:** HD captures by day, at sunset and at night, in the street and at the quay (`x 4, z 815`), with no shader errors.
 
+## No hitches while driving
+
+- **Shader warm-up:** `warmUp(delay)` (just after `gScene`) is debounced. It runs `renderer.compileAsync(scene, camera)`, which compiles hidden objects too, then queues every not-yet-seen texture of the scene's materials (`TEX_KEYS`). `warmTick()` (in the drive branch of `tick`) uploads one of them per frame with `renderer.initTexture`.
+  - Called from: boot (1.5 s after `renderer.compile`), every `loadModel` that finishes, each country's `upgradeCity`, `applyTime` (so `setQuality` too), `startDrive` and `preCockpit`.
+- **Constant light count:** three keys every program to the number of visible lights, so a light appearing or vanishing (even a hidden parent) recompiles every material in view.
+  - `cabinFill` is one scene-level PointLight. The cockpit only keeps an anchor `Object3D`, and `updateCockpit` moves the light there and sets its intensity (0 when you're not inside).
+  - `Player.head` (the headlight SpotLight) and its target live in `scene`, not in `car.group`; `headSync()` (from the constructor and `sync`) places them, and `dispose()` removes them. Never parent a light to something that gets hidden.
+- **Pre-built cockpit:** `preCockpit(p)` runs 2.5 s after a `Player` is made (driving only). It loads `int_<key>`, builds the hidden cockpit and calls `warmUp`, so the first press of C doesn't compile its ~85 shaders.
+- **Model loading:** `loadModel` decodes the base64 with `fetch('data:…')` (the old per-byte `Uint8Array.from(atob())` is the fallback). While driving, `loadAllModels` waits 250 ms between models (700 ms on touch) and then for `requestIdleCallback`.
+- **Tokyo LOD:** `updateTokyoLOD` refills only the slots (`s.bs`, a lazily built set of building indices) whose buildings crossed the `TOKYO_NEAR` line. It does a full refill on `force`, the first run or an R change.
+- **Measure:** count `renderer.info.programs.length` before and after each `tick` (new programs = compile hitches), plus `info.memory.textures/geometries`. SwiftShader frame times are useless for this (its JIT stalls at random). For CPU, stub `composer.render` and `renderer.render` and time `tick` (median ≈ 4 ms on desktop). Use a `PerformanceObserver('longtask')` for the first 90 s of a real drive.
+  - Results: starting to drive went from 68 programs to 12; going inside from 88 to 3. The light count stays at 2 in every view.
+
 ## Country towns (Blender)
 
 - **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:

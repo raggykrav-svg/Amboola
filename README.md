@@ -891,6 +891,14 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - **Sea:** clear turquoise water close by, turning deep blue further out. The ripples no longer repeat in a grid, the sun sparkles on them, and when you look towards a low sun the wave tops glow turquoise where the light shines through them.
 - **No glitching:** tree shadows now sway together with the leaves, so the crowns don't flicker. Thin details like road cracks, sea sparkles and ripples fade out smoothly in the distance instead of shimmering.
 
+**Smooth driving 🧈** (no more little freezes while you drive):
+
+- The game gets every building, tree and car ready for the graphics card in the background, a moment after it loads, so nothing has to stop and get ready the first time you drive up to it.
+- Switching to the driver's seat no longer freezes: the cockpit is built quietly a few seconds after you start driving.
+- The lights in the world stay the same when you switch views or hop into the helicopter, so the game never has to redo all its graphics at once.
+- While you drive, the remaining cars load more slowly and in the game's spare moments, and they unpack much faster.
+- Tokyo only updates the buildings that change as you drive past, instead of all of them every 25 m.
+
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 
 ![Before and after the Horizon look](media/horizon-look.jpg)
