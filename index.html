@@ -14793,7 +14793,7 @@ function crimeBump(r) {
    ===================================================================== */
 const WANTED = [0, 10, 20, 40, 50, 60], WANTED_HELI = [0, 0, 0, 0, 1, 2], COP_SHOW = isTouch ? 6 : 12, COP_POOL = [], COP_HELI_POOL = [];
 const COP_SPECS = () => ['corvette', 'mustang'].map(id => CARS.find(c => c.id === id)).filter(Boolean);
-let COP_MATS = null;
+let COP_MATS = null, COP_BEAM_TEX = null;
 function copMats() { return COP_MATS ??= { red: new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue: new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 }),
   base: new THREE.BoxGeometry(1.2, .05, .26), lamp: new THREE.BoxGeometry(.56, .13, .28) }; }
 function buildCopCar(spec, k) {
@@ -14806,8 +14806,9 @@ function buildCopCar(spec, k) {
 function buildCopHeli() {
   const spec = CARS.find(c => c.heli), car = buildHeli(spec, '#14213d'), M = copMats();
   const l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue); l.position.set(-.5, .5, -1.2); r.position.set(.5, .5, -1.2); car.body.add(l, r);
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.35, 7, 1, 20, 1, true).translate(0, -.5, 0),   // the searchlight: a soft cone down to you
-    new THREE.MeshBasicMaterial({ color: 0xfff3d0, transparent: true, opacity: .12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.3, 4.5, 1, 20, 1, true).translate(0, -.5, 0),   // the searchlight: a soft cone down to you
+    new THREE.MeshBasicMaterial({ color: 0xfff3d0, transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false,   // (front faces only: no pale wall when the camera is inside it)
+      alphaMap: COP_BEAM_TEX ??= canvasTex(4, 64, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#fff'); gr.addColorStop(.55, '#555'); gr.addColorStop(1, '#111'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }) }));   // bright at the helicopter, fading towards the ground
   beam.frustumCulled = false; car.beam = beam; return car;
 }
 function copPrewarm() {   // load and build one of each in advance (hidden) and compile their shaders, so the first backup doesn't stutter
@@ -14821,7 +14822,8 @@ function copPrewarm() {   // load and build one of each in advance (hidden) and 
 function spawnCop(c, p) {
   const specs = COP_SPECS(), want = specs[c.police.length % specs.length];
   const i = COP_POOL.findIndex(x => x.copSpec === want), car = i >= 0 ? COP_POOL.splice(i, 1)[0] : buildCopCar(want, c.police.length >> 1);
-  const s = taxiSpot(p.x, p.z, 160, 600), r = new Runner(car.group, { vmax: 50 + c.stars * 3, acc: 11 + c.stars, corner: 15, car });
+  const s = taxiSpot(p.x, p.z, 320, 650), r = new Runner(car.group,   // just out of sight: they drive in
+    { vmax: 50 + c.stars * 3, acc: 11 + c.stars, corner: 15, car });
   r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); r.repath = Math.random() * .5; r.cop = car; c.police.push(r);
 }
 function spawnCopHeli(c, p) {
@@ -14932,7 +14934,7 @@ function updateCrime(dt) {
     for (const s of [...c.safes]) if (Math.hypot(p.x - s.x, p.z - s.z) < 5.5) { collectSafe(s); if (c.cool <= 0) wantedHeat(c, 1); }
     // the wanted level: more police every star (a full pursuit builds up over ~15 s, a few cars at a time)
     c.spawnT -= dt;
-    if (inCity && c.cool <= 0 && c.police.length < WANTED[c.stars] && c.spawnT <= 0) { spawnCop(c, p); c.spawnT = .25; }
+    if (inCity && c.cool <= 0 && !c.evadeT && c.police.length < WANTED[c.stars] && c.spawnT <= 0) { spawnCop(c, p); c.spawnT = .25; }   // (no new backup while you're out of sight)
     while (c.helis.length < WANTED_HELI[c.stars]) spawnCopHeli(c, p);
     let near = false, seen = false; const t = inCity ? snapToRoad(p.x, p.z) : { x: -HALF, z: MTN.gateZ };
     for (const r of c.police) {
