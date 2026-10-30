@@ -85,6 +85,9 @@
   #crimehud small { display:block; font-size:11px; letter-spacing:.25em; color:var(--dim); } #crimehud b { font-family:'Orbitron',sans-serif; font-size:17px; }
   #crimehud .job { text-align:left; min-width:230px; } #crimehud .job b { color:#c77dff; font-size:15px; letter-spacing:.1em; }
   #crimehud .job span { display:block; font-size:14px; letter-spacing:.03em; }
+  #crHeat .st { color:#ffd21f; text-shadow:0 0 10px #ffae00; font-size:22px; letter-spacing:.06em; } #crHeat .st.off { color:#3a3f4a; text-shadow:none; }
+  #crHeat i { display:block; font-style:normal; font-size:12px; letter-spacing:.08em; color:#ff8a8a; }
+  #crimehud.evading #crHeat .st:not(.off) { animation:starBlink .5s steps(2) infinite; } @keyframes starBlink { 50% { opacity:.25; } }
   #crBtn { pointer-events:auto; padding:8px 12px; font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:.12em; color:#fff; background:rgba(199,125,255,.25); border:1px solid #c77dff; cursor:pointer; }
   #crBtn:hover { background:rgba(199,125,255,.5); }
   #crMeter { position:absolute; left:50%; top:74px; transform:translateX(-50%); width:260px; height:10px; background:rgba(0,0,0,.6); border:1px solid #ff3b3b; }
@@ -600,7 +603,7 @@
   <div id="rallyhud" class="hidden"><div><small>DESERT RALLY</small><b id="rlGate">1/10</b></div><div><small>TIME</small><b id="rlTime">0:00</b></div><div><small>BEST</small><b id="rlBest">—</b></div><div><small>NEXT GATE</small><b><span id="rlArrow">▲</span> <span id="rlDist">0 m</span></b></div></div>
   <div id="count"></div>
   <div id="draghud" class="hidden"><div id="dTree"></div><div><small id="dEvent">DRAG</small><b id="dTime">—</b></div><div><small>TO GO</small><b id="dLeft">—</b></div><div><small>VS <span id="dRival"></span></small><b id="dGap">—</b></div></div>
-  <div id="crimehud" class="hidden"><div class="job"><b id="crRole">OUTLAW</b><span id="crInfo">-</span></div><div><small id="crCashL">CARRYING</small><b id="crCash">$0</b></div><div><small id="crBankL">STASHED</small><b id="crBank">$0</b></div><div><small>POLICE</small><b id="crHeat">—</b></div><button id="crBtn">🏠 HIDEOUT ROUTE [G]</button></div>
+  <div id="crimehud" class="hidden"><div class="job"><b id="crRole">OUTLAW</b><span id="crInfo">-</span></div><div><small id="crCashL">CARRYING</small><b id="crCash">$0</b></div><div><small id="crBankL">STASHED</small><b id="crBank">$0</b></div><div class="wanted"><small id="crHeatL">WANTED</small><b id="crHeat">—</b></div><button id="crBtn">🏠 HIDEOUT ROUTE [G]</button></div>
   <div id="crMeter" class="hidden"><div id="crMeterL">BUSTED</div><i></i></div>
   <div id="taxihud" class="hidden"><div class="job"><b id="txTask">-</b><span id="txWhere">-</span></div><div><small>DISTANCE</small><b id="txDist">-</b></div><div><small>TIME</small><b id="txTime">-</b></div><div><small>EARNED</small><b id="txMoney">$0</b></div><div><small>FARES</small><b id="txFares">0</b></div></div>
 </div>
@@ -14747,7 +14750,7 @@ class Runner {
   place(x, z, h) { this.x = x; this.z = z; this.h = h; this.v = 0; this.repath = 0; this.sync(0); }
   update(dt, tx, tz, direct, vmax = this.vmax) {
     this.repath -= dt;
-    if (this.repath <= 0) { this.pts = taxiRoute(this.x, this.z, tx, tz); this.repath = .5; }
+    if (this.repath <= 0) { this.pts = taxiRoute(this.x, this.z, tx, tz); this.repath = this.rp || .5; }
     let k = this.pts.findIndex(([a, b]) => Math.hypot(a - this.x, b - this.z) > 4);
     let aim = direct || k < 0 ? [tx, tz] : this.pts[k];
     const dAim = Math.hypot(aim[0] - this.x, aim[1] - this.z);
@@ -14779,13 +14782,116 @@ function crimeBump(r) {
   if (vn < 0) { player.vx -= 1.3 * vn * nx; player.vz -= 1.3 * vn * nz; r.v *= .5; if (-vn > 3) { audio.crash(-vn * .6); r.stun = .9; } }
   return true;
 }
+/* =====================================================================
+   WANTED LEVEL (outlaw): stars like the big open-world games. Cracking a safe makes you wanted (★), every ~35 s the
+   police keep you in sight adds a star, and ramming their cars adds to it. Each level brings more police:
+   ★ 10 cars · ★★ 20 · ★★★ 40 · ★★★★ 50 + a helicopter · ★★★★★ 60 + 2 helicopters. The patrol cars are Chevrolet
+   Corvettes and Ford Mustangs in black-and-white with light bars. Get out of sight of every car and helicopter for
+   10 s (the stars blink) or reach a hideout and you escape. Escape from five stars: a random car you don't own yet and
+   $1,000,000. Only the nearest patrol cars are drawn in full; the rest are their flashing light bars (one draw call),
+   so even 60 of them keep the game smooth.
+   ===================================================================== */
+const WANTED = [0, 10, 20, 40, 50, 60], WANTED_HELI = [0, 0, 0, 0, 1, 2], COP_SHOW = isTouch ? 6 : 12, COP_POOL = [], COP_HELI_POOL = [];
+const COP_SPECS = () => ['corvette', 'mustang'].map(id => CARS.find(c => c.id === id)).filter(Boolean);
+let COP_MATS = null;
+function copMats() { return COP_MATS ??= { red: new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue: new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 }),
+  base: new THREE.BoxGeometry(1.2, .05, .26), lamp: new THREE.BoxGeometry(.56, .13, .28) }; }
+function buildCopCar(spec, k) {
+  const M = copMats(), car = buildCar(spec, k % 2 ? '#101114' : '#f2f3f5', .3), B = BODIES[spec.body];
+  const bar = new THREE.Group(); bar.position.set(0, (B?.roofY || 1.25) + .07, -.2);
+  const base = new THREE.Mesh(M.base, trafficMats.black), l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue);
+  base.position.y = -.06; l.position.x = -.3; r.position.x = .3; bar.add(base, l, r); car.group.add(bar);
+  car.copSpec = spec; return car;
+}
+function buildCopHeli() {
+  const spec = CARS.find(c => c.heli), car = buildHeli(spec, '#14213d'), M = copMats();
+  const l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue); l.position.set(-.5, .5, -1.2); r.position.set(.5, .5, -1.2); car.body.add(l, r);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.35, 7, 1, 20, 1, true).translate(0, -.5, 0),   // the searchlight: a soft cone down to you
+    new THREE.MeshBasicMaterial({ color: 0xfff3d0, transparent: true, opacity: .12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  beam.frustumCulled = false; car.beam = beam; return car;
+}
+function copPrewarm() {   // load and build one of each in advance (hidden) and compile their shaders, so the first backup doesn't stutter
+  Promise.all(['corvette', 'mustang', 'heli'].map(loadModel)).then(() => {
+    if (crime?.role !== 'outlaw') return;
+    COP_SPECS().forEach((sp, k) => { if (!COP_POOL.some(c => c.copSpec === sp)) { const car = buildCopCar(sp, k); car.group.visible = false; scene.add(car.group); COP_POOL.push(car); } });
+    if (!COP_HELI_POOL.length) { const h = buildCopHeli(); h.group.visible = h.beam.visible = false; scene.add(h.group, h.beam); COP_HELI_POOL.push(h); }
+    warmUp(50);
+  });
+}
+function spawnCop(c, p) {
+  const specs = COP_SPECS(), want = specs[c.police.length % specs.length];
+  const i = COP_POOL.findIndex(x => x.copSpec === want), car = i >= 0 ? COP_POOL.splice(i, 1)[0] : buildCopCar(want, c.police.length >> 1);
+  const s = taxiSpot(p.x, p.z, 160, 600), r = new Runner(car.group, { vmax: 50 + c.stars * 3, acc: 11 + c.stars, corner: 15, car });
+  r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); r.repath = Math.random() * .5; r.cop = car; c.police.push(r);
+}
+function spawnCopHeli(c, p) {
+  const car = COP_HELI_POOL.pop() || buildCopHeli(), a = Math.random() * Math.PI * 2;
+  scene.add(car.group, car.beam); car.group.visible = true;
+  c.helis.push({ car, x: p.x + Math.cos(a) * 450, z: p.z + Math.sin(a) * 450, y: (p.y || 0) + 70, vx: 0, vz: 0, h: 0, orbit: a, k: c.helis.length, d: 450 });
+  toast('🚁 POLICE HELICOPTER', 'IT CAN SEE YOU FROM THE SKY · OUTRUN IT');
+}
+const COP_DOWN = new THREE.Vector3(0, -1, 0), COP_V = new THREE.Vector3();
+function updateCopHeli(H, dt, p) {
+  H.orbit += dt * .35;
+  const R = 36 + H.k * 14, tx = p.x + Math.cos(H.orbit + H.k * Math.PI) * R + p.vx * 1.2, tz = p.z + Math.sin(H.orbit + H.k * Math.PI) * R + p.vz * 1.2;
+  const dx = tx - H.x, dz = tz - H.z, dd = Math.hypot(dx, dz) || 1, sp = Math.min(56, dd * .9);   // tops out at ~200 km/h: a fast car can outrun it
+  H.vx += clamp(dx / dd * sp - H.vx, -20 * dt, 20 * dt); H.vz += clamp(dz / dd * sp - H.vz, -20 * dt, 20 * dt);
+  H.x += H.vx * dt; H.z += H.vz * dt; H.y = damp(H.y, (p.y || 0) + 42 + H.k * 9, 1.2, dt);
+  const v = Math.hypot(H.vx, H.vz); if (v > 2) { let dh = Math.atan2(H.vx, H.vz) - H.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); H.h += dh * Math.min(1, dt * 2); }
+  const c = H.car; c.group.position.set(H.x, H.y, H.z); c.group.rotation.y = H.h; c.body.rotation.x = clamp(v / 56, 0, 1) * .22;
+  if (c.rotor) c.rotor.rotation.y += 30 * dt; if (c.tail) c.tail.rotation.x += 44 * dt;
+  H.d = Math.hypot(p.x - H.x, p.z - H.z);
+  const b = c.beam; b.visible = H.d < 230;
+  if (b.visible) { COP_V.set(p.x - H.x, (p.y || 0) - H.y + 1.5, p.z - H.z); const L = COP_V.length(); b.position.set(H.x, H.y - 1.2, H.z); b.scale.set(1, L, 1); b.quaternion.setFromUnitVectors(COP_DOWN, COP_V.normalize()); }
+}
+function copLOD(c) {   // the nearest patrol cars in full, the rest as flashing light bars; the light bars flash together
+  const M = copMats(), on = (performance.now() / 130 | 0) % 2; M.red.emissiveIntensity = on ? 7 : .4; M.blue.emissiveIntensity = on ? .4 : 7;
+  const order = c.police.slice().sort((a, b) => a.d - b.d), G = c.glow, P = G.geometry.attributes.position, C = G.geometry.attributes.color; let n = 0;
+  order.forEach((r, i) => {
+    const show = i < COP_SHOW && r.d < 500; r.mesh.visible = show;
+    if (!show && n < P.count - 1) { const sx = Math.cos(r.h) * .35, sz = -Math.sin(r.h) * .35;
+      P.setXYZ(n, r.x - sx, 1.45, r.z - sz); C.setXYZ(n++, on ? 1 : .15, 0, 0); P.setXYZ(n, r.x + sx, 1.45, r.z + sz); C.setXYZ(n++, 0, .15, on ? .15 : 1); }
+  });
+  G.geometry.setDrawRange(0, n); P.needsUpdate = C.needsUpdate = true;
+}
+function wantedHeat(c, k) {
+  const before = c.stars; c.heat = Math.min(5.999, c.heat + k); c.stars = Math.min(5, Math.floor(c.heat));
+  if (c.stars > before) {
+    const h = WANTED_HELI[c.stars]; c.evadeT = 0;
+    toast(`${'★'.repeat(c.stars)} WANTED LEVEL ${c.stars}`, `${WANTED[c.stars]} POLICE CARS${h ? ` + ${h === 1 ? 'A HELICOPTER' : '2 HELICOPTERS'}` : ''} ARE CHASING YOU`);
+    audio.beep(520, .12); setTimeout(() => audio.beep(390, .2), 130);
+  }
+}
+function wantedClear(c) {   // the pursuit is over: every patrol car and helicopter goes back to the pool
+  for (const r of c.police) { r.dispose(); if (r.cop) { r.cop.group.visible = true; COP_POOL.push(r.cop); } } c.police = [];
+  for (const H of c.helis) { scene.remove(H.car.group, H.car.beam); COP_HELI_POOL.push(H.car); } c.helis = [];
+  c.stars = 0; c.heat = 0; c.evadeT = 0; if (c.glow) c.glow.geometry.setDrawRange(0, 0); $('crimehud').classList.remove('evading');
+}
+function wantedEscape(c, hideout) {
+  const st = c.stars; wantedClear(c); c.cool = hideout ? 6 : 20;
+  if (st >= 5) return wantedReward();
+  toast(hideout ? 'SAFE AT THE HIDEOUT · 隠れ家' : 'YOU LOST THE POLICE', `${'★'.repeat(st)} ESCAPED · THEY WILL BE BACK IF YOU GRAB MORE MONEY`);
+}
+function wantedReward() {   // escaped from five stars: a random car you don't have yet and a million
+  const left = CARS.filter(c => !wallet.owned.has(c.id) && !c.jet && !c.heli), car = left.length ? pick(left) : null;
+  if (car) { wallet.owned.add(car.id); saveWallet(); buildMenu(); }
+  earn(1000000); bump('escapes5'); musicFanfare(true); audio.beep(880, .2); setTimeout(() => audio.beep(1320, .5), 200);
+  banner('★★★★★ ESCAPED!', car ? `${car.name.toUpperCase()} IS YOURS` : 'YOU OWN EVERY CAR ALREADY', '+$1,000,000 · YOU GOT AWAY FROM 60 POLICE CARS AND 2 HELICOPTERS');
+  toast('★★★★★ YOU ESCAPED!', car ? `NEW CAR: ${car.name.toUpperCase()} + $1,000,000` : '+$1,000,000');
+}
 let crime = null;
 function startCrime(role) {
   endMeetRace(false, true); endActs();
   if (race) endRace(false);
   if (taxi) endTaxi();
   endCrime(true); clearNav(true); buildHideouts();
-  crime = { role, carry: 0, bank: +(localStorage.getItem('amboola.' + role + '.bank') || 0), safes: [], police: [], outlaw: null, meter: 0, showRoute: role === 'police', route: [], routeT: 0, anim: 0, lostT: 0, cool: 0, fleeT: 0 };
+  crime = { role, carry: 0, bank: +(localStorage.getItem('amboola.' + role + '.bank') || 0), safes: [], police: [], outlaw: null, meter: 0, showRoute: role === 'police', route: [], routeT: 0, anim: 0, lostT: 0, cool: 0, fleeT: 0, helis: [], stars: 0, heat: 0, evadeT: 0, spawnT: 0 };
+  if (role === 'outlaw') {
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(130 * 3), 3)); gg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(130 * 3), 3)); gg.setDrawRange(0, 0);
+    crime.glow = new THREE.Points(gg, new THREE.PointsMaterial({ size: 3.2, map: GLOW_TEX(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    crime.glow.frustumCulled = false; scene.add(crime.glow); copPrewarm();
+  }
+  $('crHeatL').textContent = role === 'outlaw' ? 'WANTED' : 'OUTLAW';
   for (let i = 0; i < SAFE_COUNT; i++) crime.safes.push(newSafe());
   crime.arrows = buildRoadArrows();
   if (role === 'police') spawnOutlaw(true);
@@ -14798,7 +14904,7 @@ function startCrime(role) {
 function endCrime(silent) {
   if (!crime) return;
   for (const s of crime.safes) scene.remove(s.mesh);
-  for (const r of crime.police) r.dispose(); if (crime.outlaw) crime.outlaw.dispose();
+  wantedClear(crime); if (crime.outlaw) crime.outlaw.dispose(); if (crime.glow) scene.remove(crime.glow);
   scene.remove(crime.arrows); audio.siren(0);
   if (!silent) toast(crime.role === 'outlaw' ? 'OUTLAW OVER' : 'OFF DUTY', `TOTAL ${fmtUSD(crime.bank)}`);
   crime = null; $('crimehud').classList.add('hidden'); $('crMeter').classList.add('hidden');
@@ -14823,28 +14929,30 @@ function updateCrime(dt) {
   const inCity = p.x > -HALF - 9, pSafe = inHideout(p.x, p.z);
   let routeTo = null, routeCol = '#c77dff';
   if (c.role === 'outlaw') {
-    for (const s of [...c.safes]) if (Math.hypot(p.x - s.x, p.z - s.z) < 5.5) collectSafe(s);
-    // police pressure grows with the cash you carry
-    const want = c.carry > 0 ? Math.min(3, 1 + Math.floor(c.carry / 15000)) : 0;
-    if (c.police.length < want && c.cool <= 0 && inCity) {
-      const s = taxiSpot(p.x, p.z, 220, 420), r = new Runner(buildPoliceCar(), { vmax: 52, acc: 11, corner: 14 });
-      r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); c.police.push(r); c.cool = 4; toast('POLICE · 警察', c.police.length > 1 ? 'BACKUP IS COMING' : 'THEY ARE ON YOUR TAIL · LOSE THEM OR HIDE');
-    }
-    let near = false, far = true;
+    for (const s of [...c.safes]) if (Math.hypot(p.x - s.x, p.z - s.z) < 5.5) { collectSafe(s); if (c.cool <= 0) wantedHeat(c, 1); }
+    // the wanted level: more police every star (a full pursuit builds up over ~15 s, a few cars at a time)
+    c.spawnT -= dt;
+    if (inCity && c.cool <= 0 && c.police.length < WANTED[c.stars] && c.spawnT <= 0) { spawnCop(c, p); c.spawnT = .25; }
+    while (c.helis.length < WANTED_HELI[c.stars]) spawnCopHeli(c, p);
+    let near = false, seen = false; const t = inCity ? snapToRoad(p.x, p.z) : { x: -HALF, z: MTN.gateZ };
     for (const r of c.police) {
-      const d = Math.hypot(p.x - r.x, p.z - r.z);
-      const t = inCity ? snapToRoad(p.x, p.z) : { x: -HALF, z: MTN.gateZ };
-      r.update(dt, inCity && d < 45 ? p.x : t.x, inCity && d < 45 ? p.z : t.z, inCity && d < 45, pSafe ? 16 : r.vmax);
-      if (inCity) crimeBump(r);
-      if (d < 9) near = true; if (d < 450) far = false;
+      const d = r.d = Math.hypot(p.x - r.x, p.z - r.z), close = inCity && d < 45; r.rp = d > 300 ? 1.2 : .5;
+      r.update(dt, close ? p.x : t.x, close ? p.z : t.z, close, pSafe ? 16 : r.vmax);
+      if (inCity && d < 8) { const st = r.stun; if (crimeBump(r) && r.stun > st + .5) wantedHeat(c, .25); }   // ramming a patrol car makes it worse
+      if (d < 9) near = true; if (d < 300) seen = true;
     }
-    c.lostT = c.police.length && far ? c.lostT + dt : 0;
-    if (c.lostT > 8) { c.police.forEach(r => r.dispose()); c.police = []; c.lostT = 0; c.cool = 25; toast('YOU LOST THE POLICE', 'THEY WILL BE BACK IF YOU GRAB MORE MONEY'); }
+    for (const H of c.helis) { updateCopHeli(H, dt, p); if (H.d < 230) seen = true; }
+    if (c.glow) copLOD(c);
+    if (c.stars > 0) {
+      if (seen || (inCity && !c.police.length && !c.helis.length)) { c.evadeT = 0; wantedHeat(c, dt / 35); }
+      else { c.evadeT += dt; if (c.evadeT > 10) wantedEscape(c, false); }
+    }
+    $('crimehud').classList.toggle('evading', c.stars > 0 && c.evadeT > 0);
     // busted meter: police right next to you while you are (almost) stopped
     if (pSafe) c.meter = 0; else c.meter = clamp(c.meter + (near && p.speed < 6 ? dt / 2.2 : -dt / 1.2), 0, 1);
     if (c.meter >= 1) {
       toast('BUSTED · 逮捕', `THE POLICE TOOK ${fmtUSD(c.carry)}`); c.carry = 0; c.meter = 0;
-      c.police.forEach(r => r.dispose()); c.police = []; c.cool = 12; audio.crash(8);
+      wantedClear(c); c.cool = 12; audio.crash(8);
     }
     c.hideT = (c.hideT || 0) - dt; if (!c.hide || c.hideT <= 0) { c.hide = nearestHideout(p.x, p.z); c.hideT = 1; }
     const hide = c.hide;
@@ -14852,12 +14960,14 @@ function updateCrime(dt) {
     if (pSafe && c.carry > 0 && p.speed < 4) {
       c.bank += c.carry; localStorage.setItem('amboola.outlaw.bank', c.bank); skill.bank += Math.round(c.carry * .3); localStorage.setItem('amboola.skill', skill.bank); earn(c.carry); bump('stashed', c.carry);
       toast(`STASHED ${fmtUSD(c.carry)}`, 'SAFE AT THE HIDEOUT · 隠れ家'); audio.beep(880, .15); setTimeout(() => audio.beep(1320, .3), 150);
-      c.carry = 0; c.police.forEach(r => r.dispose()); c.police = []; c.cool = 6; c.showRoute = false;
+      c.carry = 0; c.showRoute = false; if (!c.stars) { c.cool = 6; }
     }
+    if (pSafe && c.stars > 0 && p.speed < 4) wantedEscape(c, true);   // a hideout ends the pursuit
     const nearest = c.police.reduce((m, r) => Math.min(m, Math.hypot(p.x - r.x, p.z - r.z)), 1e9);
     audio.siren(c.police.length ? clamp(1 - nearest / 260, 0, 1) : 0);
-    $('crInfo').textContent = pSafe ? 'SAFE AT A HIDEOUT · no arrests here' : c.carry ? (c.showRoute ? `Hideout: ${hide.n}` : 'Press G for the way to a hideout') : 'Find the green money safes';
-    $('crHeat').textContent = c.police.length ? '🚨'.repeat(c.police.length) : '—';
+    $('crInfo').textContent = pSafe ? 'SAFE AT A HIDEOUT · no arrests here' : c.stars ? (c.evadeT > 0 ? `OUT OF SIGHT · ESCAPING IN ${Math.ceil(10 - c.evadeT)} s` : c.stars >= 5 ? 'ESCAPE = A NEW CAR + $1,000,000!' : 'Lose the police or reach a hideout') : c.carry ? (c.showRoute ? `Hideout: ${hide.n}` : 'Press G for the way to a hideout') : 'Find the green money safes';
+    const hk = `${c.stars}|${c.police.length}|${c.helis.length}`;
+    if (c.hk !== hk) { c.hk = hk; $('crHeat').innerHTML = [1, 2, 3, 4, 5].map(k => `<span class="st${k > c.stars ? ' off' : ''}">★</span>`).join('') + (c.stars ? `<i>🚓 ${c.police.length}${c.helis.length ? ` · 🚁 ${c.helis.length}` : ''}</i>` : ''); }
     $('crCash').textContent = fmtUSD(c.carry);
   } else {
     const o = c.outlaw;
@@ -14913,6 +15023,7 @@ function drawCrimeMap(g) {
   g.fillStyle = '#34d399'; for (const s of crime.safes) g.fillRect(s.x - 10, s.z - 10, 20, 20);
   for (const h of HIDEOUTS) { g.fillStyle = '#c77dff'; g.beginPath(); g.moveTo(h.x, h.z - 22); g.lineTo(h.x + 20, h.z); g.lineTo(h.x + 13, h.z); g.lineTo(h.x + 13, h.z + 16); g.lineTo(h.x - 13, h.z + 16); g.lineTo(h.x - 13, h.z); g.lineTo(h.x - 20, h.z); g.closePath(); g.fill(); }
   for (const r of crime.police) { g.fillStyle = (t * 4 | 0) % 2 ? '#ff2a2a' : '#2a6bff'; g.beginPath(); g.arc(r.x, r.z, 12, 0, 7); g.fill(); }
+  for (const H of crime.helis || []) { g.fillStyle = (t * 4 | 0) % 2 ? '#2a6bff' : '#ffffff'; g.beginPath(); g.arc(H.x, H.z, 18, 0, 7); g.fill(); }
   const o = crime.outlaw; if (o && o.mode !== 'gone') { g.fillStyle = (t * 3 | 0) % 2 ? '#ff2a2a' : '#ffffff'; g.beginPath(); g.arc(o.x, o.z, 15, 0, 7); g.fill(); }
 }
 $('outlawBtn').onclick = ownedOnly(() => { $('menu').classList.add('hidden'); startDrive(); startCrime('outlaw'); });
@@ -15241,7 +15352,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

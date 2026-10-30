@@ -671,8 +671,20 @@ Crash into almost anything except a building and it breaks!
 Pick any car in the garage and press **💰 OUTLAW**, or choose **P → OUTLAW** while driving.
 
 - **Steal:** green money safes are hidden all over the city, with light beams and green squares on the minimap. Drive through one to crack it for ¥3,000–12,000.
-- **The police come for you:** every theft alerts them. Police cars with flashing light bars and sirens chase you through the streets, and more come as you carry more cash (up to 3).
-- **Don't get caught:** if a police car pins you while you're stopped or crawling, the **BUSTED** bar fills and they take everything you're carrying. Get more than 450 m away to lose them.
+- **Wanted stars ★★★★★:** cracking a safe makes you wanted, and the stars at the top of the screen show how badly. Every ~35 s the police keep you in sight adds a star, and ramming their cars makes it worse.
+
+  | Stars | Who's chasing you |
+  |---|---|
+  | ★ | 10 police cars |
+  | ★★ | 20 police cars |
+  | ★★★ | 40 police cars |
+  | ★★★★ | 50 police cars + a police helicopter |
+  | ★★★★★ | 60 police cars + 2 police helicopters |
+
+  The police cars are **Chevrolet Corvette Z06s and Ford Mustang Dark Horses** in black and white, with flashing light bars. The helicopters shine a searchlight on you from the sky.
+- **Escape:** get out of sight of every police car (300 m) and helicopter (230 m) and the stars start to blink. Stay hidden for 10 seconds, or reach a hideout, and you've escaped. The helicopters fly at about 200 km/h, so a fast car can outrun them.
+- **Escape from five stars:** you get **a random car you don't have yet and $1,000,000**.
+- **Don't get caught:** if a police car pins you while you're stopped or crawling, the **BUSTED** bar fills, they take everything you're carrying, and the chase ends.
 - **Take it to a hideout:** press **G** or the **🏠 HIDEOUT ROUTE** button, and purple arrows on the road lead you to the nearest hideout (隠れ家). Stop there to stash the money for good. The police can't arrest you at a hideout.
 
 Your stashed total is saved. **P → END OUTLAW** stops.
