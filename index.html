@@ -938,6 +938,28 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.25, 14000);
 const gScene = new THREE.Scene();
+/* ---- no freezes while driving: a shader compiles the first time something new is drawn, and a texture uploads to the
+   GPU the first time it is used, each a small freeze. warmUp() compiles every shader the world needs in the background
+   (compileAsync uses the browser's parallel shader compiling) a moment after each model or town arrives, and queues the
+   new textures; warmTick() uploads one of them per frame. So by the time you drive up to something, it is ready. */
+let warmT = 0, warmBusy = false; const warmQ = [], warmSeen = new WeakSet();
+const TEX_KEYS = ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'alphaMap', 'bumpMap', 'lightMap', 'clearcoatNormalMap'];
+function warmUp(delay = 400) {
+  clearTimeout(warmT);
+  warmT = setTimeout(async () => {
+    if (warmBusy) return warmUp(800);
+    warmBusy = true;
+    try {
+      await renderer.compileAsync(scene, camera);
+      scene.traverse(o => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+        for (const m of ms) for (const k of TEX_KEYS) { const t = m[k]; if (t?.isTexture && !t.isRenderTargetTexture && !warmSeen.has(t)) { warmSeen.add(t); warmQ.push(t); } } });
+    } catch (e) { }
+    warmBusy = false;
+  }, delay);
+}
+function warmTick() {   // one texture upload a frame
+  while (warmQ.length) { const t = warmQ.pop(); if (t.image && t.version > 0 && !renderer.properties.get(t).__webglInit) { renderer.initTexture(t); return; } }
+}
 const gCamera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 200);
 
 let composer, renderPass, bloomPass, smaaPass, quality = localStorage.getItem('amboola.q') || (isTouch ? 'low' : 'high');
@@ -1485,6 +1507,9 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(9000, 32, 16), skyMat);
 sky.frustumCulled = false; sky.renderOrder = -1;
 scene.add(sky);
 sun = new THREE.DirectionalLight(0xffffff, 3);
+// the cabin's fill light stays in the scene all the time (dark until you sit inside): a light appearing or vanishing
+// changes the light count, and that recompiles every shader in the world (a freeze when you switch to the inside view)
+const cabinFill = new THREE.PointLight(0xfff4ea, 0, 2.8, 2); scene.add(cabinFill);
 sun.castShadow = true; sun.shadow.mapSize.setScalar(2048);
 Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 10, far: 900 });
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.06;
@@ -1518,6 +1543,7 @@ for (let i = 0; i < 40; i++) {
 let envRT = null;
 
 function applyTime(name) {
+  warmUp();
   timeName = name; localStorage.setItem('amboola.t', name);
   const T = TIMES[name];
   skyUniforms.top.value.set(T.top); skyUniforms.horizon.value.set(T.hor); skyUniforms.ground.value.set(T.gnd);
@@ -2454,12 +2480,13 @@ function loadModel(id) {
       try {
         const b64 = window.AMBOOLA_MODELS?.[id]; if (!b64) throw new Error('no data');
         gltfLoader ??= new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/'));
-        const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        let bin; try { bin = await (await fetch('data:application/octet-stream;base64,' + b64)).arrayBuffer(); } catch (e) { bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer; }   // the browser decodes it natively (much faster than a loop)
         const gltf = await Promise.race([gltfLoader.parseAsync(bin, ''), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 20000))]);
         MODELS[id] = gltf.scene; delete window.AMBOOLA_MODELS[id];
         if (id.startsWith('tr_')) trafficModelIn(id);
         if (id === 'city_tokyo' && TOKYO.built) upgradeTokyo();
         if (state === 'garage' && CARS[carIdx]?.id === id) showGarageCar();
+        warmUp();
       } catch (e) { console.warn(`model ${id} not loaded, using the procedural body`, e); }
       res(MODELS[id] || null);
     };
@@ -2471,7 +2498,11 @@ function loadModel(id) {
 // after start-up: your own cars first, then everything else, gently (phones get more breathing room)
 function loadAllModels() {
   const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, 'city_tokyo', ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id) && !INTERIOR_MODELS.includes(id));   // towns load when you get near, cockpits when you sit inside
-  (async () => { for (const id of order) { await loadModel(id); await new Promise(r => setTimeout(r, isTouch ? 150 : 15)); } modelsDone = true; })();
+  (async () => { for (const id of order) {
+    await loadModel(id);
+    const gap = state === 'drive' ? (isTouch ? 700 : 250) : (isTouch ? 150 : 15);   // while you drive: slower, in the browser's idle time
+    await new Promise(r => setTimeout(r, gap)); if (state === 'drive' && window.requestIdleCallback) await new Promise(r => requestIdleCallback(r, { timeout: 1500 }));
+  } modelsDone = true; })();
 }
 const glossBlackMat = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: .16, clearcoat: 1, clearcoatRoughness: .05 });
 const modelMats = {
@@ -3166,12 +3197,13 @@ class Player {
     this.vy = 0; this.air = false; this.ap = 0; this.ar = 0; this.rollG = 0; this.loop = null; this.wreckT = 0; this.airS = null;
     this.surf = 'city'; this.gx = 0; this.gz = 0; this.terrain = null;
     this.head = new THREE.SpotLight(0xfff1dc, 0, 110, .5, .45, 1.4);
-    this.head.position.set(0, .8, 2.2); this.head.target.position.set(0, 0, 25);
-    this.car.group.add(this.head, this.head.target);
+    scene.add(this.head, this.head.target);   // not in the car's group: hiding the car (heli, jet) must not change the light count (that recompiles every shader)
+    this.headSync(); setTimeout(() => preCockpit(this), 2500);
     this.setLights(TIMES[timeName]);
   }
   setLights(T) { this.head.intensity = T.head * 6; this.car.headMat.emissiveIntensity = T.head ? 6 : .6; this.baseTail = T.lamps ? 2.5 : 1.2; }
-  dispose() { scene.remove(this.car.group); }
+  dispose() { scene.remove(this.car.group, this.head, this.head.target); }
+  headSync() { const g = this.car.group; g.updateMatrixWorld(); g.localToWorld(this.head.position.set(0, .8, 2.2)); g.localToWorld(this.head.target.position.set(0, 0, 25)); this.head.target.updateMatrixWorld(); }
   resetToRoad() {
     if (soccer) return soccerReset(this);
     if (swim) return seaRescue(this);
@@ -3344,6 +3376,7 @@ class Player {
       if (w.front) w.pivot.rotation.y = -this.sa * 1.1;
     }
     c.tailMat.emissiveIntensity = this.brake > 0 || this.hb ? 9 : this.baseTail;
+    this.headSync();
   }
 }
 
@@ -4062,7 +4095,7 @@ function buildInterior(car, spec, G, zr, key, IM, hide) {
   if (paint) g.traverse(o => { if (o.isMesh && o.material?.name === 'AmbAccent') { o.material = o.material.clone(); o.material.color.copy(paint); } });
   interiorLook(g);
   interiorCustom(g, spec, [[-.82, .82, -.3, .66], [-.93, -.93, -.24, .6, .55, -.5], [.93, .93, -.24, .6, .55, -.5]]);
-  const fill = new THREE.PointLight(0xfff4ea, 0, 2.8, 2); fill.position.set(0, .14, .42); g.add(fill);   // daylight bouncing round the cabin (see updateCockpit)
+  const fill = new THREE.Object3D(); fill.position.set(0, .14, .42); g.add(fill);   // where cabinFill sits: daylight bouncing round the cabin (see updateCockpit)
   g.visible = false; car.group.add(g);
   if (CAR_ENV.car === car) carEnvApply(car);   // the cockpit's glossy parts mirror the street too
   return { g, E, spin: wheel, q0: wheel?.quaternion.clone(), ang: 0, gauge, style: DIALS[key], hide, on: false, fill };
@@ -4357,15 +4390,20 @@ function buildCockpit(car, spec) {
   g.visible = false; car.group.add(g);
   return { g, E, spin, gauge: { c: gc, x: gc.getContext('2d'), t: gt, key: '', T: 0 }, hide, on: false, seat, proc: true, style: PLAIN_DIALS };
 }
+function preCockpit(p) {   // build the (hidden) cockpit in the background and warm up its shaders, so the first switch to the inside view doesn't stutter
+  if (player !== p || p.car.cockpit || p.spec.jet || state !== 'drive') return;
+  const key = interiorOf(p.spec), go = () => { if (player === p && !p.car.cockpit) { p.car.cockpit = buildCockpit(p.car, p.spec) || { none: true }; warmUp(100); } };
+  if (key && !MODELS['int_' + key]) loadModel('int_' + key).then(go); else go();
+}
 function cockpitView(p, on) {
   const car = p?.car; if (!car) return;
   if (on && !car.cockpit) car.cockpit = buildCockpit(car, p.spec) || { none: true };
   const ck = car.cockpit; if (!ck || ck.none || ck.on === on) return;
-  ck.on = on; ck.g.visible = on; for (const o of ck.hide) o.visible = !on; for (const o of car.frontTrim?.out || []) o.visible = on; if (car.dog) car.dog.visible = !on;
+  ck.on = on; ck.g.visible = on; if (!on) cabinFill.intensity = 0; for (const o of ck.hide) o.visible = !on; for (const o of car.frontTrim?.out || []) o.visible = on; if (car.dog) car.dog.visible = !on;
 }
 function updateCockpit(dt, p) {
-  const ck = p.car.cockpit; if (!ck?.on) return;
-  if (ck.fill) { ck.fill.intensity = hemi.intensity * .45 + sun.intensity * .05; ck.fill.color.copy(hemi.color).lerp(INT_WHITE, .6); }   // follows the time of day and the weather
+  const ck = p.car.cockpit; if (!ck?.on) { cabinFill.intensity = 0; return; }
+  if (ck.fill) { ck.fill.getWorldPosition(cabinFill.position); cabinFill.intensity = hemi.intensity * .45 + sun.intensity * .05; cabinFill.color.copy(hemi.color).lerp(INT_WHITE, .6); } else cabinFill.intensity = 0;   // follows the time of day and the weather
   if (ck.q0) { ck.ang = damp(ck.ang, (p.steer || 0) * 2.3, 14, dt); ck.spin.quaternion.copy(ck.q0).multiply(CK_Q.setFromAxisAngle(CK_Z, ck.ang)); }   // the model's wheel turns about its own axis
   else if (ck.spin) ck.spin.rotation.z = damp(ck.spin.rotation.z, -(p.steer || 0) * 2.3, 14, dt);   // turn right: the wheel turns clockwise (its axis points at you)
   if (ck.f1) { ck.f1.T -= dt; if (ck.f1.T <= 0) { ck.f1.T = .07; drawF1Wheel(ck.f1, p); } return; }
@@ -8562,9 +8600,12 @@ function updateTokyoLOD(force) {
   const cx = camera.position.x, cz = camera.position.z, R = quality === 'low' ? 0 : TOKYO_NEAR * (quality === 'hd' ? 1.6 : 1);
   C.grp.visible = Math.abs(cx) < 7000 && cz > -7000 && cz < 9000;   // far off in the countries Tokyo is not drawn
   if (!C.grp.visible || (!force && C.at && Math.hypot(C.at[0] - cx, C.at[1] - cz) < 25 && C.R === R)) return;
-  C.at = [cx, cz]; C.R = R;
-  TOKYO.b.forEach((B, i) => C.near[i] = Math.hypot(B.x - cx, B.z - cz) < R ? 1 : 0);
+  const full = force || !C.at || C.R !== R; C.at = [cx, cz]; C.R = R;
+  let changed = null;   // only the buildings that crossed the line: refilling (and re-uploading) every slot each time was a regular little hitch
+  TOKYO.b.forEach((B, i) => { const v = Math.hypot(B.x - cx, B.z - cz) < R ? 1 : 0; if (v !== C.near[i]) { C.near[i] = v; (changed ??= new Set()).add(i); } });
+  if (!full && !changed) return;
   for (const s of C.slots) {
+    if (!full) { s.bs ??= new Set(s.list.map(p => p.b)); let hit = false; for (const b of changed) if (s.bs.has(b)) { hit = true; break; } if (!hit) continue; }
     let n = 0;
     for (const p of s.list) {
       if (!C.near[p.b] !== !s.near) continue;
@@ -9098,7 +9139,7 @@ function updateCountryCulling(dt) {
   for (const C of COUNTRIES) {
     for (const g of C.R.chunks || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 7500;
     const d = Math.hypot(C.cx - cx, C.cz - cz); if (C.group) C.group.visible = d < 12000;
-    if (d < 9000 && !C.cityAsked && CITY_CFG[C.id]) { C.cityAsked = true; loadModel('city_' + C.id).then(m => m && upgradeCity(C)); }   // its Blender town
+    if (d < 9000 && !C.cityAsked && CITY_CFG[C.id]) { C.cityAsked = true; loadModel('city_' + C.id).then(m => { if (m) { upgradeCity(C); warmUp(); } }); }   // its Blender town
     if (C.city) for (const g of C.city.trees || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 1300;
     if (C.city) for (const g of C.city.cells) {   // detailed houses near the camera, the plain ones further out
       const dc = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz), lo = g.userData.lo;
@@ -14885,7 +14926,7 @@ $('crBtn').onclick = () => { if (crime) { crime.showRoute = !crime.showRoute; cr
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
 function startDrive() {
-  closeCust();
+  closeCust(); warmUp(60);
   audio.init();
   const spec = CARS[carIdx];
   if (spec.heli) return startHeli(spec);
@@ -15147,7 +15188,7 @@ function tick(dt) {
     if (player.dmgK < .92 && player.speed > 4 && Math.random() < dt * 14) { const B2 = BODIES[player.spec.body]; dmgSmoke.emit(player.x + fx * (B2.L / 2 - .7), player.z + fz * (B2.L / 2 - .7), player.vx, player.vz, .45, (player.y || 0) + .5); }
     smoke.update(dt); spray.update(dt); dust.update(dt); dmgSmoke.update(dt); updateBreak(dt);
     topSpeed = Math.max(topSpeed, player.speed * 3.6);
-    if (foot) footCamera(dt); else updateCamera(dt, player); updateCockpit(dt, player); carReflect();
+    if (foot) footCamera(dt); else updateCamera(dt, player); updateCockpit(dt, player); carReflect(); warmTick();
     // shadows follow player
     const py = player.y || 0; sun.position.set(player.x + sunDir.x * 400, py + sunDir.y * 400, player.z + sunDir.z * 400); sun.target.position.set(player.x, py, player.z);
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
@@ -15192,7 +15233,7 @@ async function boot() {
   buildRain(); buildWetFilm();
   setLoad(.9, 'Opening the garage…'); await nextFrame();
   buildGarage(); buildMenu(); applyTime(timeName);
-  renderer.compile(scene, camera);
+  renderer.compile(scene, camera); warmUp(1500);
   setLoad(1, 'Ready');
   await new Promise(r => setTimeout(r, 250));
   $('loading').classList.add('hidden');
