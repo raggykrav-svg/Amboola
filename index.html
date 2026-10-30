@@ -936,7 +936,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
-const pmrem = new THREE.PMREMGenerator(renderer);
+const pmrem = new THREE.PMREMGenerator(renderer); pmrem.compileCubemapShader();   // (compiled now, not when the first car reflection is ready mid-drive)
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.25, 14000);
