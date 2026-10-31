@@ -438,6 +438,42 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - **HUD:** `#crHeat` holds 5 `.st` spans plus `🚓 n · 🚁 n`, rebuilt only when that changes. `#crimehud.evading` makes the stars blink.
 - **Test:** `window.amboola.wantedHeat(crime, 1)` raises one star. Tick about 90 frames per level; there should be 10/20/40/50/60 cars and 0/0/0/1/2 helicopters, with at most 12 shown. Then move far from them all and tick about 330 frames: `stars` goes to 0, five stars gives +$1,000,000 and one more owned car.
 
+## Parties (Horizon-style festivals)
+
+- **Code:** the `PARTIES` section, just before GAME STATE.
+  - `PARTIES[k]` holds the id, colours, `chal` (flood, yas, fire, hunt or tour), the hero car, the site centre and `ry`. +z in site coordinates points at the stage.
+  - Saved state: `PST = { open, won, tour }` in `amboola.parties`.
+  - `partyCheck()` runs every second while driving. Party 0 opens at $3M; party k opens when k−1 is won and you have $4M. It opens one at a time, with a banner.
+  - `partyWin(k)`: +$4M, `buildPartySite`, `partyPlaces`, a banner, and after 3.2 s `partyGo(k, true)` (only while driving with no race or drag).
+- **Sites:**
+  - Islands and land: each is an area of its own (`AREAS` id `party_<id>`, a 220×200 `Pad` with `air`, a 20 m `Route` stub, `ZONES`), reached by fast travel only. `navRoute`, `setNav`, `travelTo` and `selectPlace` handle `d.party`. The coin hunt skips `A.party` areas, so the coins don't move.
+  - GR: on land at (−6400, −2000), with `ry` π so Fuji is behind the stage. Yas: (13900, 16500). AMBOOLA: (−3600, 3400). World: (4600, 9600). Troodos: built on the summit (`PARTY_SUMMIT`, at `TRO.top`, colliders on the Cyprus pad).
+  - `buildPartySite(k)` follows a layout (`PARTY_ISLAND` or `PARTY_SUMMIT`, in site metres): an arch, the stage (truss, a speaker stack, an animated 512×208 canvas screen and 6 additive light beams), the crowd (5 instanced `PERSON` parts, `crowdDance` with arms up), a turntable with the hero car, the garage (`addAct` ring → `partyGarage` = the pause menu's GARAGE button, so DRIVE puts you back at the party) plus showroom slots, tents, a big wheel, flags and light towers. `siteXf` and `siteCol` turn site coordinates into world coordinates and colliders (`ry` is a multiple of 90°).
+  - `partySiteStep`: the group is hidden beyond 4 km; animation stops beyond 700 m; the crowd moves within 380 m. Hero and showroom cars are built lazily (like the mansion's). Fireworks use their own pool (`PFW`, `pfwBoom`, `pfwStep`).
+- **Challenges:** `pc = { k, kind, t }`, `startPC`, `updatePC`, `endPC(quit)`, `pcWin`, `pcFail`. `busyAct` includes `pc`; `endActs` calls `endPC(true)`. `pcArrows` paints road arrows; `cityPath` uses `taxiRoute`; `troPathTo` follows `TRO.Rd`.
+  - **Flood:** `WX.storm` gives rain alpha .78, daytime lightning, a darker `weatherLook` and 1.6× fog. A muddy water plane over the city rises from −.35 to 1.3 m in 600 s (each open drain slows it by 16%).
+    - `cityWaterY` lifts `navGroundY`, so the arrows float on the water.
+    - The 5 drains sit at crossroads at least 480 m apart (relaxed if needed). Each is a whirlpool, a ring and a beam; it opens within 9 m. With all 5 open the water drops at 0.1 m/s and you win at −.3.
+    - Deep water drags the car (`1 − depth·1.1·dt`) and throws up spray. The 6 Toyota GR cars are at `FLOOD.gr`.
+  - **Yas:** `startRace(T, { solo: true })` has no rivals, 99 laps, `race.t` −1.2, no ghost and no crazy mode, and hides the race HUD.
+    - The 8 cars sit at `T.w/2 + 3.2` off the line, with a blinking roof beacon, a 90 m beam, smoke and a push-out collider. Found within 11 m.
+    - `endRace` cleans up a solo race's `pc`; `yasEnd` calls `endRace(true)`.
+  - **Fire:** travel to Platres, `loadModel('firetruck')`, then switch `carIdx` and call `startDrive` (it keeps the position).
+    - The fires are the 8 houses in `TRO.village` nearest the square, lit at `FIRE.lit` (0, 0, 0, 25 … 125 s). Each burns down after 200 s, which fails the challenge.
+    - In range (24 m + house radius) and off the gas, the truck parks itself (velocity damping) and sprays below 5 m/s, at 14 hp/s.
+    - `fireEnd` puts your own car back.
+  - **Hunt:** the 20 cars with an `amb_` body (not the Golden Tora), at `taxiSpot` pavements at least 110 m apart. At most 4 models are built at once within 260 m, and removed beyond 330 m. Found within 7.5 m.
+  - **Tour:** `tourRaces()` is the 8 `TRACKS`, the non-boss `DRAG_EVENTS`, every country's GP and the World Race (20). `partyRaceResult(key, won)` is called from `finishRace`, `endDragRun`, `endCRace` and `endWorldRace`, and only counts in `PST.tour.car`. `tourGo` switches to the tour car (after `loadModel`) and starts the race.
+- **UI:** `#parties` (styled like `#races`) via `openParties('list' | 'car' | 'tour')`; the 🎉 PARTIES pause button.
+- **Test** (a CPU-only harness: stub `composer.render` and `renderer.render`, tick by hand):
+  1. Set `wallet.usd = 3.2e6` and call `partyCheck()`.
+  2. Flood: `startPC(0)`, teleport onto each drain, then tick until `pc` is null; `PST.won` should be ['gr'].
+  3. Yas: `startPC(1)`, wait out the 1.2 s countdown, then teleport next to each car.
+  4. Fire: `startPC(2)`, wait for the truck, then park on the `TRO.Rd` sample nearest each burning house.
+  5. Hunt: `startPC(3)`, teleport to each car.
+  6. Tour: set `PST.tour` and call `partyRaceResult` for every key.
+  - After each win, wait 3.5 s of real time for `partyGo`.
+
 ## Country towns (Blender)
 
 - **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:

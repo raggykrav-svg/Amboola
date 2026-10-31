@@ -666,6 +666,28 @@ Crash into almost anything except a building and it breaks!
   - **TRAVEL HERE:** fast travel. You appear there straight away.
   - **🏁 RACE** (for tracks): starts that race.
 
+## 🎉 Parties
+
+![The AMBOOLA party in Tokyo Bay, the GAZOO Racing party under Mt. Fuji, the Troodos party on the summit, the Tokyo flood, a broken car on Yas Marina and a hidden AMBOOLA car](media/parties.jpg)
+
+Five festivals, like the Horizon Festival in Forza Horizon 5:
+- **When they open:** the first one opens by itself when you have **$3,000,000**. Each next one opens when you've won the one before and have **$4,000,000**.
+- **How you win one:** each party starts with a challenge. Win it and the party is yours:
+  - **$4,000,000**
+  - **The festival:** a stage with a big screen and a light show, fireworks, a dancing crowd, flags, food tents, a big wheel and the party's hero car on a turntable.
+  - **Your own garage there**, with all your cars: stop in its ring to change car, and you drive out at the party. Your best cars stand on show in front.
+- **Finding them:** open **P → 🎉 PARTIES** to start a challenge or go to a party. Parties you own are on the map too: search for them and press **TRAVEL HERE**.
+
+| Party | Where | The challenge |
+|---|---|---|
+| 🏁 **GAZOO Racing Party** | Under Mt. Fuji | **The Great Tokyo Flood.** The biggest storm ever floods Tokyo and the water keeps rising. Follow the blue arrows to the **5 giant drains** and drive into each one to open it. You have 10 minutes, or Tokyo becomes a sea and the **Toyota GAZOO Racing** cars parked by the road drown. |
+| 🏎️ **Dubai Yas Marina Party** | An island by the Yas Marina Circuit | **Yas Marina Rescue.** 8 cars have broken down round the circuit, smoking, with orange lights and beams. Drive the track and find all 8. |
+| ⛰️ **Troodos Uphill Party** | On top of the Troodos mountain | **Platres Is Burning.** You get the **AMBOOLA Fire Engine**. Houses in Platres catch fire one after another: follow the red arrows, let go of the gas next to a burning house, and the roof cannon sprays it out. Save all 8 houses within 10 minutes, and don't let any of them burn down. |
+| 💖 **Tokyo AMBOOLA Party** | An island in Tokyo Bay | **Find the AMBOOLA Cars.** All 20 AMBOOLA Sport cars are hidden on Tokyo's streets under pink beams. Follow the pink arrows and find every one. |
+| 🌍 **All World Party** | An island between the sea bridges | **The World Tour.** Pick one car, then win **1st place in every race** with it: all 8 circuits, the quarter- and half-mile drag races, every country's Grand Prix and the World Race (20 races). |
+
+![The PARTIES menu](media/parties-menu.jpg)
+
 ## Outlaw
 
 Pick any car in the garage and press **💰 OUTLAW**, or choose **P → OUTLAW** while driving.
