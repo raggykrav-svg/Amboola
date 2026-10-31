@@ -959,6 +959,14 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - While you drive, the remaining cars load more slowly and in the game's spare moments, and they unpack much faster.
 - Tokyo only updates the buildings that change as you drive past, instead of all of them every 25 m.
 
+**More realistic cars 🏎️** (like Forza Horizon 5):
+
+![A car in the street, and its printed tyre and darker sills up close at speed](media/cars-real.jpg)
+
+- **Grounded:** the lower body (sills, the bottom of the bumpers) catches less sky light and fewer reflections, just as a real car does next to the road, so cars sit on the road instead of floating over it.
+- **Real tyres:** the brand name is printed round the sidewall (AMBOOLA · P ZERO · 275/35 ZR20), the sidewall rubber has a satin sheen, and the tread is matt.
+- **Spinning wheels blur:** as the wheels spin faster the spokes melt into a smooth spinning disc, like in a photo of a fast car.
+
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 
 ![Before and after the Horizon look](media/horizon-look.jpg)

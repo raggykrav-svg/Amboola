@@ -480,6 +480,13 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
   6. Tour: set `PST.tour` and call `partyRaceResult` for every key.
   - After each win, wait 3.5 s of real time for `partyGo`.
 
+## Realistic car materials
+
+- **Paint (`paintShine`):** `uCarY` (per material, `this.userData.carY`; the player's is set in `Player.sync` to `this.y`). `carAO = mix(.42, 1, smoothstep(.04, .7, worldY − uCarY))` scales indirect diffuse ×carAO, indirect specular ×mix(.55, 1, carAO) and clearcoat indirect ×mix(.5, 1, carAO). Other cars keep `uCarY` 0, so a car higher up just gets no shade.
+- **Tyres (`tyreMat(R, RR)`):** one material per tyre size, and the old `TireLetter` blocks are hidden. In mesh space the axle is x. `TYRE_TEX` (2048×96 canvas) is polar-mapped onto a band of ±0.2·(R − RR) round the middle of the sidewall, mirrored by `sign(x)` so it reads from outside. Roughness is .62 on the sidewall and .95 on the tread.
+  - Guards: `length(vTyN)` and `atan(z, y + 1e-6)`. A NaN here gets into `CAR_ENV`'s cube map through other cars, and then bloom turns the whole frame black. To check for it, read pixels with and without the env map.
+- **Wheel blur (`wheelBlur`):** on desktop only. A `CircleGeometry(0.7·R)` disc with `BLUR_TEX` on each pivot's outer face. Its `onBeforeRender` measures the spin rate from `spin.rotation.z` against `simTime` (game seconds, added up in `tick`) and fades opacity to `clamp((ω − 14)/40, 0, .8)`.
+
 ## Country towns (Blender)
 
 - **Build:** `blender -b --factory-startup --python models/blender/cities.py -- --city <id>|all [--render DIR]`. It writes `models/city_<id>.glb(.js)`. `--render` makes `<id>-street.png` and `<id>-landmarks.png` test renders. Each country lives in `models/blender/city_<id>.py` (`build()`). The shared kit is `citykit.py`:
