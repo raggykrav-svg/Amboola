@@ -2550,8 +2550,8 @@ function wheelBlur(pivot, spin, w, rimCol) {   // a see-through disc over the sp
   const R = _bv.y / 2, rim = R * .7, wid = Math.min(_bv.x, _bv.z), side = Math.sign(pivot.position.z) || 1;
   const m = new THREE.MeshStandardMaterial({ map: BLUR_TEX, color: rimCol, metalness: .75, roughness: .35, transparent: true, opacity: 0, depthWrite: false });
   const d = new THREE.Mesh(new THREE.CircleGeometry(rim, 40), m); d.position.z = side * (wid / 2 - .015); if (side < 0) d.rotation.y = Math.PI;
-  let last = spin.rotation.z, t0 = performance.now();
-  d.onBeforeRender = () => { const t = performance.now(), dt = (t - t0) / 1000; if (dt > .004) { const om = Math.abs(spin.rotation.z - last) / dt; last = spin.rotation.z; t0 = t; m.opacity = damp(m.opacity, clamp((om - 14) / 40, 0, .8), 8, Math.min(dt, .1)); } };
+  let last = spin.rotation.z, t0 = simTime;
+  d.onBeforeRender = () => { const t = simTime, dt = t - t0; if (dt > .004) { const om = Math.abs(spin.rotation.z - last) / dt; last = spin.rotation.z; t0 = t; m.opacity = damp(m.opacity, clamp((om - 14) / 40, 0, .8), 8, Math.min(dt, .1)); } };
   d.renderOrder = 2; pivot.add(d);
 }
 function buildModelCar(spec, src, paint) {
@@ -16007,7 +16007,9 @@ function frame() {
   if (window.__manualFrames) { clock.getDelta(); return; }
   tick(Math.min(clock.getDelta(), 1 / 20));
 }
+let simTime = 0;   // game seconds (the wheel blur measures spin against it)
 function tick(dt) {
+  simTime += dt;
   if (player?.car?.cockpit?.on && !['drive', 'pause', 'overlay', 'map'].includes(state)) cockpitView(player, false);
   updateSpotify();
   if (state === 'ad') { updateAd(dt); return; }
