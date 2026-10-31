@@ -2517,6 +2517,43 @@ const modelMats = {
   lip: new THREE.MeshStandardMaterial({ color: 0xc9ccd0, roughness: .2, metalness: 1, side: THREE.DoubleSide }),
   ti: new THREE.MeshStandardMaterial({ color: 0x8a8079, roughness: .3, metalness: 1, side: THREE.DoubleSide }),
 };
+// tyres: printed sidewall lettering (polar-mapped from a canvas) and a satin sidewall, a matt tread; one material per tyre size
+const TYRE_TEX = (() => { let t; return () => t ??= canvasTex(2048, 96, (c, w, h) => {
+  c.clearRect(0, 0, w, h); c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  for (const [x, txt, sz] of [[.11, 'AMBOOLA', 64], [.3, 'P ZERO', 50], [.42, '275/35 ZR20', 34], [.61, 'AMBOOLA', 64], [.8, 'P ZERO', 50], [.92, '275/35 ZR20', 34]]) { c.font = `900 ${sz}px ${OR}`; c.fillText(txt, x * w, h / 2 + 2); }
+}); })();
+const tyreMats = new Map();
+function tyreMat(R, RR) {
+  const key = R.toFixed(2) + '/' + RR.toFixed(2); if (tyreMats.has(key)) return tyreMats.get(key);
+  const m = new THREE.MeshStandardMaterial({ color: 0x1b1c1e, roughness: .9, side: THREE.DoubleSide });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uTyre = { value: TYRE_TEX() }; sh.uniforms.uR = { value: new THREE.Vector2(R, RR) };
+    sh.vertexShader = 'varying vec3 vTyP; varying vec3 vTyN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vTyP = position; vTyN = normal;');
+    sh.fragmentShader = 'uniform sampler2D uTyre; uniform vec2 uR; varying vec3 vTyP; varying vec3 vTyN;\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  float tyR = length(vTyP.yz), tySide = smoothstep(.5, .8, abs(normalize(vTyN).x)), tyMid = (uR.x + uR.y) * .5, tyH = (uR.x - uR.y) * .2;
+  float tyA = atan(vTyP.z, vTyP.y) * sign(vTyP.x + 1e-5) / 6.2832 + .5, tyV = (tyR - (tyMid - tyH)) / (2. * tyH);
+  float tyText = tyV > 0. && tyV < 1. ? texture2D(uTyre, vec2(tyA, tyV)).a * tySide : 0.;
+  diffuseColor.rgb = mix(diffuseColor.rgb * mix(1., 1.25, tySide), vec3(.55), tyText * .85);`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(.95, .62, tySide);   // a satin sidewall, a matt tread');
+  };
+  m.customProgramCacheKey = () => 'tyre'; tyreMats.set(key, m); return m;
+}
+const BLUR_TEX = canvasTex(128, 128, (c, w, h) => {   // a spinning rim seen in a photo: smooth rings, a bright lip, a dark hub
+  const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+  g.addColorStop(0, '#2a2b2e'); g.addColorStop(.18, '#9a9ea4'); g.addColorStop(.3, '#55585d'); g.addColorStop(.62, '#8c9096'); g.addColorStop(.86, '#5d6066'); g.addColorStop(.93, '#c9ccd1'); g.addColorStop(1, '#3a3c40');
+  c.fillStyle = g; c.beginPath(); c.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2); c.fill();
+});
+const _bq = new THREE.Box3(), _bv = new THREE.Vector3();
+function wheelBlur(pivot, spin, w, rimCol) {   // a see-through disc over the spokes that shows as the wheel spins faster
+  _bq.setFromObject(w); _bq.getSize(_bv); if (!isFinite(_bv.y) || _bv.y < .2) return;
+  const R = _bv.y / 2, rim = R * .7, wid = Math.min(_bv.x, _bv.z), side = Math.sign(pivot.position.z) || 1;
+  const m = new THREE.MeshStandardMaterial({ map: BLUR_TEX, color: rimCol, metalness: .75, roughness: .35, transparent: true, opacity: 0, depthWrite: false });
+  const d = new THREE.Mesh(new THREE.CircleGeometry(rim, 40), m); d.position.z = side * (wid / 2 - .015); if (side < 0) d.rotation.y = Math.PI;
+  let last = spin.rotation.z, t0 = performance.now();
+  d.onBeforeRender = () => { const t = performance.now(), dt = (t - t0) / 1000; if (dt > .004) { const om = Math.abs(spin.rotation.z - last) / dt; last = spin.rotation.z; t0 = t; m.opacity = damp(m.opacity, clamp((om - 14) / 40, 0, .8), 8, Math.min(dt, .1)); } };
+  d.renderOrder = 2; pivot.add(d);
+}
 function buildModelCar(spec, src, paint) {
   const B = BODIES[spec.body];
   const group = new THREE.Group(); const orient = new THREE.Group(); orient.rotation.y = -Math.PI / 2; group.add(orient);
@@ -2541,7 +2578,11 @@ function buildModelCar(spec, src, paint) {
     if (!m) { body.add(toProfile(dress(node))); continue; }
     const hub = node.position, pivot = new THREE.Group(), spin = new THREE.Group(); pivot.add(spin);
     pivot.position.set(hub.z, hub.y, -hub.x);
-    const w = dress(node); w.position.set(0, 0, 0); spin.add(toProfile(w));
+    const w = dress(node); w.position.set(0, 0, 0);
+    { let tyre = null, R = 0, RR = 1e9; w.traverse(o => { if (o.isMesh && o.material === modelMats.tire) tyre = o; if (o.isMesh && o.material?.name === 'TireLetter') o.visible = false; });   // the printed lettering replaces the old blocks
+      if (tyre) { const P = tyre.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const r = Math.hypot(P.getY(i), P.getZ(i)); if (r > R) R = r; if (r < RR) RR = r; } tyre.material = tyreMat(R, RR); } }
+    spin.add(toProfile(w));
+    if (!isTouch) wheelBlur(pivot, spin, w, spec.rim);
     const cal = src.getObjectByName(`Caliper_${m[1]}${m[2]}`);
     if (cal) { const c = dress(cal); c.position.set(0, 0, 0); pivot.add(toProfile(c)); }
     orient.add(pivot); wheels.push({ pivot, spin, front: m[1] === 'F', R: hub.y });
@@ -2556,15 +2597,19 @@ function buildModelCar(spec, src, paint) {
 // (the flakes tilt only the base coat, the clear coat on top stays perfectly smooth)
 const SHINE = { ind: { value: 1.75 }, dir: { value: 1.6 }, flake: { value: .09 } };
 function paintShine(sh) {
-  sh.uniforms.uShineInd = SHINE.ind; sh.uniforms.uShineDir = SHINE.dir; sh.uniforms.uFlake = SHINE.flake;
-  sh.vertexShader = 'varying vec3 vFlakeP;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vFlakeP = position;');
-  sh.fragmentShader = 'uniform float uShineInd, uShineDir, uFlake;\nvarying vec3 vFlakeP;\n' + sh.fragmentShader
+  sh.uniforms.uShineInd = SHINE.ind; sh.uniforms.uShineDir = SHINE.dir; sh.uniforms.uFlake = SHINE.flake; sh.uniforms.uCarY = this.userData.carY ??= { value: 0 };
+  sh.vertexShader = 'varying vec3 vFlakeP; varying float vCarH;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vFlakeP = position;')
+    .replace('#include <project_vertex>', '#include <project_vertex>\n  vCarH = (modelMatrix * vec4(transformed, 1.)).y;');
+  sh.fragmentShader = 'uniform float uShineInd, uShineDir, uFlake, uCarY;\nvarying vec3 vFlakeP; varying float vCarH;\n' + sh.fragmentShader
+    .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+  float carAO = mix(.42, 1., smoothstep(.04, .7, vCarH - uCarY));   // near the road the body sees less sky: the sills and the lower bumper sit in shade
+  reflectedLight.indirectDiffuse *= carAO; reflectedLight.indirectSpecular *= mix(.55, 1., carAO);`)
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
   { vec3 fq = vFlakeP * 70., fp = floor(fq);
     vec3 fr = fract(sin(vec3(dot(fp, vec3(127.1, 311.7, 74.7)), dot(fp, vec3(269.5, 183.3, 246.1)), dot(fp, vec3(113.5, 271.9, 124.6)))) * 43758.5453) - .5;
     float fade = 1. - smoothstep(.25, .8, length(fwidth(fq)));   // flakes smaller than a pixel would only be noise: fade them out
     normal = normalize(normal + fr * uFlake * metalnessFactor * fade); }`)
-    .replace('( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat', '( clearcoatSpecularDirect * uShineDir + clearcoatSpecularIndirect * uShineInd ) * material.clearcoat');
+    .replace('( clearcoatSpecularDirect + clearcoatSpecularIndirect ) * material.clearcoat', '( clearcoatSpecularDirect * uShineDir + clearcoatSpecularIndirect * uShineInd * mix(.5, 1., carAO) ) * material.clearcoat');
 }
 function shinyPaint(m) { m.onBeforeCompile = paintShine; m.customProgramCacheKey = () => 'paint-shine'; return m; }
 function buildCar(spec, paintHex, metal = .4, rough) {
@@ -3381,6 +3426,7 @@ class Player {
       w.spin.rotation.z -= rate * dt;
       if (w.front) w.pivot.rotation.y = -this.sa * 1.1;
     }
+    if (c.paint?.userData.carY) c.paint.userData.carY.value = this.y || 0;   // (the paint's ground shade follows the road height)
     c.tailMat.emissiveIntensity = this.brake > 0 || this.hb ? 9 : this.baseTail;
     this.headSync();
   }
