@@ -464,6 +464,12 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
     - `fireEnd` puts your own car back.
   - **Hunt:** the 20 cars with an `amb_` body (not the Golden Tora), at `taxiSpot` pavements at least 110 m apart. At most 4 models are built at once within 260 m, and removed beyond 330 m. Found within 7.5 m.
   - **Tour:** `tourRaces()` is the 8 `TRACKS`, the non-boss `DRAG_EVENTS`, every country's GP and the World Race (20). `partyRaceResult(key, won)` is called from `finishRace`, `endDragRun`, `endCRace` and `endWorldRace`, and only counts in `PST.tour.car`. `tourGo` switches to the tour car (after `loadModel`) and starts the race.
+- **Music:**
+  - `PARTY_SONG` (gr → gazoo, yas → yasnight, tro → olympos, amb → amboparty, world → worldparty) are `SONGS` entries in the race-song format.
+  - `raceSong()` falls back to `partyNear()`: the nearest built site within `PARTY_HEAR` (300 m; height counts half), returning `{ id, live: true, o: site, near: d }`.
+  - `updateMusic` sets the gain to `.2 · clamp((300 − d)/130, 0, 1)` and only touches it when the value moves by more than .008 (`music.gv`). So a race song is .2, and a party is full volume within 170 m.
+  - The radio rests while `music.id` is set. Spotify mode plays `SCORP_RACE[song]`.
+  - Test with Chromium `--autoplay-policy=no-user-gesture-required`: count `ctx.createOscillator` calls, read `music.id` / `music.gv` and `#radiohud` at each party, then at 200, 260 and 420 m away.
 - **UI:** `#parties` (styled like `#races`) via `openParties('list' | 'car' | 'tour')`; the 🎉 PARTIES pause button.
 - **Test** (a CPU-only harness: stub `composer.render` and `renderer.render`, tick by hand):
   1. Set `wallet.usd = 3.2e6` and call `partyCheck()`.

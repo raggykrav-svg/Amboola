@@ -12411,10 +12411,22 @@ const SONGS = {
     mel: '5 _ 3 4 5 _ +1 _ | 7 _ 6 5 3 _ 5 _ | 6 _ 4 5 6 _ +2 _ | +1 _ 7 6 5 _ . . | 5 _ 7 +2 +3 _ +2 7 | +1 _ 6 5 3 _ 6 _ | 4 _ 6 +1 +2 _ +1 6 | 5 _ 7 _ +2 _ . .' },
   london: { n: 'DOUBLE-DECKER POP', bpm: 140, key: 57, prog: '1 4 6 5 1 4 5 5', drums: 'rock', bass: 'pump', chords: 'stabs', lead: 'square',
     mel: '5 5 6 5 3 _ 1 _ | 4 4 6 4 +1 _ 6 _ | 6 _ 5 _ 3 _ 1 _ | 2 _ 3 _ 5 _ . . | +1 _ 7 _ 6 5 3 5 | 6 _ +1 _ +2 _ +1 6 | 5 _ 7 _ +2 _ +1 7 | +1 _ _ _ . . . .' },
+  // the parties' own songs (PARTY_SONG), playing while you're at a festival
+  gazoo: { n: 'GAZOO RACING ANTHEM', bpm: 150, key: 50, prog: '1 5 6 4 1 5 4 5', drums: 'four', bass: 'octave', chords: 'arp16', lead: 'saw',
+    mel: '1 _ 3 5 +1 _ 7 _ | 7 _ 5 7 +2 _ +1 7 | 6 _ +1 _ +3 _ +2 +1 | 6 _ 4 6 +1 _ 7 6 | 5 _ +1 _ +3 _ +5 _ | +5 _ +4 +3 +2 _ 7 _ | +1 _ 6 _ +1 +2 +3 +4 | +5 _ _ _ +2 _ 7 _' },
+  yasnight: { n: 'YAS MARINA NIGHTS', bpm: 124, key: 50, prog: '1 b7 b6 b7 1 b7 b6 5', drums: 'house', bass: 'sub', chords: 'pad', lead: 'pluck',
+    mel: '1 2b 3 _ 5 _ 4 3 | 2b _ 1 _ 7b _ 1 _ | 3 _ 4 5 6b _ 5 4 | 3 _ 2b _ 1 _ . . | 5 _ 6b 5 3 _ 5 _ | 6b _ 7b _ +1 _ 7b 6b | 5 4 3 2b 1 _ 2b 3 | 1 _ _ _ . 5 3 2b' },
+  olympos: { n: 'OLYMPOS SUMMIT DANCE', bpm: 144, key: 50, prog: '6 6 2 3 6 2 3 6', drums: 'polka', bass: 'polka', chords: 'oompah', lead: 'mandolin',
+    mel: '6 _ 7 +1 +2 _ +1 7 | 6 _ 7 +1 7 _ 6 5 | 4 _ 5 6 7 _ 6 5 | 3 _ 4 5 6 _ . . | +3 _ +2 +1 7 _ +1 +2 | +3 _ +2 +1 7 _ 6 _ | 5 _ 6 7 +1 _ 7 6 | 6 _ _ _ 3 _ 6 _' },
+  amboparty: { n: 'AMBOOLA PARTY', bpm: 136, key: 53, prog: '4 5 3 6 2 5 1 1', drums: 'four', bass: 'octave', chords: 'arp16', lead: 'square',
+    mel: '6 _ 5 _ 6 +1 _ 6 | 7 _ 6 _ 5 _ 3 _ | 5 _ 3 5 7 _ 6 5 | 6 _ _ _ +1 _ +2 _ | +3 _ +2 _ +1 _ 6 _ | 7 _ +1 _ +2 _ 5 _ | +1 _ 7 _ +1 _ +2 +3 | +1 _ _ _ . 5 6 7' },
+  worldparty: { n: 'WORLD FESTIVAL', bpm: 128, key: 48, prog: '6 4 1 5 6 4 1 5', drums: 'four', bass: 'octave', chords: 'pad', lead: 'saw',
+    mel: '3 _ 3 _ 3 _ 2 3 | 4 _ 4 _ 4 _ 3 4 | 5 _ 5 _ 5 _ 6 5 | 5 _ _ _ 2 _ 3 _ | 6 _ 6 _ +1 _ 6 5 | 4 _ 4 _ +1 _ 6 4 | 5 _ +1 _ +3 _ +2 +1 | +2 _ _ _ 7 _ 5 _' },
   polka: { n: 'SNOWY POLKA', bpm: 150, key: 53, prog: '1 5 5 1 1 5 5 1', drums: 'polka', bass: 'polka', chords: 'oompah', lead: 'accordion',
     mel: '5 3 5 3 +1 _ 5 _ | 4 2 4 2 7 _ 5 _ | 5 4 3 2 -7 _ 2 _ | 1 _ 3 _ 1 _ . . | 3 4 5 6 +1 _ 6 _ | 5 _ 4 _ 2 _ 7 _ | +2 _ +1 7 5 _ 4 _ | 3 _ 1 _ 1 _ . .' },
 };
 const TRACK_SONG = { gp: 'sunshine', fujimi: 'fujistar', oval: 'boogie', akagi: 'akagi', kanto: 'pixel', sakura: 'sakura' };
+const PARTY_SONG = { gr: 'gazoo', yas: 'yasnight', tro: 'olympos', amb: 'amboparty', world: 'worldparty' };
 const COUNTRY_SONG = { cyprus: 'island', italy: 'ciao', dubai: 'desert', paris: 'cafe', newyork: 'boogie', alps: 'polka', london: 'london', egypt: 'desert', southafrica: 'jungle' };
 const SCALE = [0, 2, 4, 5, 7, 9, 11];
 function degNote(tok, key) {   // '3' → the 3rd step of the scale an octave above the key note; '+1', '-7', '6b', '4#'
@@ -12553,6 +12565,7 @@ function raceSong() {   // which song is on: the race you are in (o), and whethe
   if (lantern) return { id: 'matsuri', live: lantern.t >= 0, o: lantern };
   if (rally?.state === 'run') return { id: 'desert', live: true, o: rally };
   if (build.mode === 'drive' && build.run) return { id: 'pixel', live: true, o: build.run };
+  { const q = partyNear(); if (q) return { id: PARTY_SONG[q.S.P.id] || 'worldparty', live: true, o: q.S, near: q.d }; }   // at a party: the festival's own song
   return null;
 }
 function updateMusic() {
@@ -12562,9 +12575,11 @@ function updateMusic() {
   if (ctx.state !== 'running' || !musicInit()) return;
   const S = prepSong(SONGS[R.id]), sp = 60 / S.bpm / 4;
   if (music.id !== R.id) {
-    music.id = R.id; music.step = 0; music.live = R.live; music.next = ctx.currentTime + .05; music.out.gain.setTargetAtTime(.2, ctx.currentTime, .3);
+    music.id = R.id; music.step = 0; music.live = R.live; music.next = ctx.currentTime + .05; music.gv = -1;
     const h = $('radiohud'); if (h) h.textContent = `🎵 ${S.n}`;
   }
+  const gv = R.near != null ? .2 * clamp((PARTY_HEAR - R.near) / 130, 0, 1) : .2;   // a party fades in as you drive up to it
+  if (Math.abs(gv - music.gv) > .008) { music.gv = gv; music.out.gain.setTargetAtTime(Math.max(.0001, gv), ctx.currentTime, .3); }
   if (R.live && !music.live) { music.live = true; music.step = 0; music.next = ctx.currentTime + .02; }   // GO!
   if (music.next < ctx.currentTime) music.next = ctx.currentTime + .05;
   while (music.next < ctx.currentTime + .2) { musicStep(S, music.next, sp, music.step, music.live); music.next += sp; music.step++; }
@@ -12596,7 +12611,7 @@ const SCORP = {   // [name, Spotify track id]
 const SCORP_RACE = {   // race song (raceSong().id) → its Scorpions song
   sunshine: 'hurricane', fujistar: 'speedy', boogie: 'thrill', akagi: 'blackout', pixel: 'now', sakura: 'noone', champion: 'badboys', candykart: 'crazy',
   world: 'money', nitro: 'dynamite', neon: 'bigcity', matsuri: 'wind', desert: 'arizona', island: 'coming', ciao: 'kicks', cafe: 'real', polka: 'cant',
-  london: 'century', jungle: 'zoo',
+  london: 'century', jungle: 'zoo', gazoo: 'hurricane', yasnight: 'bigcity', olympos: 'now', amboparty: 'crazy', worldparty: 'wind',
 };
 const SCORP_NEXT = ['hurricane', 'dynamite', 'bigcity', 'blackout', 'badboys', 'noone', 'speedy', 'zoo', 'crazy', 'now', 'thrill', 'hit'];   // a long race: one after another
 const spot = { uri: localStorage.getItem('amboola.spotify') || SCORPIONS, ctl: null, loading: false, failed: false, shown: false, cmd: null, obj: null, song: null, cur: null,
@@ -15391,6 +15406,12 @@ function partySiteStep(S, dt, p) {
     const [sx, sz, sw, sd] = L.stage, [x, z] = siteXf(S, sx + rr(-sw / 2, sw / 2), sz + sd / 2 + rr(4, 14));
     PFW.rockets.push({ x, y: S.y + 3, z, top: S.y + (S.sum ? 40 : 55) + Math.random() * 30 });
   }
+}
+const PARTY_HEAR = 300;   // metres from a party's middle where its music starts
+function partyNear() {   // the party you're at (the nearest one you own, within earshot) and how far away it is
+  let best = null; if (!player || state !== 'drive') return null;
+  for (const S of PSITE) { if (!S) continue; const d = Math.hypot(player.x - S.cx, player.z - S.cz) + Math.abs((player.y || 0) - S.y) * .5; if (d < PARTY_HEAR && (!best || d < best.d)) best = { S, d }; }
+  return best;
 }
 function updateParties(dt, p) {
   if ((partyT -= dt) < 0) { partyT = 1; partyCheck(); }

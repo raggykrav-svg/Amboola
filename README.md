@@ -677,6 +677,17 @@ Five festivals, like the Horizon Festival in Forza Horizon 5:
   - **The festival:** a stage with a big screen and a light show, fireworks, a dancing crowd, flags, food tents, a big wheel and the party's hero car on a turntable.
   - **Your own garage there**, with all your cars: stop in its ring to change car, and you drive out at the party. Your best cars stand on show in front.
 - **Finding them:** open **P → 🎉 PARTIES** to start a challenge or go to a party. Parties you own are on the map too: search for them and press **TRAVEL HERE**.
+- **Music:** every party plays its own song while you're there, made for the game like the race songs. It gets louder as you drive in and fades away as you leave, and the radio waits until you've gone:
+
+  | Party | Song |
+  |---|---|
+  | 🏁 GAZOO Racing | GAZOO RACING ANTHEM (racing synth) |
+  | 🏎️ Yas Marina | YAS MARINA NIGHTS (Arabian night-time house) |
+  | ⛰️ Troodos | OLYMPOS SUMMIT DANCE (a Greek bouzouki dance) |
+  | 💖 AMBOOLA | AMBOOLA PARTY (J-pop) |
+  | 🌍 All World | WORLD FESTIVAL (big festival dance) |
+
+  With 🎸 Spotify music on, a Scorpions song plays instead.
 
 | Party | Where | The challenge |
 |---|---|---|
