@@ -2531,8 +2531,8 @@ function tyreMat(R, RR) {
     sh.vertexShader = 'varying vec3 vTyP; varying vec3 vTyN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vTyP = position; vTyN = normal;');
     sh.fragmentShader = 'uniform sampler2D uTyre; uniform vec2 uR; varying vec3 vTyP; varying vec3 vTyN;\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
-  float tyR = length(vTyP.yz), tySide = smoothstep(.5, .8, abs(normalize(vTyN).x)), tyMid = (uR.x + uR.y) * .5, tyH = (uR.x - uR.y) * .2;
-  float tyA = atan(vTyP.z, vTyP.y) * sign(vTyP.x + 1e-5) / 6.2832 + .5, tyV = (tyR - (tyMid - tyH)) / (2. * tyH);
+  float tyNl = length(vTyN), tyR = length(vTyP.yz), tySide = tyNl > 1e-4 ? smoothstep(.5, .8, abs(vTyN.x) / tyNl) : 0., tyMid = (uR.x + uR.y) * .5, tyH = (uR.x - uR.y) * .2;   // (guarded: a zero normal or the axle centre must never make a NaN)
+  float tyA = atan(vTyP.z, vTyP.y + 1e-6) * sign(vTyP.x + 1e-5) / 6.2832 + .5, tyV = (tyR - (tyMid - tyH)) / (2. * tyH);
   float tyText = tyV > 0. && tyV < 1. ? texture2D(uTyre, vec2(tyA, tyV)).a * tySide : 0.;
   diffuseColor.rgb = mix(diffuseColor.rgb * mix(1., 1.25, tySide), vec3(.55), tyText * .85);`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(.95, .62, tySide);   // a satin sidewall, a matt tread');
