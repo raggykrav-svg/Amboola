@@ -572,8 +572,12 @@ Crash into almost anything except a building and it breaks!
   - **🏁 RACE TO THE TOP:** you and 5 Cypriot drivers (Andreas, Eleni, Nikos, Maria and Yiannis), all in Troodos 4×4 trucks. Drive through the 6 gates to the finish arch on the summit. Win **$50,000**, and the first time you win, **the truck is yours!** The rivals are faster on the walls, you are faster on the flat parts.
   - **🚙 TAKE THE TRUCK:** borrow the truck and hike up the mountain your way, no race. It goes back (and you get your own car back) when you drive into town.
   - **🚗 MY CAR:** try the trail in your own car.
-- **Bumpy dirt:** nobody goes much faster than 80 km/h on the rocky trail, and it is full of rocks and loose dirt.
+- **Bumpy dirt:** nobody goes much faster than 80 km/h on the rocky trail, and it is full of rocks and loose dirt. The tyres **stay on the ground** over the rocks and ruts: no more jumping off every bump. Instead the car **shakes**: the body nods and rocks on its springs, the camera shakes with it and a gamepad rumbles. Only a real ledge (over a metre) still throws you in the air.
 - **🛣 The asphalt road:** a second way up, for every car. A smooth 4 km mountain road with hairpin bends climbs from the end of the town's street to the summit, with red-and-white posts and a **steel crash barrier** on the drop side, so you bounce back instead of falling down the mountain. It never crosses the dirt trail's walls.
+- **No more glitches on the mountain road:** the crash barrier is one smooth steel W-beam that follows the road up the hill (no more floating, stepped blocks), on posts set into the ground, with no gaps a car can slip through. Near the road, the trail and Platres the mountain ground is now 2 m detail (1.5 m on the summit) and the car drives on exactly the ground you see: it doesn't float over it, sink into the grass or fall under the road, and the road no longer hovers over the mountain. The ground between the two legs of a hairpin is a smooth slope, the road has a soft shoulder, Platres' square slopes with the road, and the camera stays out of the mountainside and out of Platres' houses.
+
+  ![The Troodos road: the new barrier round a hairpin, the hairpins from above, and the barrier along the drop](media/troodos-road.jpg)
+
 - **🏘 Platres:** halfway up the road (about 80 m high) is the real Troodos village: stone houses with red tile roofs, a church with a bell tower, a little square with a fountain, café umbrellas and people. Find it on the map: *Platres*.
 - **A thick pine forest:** more than 10,000 trees cover the mountain now.
 - **GPS:** *Olympos Summit* takes the asphalt road (unless you are already on the trail).
