@@ -424,6 +424,12 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
   - `COP_POOL` and `COP_HELI_POOL` reuse built cars. `copPrewarm()` (in `startCrime('outlaw')`) loads the models, builds one of each hidden in the scene, and calls `warmUp`.
 - **Drawing (`copLOD`):** the nearest `COP_SHOW` (12, 6 on touch) within 500 m are drawn in full. The rest are 2 points each in `crime.glow` (one `THREE.Points`, additive `GLOW_TEX`). The shared red and blue materials flash once per frame.
 - **Helicopters (`updateCopHeli`):** each orbits 36 m (+14 per heli) around your position plus 1.2 s of your velocity, 42 m up, at up to 56 m/s with 20 m/s² acceleration. The searchlight `beam` is a separate scene mesh (front faces only, with a gradient `alphaMap`), scaled and rotated (`setFromUnitVectors`) towards you while within 230 m.
+- **Smashing:** `crimeBump` stores `r.hitImp` (closing speed) and `r.hitN`. A hit over 10 m/s calls `copSmash`:
+  - The cop moves from `police` to `wrecks`. `copDent` adds two dents (`dentCar`, on the side facing you plus the roof) and the light bar is knocked askew.
+  - Then `wreckTraffic` and `stepWreck` (the city-car flip and tumble), `brkBits(COP_BITS)` and `crashFx`. You get back 0.8 of the bounce, and heat goes up by .35.
+  - A live cop over 14 m/s within 2.6 m of a wreck smashes too (a pile-up).
+  - `copReset` undents and straightens a pooled car. `copPrewarm` dents and resets one of each and adds hidden debris and spark meshes, so the first smash compiles nothing.
+- **Grace:** a new star sets `c.grace = 8` (counts as seen), so the first backup can arrive before evading starts.
 - **Escape:** you're seen while a cop is within 300 m or a heli within 230 m (or, in the city, before any have spawned). After 10 s unseen, `wantedEscape(c, false)` runs; stopping in a hideout runs `wantedEscape(c, true)`. Five stars calls `wantedReward()`: a random unowned non-jet car in `wallet.owned`, `earn(1e6)`, a banner, and `bump('escapes5')`. `wantedClear` sends everything back to the pools.
 - **HUD:** `#crHeat` holds 5 `.st` spans plus `🚓 n · 🚁 n`, rebuilt only when that changes. `#crimehud.evading` makes the stars blink.
 - **Test:** `window.amboola.wantedHeat(crime, 1)` raises one star. Tick about 90 frames per level; there should be 10/20/40/50/60 cars and 0/0/0/1/2 helicopters, with at most 12 shown. Then move far from them all and tick about 330 frames: `stars` goes to 0, five stars gives +$1,000,000 and one more owned car.

@@ -14778,7 +14778,7 @@ function crimeBump(r) {
   const dx = player.x - r.x, dz = player.z - r.z, d = Math.hypot(dx, dz), R = 2.7;
   if (d >= R || d < 1e-3) return false;
   const nx = dx / d, nz = dz / d; player.x += nx * (R - d); player.z += nz * (R - d);
-  const vn = (player.vx - Math.sin(r.h) * r.v) * nx + (player.vz - Math.cos(r.h) * r.v) * nz;
+  const vn = (player.vx - Math.sin(r.h) * r.v) * nx + (player.vz - Math.cos(r.h) * r.v) * nz; r.hitImp = Math.max(0, -vn); r.hitN = [nx, nz];
   if (vn < 0) { player.vx -= 1.3 * vn * nx; player.vz -= 1.3 * vn * nz; r.v *= .5; if (-vn > 3) { audio.crash(-vn * .6); r.stun = .9; } }
   return true;
 }
@@ -14793,7 +14793,7 @@ function crimeBump(r) {
    ===================================================================== */
 const WANTED = [0, 10, 20, 40, 50, 60], WANTED_HELI = [0, 0, 0, 0, 1, 2], COP_SHOW = isTouch ? 6 : 12, COP_POOL = [], COP_HELI_POOL = [];
 const COP_SPECS = () => ['corvette', 'mustang'].map(id => CARS.find(c => c.id === id)).filter(Boolean);
-let COP_MATS = null, COP_BEAM_TEX = null;
+let COP_MATS = null, COP_BEAM_TEX = null; const COP_BITS = ['#f2f3f5', '#101114', '#9fd3ff', '#ff1a1a', '#2a5bff'];   // paint, glass and light-bar pieces
 function copMats() { return COP_MATS ??= { red: new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue: new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 }),
   base: new THREE.BoxGeometry(1.2, .05, .26), lamp: new THREE.BoxGeometry(.56, .13, .28) }; }
 function buildCopCar(spec, k) {
@@ -14801,7 +14801,7 @@ function buildCopCar(spec, k) {
   const bar = new THREE.Group(); bar.position.set(0, (B?.roofY || 1.25) + .07, -.2);
   const base = new THREE.Mesh(M.base, trafficMats.black), l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue);
   base.position.y = -.06; l.position.x = -.3; r.position.x = .3; bar.add(base, l, r); car.group.add(bar);
-  car.copSpec = spec; return car;
+  car.copSpec = spec; car.copBar = bar; return car;
 }
 function buildCopHeli() {
   const spec = CARS.find(c => c.heli), car = buildHeli(spec, '#14213d'), M = copMats();
@@ -14814,14 +14814,16 @@ function buildCopHeli() {
 function copPrewarm() {   // load and build one of each in advance (hidden) and compile their shaders, so the first backup doesn't stutter
   Promise.all(['corvette', 'mustang', 'heli'].map(loadModel)).then(() => {
     if (crime?.role !== 'outlaw') return;
-    COP_SPECS().forEach((sp, k) => { if (!COP_POOL.some(c => c.copSpec === sp)) { const car = buildCopCar(sp, k); car.group.visible = false; scene.add(car.group); COP_POOL.push(car); } });
+    COP_SPECS().forEach((sp, k) => { if (!COP_POOL.some(c => c.copSpec === sp)) { const car = buildCopCar(sp, k); car.group.visible = false; scene.add(car.group); copDent(car, 1, 0, 0, 10); copReset(car); COP_POOL.push(car); } });
     if (!COP_HELI_POOL.length) { const h = buildCopHeli(); h.group.visible = h.beam.visible = false; scene.add(h.group, h.beam); COP_HELI_POOL.push(h); }
-    warmUp(50);
+    const fx = [...COP_BITS, '#c8ccd2', '#222428'].map(col => { if (!BRK.bitMats.has(col)) BRK.bitMats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: .7 })); return BRK.bitMats.get(col); });   // the smash debris and sparks too
+    const tmp = [...fx, ...BRK.sparkMats].map(m => { const o = new THREE.Mesh(BRK.bitGeo, m); o.position.y = -900; scene.add(o); return o; });
+    warmUp(50); setTimeout(() => tmp.forEach(o => scene.remove(o)), 5000);
   });
 }
 function spawnCop(c, p) {
   const specs = COP_SPECS(), want = specs[c.police.length % specs.length];
-  const i = COP_POOL.findIndex(x => x.copSpec === want), car = i >= 0 ? COP_POOL.splice(i, 1)[0] : buildCopCar(want, c.police.length >> 1);
+  const i = COP_POOL.findIndex(x => x.copSpec === want), car = i >= 0 ? copReset(COP_POOL.splice(i, 1)[0]) : buildCopCar(want, c.police.length >> 1);
   const s = taxiSpot(p.x, p.z, 320, 650), r = new Runner(car.group,   // just out of sight: they drive in
     { vmax: 50 + c.stars * 3, acc: 11 + c.stars, corner: 15, car });
   r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); r.repath = Math.random() * .5; r.cop = car; c.police.push(r);
@@ -14856,16 +14858,42 @@ function copLOD(c) {   // the nearest patrol cars in full, the rest as flashing 
   });
   G.geometry.setDrawRange(0, n); P.needsUpdate = C.needsUpdate = true;
 }
+/* ---- smash a patrol car: ram one hard (over ~36 km/h closing speed) and it crumples where you hit it, flips and
+   tumbles with glass, parts and sparks flying, then lies smoking on the road (wreckTraffic / stepWreck, like a city
+   car). Backup cars that plough into a wreck pile up too. A wreck no longer chases you, so more backup comes. */
+function copDent(car, ax, az, h, imp) {   // crumple the side facing (ax, az), world direction from the car
+  const G = car.G ??= carGeom(car); if (!G || !car.model) return;
+  const fx = Math.sin(h), fz = Math.cos(h), a = ax * fx + az * fz, b = ax * -fz + az * fx, s = clamp((imp - 8) / 22, 0, 1);
+  const zone = Math.abs(a) >= Math.abs(b) * .9 ? (a > 0 ? 'f' : 'r') : (b > 0 ? 'R' : 'L'), H = G.y1 - G.y0, xh = G.xh * .96;
+  const at = { f: [-b * xh * .6, G.y0 + H * .35, G.z1], r: [-b * xh * .6, G.y0 + H * .4, G.z0], L: [xh, G.y0 + H * .4, G.mid + a * .8], R: [-xh, G.y0 + H * .4, G.mid + a * .8] }[zone];
+  (car.dents ??= []).push([...at, .55 + s * .45, .1 + s * .2, zone], [at[0] * .9, G.y1, G.mid + a * .6, .7, .05 + s * .1, 't']);   // and the roof buckles a little
+  dentCar(car, car.dents);
+}
+function copReset(car) {   // a pooled patrol car back to new: no dents, upright, light bar on the roof
+  if (car.dents?.length) { car.dents = []; dentCar(car, []); }
+  car.group.rotation.set(0, 0, 0); car.group.position.y = 0; car.group.visible = true;
+  if (car.copBar) { car.copBar.rotation.set(0, 0, 0); car.copBar.position.x = 0; }
+  return car;
+}
+function copSmash(c, r, nx, nz, imp, by) {
+  const i = c.police.indexOf(r); if (i < 0) return; c.police.splice(i, 1); c.wrecks.push(r); r.mesh.visible = true;
+  copDent(r.cop, nx, nz, r.h, imp);
+  if (r.cop.copBar) { r.cop.copBar.rotation.z = rr(-.6, .6); r.cop.copBar.position.x = rr(-.25, .25); }   // the light bar knocked askew
+  wreckTraffic(r, by, nx, nz, imp * 1.15); r.v = 0;
+  brkBits(r.x, .9, r.z, -nx * imp * .5, -nz * imp * .5, COP_BITS, 12);   // its paint, glass and light-bar pieces
+  if (by === player) { player.vx -= .8 * r.hitImp * r.hitN[0]; player.vz -= .8 * r.hitImp * r.hitN[1];   // you plough on at half speed instead of bouncing off
+    crashFx(player, Math.min(imp, 24), player.vx, player.vz); skill.label = '🚓💥 COP WRECKED!'; wantedHeat(c, .35); bump('copsWrecked'); feelBuzz(1, 260); }
+}
 function wantedHeat(c, k) {
   const before = c.stars; c.heat = Math.min(5.999, c.heat + k); c.stars = Math.min(5, Math.floor(c.heat));
   if (c.stars > before) {
-    const h = WANTED_HELI[c.stars]; c.evadeT = 0;
+    const h = WANTED_HELI[c.stars]; c.evadeT = 0; c.grace = 8;   // a new star: they know where you are for a few seconds (the backup is on its way)
     toast(`${'★'.repeat(c.stars)} WANTED LEVEL ${c.stars}`, `${WANTED[c.stars]} POLICE CARS${h ? ` + ${h === 1 ? 'A HELICOPTER' : '2 HELICOPTERS'}` : ''} ARE CHASING YOU`);
     audio.beep(520, .12); setTimeout(() => audio.beep(390, .2), 130);
   }
 }
 function wantedClear(c) {   // the pursuit is over: every patrol car and helicopter goes back to the pool
-  for (const r of c.police) { r.dispose(); if (r.cop) { r.cop.group.visible = true; COP_POOL.push(r.cop); } } c.police = [];
+  for (const r of [...c.police, ...(c.wrecks || [])]) { r.dispose(); if (r.cop) { r.cop.group.visible = true; COP_POOL.push(r.cop); } } c.police = []; c.wrecks = [];
   for (const H of c.helis) { scene.remove(H.car.group, H.car.beam); COP_HELI_POOL.push(H.car); } c.helis = [];
   c.stars = 0; c.heat = 0; c.evadeT = 0; if (c.glow) c.glow.geometry.setDrawRange(0, 0); $('crimehud').classList.remove('evading');
 }
@@ -14887,7 +14915,7 @@ function startCrime(role) {
   if (race) endRace(false);
   if (taxi) endTaxi();
   endCrime(true); clearNav(true); buildHideouts();
-  crime = { role, carry: 0, bank: +(localStorage.getItem('amboola.' + role + '.bank') || 0), safes: [], police: [], outlaw: null, meter: 0, showRoute: role === 'police', route: [], routeT: 0, anim: 0, lostT: 0, cool: 0, fleeT: 0, helis: [], stars: 0, heat: 0, evadeT: 0, spawnT: 0 };
+  crime = { role, carry: 0, bank: +(localStorage.getItem('amboola.' + role + '.bank') || 0), safes: [], police: [], outlaw: null, meter: 0, showRoute: role === 'police', route: [], routeT: 0, anim: 0, lostT: 0, cool: 0, fleeT: 0, helis: [], wrecks: [], stars: 0, heat: 0, evadeT: 0, spawnT: 0 };
   if (role === 'outlaw') {
     const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(130 * 3), 3)); gg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(130 * 3), 3)); gg.setDrawRange(0, 0);
     crime.glow = new THREE.Points(gg, new THREE.PointsMaterial({ size: 3.2, map: GLOW_TEX(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -14937,13 +14965,18 @@ function updateCrime(dt) {
     if (inCity && c.cool <= 0 && !c.evadeT && c.police.length < WANTED[c.stars] && c.spawnT <= 0) { spawnCop(c, p); c.spawnT = .25; }   // (no new backup while you're out of sight)
     while (c.helis.length < WANTED_HELI[c.stars]) spawnCopHeli(c, p);
     let near = false, seen = false; const t = inCity ? snapToRoad(p.x, p.z) : { x: -HALF, z: MTN.gateZ };
-    for (const r of c.police) {
+    for (const r of [...c.police]) {
       const d = r.d = Math.hypot(p.x - r.x, p.z - r.z), close = inCity && d < 45; r.rp = d > 300 ? 1.2 : .5;
       r.update(dt, close ? p.x : t.x, close ? p.z : t.z, close, pSafe ? 16 : r.vmax);
-      if (inCity && d < 8) { const st = r.stun; if (crimeBump(r) && r.stun > st + .5) wantedHeat(c, .25); }   // ramming a patrol car makes it worse
+      if (inCity && d < 8) { const st = r.stun; if (crimeBump(r)) { if (r.hitImp > 10) { copSmash(c, r, r.hitN[0], r.hitN[1], r.hitImp, player); continue; } if (r.stun > st + .5) wantedHeat(c, .25); } }   // ramming a patrol car makes it worse; hard enough and it's wrecked
+      if (r.v > 14) for (const w of c.wrecks) { const wx = w.mesh.position.x - r.x, wz = w.mesh.position.z - r.z, wd = Math.hypot(wx, wz);   // a pile-up: straight into a wreck
+        if (wd < 2.6) { copSmash(c, r, -wx / wd, -wz / wd, r.v * .8, { vx: Math.sin(r.h) * r.v, vz: Math.cos(r.h) * r.v }); break; } }
+      if (r.wreck) continue;
       if (d < 9) near = true; if (d < 300) seen = true;
     }
+    for (let k = c.wrecks.length - 1; k >= 0; k--) { const w = c.wrecks[k]; if (stepWreck(w, dt)) { w.dispose(); COP_POOL.push(w.cop); c.wrecks.splice(k, 1); } }
     for (const H of c.helis) { updateCopHeli(H, dt, p); if (H.d < 230) seen = true; }
+    c.grace = (c.grace || 0) - dt; if (c.grace > 0) seen = true;
     if (c.glow) copLOD(c);
     if (c.stars > 0) {
       if (seen || (inCity && !c.police.length && !c.helis.length)) { c.evadeT = 0; wantedHeat(c, dt / 35); }

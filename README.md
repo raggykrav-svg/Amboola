@@ -684,6 +684,9 @@ Pick any car in the garage and press **💰 OUTLAW**, or choose **P → OUTLAW**
   | ★★★★★ | 60 police cars + 2 police helicopters |
 
   The police cars are **Chevrolet Corvette Z06s and Ford Mustang Dark Horses** in black and white, with flashing light bars. The helicopters shine a searchlight on you from the sky.
+![A police car flips after you ram it](media/cop-smash.jpg)
+
+- **Smash them:** ram a police car hard (faster than about 36 km/h into it) and it crumples where you hit it, flips and tumbles with glass, paint and light-bar pieces flying, then lies smoking on the road. You plough on, and police cars that drive into a wreck pile up too. Every wreck brings more backup and makes your wanted level climb faster.
 - **Escape:** get out of sight of every police car (300 m) and helicopter (230 m) and the stars start to blink. No new police join while they can't see you. Stay hidden for 10 seconds, or reach a hideout, and you've escaped. The helicopters fly at about 200 km/h, so a fast car can outrun them.
 - **Escape from five stars:** you get **a random car you don't have yet and $1,000,000**.
 - **Don't get caught:** if a police car pins you while you're stopped or crawling, the **BUSTED** bar fills, they take everything you're carrying, and the chase ends.
