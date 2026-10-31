@@ -14749,6 +14749,7 @@ class Runner {
   constructor(mesh, o) { Object.assign(this, { mesh, v: 0, vmax: o.vmax, acc: o.acc, corner: o.corner || 12, pts: [], repath: 0, stun: 0, car: o.car || null, x: 0, z: 0, h: 0 }); scene.add(mesh); }
   place(x, z, h) { this.x = x; this.z = z; this.h = h; this.v = 0; this.repath = 0; this.sync(0); }
   update(dt, tx, tz, direct, vmax = this.vmax) {
+    if (this.race) return this.raceUpdate(dt, tx, tz, direct, vmax);
     this.repath -= dt;
     if (this.repath <= 0) { this.pts = taxiRoute(this.x, this.z, tx, tz); this.repath = this.rp || .5; }
     let k = this.pts.findIndex(([a, b]) => Math.hypot(a - this.x, b - this.z) > 4);
@@ -14765,6 +14766,33 @@ class Runner {
     this.v = this.v < vT ? Math.min(vT, this.v + this.acc * dt) : Math.max(vT, this.v - 14 * dt);
     const turn = 2.6 * dt * clamp(this.v / 6, .4, 1); this.h += clamp(dh, -turn, turn);
     this.x = clamp(this.x + Math.sin(this.h) * this.v * dt, -HALF - 6, HALF + 6); this.z = clamp(this.z + Math.cos(this.h) * this.v * dt, -HALF - 6, HALF + 6);
+    this.sync(dt);
+  }
+  // police cars drive like the race opponents: the car's own power, weight and grip, braking for the corners, smooth
+  // steering (the turn rate the tyres allow at that speed), front wheels that steer, and a body that leans and pitches
+  raceUpdate(dt, tx, tz, direct, vmax) {
+    const sp = this.spec, g = 9.81, grip = sp.grip || 1.1, dec = g * grip * .95, latA = g * grip;
+    this.repath -= dt;
+    if (this.repath <= 0) { this.pts = taxiRoute(this.x, this.z, tx, tz); this.repath = this.rp || .5; }
+    const k = this.pts.findIndex(([a, b]) => Math.hypot(a - this.x, b - this.z) > 5), aim = direct || k < 0 ? [tx, tz] : this.pts[k];
+    const dAim = Math.hypot(aim[0] - this.x, aim[1] - this.z);
+    let vT = vmax;
+    if (!direct && k >= 0 && k + 1 < this.pts.length) {   // a corner ahead: brake to the speed the tyres can take round it (about a 9 m radius)
+      const n = this.pts[k + 1], a1 = Math.atan2(aim[0] - this.x, aim[1] - this.z), a2 = Math.atan2(n[0] - aim[0], n[1] - aim[1]);
+      const turn = Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1)));
+      if (turn > .3) { const vc = Math.sqrt(latA * 9 / Math.min(1, turn / 1.57)); vT = Math.min(vT, Math.sqrt(vc * vc + 2 * dec * Math.max(0, dAim - 6))); }
+    }
+    let dh = Math.atan2(aim[0] - this.x, aim[1] - this.z) - this.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+    if (Math.abs(dh) > 1.2) vT = Math.min(vT, 8);   // facing the wrong way: slow, tight turn
+    if (this.stun > 0) { this.stun -= dt; vT = Math.min(vT, 3); }
+    const v0 = this.v, acc = Math.min(g * grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(this.v, 4))) - (sp.drag || .4) * this.v * this.v / sp.mass;
+    this.v = this.v < vT ? Math.min(vT, this.v + Math.max(acc, .8) * dt) : Math.max(vT, this.v - dec * dt);
+    const yawMax = Math.min(Math.max(this.v, 2) / 4.5, latA * 1.05 / Math.max(this.v, 1));   // tight at walking pace, the grip limit at speed
+    this.yr = damp(this.yr || 0, clamp(dh * 2.2, -yawMax, yawMax), 7, dt); this.h += this.yr * dt;
+    this.x = clamp(this.x + Math.sin(this.h) * this.v * dt, -HALF - 6, HALF + 6); this.z = clamp(this.z + Math.cos(this.h) * this.v * dt, -HALF - 6, HALF + 6);
+    const ax = dt > 0 ? (this.v - v0) / dt : 0, lat = this.yr * this.v, B = this.car?.body;
+    if (B) { B.rotation.x = damp(B.rotation.x, clamp(lat * .0055, -.06, .06), 7, dt); B.rotation.z = damp(B.rotation.z, clamp(ax * .0045, -.045, .035), 7, dt); }   // lean in the corners, squat and dive (the body's axes, as the player's car)
+    if (this.car) for (const w of this.car.wheels) if (w.front && w.pivot) w.pivot.rotation.y = damp(w.pivot.rotation.y, clamp(this.yr / Math.max(this.v, 3) * 2.6, -.5, .5), 10, dt);
     this.sync(dt);
   }
   sync(dt) {
@@ -14825,7 +14853,8 @@ function spawnCop(c, p) {
   const specs = COP_SPECS(), want = specs[c.police.length % specs.length];
   const i = COP_POOL.findIndex(x => x.copSpec === want), car = i >= 0 ? copReset(COP_POOL.splice(i, 1)[0]) : buildCopCar(want, c.police.length >> 1);
   const s = taxiSpot(p.x, p.z, 320, 650), r = new Runner(car.group,   // just out of sight: they drive in
-    { vmax: 50 + c.stars * 3, acc: 11 + c.stars, corner: 15, car });
+    { vmax: 30 + c.stars * 3, acc: 11 + c.stars, corner: 15, car });
+  r.race = true; r.spec = want; r.yr = 0;
   r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); r.repath = Math.random() * .5; r.cop = car; c.police.push(r);
 }
 function spawnCopHeli(c, p) {
@@ -14871,7 +14900,7 @@ function copDent(car, ax, az, h, imp) {   // crumple the side facing (ax, az), w
 }
 function copReset(car) {   // a pooled patrol car back to new: no dents, upright, light bar on the roof
   if (car.dents?.length) { car.dents = []; dentCar(car, []); }
-  car.group.rotation.set(0, 0, 0); car.group.position.y = 0; car.group.visible = true;
+  car.group.rotation.set(0, 0, 0); car.group.position.y = 0; car.group.visible = true; car.body?.rotation.set(0, 0, 0);
   if (car.copBar) { car.copBar.rotation.set(0, 0, 0); car.copBar.position.x = 0; }
   return car;
 }
@@ -14967,8 +14996,12 @@ function updateCrime(dt) {
     let near = false, seen = false; const t = inCity ? snapToRoad(p.x, p.z) : { x: -HALF, z: MTN.gateZ };
     for (const r of [...c.police]) {
       const d = r.d = Math.hypot(p.x - r.x, p.z - r.z), close = inCity && d < 45; r.rp = d > 300 ? 1.2 : .5;
-      r.update(dt, close ? p.x : t.x, close ? p.z : t.z, close, pSafe ? 16 : r.vmax);
-      if (inCity && d < 8) { const st = r.stun; if (crimeBump(r)) { if (r.hitImp > 10) { copSmash(c, r, r.hitN[0], r.hitN[1], r.hitImp, player); continue; } if (r.stun > st + .5) wantedHeat(c, .25); } }   // ramming a patrol car makes it worse; hard enough and it's wrecked
+      const top = Math.min(r.spec.vmax / 3.6 * .97, d > 250 ? r.vmax + 10 : d < 60 ? Math.max(12, p.speed + 6) : r.vmax);   // like a race: catch up from far, don't fly past you close up
+      r.update(dt, close ? p.x : t.x, close ? p.z : t.z, close, pSafe ? 16 : top);
+      if (inCity && d < 8) { const st = r.stun, pvx = p.vx, pvz = p.vz; if (crimeBump(r)) {
+        const mine = -(pvx * r.hitN[0] + pvz * r.hitN[1]);   // how fast YOU drove into it (a patrol car running into you doesn't count)
+        if (mine > 6 && r.hitImp > 10) { copSmash(c, r, r.hitN[0], r.hitN[1], r.hitImp, player); continue; }
+        if (mine > 4 && r.stun > st + .5) wantedHeat(c, .25); } }   // ramming a patrol car makes it worse; hard enough and it's wrecked
       if (r.v > 14) for (const w of c.wrecks) { const wx = w.mesh.position.x - r.x, wz = w.mesh.position.z - r.z, wd = Math.hypot(wx, wz);   // a pile-up: straight into a wreck
         if (wd < 2.6) { copSmash(c, r, -wx / wd, -wz / wd, r.v * .8, { vx: Math.sin(r.h) * r.v, vz: Math.cos(r.h) * r.v }); break; } }
       if (r.wreck) continue;
