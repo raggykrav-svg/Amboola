@@ -683,7 +683,17 @@ Pick any car in the garage and press **💰 OUTLAW**, or choose **P → OUTLAW**
   | ★★★★ | 50 police cars + a police helicopter |
   | ★★★★★ | 60 police cars + 2 police helicopters |
 
-  The police cars are **Chevrolet Corvette Z06s and Ford Mustang Dark Horses** in black and white, with flashing light bars. They drive like the race opponents: each car's own power, weight and grip, braking for the corners, front wheels that steer, and a body that leans and dives. They're calmer in the city: about 120 km/h at ★ up to about 160 km/h at ★★★★★, a bit faster when they're far behind, and close up they match your speed instead of flying past. The helicopters shine a searchlight on you from the sky.
+  The police cars are **Chevrolet Corvette Z06s and Ford Mustang Dark Horses** in black and white, with flashing light bars. They drive like the race opponents: each car's own power, weight and grip, braking for the corners, front wheels that steer, and a body that leans and dives. They have speed limits:
+
+  | Stars | Straights | Corners |
+  |---|---|---|
+  | ★ | 100 km/h | 50 km/h |
+  | ★★ | 105 km/h | 52 km/h |
+  | ★★★ | 110 km/h | 55 km/h |
+  | ★★★★ | 115 km/h | 57 km/h |
+  | ★★★★★ | 120 km/h | 60 km/h |
+
+  They brake before a corner and only turn hard once they're slow enough. Close up, they match your speed instead of flying past. The helicopters shine a searchlight on you from the sky.
 ![A police car flips after you ram it](media/cop-smash.jpg)
 
 - **Smash them:** ram a police car hard (you driving into it at more than about 22 km/h, about 36 km/h closing speed; a police car running into you doesn't count) and it crumples where you hit it, flips and tumbles with glass, paint and light-bar pieces flying, then lies smoking on the road. You plough on, and police cars that drive into a wreck pile up too. Every wreck brings more backup and makes your wanted level climb faster.
