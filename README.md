@@ -670,6 +670,31 @@ Crash into almost anything except a building and it breaks!
   - **TRAVEL HERE:** fast travel. You appear there straight away.
   - **🏁 RACE** (for tracks): starts that race.
 
+## 🚀 AMBOOLA 3000 · the future
+
+![The year 3000: the neon city with its megatowers and the dancing robot hologram, a neon street, year-3000 Paris with flying cars, robot people, the Enforcer 3000, the flying-car lanes, the giant transformer on Mt. Amboola and folded into a hover-truck, and the FUTURE button in the garage](media/future.jpg)
+
+In the garage, press **🚀 FUTURE · 3000** (just above the car search). That's the **time machine**: the screen warps, the year counts up from **2026 to 3000**, and you drive on in the future.
+- **The roads are the same, but not the city.** Every building is a year-3000 tower made in Blender:
+  - glass towers striped with neon;
+  - huge concrete apartment blocks with balconies and blade signs;
+  - chrome spires with a needle on top;
+  - neon pagodas with glowing eaves;
+  - capsule houses and hangars.
+- **Megatowers:** five giant towers (300 to 380 m) rise in the middle of Tokyo, and more stand on the skyline. There's the arcology pyramid, the twin spires joined by sky bridges, and the ring tower with spinning halo rings.
+- **Adverts everywhere, like on TV.** Every tower has animated screens for eight year-3000 brands: AMBOOLA SKY flying cars, SYNTH-COLA, ROBO-PUP v9, NEON RAMEN, MOON TRIPS, ZERO-G KICKS, HOLO GAMES and ROBO ARMS. The billboards and the big screens at the scramble crossing show them too.
+- **Holograms** float over the city:
+  - the giant AMBOOLA 3000 logo over the crossing;
+  - a koi fish swimming round the ring tower;
+  - a robot dancing on top of the arcology;
+  - a car turning above the twin spires.
+- **Flying cars, lots of them:** 260 of them (90 on phones) cruise in six sky lanes over the streets, from 26 to 130 m up. There are sedans, yellow sky taxis, sports flyers, cargo drones and flying police. The cars in the street hover over the road too.
+- **Robot people:** everyone walking on the pavements is a robot (chrome, white, black, gold or coloured) with glowing eyes.
+- **The police of the year 3000:** in **OUTLAW** they chase you in the **AMBOOLA Enforcer 3000**, an armoured black-and-white cruiser with glowing light strips. At 4 and 5 stars, **flying police cars** hunt you from the sky. You can buy an Enforcer 3000 in the garage too (FUTURE, $300,000).
+- **A giant transformer robot on every mountain:** Mt. Amboola, the Shirayuki Snow Pass, Mt. Fuji, the volcano, the Troodos mountains and the five peaks of the Swiss Alps. Each one **moves every second**: it waves, points at you, shows its muscles, punches, looks round, stomps (you feel it if you're close) and cheers. About every half a minute it **folds down into a giant hover-truck**, turns about, and stands up again.
+- The countries' towns are year-3000 towns too, and the air is a violet neon haze at night.
+- Press **⏪ BACK TO 2026** in the garage to come home. The game remembers which year you were in.
+
 ## 🎉 Parties
 
 ![The AMBOOLA party in Tokyo Bay, the GAZOO Racing party under Mt. Fuji, the Troodos party on the summit, the Tokyo flood, a broken car on Yas Marina and a hidden AMBOOLA car](media/parties.jpg)

@@ -31,13 +31,37 @@
   #brand h1 { margin:0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:clamp(34px,5vw,64px); letter-spacing:.2em;
     color:#0b0b0e; -webkit-text-stroke:2px #e0101a; filter:drop-shadow(0 0 14px rgba(224,16,26,.6)); }
   #brand p { margin:2px 0 0; color:var(--dim); letter-spacing:.35em; font-size:13px; text-transform:uppercase; }
-  #carsearch { position:absolute; left:28px; top:130px; width:296px; display:flex; gap:6px; z-index:2; }
+  #carsearch { position:absolute; left:28px; top:180px; width:296px; display:flex; gap:6px; z-index:2; }
+  /* the time machine (AMBOOLA 3000) */
+  #futBtn { position:absolute; left:28px; top:124px; width:296px; z-index:2; padding:6px 12px 7px; font:900 15px 'Orbitron',sans-serif; letter-spacing:.18em; color:#fff; cursor:pointer; text-align:center;
+    background:linear-gradient(90deg,#2a0a4a,#0a2a4a); border:2px solid #39f0ff; border-radius:8px; box-shadow:0 0 12px rgba(57,240,255,.55), inset 0 0 12px rgba(255,56,232,.35); text-shadow:0 0 8px #39f0ff; animation:futGlow 2.4s ease-in-out infinite; }
+  #futBtn small { display:block; font:700 10px 'Orbitron',sans-serif; letter-spacing:.2em; color:#ffb8f4; margin-top:2px; text-shadow:none; }
+  #futBtn:hover { filter:brightness(1.18); transform:translateY(-1px); }
+  #futBtn.back { border-color:#ffb02d; text-shadow:0 0 8px #ffb02d; background:linear-gradient(90deg,#3a1a00,#2a0a1a); animation:none; box-shadow:0 0 12px rgba(255,176,45,.55); }
+  #futBtn.back small { color:#ffd9a0; }
+  @keyframes futGlow { 50% { box-shadow:0 0 22px rgba(255,56,232,.75), inset 0 0 14px rgba(57,240,255,.4); border-color:#ff38e8; } }
+  #warp { position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#02010a; overflow:hidden; pointer-events:auto; }
+  #warp.hidden { display:none; }
+  #warp::before { content:''; position:absolute; left:50%; top:50%; width:260vmax; height:260vmax; margin:-130vmax 0 0 -130vmax;
+    background:repeating-conic-gradient(from 0deg, rgba(57,240,255,0) 0deg 3.6deg, rgba(57,240,255,.7) 4deg 4.4deg, rgba(255,56,232,0) 4.8deg 8.6deg, rgba(255,56,232,.6) 9deg 9.4deg, rgba(255,255,255,0) 9.8deg 12deg);
+    -webkit-mask:radial-gradient(circle, transparent 0 4%, #000 22%); mask:radial-gradient(circle, transparent 0 4%, #000 22%); }
+  #warp.go::before { animation:warpGo 2.6s cubic-bezier(.5,0,.9,.6) forwards; }
+  #warp::after { content:''; position:absolute; inset:0; background:radial-gradient(circle, rgba(255,255,255,0) 0, rgba(120,60,255,.22) 30%, rgba(0,0,0,.82) 72%); }
+  #warp.back::before { filter:hue-rotate(150deg) saturate(1.4); }
+  #warp.flash { animation:warpFlash .38s ease-out; }
+  #warpYear { position:relative; z-index:2; font:900 clamp(72px,16vw,200px) 'Orbitron',sans-serif; color:#fff; letter-spacing:.06em; text-shadow:0 0 18px #39f0ff, 0 0 48px #ff38e8; }
+  #warp.back #warpYear { text-shadow:0 0 18px #ffb02d, 0 0 48px #ff5a1f; }
+  #warpMsg { position:relative; z-index:2; margin-top:8px; padding:0 16px; text-align:center; font:700 clamp(12px,2vw,18px) 'Orbitron',sans-serif; letter-spacing:.28em; color:#bfe9ff; }
+  @keyframes warpGo { from { transform:scale(.55) rotate(0deg); } to { transform:scale(2.4) rotate(720deg); } }
+  @keyframes warpFlash { 0% { background:#fff; } 100% { background:#02010a; } }
+  #futTag { position:absolute; left:22px; top:64px; padding:3px 10px; font:900 11px 'Orbitron',sans-serif; letter-spacing:.24em; color:#fff; border:1px solid #ff38e8; border-radius:12px;
+    background:rgba(40,0,60,.55); text-shadow:0 0 6px #39f0ff; box-shadow:0 0 10px rgba(255,56,232,.45); pointer-events:none; }
   #carq { flex:1; min-width:0; padding:8px 10px; font:700 13px 'Orbitron',sans-serif; letter-spacing:.08em; color:#fff; background:rgba(12,14,20,.85); border:1px solid #3a3f4b; border-radius:6px; outline:none; }
   #carq:focus { border-color:#ffd02d; box-shadow:0 0 0 2px rgba(255,208,45,.25); } #carq::placeholder { color:#8a909c; }
   #carqx { width:34px; font-size:14px; color:#fff; background:rgba(12,14,20,.85); border:1px solid #3a3f4b; border-radius:6px; cursor:pointer; }
   #carlist [hidden] { display:none !important; }
   #carqn { padding:14px 6px; color:var(--dim); font-size:13px; letter-spacing:.12em; }
-  #carlist { position:absolute; left:28px; top:174px; bottom:28px; width:290px; overflow-y:auto; padding-right:6px; }
+  #carlist { position:absolute; left:28px; top:224px; bottom:28px; width:290px; overflow-y:auto; padding-right:6px; }
   #carlist::-webkit-scrollbar { width:4px; } #carlist::-webkit-scrollbar-thumb { background:#444; }
   .cat { font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:.3em; color:var(--accent2); margin:14px 0 6px; }
   .caritem { background:var(--panel); border:1px solid rgba(255,255,255,.06); border-left:3px solid transparent; padding:9px 12px; margin-bottom:6px;
@@ -283,7 +307,7 @@
   #repairBtn small { display:block; font-family:'Rajdhani',sans-serif; font-size:12px; letter-spacing:.06em; font-weight:700; opacity:.9; margin-top:2px; }
   #custPanel { position:fixed; left:28px; top:130px; bottom:28px; width:330px; z-index:31; overflow-y:auto; background:var(--panel); border:1px solid rgba(255,255,255,.08);
     backdrop-filter:blur(8px); padding:14px 16px; } #custPanel.hidden { display:none; }
-  #menu.customizing #carlist, #menu.customizing #carsearch, #menu.customizing #misBtn { visibility:hidden; }
+  #menu.customizing #carlist, #menu.customizing #carsearch, #menu.customizing #misBtn, #menu.customizing #futBtn { visibility:hidden; }
   #custPanel h2 { margin:0; font-family:'Orbitron',sans-serif; font-weight:900; font-size:22px; letter-spacing:.2em; }
   #custCar { color:var(--dim); font-size:13px; letter-spacing:.15em; text-transform:uppercase; margin-bottom:4px; }
   .crow { margin-top:12px; } .crow > small { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.25em; color:var(--dim); text-transform:uppercase; } .crow > small b { color:#fff; letter-spacing:.08em; }
@@ -425,6 +449,7 @@
   #tcam { right:calc(50% + 36px); top:10px; width:48px!important; height:48px!important; font-size:22px!important; }
   @media (max-width: 760px) {
     #carsearch { top:auto; bottom:334px; left:12px; right:12px; width:auto; } #carq { padding:6px 10px; font-size:12px; }
+    #carsearch { right:144px; } #futBtn { top:auto; bottom:334px; left:auto; right:12px; width:124px; height:31px; padding:4px 4px; font-size:10px; letter-spacing:.04em; } #futBtn small { display:none; }   /* (in the search row) */
     #carlist { top:auto; bottom:236px; left:12px; right:12px; width:auto; height:94px; display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; }
     .cat { display:none; } .caritem { min-width:150px; }
     #stats { left:12px; right:12px; width:auto; top:auto; bottom:366px; padding:10px 14px; }
@@ -534,6 +559,7 @@
 <div id="menu" class="hidden">
   <div id="brand"><h1>AMBOOLA</h1><p>Tokyo Open World · 東京</p></div>
   <div id="walletG"><small>WALLET · 財布</small><span id="walletV">$0</span></div>
+  <button id="futBtn">🚀 FUTURE · 3000<small>TIME MACHINE · 未来へ</small></button>
   <div id="carsearch"><input id="carq" type="text" enterkeyhint="search" placeholder="🔍 SEARCH CARS…" autocomplete="off" spellcheck="false" aria-label="Search cars"><button id="carqx" aria-label="Clear search">✕</button></div>
   <div id="carlist"></div>
   <div id="stats">
@@ -593,6 +619,7 @@
   <div id="maptag">🗺 MAP · CLICK / N</div>
   <button id="flyBtn" class="hidden">🚀 FLY <small>V</small></button>
   <div id="mudFx"></div><div id="banFx"><span>🍌</span></div>
+  <div id="futTag" class="hidden">⏳ YEAR 3000</div>
   <div id="cabhud" class="hidden"><span id="cabTxt"></span><span id="cabBtns"></span></div>
   <div id="navhud" class="hidden"><small>ROUTE</small><span id="nvName">-</span> · <b id="nvDist">-</b></div>
   <div id="racehud" class="hidden"><div><small>POS</small><b id="rPos">-</b></div><div><small>LAP</small><b id="rLap">-</b></div><div><small>TIME</small><b id="rTime">-</b></div><div><small>BEST LAP</small><b id="rBest">-</b></div></div>
@@ -618,6 +645,7 @@
 <div id="achv"></div>
 <div id="hdView" class="hidden"><img id="hdImg" alt=""><button class="hdBtn" id="hdPrev" aria-label="Previous photo">‹</button><button class="hdBtn" id="hdNext" aria-label="Next photo">›</button><button id="hdClose" aria-label="Close">✕</button><div id="hdCap"></div></div>
 <div id="camFlash"></div>
+<div id="warp" class="hidden"><div id="warpYear">2026</div><div id="warpMsg"></div></div>
 <div id="camShot" class="hidden"><img alt=""><div></div></div>
 <div id="title" class="hidden">
   <div id="tiLogo" class="hidden">AMBOOLA</div>
@@ -1465,7 +1493,7 @@ function addCol(x0, z0, x1, z1) {
   return b;
 }
 const parks = [], landmarks = [];
-const TOKYO = { b: [], meshes: [], lm: {} };   // Tokyo's plain buildings (records + their meshes) and landmarks, for the Blender upgrade (upgradeTokyo)
+const TOKYO = { b: [], meshes: [], lm: {}, sky: [] };   // Tokyo's plain buildings (records + their meshes) and landmarks, for the Blender upgrade (upgradeTokyo)
 const roofGrid = new Map();   // building tops for the helicopter: [x0, z0, x1, z1, h] per city cell
 function addRoof(x0, z0, x1, z1, h) {
   if (colMute) return; const r = [x0, z0, x1, z1, h];
@@ -1579,6 +1607,7 @@ function applyTime(name) {
   envRT = pmrem.fromScene(envScene, 0.02);
   scene.environment = envRT.texture;
   scene.environmentIntensity = (name === 'night' ? 0.8 : 1.0) * (weather === 'rain' ? .8 : 1);
+  window.__futLook?.(name);   // (the year 3000's haze)
   JG.baseFog = scene.fog.color.clone();   // the jungle tints the haze from this each frame
 }
 
@@ -1808,7 +1837,7 @@ async function buildWorld() {
   const roofGB = new GB(), tileGB = new GB(), plainGB = new GB(), redGB = new GB();
   const tkFacadeGB = FACADES.map(() => new GB()), tkRoofGB = new GB(), tkHouseGB = new GB(), tkTileGB = new GB();   // the block buildings (swapped by upgradeTokyo)
   const adTexs = ADS.map(adTex);
-  const adMats = adTexs.map(t => { const m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 1, roughness: .5 }); dynMats.ads.push(m); return m; });
+  const adMats = adTexs.map(t => { const m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 1, roughness: .5 }); dynMats.ads.push(m); return m; }); TOKYO.adMats = adMats;   // (the year 3000 shows its own adverts on them)
   const adInst = ADS.map(() => []);           // matrices per ad
   const neonMats = NEON_WORDS.map((w, i) => { const m = new THREE.MeshBasicMaterial({ map: neonTex(w, NEON_COLS[i % NEON_COLS.length]), side: THREE.DoubleSide }); dynMats.neon.push(m); return m; });
   const neonInst = NEON_WORDS.map(() => []);
@@ -1945,7 +1974,7 @@ async function buildWorld() {
     if (x > DRAG.x0 - 160 && x < DRAG.x0 + DRAG.len + 140 && Math.abs(z - DRAG.z) < 110) continue;
     if (AREAS.some(A => { const nr = A.R.near(x, z, 100); return nr && nr.d < 95; }) || Math.hypot(x - SNOW.cx, z - SNOW.cz) < SNOW.R + 160 || (x > ISLAND.x0 - 120 && z > ISLAND.z0 - 160)) continue;
     const w = rr(20, 50), d = rr(20, 50), h = r < HALF + 600 ? rr(20, 120) : rr(40, 220);
-    facadeGB[pick([0, 1, 2, 3, 4])].box(x, 0, z, w, h, d, 16, 32, 0, tint(), roofGB);
+    facadeGB[pick([0, 1, 2, 3, 4])].box(x, 0, z, w, h, d, 16, 32, 0, tint(), roofGB); TOKYO.sky.push({ x, z, w, d, h });   // (the year 3000 builds over these)
   }
   await nextFrame(); setLoad(.55, 'Lighting up the neon…');
 
@@ -2503,7 +2532,7 @@ function loadModel(id) {
 }
 // after start-up: your own cars first, then everything else, gently (phones get more breathing room)
 function loadAllModels() {
-  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, 'city_tokyo', ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id) && !INTERIOR_MODELS.includes(id));   // towns load when you get near, cockpits when you sit inside
+  const own = CARS.filter(c => wallet.owned.has(c.id)).map(c => c.id), order = [...new Set([...TRAFFIC_MODELS, 'city_tokyo', ...own, ...MODEL_FILES])].filter(id => !CITY_MODELS.includes(id) && !INTERIOR_MODELS.includes(id) && !id.startsWith('fut_'));   // towns load when you get near, cockpits when you sit inside
   (async () => { for (const id of order) {
     await loadModel(id);
     const gap = state === 'drive' ? (isTouch ? 700 : 250) : (isTouch ? 150 : 15);   // while you drive: slower, in the browser's idle time
@@ -3529,7 +3558,7 @@ function dressTraffic(g) {
   const kit = trafficKit('tr_' + g.userData.T.n); if (!kit) return false;
   const hi = new THREE.Group();
   for (const p of kit.parts) { const m = new THREE.Mesh(p.geo, p.mat || g.userData.paint); m.castShadow = !p.mat; hi.add(m); }
-  const lod = new THREE.LOD(); lod.addLevel(hi, 0); lod.addLevel(g.userData.lo, TRAFFIC_LOD); g.add(lod);
+  const lod = new THREE.LOD(); lod.addLevel(hi, 0); lod.addLevel(g.userData.lo, TRAFFIC_LOD); g.add(lod); if (g.userData.fut?.visible) lod.visible = false;   // (it hovers in the year 3000)
   g.userData.top = kit.top; g.userData.onDress?.(kit); return true;
 }
 function trafficModelIn(id) {   // a traffic model arrived: dress every car of that type that is still a box
@@ -3554,6 +3583,7 @@ function buildTrafficCar(T) {
   lo.add(new THREE.Mesh(mergeGeometries(wg), tireMat));
   g.userData = { T, paint, lo };
   if (!dressTraffic(g)) { g.add(lo); trafficWaiting.push(g); }
+  TRAFFIC_ALL.push(g); if (FUT.on && FUT.ready) futDressCar(g, true);   // (a hover car in the year 3000)
   return g;
 }
 /* =====================================================================
@@ -6321,6 +6351,8 @@ function mountainCollide(p) {
   const M = MTN, rC = Math.hypot(p.x - M.cx, p.z - M.cz);
   if (rC < M.plazaR - 1.6) { // on the viewpoint plaza
     p.y = M.plazaY; p.slope = 0;
+    const GF = FUT.on && FUT.ready ? FUT.giants.find(G => G.sp.foot) : null;   // the year 3000: the giant's feet are solid
+    if (GF) { const R = GF.sp.foot * GF.sp.s, dx = p.x - GF.sp.x, dz = p.z - GF.sp.z, d = Math.hypot(dx, dz); if (d < R && d > 1e-3) { p.x = GF.sp.x + dx / d * R; p.z = GF.sp.z + dz / d * R; const vn = (p.vx * dx + p.vz * dz) / d; if (vn < 0) { p.vx -= 1.4 * vn * dx / d; p.vz -= 1.4 * vn * dz / d; return -vn; } } }
     if (!summitSeen) { summitSeen = true; skill.bank += 2000; localStorage.setItem('amboola.skill', skill.bank); toast('SUMMIT · 展望台', `MT. AMBOOLA ${Math.round(M.plazaY)} m · BEST VIEW OF TOKYO +2000`); }
     return 0;
   }
@@ -8757,7 +8789,7 @@ function upgradeTokyo() {
 function updateTokyoLOD(force) {
   const C = TOKYO.city; if (!C) return;
   const cx = camera.position.x, cz = camera.position.z, R = quality === 'low' ? 0 : TOKYO_NEAR * (quality === 'hd' ? 1.6 : 1);
-  C.grp.visible = Math.abs(cx) < 7000 && cz > -7000 && cz < 9000;   // far off in the countries Tokyo is not drawn
+  C.grp.visible = !(FUT.on && FUT.ready) && Math.abs(cx) < 7000 && cz > -7000 && cz < 9000;   // (the year 3000 has its own) far off in the countries Tokyo is not drawn
   if (!C.grp.visible || (!force && C.at && Math.hypot(C.at[0] - cx, C.at[1] - cz) < 25 && C.R === R)) return;
   const full = force || !C.at || C.R !== R; C.at = [cx, cz]; C.R = R;
   let changed = null;   // only the buildings that crossed the line: refilling (and re-uploading) every slot each time was a regular little hitch
@@ -9294,8 +9326,10 @@ for (const C of COUNTRIES) {
 let cullT = 0;
 function updateCountryCulling(dt) {
   const cx = camera.position.x, cz = camera.position.z;   // every frame: a teleport or the jet moves the camera kilometres at once
-  updateTokyoLOD();
+  updateTokyoLOD(); futUpdate(dt || 0);
+  const fut = FUT.on && FUT.ready;
   for (const C of COUNTRIES) {
+    if (C.town) { const dT = Math.hypot(C.cx - cx, C.cz - cz), T = fut && dT < 2600 ? futBuildTown(C) : FUT.towns.get(C); if (T) T.grp.visible = fut && dT < 2600; C.town.meshes.forEach(m => m.visible = !fut && !C.city); }   // the year 3000's town
     for (const g of C.R.chunks || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 7500;
     const d = Math.hypot(C.cx - cx, C.cz - cz); if (C.group) C.group.visible = d < 12000;
     if (d < 9000 && !C.cityAsked && CITY_CFG[C.id]) { C.cityAsked = true; loadModel('city_' + C.id).then(m => { if (m) { upgradeCity(C); warmUp(); } }); }   // its Blender town
@@ -9303,7 +9337,7 @@ function updateCountryCulling(dt) {
     if (C.city) for (const g of C.city.cells) {   // detailed houses near the camera, the plain ones further out
       const dc = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz), lo = g.userData.lo;
       const near = quality === 'low' ? 0 : CITY_NEAR * (quality === 'hd' ? 1.5 : 1);   // graphics LOW: only the plain houses
-      g.visible = dc < (lo ? near : 1700); if (lo) lo.visible = dc >= near && dc < 1700;
+      g.visible = !fut && dc < (lo ? near : 1700); if (lo) lo.visible = !fut && dc >= near && dc < 1700;
     }
   }
 }
@@ -10408,6 +10442,10 @@ function crowdSpawn(q, zone, fx, fz) {
     if (d > 240 || (CROWD.filled && d < 110)) continue;   // once the streets are full, new people come from out of sight
     Object.assign(q, { on: true, x, z, h: 0, dir: Math.random() < .5 ? 1 : -1, v: 1 + Math.random() * .6, ph: Math.random() * 6, stand: Math.random() < .15 ? 3 + Math.random() * 8 : 0, ox: 0, oz: 0, hop: 0, y: 0 });
     const I = CROWD.ims, c = CROWD.col, k = q.k;
+    if (FUT.on && FUT.robot && I.torso.material === FUT.mat) {   // a robot: one finish all over (its glow colour comes from it)
+      c.set(pick(FUT_PAL.robot)); for (const im of [I.torso, I.head, I.hair]) im.setColorAt(k, c); for (const im of [I.leg, I.arm]) { im.setColorAt(2 * k, c); im.setColorAt(2 * k + 1, c); }
+      for (const im of Object.values(I)) im.instanceColor.needsUpdate = true; continue;
+    }
     I.torso.setColorAt(k, c.set(pick(PERSON.SHIRT))); I.head.setColorAt(k, c.set(pick(PERSON.SKIN))); I.arm.setColorAt(2 * k, c); I.arm.setColorAt(2 * k + 1, c);
     I.hair.setColorAt(k, c.set(pick(PERSON.HAIR))); I.leg.setColorAt(2 * k, c.set(pick(PERSON.PANTS))); I.leg.setColorAt(2 * k + 1, c);
     for (const im of Object.values(I)) im.instanceColor.needsUpdate = true;
@@ -15004,30 +15042,40 @@ function crimeBump(r) {
    ===================================================================== */
 const COP_TOP = st => (100 + 5 * (Math.max(1, st) - 1)) / 3.6, COP_TURN = st => (50 + 2.5 * (Math.max(1, st) - 1)) / 3.6;   // police speed limits: ★ 100 km/h, 50 in the corners … ★★★★★ 120, 60
 const WANTED = [0, 10, 20, 40, 50, 60], WANTED_HELI = [0, 0, 0, 0, 1, 2], COP_SHOW = isTouch ? 6 : 12, COP_POOL = [], COP_HELI_POOL = [];
-const COP_SPECS = () => ['corvette', 'mustang'].map(id => CARS.find(c => c.id === id)).filter(Boolean);
+const COP_SPECS = () => (FUT.on && FUT.ready && MODELS.enforcer ? ['enforcer'] : ['corvette', 'mustang']).map(id => CARS.find(c => c.id === id)).filter(Boolean);   // (the year 3000: the Enforcer)
 let COP_MATS = null, COP_BEAM_TEX = null; const COP_BITS = ['#f2f3f5', '#101114', '#9fd3ff', '#ff1a1a', '#2a5bff'];   // paint, glass and light-bar pieces
 function copMats() { return COP_MATS ??= { red: new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff1a1a, emissiveIntensity: 3 }), blue: new THREE.MeshStandardMaterial({ color: 0x000844, emissive: 0x2a5bff, emissiveIntensity: 3 }),
   base: new THREE.BoxGeometry(1.2, .05, .26), lamp: new THREE.BoxGeometry(.56, .13, .28) }; }
 function buildCopCar(spec, k) {
   const M = copMats(), car = buildCar(spec, k % 2 ? '#101114' : '#f2f3f5', .3), B = BODIES[spec.body];
   const bar = new THREE.Group(); bar.position.set(0, (B?.roofY || 1.25) + .07, -.2);
+  if (spec.id === 'enforcer') {   // the Enforcer 3000: thin glowing strips down the roof edges and across the back
+    const strip = (m, x, z, w, d) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, .05, d), m); o.position.set(x, -.04, z); bar.add(o); };
+    strip(M.red, -.68, .2, .07, 1.3); strip(M.blue, .68, .2, .07, 1.3); strip(M.blue, -.3, -.72, .55, .06); strip(M.red, .3, -.72, .55, .06);
+  } else {
   const base = new THREE.Mesh(M.base, trafficMats.black), l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue);
-  base.position.y = -.06; l.position.x = -.3; r.position.x = .3; bar.add(base, l, r); car.group.add(bar);
+  base.position.y = -.06; l.position.x = -.3; r.position.x = .3; bar.add(base, l, r); }
+  car.group.add(bar);
   car.copSpec = spec; car.copBar = bar; return car;
 }
 function buildCopHeli() {
-  const spec = CARS.find(c => c.heli), car = buildHeli(spec, '#14213d'), M = copMats();
-  const l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue); l.position.set(-.5, .5, -1.2); r.position.set(.5, .5, -1.2); car.body.add(l, r);
+  let car;
+  if (FUT.on && FUT.ready && MODELS.fut_cars) {   // the year 3000: a flying police car, its own light bars flashing
+    const group = new THREE.Group(), body = new THREE.Group(), m = new THREE.Mesh(futKit('fut_cars', 'FC_police', FUT_CARK), futMat({ tint: '#f2f3f5', glow: 2.4, self: .08 })); m.scale.setScalar(1.7); m.castShadow = true; body.add(m); group.add(body);
+    car = { group, body, rotor: null, tail: null, fut: true };
+  } else {
+  const spec = CARS.find(c => c.heli), M = copMats(); car = buildHeli(spec, '#14213d');
+  const l = new THREE.Mesh(M.lamp, M.red), r = new THREE.Mesh(M.lamp, M.blue); l.position.set(-.5, .5, -1.2); r.position.set(.5, .5, -1.2); car.body.add(l, r); }
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(.3, 4.5, 1, 20, 1, true).translate(0, -.5, 0),   // the searchlight: a soft cone down to you
     new THREE.MeshBasicMaterial({ color: 0xfff3d0, transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false,   // (front faces only: no pale wall when the camera is inside it)
       alphaMap: COP_BEAM_TEX ??= canvasTex(4, 64, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#fff'); gr.addColorStop(.55, '#555'); gr.addColorStop(1, '#111'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }) }));   // bright at the helicopter, fading towards the ground
   beam.frustumCulled = false; car.beam = beam; return car;
 }
 function copPrewarm() {   // load and build one of each in advance (hidden) and compile their shaders, so the first backup doesn't stutter
-  Promise.all(['corvette', 'mustang', 'heli'].map(loadModel)).then(() => {
+  Promise.all(['corvette', 'mustang', 'heli', ...(FUT.on ? ['enforcer', 'fut_cars'] : [])].map(loadModel)).then(() => {
     if (crime?.role !== 'outlaw') return;
     COP_SPECS().forEach((sp, k) => { if (!COP_POOL.some(c => c.copSpec === sp)) { const car = buildCopCar(sp, k); car.group.visible = false; scene.add(car.group); copDent(car, 1, 0, 0, 10); copReset(car); COP_POOL.push(car); } });
-    if (!COP_HELI_POOL.length) { const h = buildCopHeli(); h.group.visible = h.beam.visible = false; scene.add(h.group, h.beam); COP_HELI_POOL.push(h); }
+    if (!COP_HELI_POOL.some(h => !!h.fut === !!(FUT.on && FUT.ready))) { const h = buildCopHeli(); h.group.visible = h.beam.visible = false; scene.add(h.group, h.beam); COP_HELI_POOL.push(h); }
     const fx = [...COP_BITS, '#c8ccd2', '#222428'].map(col => { if (!BRK.bitMats.has(col)) BRK.bitMats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: .7 })); return BRK.bitMats.get(col); });   // the smash debris and sparks too
     const tmp = [...fx, ...BRK.sparkMats].map(m => { const o = new THREE.Mesh(BRK.bitGeo, m); o.position.y = -900; scene.add(o); return o; });
     warmUp(50); setTimeout(() => tmp.forEach(o => scene.remove(o)), 5000);
@@ -15042,10 +15090,10 @@ function spawnCop(c, p) {
   r.place(s.x, s.z, Math.atan2(p.x - s.x, p.z - s.z)); r.repath = Math.random() * .5; r.cop = car; c.police.push(r);
 }
 function spawnCopHeli(c, p) {
-  const car = COP_HELI_POOL.pop() || buildCopHeli(), a = Math.random() * Math.PI * 2;
+  const fi = COP_HELI_POOL.findIndex(h => !!h.fut === !!(FUT.on && FUT.ready)), car = fi >= 0 ? COP_HELI_POOL.splice(fi, 1)[0] : buildCopHeli(), a = Math.random() * Math.PI * 2;
   scene.add(car.group, car.beam); car.group.visible = true;
   c.helis.push({ car, x: p.x + Math.cos(a) * 450, z: p.z + Math.sin(a) * 450, y: (p.y || 0) + 70, vx: 0, vz: 0, h: 0, orbit: a, k: c.helis.length, d: 450 });
-  toast('🚁 POLICE HELICOPTER', 'IT CAN SEE YOU FROM THE SKY · OUTRUN IT');
+  toast(car.fut ? '🚓 FLYING POLICE' : '🚁 POLICE HELICOPTER', 'IT CAN SEE YOU FROM THE SKY · OUTRUN IT');
 }
 const COP_DOWN = new THREE.Vector3(0, -1, 0), COP_V = new THREE.Vector3();
 function updateCopHeli(H, dt, p) {
@@ -15887,6 +15935,596 @@ $('bParties').onclick = () => openParties();
 $('partiesClose').onclick = () => { $('parties').classList.add('hidden'); if (state === 'pause') $('pause').classList.remove('hidden'); };
 
 /* =====================================================================
+   AMBOOLA 3000 — the time machine. The 🚀 FUTURE button in the garage (just above the car search) sends you to the
+   year 3000: the screen warps, the year counts up from 2026 to 3000, and you drive on in the future. The roads stay
+   the same, but every building is a Blender cyberpunk tower (models/blender/future.py: glass neon towers, concrete
+   megablocks, chrome spires, neon pagodas, capsule homes, hangars) stretched over its plot; five megatowers rise
+   over the middle of Tokyo and more on the skyline. Everything is lit with neon strips, window lights and animated
+   adverts (eight year-3000 brands, four frames each), and holograms float over the city: the AMBOOLA 3000 logo, a
+   koi fish, a dancing robot and a car. Hundreds of flying cars cruise in sky lanes over the streets, the street cars
+   hover, the people are robots, the police chase you in AMBOOLA Enforcer 3000s and flying police cars, and on top of
+   every mountain stands a giant transformer robot that moves every second (and now and then folds into a giant
+   hover-truck and back). ⏪ BACK TO 2026 brings today back.
+   Everything of the year 3000 is drawn with one material (futMat): each vertex says what it is (aKind: tinted wall,
+   glass, window cells, neon A/B, advert, shop, lamp, glow, police lights …), so a whole building module, flying car,
+   robot or giant part is one draw call.
+   ===================================================================== */
+const FUT_MODELS = ['fut_city', 'fut_cars', 'fut_robot', 'fut_giant'];
+MODEL_FILES.push(...FUT_MODELS);
+// the year-3000 police car (models/blender/future.py): the police drive it in the future, and you can buy one
+CARS.push({ id: 'enforcer', name: 'AMBOOLA Enforcer 3000', brand: 'Amboola', cat: 'FUTURE', body: 'enforcer', wing: 'none', kw: 520, redline: 16000, mass: 2100, vmax: 280, drive: 'AWD', engine: 'ev', gears: 1, zero: 3.0,
+  grip: 1.3, aero: .3, paint: Math.max(0, PAINTS.findIndex(q => q.n === 'Pearl White')), rim: '#16181e', caliper: '#2a5bff', usd: 300000, desc: 'Year-3000 police cruiser · armoured · electric', jp: '未来パトカー' });
+MODEL_FILES.push('enforcer');
+BODIES.enforcer = { ...BODIES.urus, L: 5.04, W: 2.08, wr: .38, fX: 1.62, rX: -1.55, roofY: 1.52 };
+derive(CARS[CARS.length - 1]);   // (its gearing, drag and grip: CARS.forEach(derive) ran before it was added)
+const FUT = { on: localStorage.getItem('amboola.future') === '1', ready: false, job: null, t: 0, travelling: false,
+  U: { uT: { value: 0 }, uWin: { value: 1.6 }, uNeon: { value: 2.4 }, uAd: { value: 1.5 }, uShop: { value: 1.5 }, uGlow: { value: 2.4 }, uFlashR: { value: 0 }, uFlashB: { value: 0 }, uAtlas: { value: null } },
+  mat: null, kits: {}, tokyo: null, sky: null, holo: null, giants: [], towns: new Map(), cols: [], padCols: [], robot: null, adTexs: null, adOld: null };
+const FUT_NEAR = () => quality === 'low' ? 0 : (isTouch ? 170 : 320) * (quality === 'hd' ? 1.4 : 1);
+const FUT_PAL = {
+  wall: [['#2c313c', '#3a404d', '#262a33', '#454b58', '#323a46'], ['#5a5e66', '#4b4f58', '#6a5c58', '#57636e', '#3f4752', '#61566b'], ['#8a929c', '#a7adb5', '#6e7680', '#9a8f80'], ['#3a1418', '#2a1c24', '#4a1a1e', '#1e1a26', '#26202e']],
+  house: ['#d8dde4', '#c7ccd6', '#a9b3c0', '#e4d8cc', '#9aa6b4', '#c9c2d6'], ware: ['#5a616c', '#4c535e', '#6b6f78'],
+  car: { FC_sedan: ['#e8e9ec', '#1b1c20', '#b3121a', '#1d5fc4', '#a9adb1', '#6a2bd8', '#0fa5a5', '#f2c20f'], FC_taxi: ['#f3c318', '#f3c318', '#f3c318', '#12161c'],
+    FC_sport: ['#ff2d6f', '#39f0ff', '#ffd21f', '#7dff5a', '#ff6a2d', '#f4f4f4', '#9f6bff'], FC_van: ['#e8e8e8', '#2a2d36', '#ff6a2d', '#3a6ea8'], FC_police: ['#f2f3f5'] },
+  robot: ['#d9dde3', '#f2f2f2', '#2a2d33', '#b58a3a', '#9fa6ae', '#c8141b', '#1f6f8b', '#e0e4ea', '#55595f', '#7a2bd8'],
+  giant: [['#c8141b', '#d8dde3'], ['#1d5fc4', '#ffd21f'], ['#f2f2f2', '#c8141b'], ['#2a2d33', '#39f0ff'], ['#ff6a2d', '#2a2d33'], ['#7a2bd8', '#d8dde3'], ['#2fa85a', '#f2f2f2'], ['#ffd21f', '#2a2d33'], ['#9fa6ae', '#ff38e8'], ['#0fa5a5', '#f2f2f2']] };
+// what each Blender material is: [kind, r, g, b] (the colour is the vertex colour; kind 1 and 14 are tinted per instance)
+const FUT_KIND = { Wall: [1, 1, 1, 1], Dark: [0, .08, .085, .1], Metal: [13, .42, .45, .5], Chrome: [13, .75, .78, .82], Glass: [2, .04, .06, .1], Win: [3, .03, .035, .045],
+  Shop: [7, 1, .78, .5], Neon: [4, 1, 1, 1], Neon2: [5, 1, 1, 1], Ad: [6, 1, 1, 1], Lamp: [8, 1, .1, .08], Holo: [10, .3, .9, 1], Sign: [10, 1, .78, .15], Paint: [1, 1, 1, 1],
+  Thruster: [10, .25, .85, 1], Headlight: [10, 1, 1, .92], Taillight: [10, 1, .06, .04], PoliceRed: [11, 1, .1, .1], PoliceBlue: [12, .15, .35, 1], Glow: [15, 1, 1, 1], Eye: [10, 1, .15, .12],
+  Body: [1, 1, 1, 1], Joint: [0, .16, .17, .2], Armor: [1, 1, 1, 1], Armor2: [14, 1, 1, 1], Tire: [0, .05, .05, .06], Rim: [13, .6, .62, .66], Black: [0, .04, .04, .045],
+  GlossBlack: [0, .02, .02, .025], Accent: [0, .12, .37, .77], Disc: [13, .35, .36, .38] };
+const FUT_CARK = { Ad: [10, .35, .85, 1] };   // (a moving car's side screen just glows: its advert would change as it flies)
+const FUT_VS = vs => 'attribute float aKind;\nattribute vec2 aUv;\nuniform vec3 uTint, uTint2;\nvarying float vKind, vSeed;\nvarying vec2 vUv2;\nvarying vec3 vWP, vWN, vTint;\n' + vs
+  .replace('#include <color_vertex>', `vColor = color;
+  vec3 tnt = uTint;
+  #ifdef USE_INSTANCING_COLOR
+    tnt = instanceColor.rgb;
+  #endif
+  vTint = tnt; vKind = aKind; vUv2 = aUv;
+  { float kd = floor(aKind + .5); if (kd == 1. || kd == 9.) vColor *= tnt; else if (kd == 14.) vColor *= uTint2; }`)
+  .replace('#include <project_vertex>', `#include <project_vertex>
+  { vec4 fwp = vec4(transformed, 1.); vec3 fn = objectNormal, ip = vec3(0.);
+    #ifdef USE_INSTANCING
+      fwp = instanceMatrix * fwp; fn = mat3(instanceMatrix) * fn; ip = instanceMatrix[3].xyz;
+    #endif
+    fwp = modelMatrix * fwp; vWP = fwp.xyz; vWN = normalize(mat3(modelMatrix) * fn); ip = (modelMatrix * vec4(ip, 1.)).xyz;
+    vSeed = fract(sin(dot(floor(ip.xz * .25), vec2(12.9898, 78.233))) * 43758.5453); }`);
+const FUT_FS = fs => `uniform float uT, uWin, uNeon, uAd, uShop, uGlow, uFlashR, uFlashB, uSelf, uGk;
+uniform sampler2D uAtlas;
+varying float vKind, vSeed;
+varying vec2 vUv2;
+varying vec3 vWP, vWN, vTint;
+const vec3 FP[8] = vec3[8](vec3(.22, .94, 1.), vec3(1., .22, .91), vec3(1., .82, .12), vec3(.49, 1., .35), vec3(1., .42, .18), vec3(.62, .42, 1.), vec3(1., .18, .44), vec3(.18, 1., .78));
+float fh(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+vec3 fWin(vec3 p, vec3 n, float s) {   // a window per 2.4 m x 3.6 m cell: dark, or lit warm / cool / pink / mint, with frames between
+  float hz = abs(n.x) > abs(n.z) ? p.z : p.x;
+  vec2 q = vec2(hz / 2.4, (p.y - .3) / 3.6), c = floor(q), f = fract(q);
+  float h = fh(c + floor(s * 50.)), fr = step(.1, f.x) * step(f.x, .9) * step(.14, f.y) * step(f.y, .86);
+  vec3 col = h < .74 ? vec3(1., .7, .42) : h < .86 ? vec3(.5, .72, 1.) : h < .94 ? vec3(1., .38, .82) : vec3(.35, 1., .8);
+  return col * (h < .5 ? .02 : .25 + .75 * fh(c * 1.7 + 3.1)) * fr;
+}
+` + fs.replace('#include <color_fragment>', `#include <color_fragment>
+  float kd = floor(vKind + .5); vec3 fEm = vec3(0.);
+  if (kd == 3.) { fEm = fWin(vWP, vWN, vSeed) * uWin; diffuseColor.rgb = vec3(.025); }
+  else if (kd == 9.) { if (vWN.y > .5) diffuseColor.rgb *= .35; else { fEm = fWin(vWP, vWN, vSeed) * uWin * .8 + FP[int(vSeed * 7.99)] * step(.968, fract(vWP.y / 19. + vSeed)) * uNeon * .7; diffuseColor.rgb *= .85; } }
+  else if (kd == 4. || kd == 5.) { fEm = FP[int(fract(vSeed * (kd == 4. ? 7.31 : 3.77) + (kd == 5. ? .37 : 0.)) * 7.99)] * uNeon; diffuseColor.rgb = vec3(.04); }
+  else if (kd == 6.) { float ak = floor(vSeed * 7.99), fr = floor(mod(uT * 2.2 + vSeed * 17., 4.)); vec2 auv = fract(vUv2);
+    vec3 ac = texture2D(uAtlas, vec2((auv.x + fr) * .25, (auv.y + ak) * .125)).rgb;
+    fEm = ac * (.82 + .18 * sin(vUv2.y * 420. + uT * 6.)) * uAd; diffuseColor.rgb = vec3(.01); }
+  else if (kd == 7.) { float hz7 = abs(vWN.x) > abs(vWN.z) ? vWP.z : vWP.x;   // shop windows: panes, brighter at the top, each shop its own
+    fEm = vec3(1., .68, .4) * uShop * (.3 + .7 * smoothstep(0., 3.4, vWP.y)) * step(.08, fract(hz7 / 1.8)) * step(.06, fract(vWP.y / 1.2 + .5)) * (.45 + .55 * fh(vec2(floor(hz7 / 5.6), vSeed))); diffuseColor.rgb = vec3(.03); }
+  else if (kd == 8.) { fEm = vec3(1., .08, .05) * (.15 + 3. * step(.6, fract(uT * .55 + vSeed))); }
+  else if (kd == 10.) { fEm = diffuseColor.rgb * uGlow; }
+  else if (kd == 11.) { fEm = vec3(1., .08, .08) * uFlashR * 3.; diffuseColor.rgb = vec3(.3, .02, .02); }
+  else if (kd == 12.) { fEm = vec3(.12, .3, 1.) * uFlashB * 3.; diffuseColor.rgb = vec3(.02, .05, .3); }
+  else if (kd == 15.) { fEm = FP[int(fh(vTint.rg * 9.1 + vTint.b) * 7.99)] * uGlow; diffuseColor.rgb = vec3(.05); }
+  if (kd >= 10. && kd != 13. && kd != 14.) fEm *= uGk;
+  if (uSelf > 0. && (kd == 1. || kd == 14.)) fEm += diffuseColor.rgb * uSelf * (kd == 14. ? 1.6 : 1.);   // (the giants and the flying cars: lit up by the city)`)
+  .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
+  if (kd == 2.) { roughnessFactor = .05; metalnessFactor = .92; } else if (kd == 13.) { roughnessFactor = .26; metalnessFactor = .92; }
+  else if (kd == 1. || kd == 14.) { roughnessFactor = .38; metalnessFactor = .45; } else if (kd == 9.) { roughnessFactor = .3; metalnessFactor = .5; }`)
+  .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += fEm;');
+function futMat({ tint = '#ffffff', tint2 = '#ffffff', fog = true, self = 0, glow = 1 } = {}) {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .55, metalness: .35, fog });
+  const own = { uTint: { value: new THREE.Color(tint) }, uTint2: { value: new THREE.Color(tint2) }, uSelf: { value: self }, uGk: { value: glow } }; m.userData.fu = own;
+  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, FUT.U, own); sh.vertexShader = FUT_VS(sh.vertexShader); sh.fragmentShader = FUT_FS(sh.fragmentShader); };
+  m.customProgramCacheKey = () => 'fut-uber';
+  return m;
+}
+// a Blender node (and the primitives it is drawn with) as one geometry with the attributes futMat reads. skip: names
+// of child nodes that are parts of their own (the giant's joints)
+function futMerge(node, over, skip) {
+  node.updateMatrixWorld(true); const inv = node.matrixWorld.clone().invert(), geos = [];
+  const add = o => {
+    const src = o.geometry; if (!src?.attributes.position) return;
+    const n = src.attributes.position.count, g = new THREE.BufferGeometry(), [k, r, gg, b] = over?.[o.material.name] || FUT_KIND[o.material.name] || [0, .5, .5, .5];
+    g.setAttribute('position', src.attributes.position.clone());
+    if (src.attributes.normal) g.setAttribute('normal', src.attributes.normal.clone()); else g.computeVertexNormals();
+    g.setIndex(src.index ? src.index.clone() : [...Array(n).keys()]);
+    const col = new Float32Array(n * 3), kind = new Float32Array(n).fill(k); for (let i = 0; i < n; i++) col.set([r, gg, b], i * 3);
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('aKind', new THREE.BufferAttribute(kind, 1));
+    g.setAttribute('aUv', src.attributes.uv ? new THREE.BufferAttribute(new Float32Array(src.attributes.uv.array), 2) : new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)); geos.push(g);
+  };
+  if (skip) { if (node.isMesh) add(node); for (const c of node.children) if (c.isMesh && !skip.includes(c.name)) add(c); }
+  else node.traverse(o => { if (o.isMesh) add(o); });
+  if (!geos.length) return null;
+  const m = mergeGeometries(geos); m.computeBoundingSphere(); return m;
+}
+const futKit = (src, name, over) => { const key = name + (over ? '*' : ''); if (key in FUT.kits) return FUT.kits[key]; const node = MODELS[src]?.getObjectByName(name); return (FUT.kits[key] = node ? futMerge(node, over) : null); };
+const futM4 = (x, y, z, ry, sx, sy, sz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(sx, sy, sz));
+
+// ---- the adverts: eight year-3000 brands (made up), four frames each, in one atlas for the buildings' screens and
+// as big pictures for the billboards and the crossing's video screens
+const FUT_ADS = [
+  { t: 'AMBOOLA SKY', s: 'FLY TO WORK · 空を走れ', bg: ['#08001a', '#2a0050'], ac: '#39f0ff', ic: 'car' },
+  { t: 'SYNTH-COLA', s: 'TASTE THE YEAR 3000', bg: ['#1a0008', '#5a0020'], ac: '#ff2d6f', ic: 'can' },
+  { t: 'ROBO-PUP v9', s: 'YOUR BEST FRIEND · ロボ犬', bg: ['#001a14', '#004a3a'], ac: '#7dff5a', ic: 'dog' },
+  { t: 'NEON RAMEN', s: 'HOT IN 3 SECONDS · ラーメン', bg: ['#1a0a00', '#552000'], ac: '#ffd21f', ic: 'bowl' },
+  { t: 'MOON TRIPS', s: 'A WEEKEND ON THE MOON · $99', bg: ['#000814', '#0a2a5a'], ac: '#cfe6ff', ic: 'moon' },
+  { t: 'ZERO-G KICKS', s: 'JUMP HIGHER · 無重力', bg: ['#12001a', '#40005a'], ac: '#ff38e8', ic: 'shoe' },
+  { t: 'HOLO GAMES', s: 'PLAY IN YOUR DREAMS · ゲーム', bg: ['#00101a', '#00405a'], ac: '#2dffc8', ic: 'game' },
+  { t: 'ROBO ARMS', s: 'UPGRADE YOUR ARM · 50% OFF', bg: ['#1a1000', '#4a3000'], ac: '#ff6a2d', ic: 'arm' },
+];
+function futAdDraw(g, k, f, W, H) {   // advert k, frame f (0-3), in a W x H box at g's origin
+  const A = FUT_ADS[k], s = H / 128;
+  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, A.bg[0]); gr.addColorStop(1, A.bg[1]); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.save(); g.globalAlpha = .16; g.strokeStyle = A.ac; g.lineWidth = 2 * s;
+  for (let x = -H + f * 7 * s; x < W; x += 22 * s) { g.beginPath(); g.moveTo(x, H); g.lineTo(x + H, 0); g.stroke(); }
+  g.restore();
+  // the picture, on the right
+  const cx = W * .78, cy = H * .52, R = H * .34; g.save(); g.translate(cx, cy); g.fillStyle = A.ac; g.strokeStyle = A.ac; g.lineWidth = 3 * s; g.shadowColor = A.ac; g.shadowBlur = 10 * s;
+  if (A.ic === 'car') {   // a flying car crossing, with a glow under it
+    g.translate((f - 1.5) * 9 * s, Math.sin(f * 1.6) * 3 * s);
+    g.beginPath(); g.ellipse(0, 0, R * 1.1, R * .32, 0, 0, 7); g.fill(); g.fillStyle = '#0b1530'; g.beginPath(); g.ellipse(-R * .1, -R * .2, R * .45, R * .22, 0, Math.PI, 0); g.fill();
+    g.fillStyle = '#fff'; g.globalAlpha = .7; g.fillRect(-R * .9, R * .38, R * 1.8, 2 * s);
+  } else if (A.ic === 'can') {
+    g.fillRect(-R * .38, -R * .8, R * .76, R * 1.6); g.fillStyle = '#fff'; g.fillRect(-R * .38, -R * .2, R * .76, R * .25);
+    g.globalAlpha = .8; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(Math.sin(i * 2.3) * R * .6, R * .9 - ((i * 13 + f * 9) % 40) * s * 1.5, 2.5 * s, 0, 7); g.stroke(); }
+  } else if (A.ic === 'dog') {
+    g.fillRect(-R * .7, -R * .5, R * 1.4, R); g.beginPath(); g.moveTo(-R * .7, -R * .5); g.lineTo(-R * .45, -R * .95); g.lineTo(-R * .2, -R * .5); g.moveTo(R * .7, -R * .5); g.lineTo(R * .45, -R * .95); g.lineTo(R * .2, -R * .5); g.fill();
+    g.fillStyle = '#04120c'; const blink = f === 2 ? .15 : 1; for (const e of [-1, 1]) { g.beginPath(); g.ellipse(e * R * .3, -R * .1, R * .14, R * .14 * blink, 0, 0, 7); g.fill(); }
+    g.fillRect(-R * .25, R * .22, R * .5, R * .08);
+  } else if (A.ic === 'bowl') {
+    g.beginPath(); g.arc(0, 0, R * .9, 0, Math.PI); g.fill(); g.fillRect(-R, -R * .04, R * 2, R * .12);
+    g.globalAlpha = .75; for (let i = -1; i <= 1; i++) { g.beginPath(); for (let t = 0; t <= 1; t += .1) { const y = -R * .2 - t * R * .9, x = i * R * .4 + Math.sin(t * 7 + f * 1.4 + i) * R * .1; t ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+  } else if (A.ic === 'moon') {
+    g.beginPath(); g.arc(R * .15, R * .1, R * .75, 0, 7); g.fill(); g.fillStyle = A.bg[0]; g.globalAlpha = .35; for (const [x, y, r] of [[-.1, -.1, .18], [.35, .3, .14], [.3, -.25, .1]]) { g.beginPath(); g.arc(x * R + R * .15, y * R + R * .1, r * R, 0, 7); g.fill(); }
+    g.globalAlpha = 1; g.fillStyle = '#ff6a2d'; g.save(); g.translate(-R * .9 + f * R * .25, R * .7 - f * R * .3); g.rotate(-.7); g.fillRect(-2 * s, -7 * s, 4 * s, 14 * s); g.restore();
+  } else if (A.ic === 'shoe') {
+    g.translate(0, -Math.abs(Math.sin(f * Math.PI / 2)) * R * .4);
+    g.beginPath(); g.moveTo(-R, R * .3); g.lineTo(-R * .8, -R * .3); g.lineTo(-R * .1, -R * .2); g.lineTo(R, R * .1); g.lineTo(R, R * .3); g.closePath(); g.fill();
+    g.fillStyle = '#fff'; g.fillRect(-R, R * .3, R * 2, R * .12);
+  } else if (A.ic === 'game') {   // a little pixel alien, two poses
+    const P = f % 2 ? ['0100010', '0011100', '0111110', '1101011', '1111111', '0100010', '1000001'] : ['0100010', '0011100', '0111110', '1101011', '1111111', '0010100', '0100010'], px = R * .26;
+    P.forEach((row, j) => [...row].forEach((c, i) => { if (c === '1') g.fillRect((i - 3.5) * px, (j - 3.5) * px, px * .92, px * .92); }));
+  } else if (A.ic === 'arm') {
+    const a = -.5 + f * .35; g.lineCap = 'round'; g.lineWidth = 9 * s; g.beginPath(); g.moveTo(-R, R * .6); g.lineTo(-R * .1, R * .1); g.lineTo(-R * .1 + Math.cos(a - 1.2) * R * .8, R * .1 + Math.sin(a - 1.2) * R * .8); g.stroke();
+    g.beginPath(); g.arc(-R * .1, R * .1, 7 * s, 0, 7); g.fillStyle = '#fff'; g.fill();
+  }
+  g.restore();
+  // the words: the brand glowing (a glitch on the last frame), the line under it, a little year-3000 tag
+  g.textBaseline = 'alphabetic'; let fs = 30 * s; g.font = `900 ${fs}px ${OR}`; while (g.measureText(A.t).width > W * .6 && fs > 12 * s) { fs -= 2 * s; g.font = `900 ${fs}px ${OR}`; }
+  const tx = 14 * s, ty = H * .44;
+  if (f === 3) { g.globalAlpha = .7; g.fillStyle = '#ff2d6f'; g.fillText(A.t, tx - 3 * s, ty); g.fillStyle = '#39f0ff'; g.fillText(A.t, tx + 3 * s, ty); g.globalAlpha = 1; }
+  g.fillStyle = f === 1 ? '#fff' : A.ac; g.shadowColor = A.ac; g.shadowBlur = 12 * s; g.fillText(A.t, tx, ty); g.shadowBlur = 0;
+  g.fillStyle = '#fff'; g.font = `700 ${11 * s}px ${OR}, ${JP}`; g.fillText(A.s, tx, ty + 22 * s);
+  g.fillStyle = A.ac; g.globalAlpha = .8; g.fillRect(tx, ty + 30 * s, W * .3 * ((f + 1) / 4), 3 * s); g.globalAlpha = 1;
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.font = `700 ${8 * s}px ${OR}`; g.fillText('AMBOOLA 3000', tx, H - 10 * s);
+  g.strokeStyle = A.ac; g.globalAlpha = .5; g.lineWidth = 2 * s; g.strokeRect(2 * s, 2 * s, W - 4 * s, H - 4 * s); g.globalAlpha = 1;
+}
+function futInit() {
+  if (FUT.mat) return;
+  const atlas = canvasTex(1024, 1024, (g) => { for (let k = 0; k < 8; k++) for (let f = 0; f < 4; f++) { g.save(); g.translate(f * 256, k * 128); g.beginPath(); g.rect(0, 0, 256, 128); g.clip(); futAdDraw(g, k, f, 256, 128); g.restore(); } });
+  atlas.flipY = false; atlas.needsUpdate = true; FUT.U.uAtlas.value = atlas;   // (glTF texture coordinates: row 0 at the top)
+  FUT.adTexs = FUT_ADS.map((_, k) => canvasTex(1024, 512, (g, w, h) => futAdDraw(g, k, 0, w, h)));
+  FUT.mat = futMat(); FUT.carMat = futMat({ glow: 2.6, self: .07 });   // (flying cars: brighter light strips, and lit by the city)
+  FUT.holoMats = ['#5ff0ff', '#ff6ad5', '#ffd25a', '#7dff8a'].map(c => {
+    const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(1.6), transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    m.onBeforeCompile = sh => {   // see-through, with scan lines running up it and a flicker now and then
+      sh.uniforms.uT = FUT.U.uT;
+      sh.vertexShader = 'varying vec3 vHP;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vHP = (modelMatrix * vec4(transformed, 1.)).xyz;');
+      sh.fragmentShader = 'uniform float uT;\nvarying vec3 vHP;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+  diffuseColor.a *= (.45 + .55 * step(.42, fract(vHP.y * .35 - uT * 1.4))) * (1. - .6 * step(.97, fract(sin(floor(uT * 12.)) * 437.5)));`);
+    };
+    m.customProgramCacheKey = () => 'fut-holo'; return m;
+  });
+}
+function futWallTint(pal, rnd) { return new THREE.Color(pal[Math.floor(rnd() * pal.length)]); }
+
+// ---- year-3000 Tokyo: the records of upgradeTokyo (TOKYO.b) get future modules near the camera and lit boxes further
+// off; five blocks in the middle get megatowers; the skyline gets taller lit boxes and more megatowers
+function futBuildTokyo() {
+  if (FUT.tokyo || !MODELS.fut_city || !TOKYO.b.length) return;
+  const rnd = mulberry32(3000), groups = new Map(), far = [], skip = new Set();
+  const put = (name, b, M, c) => { if (!futKit('fut_city', name)) return; if (!groups.has(name)) groups.set(name, []); groups.get(name).push({ b, M, c }); };
+  // the megatower blocks: tall blocks near (not at) the middle, far apart
+  const blocks = new Map();
+  TOKYO.b.forEach((B, i) => { const key = Math.floor((B.x + HALF) / CELL) * 1000 + Math.floor((B.z + HALF) / CELL); if (!blocks.has(key)) blocks.set(key, []); blocks.get(key).push(i); });
+  const cands = [];
+  for (const [key, list] of blocks) {
+    const i = Math.floor(key / 1000), j = key % 1000, cx = rc(i) + CELL / 2, cz = rc(j) + CELL / 2, d = Math.hypot(cx, cz);
+    if (d < 100 || d > HALF * .62 || !list.every(k => TOKYO.b[k].k === 'bld') || Math.max(...list.map(k => TOKYO.b[k].h + TOKYO.b[k].y0)) < 40) continue;
+    cands.push({ list, cx, cz, h: mulberry32(key)() });
+  }
+  cands.sort((a, b) => a.h - b.h);
+  const megas = [];
+  for (const c of cands) { if (megas.length >= 5) break; if (megas.some(m => Math.hypot(m.cx - c.cx, m.cz - c.cz) < 240)) continue; megas.push(c); c.list.forEach(k => skip.add(k)); }
+  const famOf = fi => [0, 1, 2, 1, 3][fi ?? 0];
+  TOKYO.b.forEach((B, i) => {
+    if (skip.has(i)) return;
+    const q = Math.floor(rnd() * 4) * Math.PI / 2, turned = Math.abs(Math.sin(q)) > .5, w = turned ? B.d : B.w, d = turned ? B.w : B.d;
+    if (B.k === 'house') {
+      const c = futWallTint(FUT_PAL.house, rnd), H = B.h + (B.rise || 0) * .6;
+      put('K', i, futM4(B.x, 0, B.z, q, w / 8.5, H / 6.6, d / 8.5), c); far.push({ b: i, M: futM4(B.x, 0, B.z, 0, B.w, H, B.d), c }); return;
+    }
+    if (B.k === 'ware') { const c = futWallTint(FUT_PAL.ware, rnd); put('W', i, futM4(B.x, 0, B.z, q, w / 26, B.h / 11, d / 26), c); far.push({ b: i, M: futM4(B.x, 0, B.z, 0, B.w, B.h, B.d), c }); return; }
+    let f = famOf(B.fi); if (f === 3 && rnd() < .4) f = 1;
+    const c = futWallTint(FUT_PAL.wall[f], rnd), sx = w / 20, sz = d / 20; let y = B.y0, rest = B.h;
+    if (B.y0 === 0) {
+      if (B.h < 6.8) { put(`F${f}G`, i, futM4(B.x, 0, B.z, q, sx, B.h / 6, sz), c); rest = 0; y = B.h; }
+      else { put(`F${f}G`, i, futM4(B.x, 0, B.z, q, sx, 1, sz), c); y = 6; rest = B.h - 6; }
+    }
+    if (rest > 0) {
+      const F = Math.max(1, Math.round(rest / 3.6)), sy = rest / (F * 3.6), nS = Math.floor(F / 4), aAt = nS >= 2 ? nS >> 1 : nS === 1 && rnd() < .5 ? 0 : -1;
+      for (let k = 0; k < nS; k++) { put(`F${f}${k === aAt ? 'A' : 'S'}`, i, futM4(B.x, y, B.z, q, sx, sy, sz), c); y += 14.4 * sy; }
+      for (let k = 0; k < F % 4; k++) { put(`F${f}U`, i, futM4(B.x, y, B.z, q, sx, sy, sz), c); y += 3.6 * sy; }
+    }
+    if (!B.podium) put(`F${f}R`, i, futM4(B.x, y, B.z, q, sx, 1, sz), c);
+    far.push({ b: i, M: futM4(B.x, B.y0, B.z, 0, B.w, B.h, B.d), c });
+  });
+  const grp = new THREE.Group(); grp.visible = false; scene.add(grp);
+  const sphere = new THREE.Sphere(new THREE.Vector3(0, 80, 0), HALF * 1.8), slots = [];
+  const mkIM = (geo, n, shadow) => { const im = new THREE.InstancedMesh(geo, FUT.mat, Math.max(1, n)); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, n) * 3), 3); im.count = 0; im.boundingSphere = sphere; im.castShadow = shadow; im.receiveShadow = true; grp.add(im); return im; };
+  for (const [name, list] of groups) slots.push({ im: mkIM(futKit('fut_city', name), list.length, name[0] !== 'K'), list, near: true });
+  const boxGeo = futBoxGeo(); slots.push({ im: mkIM(boxGeo, far.length, false), list: far, near: false });
+  // the skyline: taller lit boxes over the old ones, and megatowers on the tallest
+  const sky = TOKYO.sky || [], skyIM = mkIM(boxGeo, sky.length, false);
+  sky.forEach((S, k) => { skyIM.setMatrixAt(k, futM4(S.x, 0, S.z, 0, S.w + 2, S.h * 1.5 + 12, S.d + 2)); skyIM.setColorAt(k, futWallTint(FUT_PAL.wall[k % 4], rnd)); }); skyIM.count = sky.length;
+  // megatowers: the middle five (with colliders) and 24 on the skyline
+  const mlist = { M_0: [], M_1: [], M_2: [] }, rings = [], colBoxes = [], types = ['M_2', 'M_0', 'M_1', 'M_1', 'M_0'];
+  megas.forEach((m, k) => { const t = types[k], hs = .9 + rnd() * .2; mlist[t].push(futM4(m.cx, 0, m.cz, k * Math.PI / 2, .96, hs, .96)); if (t === 'M_2') rings.push({ x: m.cx, z: m.cz, hs, s: .96, a: 0 }); colBoxes.push([m.cx - 29, m.cz - 29, m.cx + 29, m.cz + 29]); m.type = t; m.hs = hs; });
+  [...sky].sort((a, b) => b.h - a.h).slice(0, 24).forEach((S, k) => { const t = ['M_0', 'M_1', 'M_2'][k % 3], s = clamp(Math.max(S.w, S.d) / 50, .6, 1.1), hs = .75 + rnd() * .5; mlist[t].push(futM4(S.x, 0, S.z, rnd() * 6, s, hs, s)); if (t === 'M_2') rings.push({ x: S.x, z: S.z, hs, s, a: rnd() * 6 }); });
+  for (const [t, list] of Object.entries(mlist)) { const geo = futKit('fut_city', t); if (!geo || !list.length) continue; const im = mkIM(geo, list.length, true); list.forEach((M, k) => { im.setMatrixAt(k, M); im.setColorAt(k, futWallTint(FUT_PAL.wall[0], rnd)); }); im.count = list.length; im.instanceMatrix.needsUpdate = true; }
+  let ringIM = null; { const geo = futKit('fut_city', 'M_2r'); if (geo && rings.length) { ringIM = mkIM(geo, rings.length, false); ringIM.count = rings.length; } }
+  FUT.tokyo = { grp, slots, at: null, near: new Uint8Array(TOKYO.b.length), megas, rings, ringIM, colBoxes };
+  futBuildHolo(megas);
+}
+function futBoxGeo() {   // a 1 x 1 x 1 box standing on the ground, all of it 'far building' (lit windows, neon bands, dark roof)
+  const g = new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), n = g.attributes.position.count;
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3)); g.setAttribute('aKind', new THREE.BufferAttribute(new Float32Array(n).fill(9), 1)); g.setAttribute('aUv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+  return g;
+}
+function futTokyoLOD(force) {
+  const C = FUT.tokyo; if (!C) return;
+  const cx = camera.position.x, cz = camera.position.z, R = FUT_NEAR();
+  C.grp.visible = FUT.on && Math.abs(cx) < 7000 && cz > -7000 && cz < 9000;
+  if (!C.grp.visible || (!force && C.at && Math.hypot(C.at[0] - cx, C.at[1] - cz) < 25 && C.R === R)) return;
+  const full = force || !C.at || C.R !== R; C.at = [cx, cz]; C.R = R;
+  let changed = null;
+  TOKYO.b.forEach((B, i) => { const v = Math.hypot(B.x - cx, B.z - cz) < R ? 1 : 0; if (v !== C.near[i]) { C.near[i] = v; (changed ??= new Set()).add(i); } });
+  if (!full && !changed) return;
+  for (const s of C.slots) {
+    if (!full) { s.bs ??= new Set(s.list.map(p => p.b)); let hit = false; for (const b of changed) if (s.bs.has(b)) { hit = true; break; } if (!hit) continue; }
+    let n = 0;
+    for (const p of s.list) { if (!C.near[p.b] !== !s.near) continue; s.im.setMatrixAt(n, p.M); s.im.setColorAt(n, p.c); n++; }
+    s.im.count = n; s.im.visible = n > 0; s.im.instanceMatrix.needsUpdate = true; s.im.instanceColor.needsUpdate = true;
+  }
+}
+// ---- a country town in the year 3000: its plots (C.town.b) get the same future modules (low-rise), all detailed
+function futBuildTown(C) {
+  if (FUT.towns.has(C) || !C.town?.b?.length || !MODELS.fut_city) return FUT.towns.get(C);
+  const rnd = mulberry32(C.id.length * 3001), groups = new Map(), grp = new THREE.Group(); grp.visible = false; scene.add(grp);
+  const put = (name, M, c) => { if (!futKit('fut_city', name)) return; if (!groups.has(name)) groups.set(name, []); groups.get(name).push({ M, c }); };
+  for (const B of C.town.b) {
+    const q = Math.floor(rnd() * 4) * Math.PI / 2, turned = Math.abs(Math.sin(q)) > .5, w = turned ? B.d : B.w, d = turned ? B.w : B.d;
+    if (B.h < 8.5 && rnd() < .55) { put('K', futM4(B.x, 0, B.z, q, w / 8.5, B.h / 6.2, d / 8.5), futWallTint(FUT_PAL.house, rnd)); continue; }
+    const f = Math.floor(rnd() * 4), c = futWallTint(FUT_PAL.wall[f], rnd), sx = w / 20, sz = d / 20;
+    put(`F${f}G`, futM4(B.x, 0, B.z, q, sx, Math.min(1, B.h / 6), sz), c); let y = Math.min(6, B.h), rest = B.h - y;
+    if (rest > 1) { const F = Math.max(1, Math.round(rest / 3.6)), sy = rest / (F * 3.6); for (let k = 0; k < Math.floor(F / 4); k++) { put(`F${f}S`, futM4(B.x, y, B.z, q, sx, sy, sz), c); y += 14.4 * sy; } for (let k = 0; k < F % 4; k++) { put(`F${f}U`, futM4(B.x, y, B.z, q, sx, sy, sz), c); y += 3.6 * sy; } }
+    put(`F${f}R`, futM4(B.x, y, B.z, q, sx, 1, sz), c);
+  }
+  for (const [name, list] of groups) {
+    const im = new THREE.InstancedMesh(futKit('fut_city', name), FUT.mat, list.length); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 3), 3);
+    list.forEach((p, k) => { im.setMatrixAt(k, p.M); im.setColorAt(k, p.c); }); im.castShadow = name[0] !== 'K'; im.receiveShadow = true; im.computeBoundingSphere(); grp.add(im);
+  }
+  const T = { grp }; FUT.towns.set(C, T); return T;
+}
+// ---- holograms over Tokyo: the logo over the scramble crossing, a koi round the ring tower, a robot dancing on the
+// arcology and a car turning over the twin spires
+function futBuildHolo(megas) {
+  const g = new THREE.Group(); g.visible = false; scene.add(g); const H = FUT.holo = { grp: g, list: [] }, hm = FUT.holoMats;
+  const mesh = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; return m; };
+  const logo = futKit('fut_city', 'H_logo'); if (logo) { const m = mesh(logo, hm[0]); m.scale.setScalar(1.7); m.position.set(0, 96, 0); g.add(m); H.list.push({ m, k: 'logo' }); }
+  const ring = megas.find(m => m.type === 'M_2') || megas[0], arc = megas.find(m => m.type === 'M_0') || megas[0], twin = megas.find(m => m.type === 'M_1') || megas[0];
+  const koi = futKit('fut_city', 'H_koi'); if (koi && ring) { const m = mesh(koi, hm[1]); m.scale.setScalar(1.6); g.add(m); H.list.push({ m, k: 'koi', c: ring }); }
+  if (arc && MODELS.fut_robot) {   // a 55 m robot hologram dancing on the arcology's roof
+    const parts = ['RB_torso', 'RB_head', 'RB_crest', 'RB_leg', 'RB_leg', 'RB_arm', 'RB_arm'].map(n => { const geo = FUT.kits['holo_' + n] ??= futMerge(MODELS.fut_robot.getObjectByName(n)); const m = mesh(geo, hm[1]); m.matrixAutoUpdate = false; g.add(m); return m; });
+    H.list.push({ k: 'dancer', parts, M: poseMats(), x: arc.cx, z: arc.cz, y: 300 * arc.hs + 22, S: new THREE.Matrix4().makeScale(30, 30, 30) });
+  }
+  const car = futKit('fut_cars', 'FC_sport'); if (car && twin) { const m = mesh(car, hm[2]); m.scale.setScalar(7); m.position.set(twin.cx - 15, 340 * twin.hs + 48, twin.cz); g.add(m); H.list.push({ m, k: 'car' }); }
+}
+// ---- flying cars: sky lanes over the streets (Tokyo's road grid, or a country town's streets), 26-130 m up, one
+// instanced mesh per model
+const FUT_SKY_MODELS = [['FC_sedan', .34], ['FC_taxi', .2], ['FC_sport', .2], ['FC_van', .14], ['FC_police', .12]], FUT_ALT = [26, 40, 56, 76, 100, 130];
+function futBuildSky() {
+  if (FUT.sky || !MODELS.fut_cars) return;
+  const n = quality === 'low' ? 60 : isTouch ? 90 : 260, rnd = mulberry32(31), grp = new THREE.Group(); grp.visible = false; scene.add(grp);
+  const models = FUT_SKY_MODELS.map(([id, share]) => ({ id, share, geo: futKit('fut_cars', id, FUT_CARK) })).filter(m => m.geo);
+  const cars = [];
+  for (let i = 0; i < n; i++) { let r = rnd(), k = 0; while (k < models.length - 1 && r > models[k].share) { r -= models[k].share; k++; } cars.push({ m: k, ph: rnd() * 6, v: 16 + rnd() * 18, off: (rnd() - .5) * 5, col: new THREE.Color(pick(FUT_PAL.car[models[k].id])) }); }
+  for (const [k, M] of models.entries()) {
+    const mine = cars.filter(c => c.m === k); M.im = new THREE.InstancedMesh(M.geo, FUT.carMat, Math.max(1, mine.length)); M.im.frustumCulled = false; M.im.castShadow = false;
+    M.im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, mine.length) * 3), 3); mine.forEach((c, j) => { c.j = j; M.im.setColorAt(j, c.col); }); M.im.count = mine.length; grp.add(M.im);
+  }
+  FUT.sky = { grp, models, cars, zone: undefined };
+}
+function futSkySeed(zone) {
+  const S = FUT.sky; S.zone = zone; if (!zone) return;
+  let xs, zs, b;
+  if (zone === 'tokyo') { xs = zs = Array.from({ length: N + 1 }, (_, i) => rc(i)); b = [-HALF - 160, -HALF - 160, HALF + 160, HALF + 160]; }
+  else { const st = zone.streets ??= cStreets(zone); xs = st.xs; zs = st.zs; b = [zone.x0 - 160, zone.z0 - 160, zone.x1 + 160, zone.z1 + 160]; }
+  S.b = b; const rnd = mulberry32(77);
+  for (const c of S.cars) {
+    c.ax = rnd() < .5 ? 'x' : 'z'; const L = Math.floor(rnd() * FUT_ALT.length); c.alt = FUT_ALT[L] + (rnd() - .5) * 4;
+    c.line = c.ax === 'x' ? zs[Math.floor(rnd() * zs.length)] : xs[Math.floor(rnd() * xs.length)]; c.dir = (L + (c.ax === 'x' ? 1 : 0)) % 2 ? 1 : -1;
+    c.s = c.ax === 'x' ? lerp(b[0], b[2], rnd()) : lerp(b[1], b[3], rnd());
+  }
+}
+function futSkyStep(dt) {
+  const S = FUT.sky; if (!S) return;
+  const zone = FUT.on ? crowdZone(camera.position.x, camera.position.z) : null;
+  if (zone !== S.zone) futSkySeed(zone);
+  S.grp.visible = !!zone; if (!zone) return;
+  const b = S.b, t = FUT.t;
+  for (const c of S.cars) {
+    c.s += c.v * c.dir * dt;
+    const lo = c.ax === 'x' ? b[0] : b[1], hi = c.ax === 'x' ? b[2] : b[3];
+    if (c.s > hi) c.s = lo; else if (c.s < lo) c.s = hi;
+    const y = c.alt + Math.sin(t * 1.3 + c.ph) * .5, h = c.ax === 'x' ? (c.dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (c.dir > 0 ? 0 : Math.PI);
+    const x = c.ax === 'x' ? c.s : c.line + c.off * c.dir, z = c.ax === 'x' ? c.line - c.off * c.dir : c.s, co = Math.cos(h), si = Math.sin(h), roll = Math.sin(t * .9 + c.ph) * .04;
+    const E = S.models[c.m].im.instanceMatrix.array, o = c.j * 16, cr = Math.cos(roll), sr = Math.sin(roll);
+    // R = Ry(h) * Rz(roll): the car rocks a little from side to side
+    E[o] = co * cr; E[o + 1] = sr; E[o + 2] = -si * cr; E[o + 3] = 0;
+    E[o + 4] = -co * sr; E[o + 5] = cr; E[o + 6] = si * sr; E[o + 7] = 0;
+    E[o + 8] = si; E[o + 9] = 0; E[o + 10] = co; E[o + 11] = 0;
+    E[o + 12] = x; E[o + 13] = y; E[o + 14] = z; E[o + 15] = 1;
+  }
+  for (const M of S.models) M.im.instanceMatrix.needsUpdate = true;
+}
+// ---- the street cars hover in the year 3000: every car buildTrafficCar makes (traffic, the expressway, patrols,
+// jams) gets a flying-car body in its own paint that floats over the road; its wheeled body hides
+const FUT_TRAFFIC = { kei: 'FC_sport', taxi: 'FC_taxi', sedan: 'FC_sedan', van: 'FC_van', truck: 'FC_van', police: 'FC_police' };
+const TRAFFIC_ALL = [];
+function futDressCar(g, on) {
+  const ud = g.userData; if (!ud.T) return;
+  if (on && !ud.fut) {
+    const geo = futKit('fut_cars', FUT_TRAFFIC[ud.T.n] || 'FC_sedan', FUT_CARK); if (!geo) return;
+    const m = futMat({ tint: '#' + (ud.paint?.color?.getHexString() || 'ffffff'), glow: 2, self: .05 }), mesh = new THREE.Mesh(geo, m), h = new THREE.Group(); mesh.castShadow = true; h.add(mesh);
+    h.position.y = .38; if (ud.T.n === 'truck') h.scale.setScalar(1.25); ud.fut = h; ud.futPh = Math.random() * 6; g.add(h);
+  }
+  if (!ud.fut) return;
+  for (const c of g.children) c.visible = c === ud.fut ? on : !on;   // the hover car, or the wheeled one (and its light bar)
+}
+function futTrafficAll(on) { for (const g of TRAFFIC_ALL) futDressCar(g, on); }
+// ---- robot people: the crowd's five instanced parts get the robot's (same joints as a person) and robot colours
+function futRobots(on) {
+  const I = CROWD.ims; if (!I) return;
+  if (on && !FUT.robot) { const src = MODELS.fut_robot; if (!src) return; FUT.robot = {}; for (const [k, n] of [['torso', 'RB_torso'], ['head', 'RB_head'], ['hair', 'RB_crest'], ['leg', 'RB_leg'], ['arm', 'RB_arm']]) FUT.robot[k] = futMerge(src.getObjectByName(n)); }
+  CROWD.human ??= { geo: Object.fromEntries(Object.entries(I).map(([k, im]) => [k, im.geometry])), mat: I.torso.material };
+  for (const k in I) { I[k].geometry = on && FUT.robot ? FUT.robot[k] : CROWD.human.geo[k]; I[k].material = on && FUT.robot ? FUT.mat : CROWD.human.mat; }
+  CROWD.filled = false; for (const q of CROWD.list) q.on = false;   // everyone comes back in the new look
+}
+// ---- the giant transformers: one on every mountain, standing over the top, turning round and moving every second;
+// now and then it folds down into a giant hover-truck and back up
+const FUT_JOINTS = ['TF_pelvis', 'TF_torso', 'TF_head', 'TF_armU_L', 'TF_armF_L', 'TF_hand_L', 'TF_armU_R', 'TF_armF_R', 'TF_hand_R', 'TF_thigh_L', 'TF_shin_L', 'TF_foot_L', 'TF_thigh_R', 'TF_shin_R', 'TF_foot_R'];
+const FUT_JK = { T: 'TF_torso', H: 'TF_head', aL: 'TF_armU_L', fL: 'TF_armF_L', aR: 'TF_armU_R', fR: 'TF_armF_R', tL: 'TF_thigh_L', sL: 'TF_shin_L', kL: 'TF_foot_L', tR: 'TF_thigh_R', sR: 'TF_shin_R', kR: 'TF_foot_R' };
+const FUT_POSES = [
+  { aL: [0, 0, .15], aR: [0, 0, -.15], fL: [-.2, 0, 0], fR: [-.2, 0, 0] },                                             // stand
+  { aL: [0, 0, 2.6], fL: [0, 0, .5], H: [0, .3, 0], wave: 1 },                                                        // wave
+  { aR: [0, 0, -2.6], fR: [0, 0, -.5], H: [0, -.3, 0], wave: -1 },
+  { aR: [-1.55, 0, 0], T: [0, -.3, 0], H: [0, -.35, 0] },                                                             // point at you
+  { aL: [0, 0, 1.5], fL: [0, 0, 1.7], aR: [0, 0, -1.5], fR: [0, 0, -1.7], T: [.1, 0, 0] },                            // muscles
+  { aL: [-1.55, 0, -.1], aR: [-.6, 0, -.2], fR: [-1.8, 0, 0], T: [0, .4, 0] },                                        // punch
+  { aR: [-1.55, 0, .1], aL: [-.6, 0, .2], fL: [-1.8, 0, 0], T: [0, -.4, 0] },
+  { H: [-.15, .9, 0], T: [0, .3, 0], aL: [0, 0, .3], aR: [0, 0, -.3] },                                               // look round
+  { H: [-.15, -.9, 0], T: [0, -.3, 0], aL: [0, 0, .3], aR: [0, 0, -.3] },
+  { tL: [-1.1, 0, 0], sL: [1.3, 0, 0], aL: [0, 0, .5], aR: [0, 0, -.5], stomp: 1 },                                   // lift a foot … and stomp
+  { aL: [-2.9, 0, .35], aR: [-2.9, 0, -.35], H: [-.3, 0, 0] },                                                        // victory
+  { P: -1.3, tL: [-.95, 0, .12], tR: [-.95, 0, -.12], sL: [1.7, 0, 0], sR: [1.7, 0, 0], kL: [-.75, 0, 0], kR: [-.75, 0, 0], T: [.45, 0, 0], aL: [-.6, 0, .4], aR: [-.6, 0, -.4] },   // crouch
+];
+// the hover-truck: lying back with the chest up, the legs forward on their wheels, the arms folded along the sides
+const FUT_TRUCK = { P: -4.8, Px: -Math.PI / 2, H: [0, 0, 0], hs: .05, aL: [-Math.PI, 0, -.08], aR: [-Math.PI, 0, .08], fL: [0, 0, 0], fR: [0, 0, 0], tL: [0, 0, 0], tR: [0, 0, 0], sL: [0, 0, 0], sR: [0, 0, 0], kL: [Math.PI / 2, 0, 0], kR: [Math.PI / 2, 0, 0], T: [0, 0, 0] };
+function futGiantSpots() {
+  const S = [], face = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
+  { // Mt. Amboola: on the summit plaza (the road spirals right round the top), a little back from the middle, looking at the city
+    const back = Math.atan2(0 - MTN.cz, 0 - MTN.cx) + Math.PI, x = MTN.cx + Math.cos(back) * 6, z = MTN.cz + Math.sin(back) * 6;
+    S.push({ id: 'mtn', x, z, y: MTN.plazaY, s: 5, ry: face(x, z, 0, 0), foot: 2.3 });
+  }
+  S.push({ id: 'snow', x: SNOW.cx, z: SNOW.cz, y: snowHeight(SNOW.cx, SNOW.cz) - 1, s: 7.5, ry: face(SNOW.cx, SNOW.cz, 0, 0) });
+  S.push({ id: 'fuji', x: FUJI.peak[0], z: FUJI.peak[1], y: 1592, s: 22, ry: face(FUJI.peak[0], FUJI.peak[1], 0, 0), fog: false });
+  { const [vx, vz, , vh] = VOLC.cone, a = Math.atan2(0 - vz, 0 - vx); S.push({ id: 'volcano', x: vx + Math.cos(a) * 112, z: vz + Math.sin(a) * 112, y: vh - 2, s: 8, ry: face(vx, vz, 0, 0) }); }
+  if (TRO.T) { const C = COUNTRIES.find(c => c.troodos), x = TRO.cx + 70, z = TRO.cz + 50; S.push({ id: 'troodos', x, z, y: troY(x, z) - .5, s: 6, ry: face(x, z, C ? C.cx : x + 100, C ? C.cz : z), pad: C?.P }); }
+  const A = COUNTRIES.find(c => c.id === 'alps');
+  if (A) { const ox = A.cx, oz = A.cz; for (const [x, z, h] of [[A.x0 - 500, oz, 1400], [ox - 200, A.z1 + 700, 1900], [A.x1 + 550, oz - 200, 1300], [ox + 400, A.z1 + 600, 1150], [A.x0 - 300, A.z1 + 500, 1000]]) S.push({ id: 'alps', x, z, y: h - 20 - h * .012, s: h / 90, ry: face(x, z, ox, oz), fog: false }); }
+  return S;
+}
+function futBuildGiants() {
+  if (FUT.giants.length || !MODELS.fut_giant) return;
+  const G0 = FUT.giantMats = [];
+  const src = MODELS.fut_giant; src.updateMatrixWorld(true);
+  const geo = {}; for (const n of FUT_JOINTS) { const node = src.getObjectByName(n); if (node) geo[n] = futMerge(node, null, FUT_JOINTS); }
+  futGiantSpots().forEach((sp, k) => {
+    const [c1, c2] = FUT_PAL.giant[k % FUT_PAL.giant.length], mat = futMat({ tint: c1, tint2: c2, fog: sp.fog !== false, self: .12 }), J = {}; G0.push(mat);
+    for (const n of FUT_JOINTS) {
+      const node = src.getObjectByName(n); if (!node) continue;
+      const g = new THREE.Group(); g.position.copy(node.position); g.quaternion.copy(node.quaternion);
+      if (geo[n]) { const m = new THREE.Mesh(geo[n], mat); m.castShadow = sp.s < 10; m.frustumCulled = false; g.add(m); }
+      J[n] = g;
+    }
+    for (const n of FUT_JOINTS) { const par = src.getObjectByName(n)?.parent?.name; if (J[par] && J[n]) J[par].add(J[n]); }
+    const root = new THREE.Group(); root.add(J.TF_pelvis); root.position.set(sp.x, sp.y, sp.z); root.rotation.y = sp.ry; root.scale.setScalar(sp.s); root.visible = false; scene.add(root);
+    const G = { sp, root, J, py: J.TF_pelvis.position.y, cur: {}, beat: Math.random(), pose: FUT_POSES[0], next: 0, tf: 0, tfT: 14 + k * 3.7, mode: 0, yaw: 0, yawT: 0, cols: [] };
+    FUT.giants.push(G);
+  });
+}
+function futGiantCols(on) {   // the Troodos giant stands on the drivable mountain: its feet are solid
+  for (const G of FUT.giants) {
+    const P = G.sp.pad; if (!P) continue;
+    if (on && !G.cols.length) { const s = G.sp.s; G.cols.push(P.addCol(G.sp.x - 2.3 * s, G.sp.z - 2.3 * s, G.sp.x + 2.3 * s, G.sp.z + 2.3 * s)); }
+    if (!on && G.cols.length) { for (const b of G.cols) for (const l of P.grid.values()) { const i = l.indexOf(b); if (i >= 0) l.splice(i, 1); } G.cols.length = 0; }
+  }
+}
+function futGiantStep(G, dt) {
+  const d = Math.hypot(G.sp.x - camera.position.x, G.sp.z - camera.position.z), far = G.sp.fog === false ? 22000 : 9000;
+  G.root.visible = FUT.on && d < far; if (!G.root.visible) return;
+  // the transform cycle: robot for a while, fold into the truck (2 s), drive about a little (5 s), stand up again (2 s)
+  G.tfT -= dt;
+  if (G.tfT <= 0) { G.mode = (G.mode + 1) % 4; G.tfT = [20 + Math.random() * 8, 2, 5, 2][G.mode]; if (d < 900 && (G.mode === 1 || G.mode === 3)) futGiantSound(d, 'tf'); }
+  const goal = G.mode === 0 ? 0 : G.mode === 1 ? 1 - G.tfT / 2 : G.mode === 2 ? 1 : G.tfT / 2;
+  G.tf = smooth01(clamp(goal, 0, 1));
+  // a new move every second
+  G.beat -= dt;
+  if (G.beat <= 0) {
+    G.beat += 1;
+    const was = G.pose; G.pose = was.stomp ? FUT_POSES[0] : FUT_POSES[Math.floor(Math.random() * FUT_POSES.length)];
+    if (Math.random() < .35) G.yawT = (Math.random() - .5) * 1.6;
+    if (G.mode === 0 && d < 700) futGiantSound(d, was.stomp ? 'stomp' : 'servo');
+  }
+  const P = G.pose, k = G.tf, rate = 1 - Math.exp(-dt * 7);
+  for (const [key, name] of Object.entries(FUT_JK)) {
+    const o = G.J[name]; if (!o) continue;
+    const a = P[key] || [0, 0, 0], b = FUT_TRUCK[key] || [0, 0, 0], c = G.cur[key] ??= [0, 0, 0];
+    let tz = lerp(a[2], b[2], k); if (P.wave && (key === (P.wave > 0 ? 'fL' : 'fR'))) tz += Math.sin(FUT.t * 7) * .45 * (1 - k);
+    c[0] += (lerp(a[0], b[0], k) - c[0]) * rate; c[1] += (lerp(a[1], b[1], k) - c[1]) * rate; c[2] += (tz - c[2]) * rate;
+    o.rotation.set(c[0], c[1], c[2]);
+  }
+  const pel = G.J.TF_pelvis, py = lerp(P.P || 0, FUT_TRUCK.P, k);
+  G.cur.P = (G.cur.P ?? 0) + (py - (G.cur.P ?? 0)) * rate; pel.position.y = G.py + G.cur.P; pel.rotation.x = FUT_TRUCK.Px * k;
+  if (G.J.TF_head) G.J.TF_head.scale.setScalar(lerp(1, FUT_TRUCK.hs, k));
+  G.yaw += (G.yawT * (1 - k) + (G.mode === 2 ? Math.sin(FUT.t * .6) * .9 : 0) - G.yaw) * (1 - Math.exp(-dt * 2)); G.root.rotation.y = G.sp.ry + G.yaw;
+}
+function futGiantSound(d, kind) {
+  if (!audio.ctx || !audio.burst) return; const k = clamp(1 - d / 900, .05, 1);
+  if (kind === 'stomp') { audio.burst({ type: 'lowpass', freq: 110, q: .7, gain: .7 * k, dur: .7, thump: 38 }); if (d < 400) shakeT += .5 * k; }
+  else if (kind === 'tf') { audio.burst({ type: 'bandpass', freq: 420, q: 1.5, gain: .5 * k, dur: 1.4 }); audio.burst({ type: 'lowpass', freq: 160, q: .7, gain: .45 * k, dur: .9, thump: 60 }); }
+  else audio.burst({ type: 'bandpass', freq: 520 + Math.random() * 260, q: 3, gain: .22 * k, dur: .32 });
+}
+// ---- every frame (from updateCountryCulling: driving, flying and the helicopter)
+function futUpdate(dt) {
+  FUT.t += dt; FUT.U.uT.value = FUT.t;
+  const fl = Math.floor(FUT.t * 4) % 4; FUT.U.uFlashR.value = fl === 0 || fl === 2 ? 1 : .1; FUT.U.uFlashB.value = fl === 1 || fl === 3 ? 1 : .1;
+  if (!FUT.ready) return;
+  futTokyoLOD(); futSkyStep(dt);
+  if (FUT.tokyo?.ringIM) { const T = FUT.tokyo; T.rings.forEach((r, k) => { r.a += dt * (k % 2 ? -.12 : .1); T.ringIM.setMatrixAt(k, futM4(r.x, 0, r.z, r.a, r.s, r.hs, r.s)); }); T.ringIM.instanceMatrix.needsUpdate = true; }
+  if (FUT.holo) { FUT.holo.grp.visible = FUT.on && Math.abs(camera.position.x) < 7000 && camera.position.z > -7000 && camera.position.z < 9000; if (FUT.holo.grp.visible) futHoloStep(); }
+  for (const G of FUT.giants) futGiantStep(G, dt);
+  if (FUT.on) for (const g of TRAFFIC_ALL) { const h = g.userData.fut; if (h?.visible) h.position.y = .38 + Math.sin(FUT.t * 2.2 + g.userData.futPh) * .06; }
+  if ((FUT.prune = (FUT.prune || 0) + dt) > 5) {   // forget the cars that left the world (a cleared crash scene's)
+    FUT.prune = 0; for (let i = TRAFFIC_ALL.length - 1; i >= 0; i--) { let o = TRAFFIC_ALL[i]; while (o.parent) o = o.parent; if (o !== scene) TRAFFIC_ALL.splice(i, 1); }
+  }
+}
+function futHoloStep() {
+  const t = FUT.t;
+  for (const H of FUT.holo.list) {
+    if (H.k === 'logo') { H.m.rotation.y = t * .35; H.m.position.y = 96 + Math.sin(t * .8) * 2; }
+    else if (H.k === 'koi') { const a = t * .16, c = H.c; H.m.position.set(c.cx + Math.cos(a) * 64, 165 + Math.sin(t * .5) * 22, c.cz + Math.sin(a) * 64); H.m.rotation.set(0, -a + Math.PI, Math.sin(t * 1.3) * .15); }
+    else if (H.k === 'car') H.m.rotation.y = t * .5;
+    else if (H.k === 'dancer') {
+      posePerson(H.M, 0, 0, 0, t * .7, t * 5, .9, 0, .5 + .5 * Math.sin(t * 2.4));
+      const B = new THREE.Matrix4().makeTranslation(H.x, H.y + Math.abs(Math.sin(t * 2.5)) * 3, H.z).multiply(H.S);
+      H.parts.forEach((m, k) => m.matrix.multiplyMatrices(B, H.M[k]));
+    }
+  }
+}
+// ---- the year-3000 look of the sky and the air (applyTime calls this), and the city's adverts
+function futLook(name) {
+  const night = name === 'night', sunset = name === 'sunset', U = FUT.U;
+  for (const m of FUT.giantMats || []) m.userData.fu.uSelf.value = night ? .16 : sunset ? .08 : 0;
+  U.uWin.value = night ? 1.15 : sunset ? .8 : .12; U.uNeon.value = night ? 2.4 : sunset ? 1.7 : 1.05; U.uAd.value = night ? 1.5 : sunset ? 1.2 : .95; U.uShop.value = night ? 1.1 : sunset ? .8 : .45; U.uGlow.value = night ? 2.4 : sunset ? 1.7 : 1.1;
+  if (!FUT.on || !FUT.ready) return;
+  scene.fog.color.lerp(new THREE.Color(night ? 0x2a1240 : sunset ? 0x7a3a5a : 0x7a96a0), night ? .55 : .35);   // a violet haze at night, pink smog at sunset, teal by day
+  skyUniforms.horizon.value.lerp(new THREE.Color(night ? 0x3a1650 : sunset ? 0xff5a8a : 0x9ab8c8), night ? .5 : .3);
+  if (bloomPass) bloomPass.strength += night ? .12 : .05;
+}
+function futAds(on) {
+  if (!FUT.adTexs) return;
+  const A = TOKYO.adMats || [];
+  FUT.adOld ??= A.map(m => m.map);
+  A.forEach((m, i) => { m.map = m.emissiveMap = on ? FUT.adTexs[i % 8] : FUT.adOld[i]; m.needsUpdate = true; });
+  for (const s of bigScreens) { s.m.map = s.m.emissiveMap = on ? FUT.adTexs[s.idx % 8] : bigScreenTexs[s.idx]; s.m.needsUpdate = true; }
+}
+function futCols(on) {   // the megatowers' blocks are solid
+  if (on && !FUT.cols.length && FUT.tokyo) for (const [x0, z0, x1, z1] of FUT.tokyo.colBoxes) FUT.cols.push(addCol(x0, z0, x1, z1));
+  if (!on && FUT.cols.length) { for (const b of FUT.cols) for (const l of colGrid.values()) { const i = l.indexOf(b); if (i >= 0) l.splice(i, 1); } FUT.cols.length = 0; }
+  futGiantCols(on);
+}
+// ---- switching between the years
+function futApply(on) {
+  FUT.on = on; try { localStorage.setItem('amboola.future', on ? '1' : '0'); } catch (e) { }
+  futBtnLabel(); $('futTag')?.classList.toggle('hidden', !on);
+  if (!FUT.ready) return;
+  TOKYO.meshes.forEach(m => m.visible = !on && !TOKYO.city);
+  if (FUT.tokyo) { FUT.tokyo.at = null; futTokyoLOD(true); }
+  if (!on) { if (FUT.tokyo) FUT.tokyo.grp.visible = false; if (FUT.sky) FUT.sky.grp.visible = false; if (FUT.holo) FUT.holo.grp.visible = false; for (const G of FUT.giants) G.root.visible = false; for (const T of FUT.towns.values()) T.grp.visible = false; }
+  futCols(on); futRobots(on); futTrafficAll(on); futAds(on);
+  updateTokyoLOD(true); applyTime(timeName);
+}
+function futEnsure() {   // load the year 3000's Blender models and build it (once)
+  return FUT.job ??= (async () => {
+    await Promise.all([...FUT_MODELS, 'enforcer'].map(loadModel));
+    if (!MODELS.fut_city) { FUT.job = null; return false; }
+    futInit(); await nextFrame();
+    futBuildTokyo(); await nextFrame();
+    futBuildSky(); futBuildGiants();
+    FUT.ready = true; warmUp(80); return true;
+  })();
+}
+function futBtnLabel() {
+  const b = $('futBtn'); if (!b) return;
+  b.classList.toggle('back', FUT.on);
+  b.innerHTML = FUT.on ? '⏪ BACK TO 2026<small>TIME MACHINE · 現在へ</small>' : '🚀 FUTURE · 3000<small>TIME MACHINE · 未来へ</small>';
+}
+function futWarpSound(on) {   // a rising (or falling) whoosh with a shimmer on top
+  const C = audio.ctx; if (!C || audio.muted) return;
+  try {
+    const t = C.currentTime, o = C.createOscillator(), o2 = C.createOscillator(), g = C.createGain(), f = C.createBiquadFilter();
+    o.type = 'sawtooth'; o2.type = 'sine'; f.type = 'lowpass'; f.Q.value = 6;
+    const [a, b] = on ? [80, 1800] : [1800, 80];
+    o.frequency.setValueAtTime(a, t); o.frequency.exponentialRampToValueAtTime(b, t + 2.4); o2.frequency.setValueAtTime(a * 2, t); o2.frequency.exponentialRampToValueAtTime(b * 2, t + 2.4);
+    f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(5000, t + 2.2);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.16, t + .3); g.gain.setValueAtTime(.16, t + 2.2); g.gain.exponentialRampToValueAtTime(.001, t + 2.8);
+    o.connect(f); o2.connect(f); f.connect(g); g.connect(audio.master || C.destination); o.start(t); o2.start(t); o.stop(t + 2.9); o2.stop(t + 2.9);
+  } catch (e) { }
+}
+async function futTravel(on) {   // the time machine: the warp, the year counting, then you drive on in that year
+  if (FUT.travelling) return; FUT.travelling = true;
+  audio.init();
+  const W = $('warp'), yr = $('warpYear'), msg = $('warpMsg'), D = 2400, t0 = performance.now(), y0 = on ? 2026 : 3000, y1 = on ? 3000 : 2026;
+  W.classList.remove('hidden', 'flash'); W.classList.toggle('back', !on); void W.offsetWidth; W.classList.add('go');
+  msg.textContent = on ? 'TIME TRAVEL TO THE YEAR 3000 · 時間旅行' : 'BACK TO THE YEAR 2026 · 現在へ';
+  futWarpSound(on);
+  const count = () => { const k = clamp((performance.now() - t0) / D, 0, 1); yr.textContent = Math.round(lerp(y0, y1, k * k * (3 - 2 * k))); if (k < 1 && FUT.travelling) requestAnimationFrame(count); };
+  count();
+  const built = on ? futEnsure() : Promise.resolve(true);
+  await new Promise(r => setTimeout(r, D + 150));
+  if (on && !FUT.ready) msg.textContent = 'BUILDING THE YEAR 3000 · 建設中…';
+  const ok = await built;
+  if (on && !ok) toast('⚠️ THE TIME MACHINE BROKE', 'THE YEAR 3000 DID NOT LOAD · TRY AGAIN');
+  if (on && ok) timeName = 'night';   // the year 3000 shines at night (Time of day still changes it)
+  futApply(on && ok);
+  W.classList.add('flash'); await new Promise(r => setTimeout(r, 380));
+  W.classList.add('hidden'); W.classList.remove('go', 'flash', 'back'); FUT.travelling = false;
+  if (state === 'garage') startDrive();
+  if (ok || !on) toast(on ? '🚀 THE YEAR 3000' : '⏪ THE YEAR 2026', on ? 'AMBOOLA 3000 · 未来の東京' : 'TOKYO TODAY · 東京');
+}
+$('futBtn').onclick = ownedOnly(() => futTravel(!FUT.on));
+futBtnLabel();
+
+window.__futLook = futLook;
+
+/* =====================================================================
    GAME STATE
    ===================================================================== */
 let state = 'loading', traffic = null, skids = null, smoke = null, bigScreens = [], bigScreenTexs = [], screenT = 0;
@@ -15900,6 +16538,7 @@ function startDrive() {
     (startDrive.waited ??= {})[spec.id] = 1; $('drive').textContent = 'LOADING…'; loadModel(spec.id).then(() => { if (state === 'garage') startDrive(); }); return;
   }
   localStorage.setItem('amboola.lastcar', carIdx);
+  if (FUT.on && !FUT.ready && !FUT.travelling) futEnsure().then(ok => { if (ok && FUT.on) futApply(true); });   // (you were in the year 3000 last time)
   boat = null; let keepPos = null; if (player) { keepPos = { x: player.x, z: player.z, h: player.heading }; player.dispose(); }
   player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); updateRadioHud(); attachDog(player.car);
   if (keepPos) { player.x = keepPos.x; player.z = keepPos.z; player.heading = keepPos.h; }
@@ -16165,7 +16804,7 @@ function tick(dt) {
     audio.weather(WX.wet, player.speed, camMode >= 2 || SEA.under);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 || SEA.under, air: player.air });
     // big screens cycle
-    screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
+    screenT += dt; if (screenT > 5) { screenT = 0; for (const s of bigScreens) { s.idx = (s.idx + 1) % bigScreenTexs.length; s.m.map = s.m.emissiveMap = FUT.on && FUT.adTexs ? FUT.adTexs[s.idx % 8] : bigScreenTexs[s.idx]; s.m.needsUpdate = true; } }
     // HUD
     drawTacho(player); drawMinimap(foot ? { x: foot.x, z: foot.z, heading: foot.h, speed: 0 } : player); drawDmgHud(player.spec.id);
     const nb = $('nitroBar'), cap = player.spec.nitroCap; nb.classList.toggle('hidden', !cap);
@@ -16209,7 +16848,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
