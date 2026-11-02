@@ -1157,23 +1157,32 @@ class Car:
         p, _ = self.hit((xm, 0, -3), (0, 0, 1)); zb = p.z if p else 0.2
         busy = [o.matrix_world @ v.co for o in self.parts if o.name.split('.')[0] in ('badge', 'exhaust', 'tailpipe', 'hitch', 'towhook', 'horseshoe')
                 or (o.data.materials and o.data.materials[0].name in ('Headlight', 'Taillight', 'Titanium')) for v in o.data.vertices]
+        # a plate goes on solid bumper: first try to keep it off the openings (the mesh set back in a grille or intake,
+        # and the trim round them and the lamps), so it isn't sunk into a hole; only if there's no room, anywhere
+        holes = busy + [o.matrix_world @ v.co for o in self.parts if o.name.split('.')[0] == 'li_rim'
+                        or (o.data.materials and o.data.materials[0].name == 'Grille') for v in o.data.vertices]
         for sx, z0, z1, zp in ((1, 0.12, 0.6, 0.30), (-1, 0.2, 0.8, 0.42)):
-            best = None
-            for i in range(int((z1 - z0) / 0.02) + 1):
-                z = zb + z0 + i * 0.02
-                hits = [self.hit((sx * 9, y, z + dz), (-sx, 0, 0)) for y in (-0.165, 0, 0.165) for dz in (-0.0825, 0.0825)]
-                if any(h[0] is None or h[1].x * sx < 0.6 for h in hits): continue
-                xs = [h[0].x for h in hits]
-                if max(xs) - min(xs) > 0.06: continue
-                c = sum((h[0] for h in hits), Vector()) / 6; n = sum((h[1] for h in hits), Vector()); n.y = 0; n.normalize()
-                c = Vector((max(xs) if sx > 0 else min(xs), 0, c.z)) + n * 0.008
-                up = n.cross(Vector((0, 1, 0)))
-                if any(abs((v - c).y) < 0.2 and abs((v - c).dot(up)) < 0.11 and abs((v - c).dot(n)) < 0.1 for v in busy): continue
-                if best is None or abs(z - zb - zp) < abs(best[0] - zb - zp): best = (z, c, n)
+            best = self._plate_spot(sx, zb, z0, z1, zp, holes) or self._plate_spot(sx, zb, z0, z1, zp, busy)
             if best is None: continue
             _, c, n = best
             self.slab('plateframe', 'Gloss', c - n * 0.004, (0, 1, 0), n, 0.176, 0.093, 0.004)
             self.slab('plate', 'Plate', c, (0, 1, 0), n, 0.165, 0.0825, 0.003)
+    def _plate_spot(self, sx, zb, z0, z1, zp, busy):
+        """the flattest upright 330 x 165 mm patch on the nose (sx=1) or the tail (-1) between zb+z0 and zb+z1 that no
+        `busy` point covers, nearest the usual height zb+zp: (z, centre, normal) or None"""
+        best = None
+        for i in range(int((z1 - z0) / 0.02) + 1):
+            z = zb + z0 + i * 0.02
+            hits = [self.hit((sx * 9, y, z + dz), (-sx, 0, 0)) for y in (-0.165, 0, 0.165) for dz in (-0.0825, 0.0825)]
+            if any(h[0] is None or h[1].x * sx < 0.6 for h in hits): continue
+            xs = [h[0].x for h in hits]
+            if max(xs) - min(xs) > 0.06: continue
+            c = sum((h[0] for h in hits), Vector()) / 6; n = sum((h[1] for h in hits), Vector()); n.y = 0; n.normalize()
+            c = Vector((max(xs) if sx > 0 else min(xs), 0, c.z)) + n * 0.008
+            up = n.cross(Vector((0, 1, 0)))
+            if any(abs((v - c).y) < 0.2 and abs((v - c).dot(up)) < 0.11 and abs((v - c).dot(n)) < 0.1 for v in busy): continue
+            if best is None or abs(z - zb - zp) < abs(best[0] - zb - zp): best = (z, c, n)
+        return best
 
     # ------------------------------------------------------------ see-through cabin
     FRIT = {'windscreen': 0.045, 'rearwindow': 0.04, 'rearwin': 0.04, 'roof': 0.03, 'roofglass': 0.03}
