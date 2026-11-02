@@ -2413,6 +2413,28 @@ const carbonMat = new THREE.MeshPhysicalMaterial({ color: 0x141416, roughness: .
 const tireMat = new THREE.MeshStandardMaterial({ color: 0x151516, roughness: .92 });
 const chromeMat = new THREE.MeshStandardMaterial({ color: 0xcfd2d6, roughness: .18, metalness: 1 });
 const discMat = new THREE.MeshStandardMaterial({ color: 0x5c5e61, roughness: .45, metalness: .9 });
+// real lamps and openings on the Blender cars (carkit.pocket): a clear or red glass cover flush with the body over a
+// recessed chrome (or dark red) lamp, LED light guides that are lit day and night, projector lenses, and a honeycomb
+// mesh in every grille and intake with real holes in it (the black of the opening shows through)
+const lampMats = {
+  LensClear: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .03, metalness: 0, transparent: true, opacity: .16, depthWrite: false, clearcoat: 1, clearcoatRoughness: .02, envMapIntensity: 1.6 }),
+  LensRed: new THREE.MeshPhysicalMaterial({ color: 0xa0000a, roughness: .05, transparent: true, opacity: .55, depthWrite: false, clearcoat: 1, clearcoatRoughness: .03, emissive: 0x3a0000 }),
+  LampBack: new THREE.MeshStandardMaterial({ color: 0xd0d6de, metalness: 1, roughness: .22 }),
+  TailBack: new THREE.MeshStandardMaterial({ color: 0x4a0007, metalness: .4, roughness: .3, emissive: 0x1a0000 }),
+  DRL: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xeaf2ff, emissiveIntensity: 2.4, roughness: .2 }),
+  LensGlass: new THREE.MeshPhysicalMaterial({ color: 0x080a0e, metalness: .1, roughness: .02, clearcoat: 1 }),
+  Pocket: new THREE.MeshStandardMaterial({ color: 0x040405, roughness: .9 }),
+  Grille: new THREE.MeshStandardMaterial({ color: 0x0e0f11, metalness: .5, roughness: .38, side: THREE.DoubleSide }),
+};
+lampMats.Grille.onBeforeCompile = sh => {   // the honeycomb: hexagon holes 2.2 cm across, projected onto the grille's own plane
+  sh.vertexShader = 'varying vec3 vGP; varying vec3 vGN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGP = position; vGN = normal;');
+  sh.fragmentShader = 'varying vec3 vGP; varying vec3 vGN;\n' + sh.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+  { vec3 an = abs(vGN); vec2 q = (an.x > an.y && an.x > an.z ? vGP.zy : an.y > an.z ? vGP.xz : vGP.xy) / .022; const vec2 sH = vec2(1., 1.7320508);
+    vec4 hc = floor(vec4(q, q - vec2(.5, 1.)) / sH.xyxy) + .5, h = vec4(q - hc.xy * sH, q - (hc.zw + .5) * sH);
+    vec2 g = dot(h.xy, h.xy) < dot(h.zw, h.zw) ? h.xy : h.zw;
+    if (max(dot(abs(g), vec2(.5, .8660254)), abs(g.x)) < .4) discard; }`);
+};
+lampMats.Grille.customProgramCacheKey = () => 'car-grille';
 
 function smoothChain(P, n) {
   const c = new THREE.CatmullRomCurve3(P.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
@@ -2590,7 +2612,7 @@ function buildModelCar(spec, src, paint) {
   const headMat = new THREE.MeshStandardMaterial({ color: 0xdfe8f0, emissive: 0xffffff, emissiveIntensity: 0, roughness: .1, metalness: .3 });
   const tailMat = new THREE.MeshStandardMaterial({ color: 0x3a0000, emissive: 0xff1010, emissiveIntensity: 1.5, roughness: .2 });
   const MAT = {
-    ...cabinMats, Plate: plateMat, Paint: paint, Glass: glassMat, GlassClear: clearMat, Black: modelMats.black, GlossBlack: glossBlackMat, Carbon: carbonMat, Chrome: chromeMat, RimLip: modelMats.lip,
+    ...cabinMats, ...lampMats, Plate: plateMat, Paint: paint, Glass: glassMat, GlassClear: clearMat, Black: modelMats.black, GlossBlack: glossBlackMat, Carbon: carbonMat, Chrome: chromeMat, RimLip: modelMats.lip,
     Titanium: modelMats.ti, Headlight: headMat, Taillight: tailMat, Tire: modelMats.tire, Disc: discMat,
     Rim: new THREE.MeshStandardMaterial({ color: spec.rim, roughness: .32, metalness: .85, side: THREE.DoubleSide }),
     Caliper: new THREE.MeshStandardMaterial({ color: spec.caliper, roughness: .35, metalness: .3 }),

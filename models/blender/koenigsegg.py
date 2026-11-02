@@ -30,8 +30,9 @@ def koenigsegg(k, P, wheels=WK, rings=True):
         k.slanted('sideintake', 'Gloss', s, -0.40, -1.00, 0.46, 0.88, lean=0.22, nu=8, nv=8, off=.006)
         k.decal('skirt', 'Carbon', side(s), -0.95, 1.0, 0.11, 0.20, 30, 2)
     # slanted lights in the fender tips, a big carbon splitter and the wide front mouth
-    k.headlight_quad((S.nose - 0.30, 0.70, 0.58), (0.66, 0.34, 0.52), 0.22, 0.09, slant=0.06, taper=0.3, dots='row')
-    k.decal('mouth', 'Gloss', 'front', -0.52, 0.52, 0.18, 0.36, 18, 4)
+    k.headlight_quad((S.nose - 0.32, 0.70, 0.59), (0.66, 0.34, 0.52), 0.32, 0.10, slant=0.06, taper=0.3, dots='row')
+    # the wide "smile" mouth across the nose (a real opening with its mesh, see Car._dress)
+    k.project('mouth', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.74, 0.62, v), lerp(0.17, 0.42, v) - 0.05 * (1 - (2 * u - 1) ** 2) * (1 - v)), 18, 5)
     k.decal('splitter', 'Carbon', 'front', -0.94, 0.94, 0.12, 0.17, 30, 2)
     k.fan('rearbg', 'Gloss', -1.7, 0.42, 0.76, -0.66, 0.66, 30, 5, off=.003)
     k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.42, -0.72, 0.72, 30, 3)
@@ -70,9 +71,10 @@ def regera(k):
 P_CC = scaled(PJESKO, L=4.364, W=2.024, H=1.127, WB=2.70, fo=0.86)
 def cc850(k):
     S = koenigsegg(k, P_CC, rings=False); big_pipe(k, z=0.74, w=0.16)
+    a0, a1 = k._corner_fan(-1.7, 0.84, 0.45, 0.80, wide=0.32)
     for s in (1, -1):
         k.oval('headlight', 'Chrome', V(S.nose - 0.28, s * 0.68, 0.58), V(0.66, s * 0.34, 0.52), 0.10, 0.07, .007, n=8)
-        k.fan('tail', 'Taillight', -1.7, 0.80, 0.88, s * 0.45, s * 0.80, 8, 3, off=.006)
+        k.fan('tail', 'Taillight', -1.7, 0.80, 0.88, s * a0, s * a1, 8, 3, off=.006)
     k.join(); k.wheels(spokes=18, spoke_w=(0.012, 0.008))
 
 # ---- Agera RS: 4.29 x 2.05 x 1.12 m, 2.66 m wheelbase - short and wide, the fixed wing on posts

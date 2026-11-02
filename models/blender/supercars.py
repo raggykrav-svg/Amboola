@@ -37,11 +37,11 @@ def y_lights(k, c, f, size=0.15):
         cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2])
         _, e1, e2 = k.basis(fs)
         for dx, dy, w, h, sl in ((0, size * .32, size * 1.3, .012, 0.0), (-size * .55, -size * .05, size * .9, .012, size * .5), (size * .55, -size * .05, size * .9, .012, -size * .5)):
-            k.rect('ydrl', 'Headlight', cs + e1 * dx * s + e2 * dy, fs, w, h, .012, nu=6, nv=1, slant=sl * s)
+            k.rect('li_ydrl', 'DRL', cs + e1 * dx * s + e2 * dy, fs, w, h, .012, nu=6, nv=1, slant=sl * s)
 
 def y_tails(k, ox, z0, z1, a0, a1):
     """Y / hexagonal tail lights at the rear corners, over a black rear grille"""
-    k.tail_clusters(ox, z0, z1, a0, a1)
+    a0, a1 = k.tail_clusters(ox, z0, z1, a0, a1)
     for s in (1, -1):
         k.fan('tailY', 'Taillight', ox, z0 - .06, z0, s * a0, s * (a0 + (a1 - a0) * .4), 6, 2, off=.007)
 
@@ -90,7 +90,7 @@ def lambo_common(k, S, x0=-0.30, x1=-1.0):
 def revuelto(k):
     S = build(k, PREV, dict(r=0.347, w=0.265, rim=0.254), dict(r=0.37, w=0.345, rim=0.267), crease=SHARP)
     lambo_common(k, S)
-    y_lights(k, (2.24, 0.72, 0.58), (0.62, 0.36, 0.55))
+    y_lights(k, (2.20, 0.72, 0.60), (0.62, 0.36, 0.55), size=0.19)
     k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.16, 0.30, 12, 4)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.44, s * 0.90, 0.15, 0.40, 12, 6))
     k.decal('splitter', 'Carbon', 'front', -0.94, 0.94, 0.11, 0.16, 30, 2)
@@ -117,7 +117,7 @@ def svj(k):
     lambo_common(k, S)
     for s in (1, -1): k.decal('scoop', 'Gloss', 'top', -1.05, -0.70, s * 0.76, s * 0.96, 4, 4)       # shoulder scoops
     for i in range(6): k.decal('louvre', 'Gloss', 'top', -2.15 + i * .12, -2.08 + i * .12, -0.55, 0.55, 2, 12)
-    y_lights(k, (2.26, 0.74, 0.56), (0.62, 0.36, 0.55))
+    y_lights(k, (2.22, 0.74, 0.58), (0.62, 0.36, 0.55), size=0.18)
     k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.15, 0.28, 12, 4)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.42, s * 0.92, 0.14, 0.40, 12, 6))
     k.decal('splitter', 'Carbon', 'front', -0.96, 0.96, 0.10, 0.15, 30, 2)
@@ -145,9 +145,9 @@ PTEM = dict(L=4.706, W=1.996, H=1.201, WB=2.658, fo=1.07, clear=0.11, nose_zb=0.
 def temerario(k):
     S = build(k, PTEM, dict(r=0.347, w=0.265, rim=0.254), dict(r=0.364, w=0.325, rim=0.267), crease=SHARP)
     lambo_common(k, S, -0.35, -0.95)
-    k.headlight_quad((2.10, 0.68, 0.60), (0.62, 0.36, 0.55), 0.26, 0.08, slant=0.03, dots='row')
+    k.headlight_quad((2.08, 0.68, 0.61), (0.62, 0.36, 0.55), 0.36, 0.10, slant=0.03, dots='row')
     for s in (1, -1):
-        k.oval('hexdrl', 'Headlight', V(2.08, s * 0.68, 0.62), V(0.62, s * 0.36, 0.55), 0.07, 0.06, .012, ring=0.6, n=6)
+        k.oval('li_hexdrl', 'DRL', V(2.08, s * 0.68, 0.62), V(0.62, s * 0.36, 0.55), 0.07, 0.06, .012, ring=0.6, n=6)
         k.oval('hextail', 'Taillight', V(-2.25, s * 0.66, 0.84), V(-1, s * 0.3, 0.05), 0.09, 0.075, .007, ring=0.55, n=6)
     k.decal('intakeC', 'Gloss', 'front', -0.32, 0.32, 0.16, 0.30, 12, 4)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.42, s * 0.86, 0.15, 0.40, 12, 6))
@@ -171,7 +171,7 @@ PSTO = dict(L=4.549, W=1.945, H=1.22, WB=2.62, fo=1.03, clear=0.11, nose_zb=0.22
             cab=(0.95, 0.10, -0.62, -1.0), bulge=[(0.0, 0.02), (1.0, 0.05), (2.0, 0.04)], hip=0.04, side=(0.88, -0.88),
             doors=(0.86,), mirror_x=0.80, rw_w=0.9, rw_bulge=0.0, roof_crown=0.04)
 def huracan_face(k):
-    y_lights(k, (2.06, 0.66, 0.60), (0.62, 0.36, 0.55), size=0.13)
+    y_lights(k, (2.04, 0.66, 0.61), (0.62, 0.36, 0.55), size=0.17)
     k.decal('intakeC', 'Gloss', 'front', -0.30, 0.30, 0.16, 0.30, 12, 4)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.40, s * 0.84, 0.15, 0.40, 12, 6))
     k.fan('rearbg', 'Gloss', -1.7, 0.40, 0.92, -0.62, 0.62, 30, 8, off=.003)
@@ -249,7 +249,7 @@ def urusp(k):
     both(lambda s: k.decal('hoodvent', 'Carbon', 'top', 1.40, 1.85, s * 0.20, s * 0.40, 6, 4, off=.006))
     for s in (1, -1): k.decal('sill', 'Gloss', side(s), -1.30, 1.10, 0.22, 0.34, 30, 3, off=.005)
     k.arch_trim(0.05, mat='Gloss')
-    y_lights(k, (2.38, 0.72, 0.95), (0.72, 0.30, 0.50), size=0.16)
+    y_lights(k, (2.36, 0.72, 0.95), (0.72, 0.30, 0.50), size=0.19)
     k.project('grille', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.50, 0.60, v), lerp(0.40, 0.74, v)), 16, 6, off=.006)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.64, s * 0.90, 0.36, 0.70, 10, 8))
     k.decal('lip', 'Carbon', 'front', -0.88, 0.88, 0.32, 0.40, 30, 2)
@@ -305,8 +305,8 @@ def ferrari_sides(k, x0=-0.45, x1=-1.0, z0=0.50, z1=0.82):
 def sf90(k):
     build(k, PSF90, dict(r=0.343, w=0.255, rim=0.254), dict(r=0.349, w=0.315, rim=0.254), crease=SOFT)
     ferrari_sides(k)
-    k.headlight_quad((2.10, 0.68, 0.62), (0.66, 0.36, 0.52), 0.30, 0.06, slant=0.06, taper=0.4, dots='row')
-    k.decal('grille', 'Gloss', 'front', -0.52, 0.52, 0.18, 0.36, 18, 5)
+    k.headlight_quad((2.06, 0.69, 0.63), (0.66, 0.36, 0.52), 0.40, 0.085, slant=0.06, taper=0.4, dots='row')
+    k.decal('grille', 'Gloss', 'front', -0.70, 0.70, 0.16, 0.37, 18, 5)
     k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.12, 0.17, 30, 2)
     both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.55, 1.80, s * 0.12, s * 0.30, 6, 4))
     for s in (1, -1):
@@ -332,7 +332,7 @@ PLAF = dict(L=4.702, W=1.992, H=1.116, WB=2.65, fo=1.03, clear=0.10, nose_zb=0.2
 def laferrari(k):
     build(k, PLAF, dict(r=0.321, w=0.265, rim=0.241), dict(r=0.358, w=0.345, rim=0.254), crease=SOFT)
     ferrari_sides(k, -0.35, -1.0, 0.40, 0.78)
-    k.headlight_quad((2.02, 0.70, 0.62), (0.55, 0.40, 0.62), 0.30, 0.05, slant=0.07, taper=0.5, dots='row')
+    k.headlight_quad((1.98, 0.70, 0.63), (0.55, 0.40, 0.62), 0.40, 0.075, slant=0.07, taper=0.5, dots='row')
     k.decal('nosevalley', 'Gloss', 'top', 1.30, 2.0, -0.12, 0.12, 8, 3)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.24, s * 0.70, 0.16, 0.38, 10, 5))
     k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.11, 0.16, 30, 2)
@@ -361,8 +361,8 @@ def gtb296(k):
     build(k, P296, dict(r=0.34, w=0.245, rim=0.254), dict(r=0.361, w=0.305, rim=0.254), crease=SOFT)
     ferrari_sides(k, -0.40, -0.95, 0.52, 0.82)
     for s in (1, -1):
-        k.oval('teardrop', 'Gloss', V(2.06, s * 0.68, 0.62), V(0.66, s * 0.36, 0.52), 0.16, 0.07, .004, n=10)
-        k.rect('drl', 'Headlight', V(2.06, s * 0.68, 0.64), V(0.66, s * 0.36, 0.52), 0.20, 0.014, .009, 6, 1, slant=s * 0.03)
+        k.oval('teardrop', 'Gloss', V(2.04, s * 0.68, 0.62), V(0.66, s * 0.36, 0.52), 0.21, 0.085, .004, n=10)
+        k.rect('li_drl', 'DRL', V(2.04, s * 0.68, 0.645), V(0.66, s * 0.36, 0.52), 0.27, 0.016, .009, 6, 1, slant=s * 0.03)
         k.decal('buttress', 'Gloss', side(s), -0.55, -0.80, 0.98, 1.06, 6, 3, off=.004)
         k.fan('tail', 'Taillight', -1.7, 0.88, 0.91, s * 0.50, s * 0.86, 10, 2, off=.007)
     k.decal('grille', 'Gloss', 'front', -0.50, 0.50, 0.18, 0.34, 18, 4)
@@ -388,9 +388,9 @@ PF8 = dict(L=4.611, W=1.979, H=1.206, WB=2.65, fo=1.03, clear=0.11, nose_zb=0.24
 def f8(k):
     build(k, PF8, dict(r=0.34, w=0.245, rim=0.254), dict(r=0.346, w=0.305, rim=0.254), crease=SOFT)
     ferrari_sides(k, -0.40, -1.0, 0.50, 0.84)
-    k.headlight_quad((2.08, 0.68, 0.62), (0.66, 0.36, 0.52), 0.30, 0.06, slant=0.06, taper=0.45, dots='row')
+    k.headlight_quad((2.04, 0.69, 0.63), (0.66, 0.36, 0.52), 0.40, 0.085, slant=0.06, taper=0.45, dots='row')
     k.naca(1.45, 2.10, 0.0, 0.14, 0.40)                                         # the S-duct
-    k.decal('grille', 'Gloss', 'front', -0.50, 0.50, 0.18, 0.34, 18, 4)
+    k.decal('grille', 'Gloss', 'front', -0.62, 0.62, 0.16, 0.36, 18, 4)
     k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.12, 0.17, 30, 2)
     for i in range(3): k.decal('louvre', 'Gloss', 'top', -1.55 + i * .2, -1.47 + i * .2, -0.42, 0.42, 2, 10, off=.006)
     for s in (1, -1):
@@ -439,8 +439,8 @@ def c812(k):
         k.slanted('fendervent', 'Gloss', s, 1.05, 0.88, 0.48, 0.74, lean=0.06, nu=4, nv=6)
         k.decal('skirt', 'Carbon', side(s), -1.0, 1.0, 0.12, 0.20, 30, 2)
         for y in (0.56, 0.74): k.oval('tailround', 'Taillight', V(-2.30, s * y, 0.88), V(-1, s * 0.25 * y, 0.1), 0.065, 0.055, .006, n=6)
-    k.headlight_quad((2.10, 0.70, 0.66), (0.70, 0.34, 0.52), 0.32, 0.07, slant=0.05, taper=0.4, dots='row')
-    k.decal('grille', 'Gloss', 'front', -0.64, 0.64, 0.20, 0.40, 18, 5)
+    k.headlight_quad((2.05, 0.71, 0.67), (0.70, 0.34, 0.52), 0.42, 0.09, slant=0.05, taper=0.4, dots='row')
+    k.decal('grille', 'Gloss', 'front', -0.74, 0.74, 0.18, 0.42, 18, 5)
     k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.13, 0.18, 30, 2)
     k.fan('rearpanel', 'Gloss', -1.9, 0.42, 0.62, -0.62, 0.62, 30, 4)
     k.fan('diffuser', 'Carbon', -1.9, 0.26, 0.42, -0.66, 0.66, 30, 3)
@@ -462,8 +462,8 @@ def cil12(k):
     build(k, P12C, dict(r=0.363, w=0.275, rim=0.267), dict(r=0.377, w=0.315, rim=0.267), crease=SOFT)
     k.decal('delta', 'Gloss', 'top', -2.15, -1.85, -0.55, 0.55, 6, 12)          # black delta behind the rear glass
     k.fan('band', 'Gloss', 1.20, 0.60, 0.68, -0.66, 0.66, 40, 2, rear=False)    # the black band across the nose
-    k.drl_strip((2.14, 0.72, 0.66), (0.75, 0.30, 0.40), 0.28, 0.03)
-    k.decal('grille', 'Gloss', 'front', -0.46, 0.46, 0.22, 0.36, 18, 4)
+    k.drl_strip((2.12, 0.72, 0.66), (0.75, 0.30, 0.40), 0.38, 0.035)
+    k.decal('grille', 'Gloss', 'front', -0.60, 0.60, 0.20, 0.37, 18, 4)
     k.decal('splitter', 'Gloss', 'front', -0.88, 0.88, 0.13, 0.18, 30, 2)
     for s in (1, -1):
         k.decal('skirt', 'Gloss', side(s), -1.0, 1.0, 0.12, 0.20, 30, 2)
@@ -491,7 +491,7 @@ def purosangue(k):
         k.fan('tail', 'Taillight', -2.0, 1.04, 1.07, s * 0.30, s * 0.86, 12, 2, off=.007)
     k.arch_trim(0.05, mat='Gloss')
     k.drl_strip((2.36, 0.72, 0.92), (0.78, 0.30, 0.30), 0.30, 0.03)
-    k.headlight_quad((2.40, 0.66, 0.70), (0.85, 0.30, 0.10), 0.18, 0.07, dots='row')
+    k.headlight_quad((2.40, 0.66, 0.70), (0.85, 0.30, 0.10), 0.24, 0.085, dots='row')
     k.decal('grille', 'Gloss', 'front', -0.52, 0.52, 0.42, 0.66, 18, 5)
     k.fan('rearpanel', 'Gloss', -2.0, 0.80, 1.02, -0.66, 0.66, 30, 4)
     k.fan('diffuser', 'Gloss', -2.0, 0.46, 0.62, -0.62, 0.62, 30, 3)

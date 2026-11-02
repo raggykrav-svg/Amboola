@@ -1136,6 +1136,28 @@ That covers every Ferrari, Lamborghini, McLaren, Bugatti, Koenigsegg, Toyota, BM
 
 **No more see-through roofs:** on some cars the side windows reached up onto the roof, so cutting the windows open also cut the roof away, and the car looked like a convertible. The side glass now stops where the body turns into the roof.
 
+### Checked against real photos 📷
+
+Every car was compared with real photos of the real car (from Wikimedia Commons), side by side with a Blender render of our model, and then rebuilt with more real parts:
+
+- **Real headlights:** each one sits in a recess behind a clear glass cover, with a silver reflector, projector lenses and always-on LED daytime lights in the car's own pattern (Porsche's four dots, Lamborghini's Y, Tesla's eyebrow, McLaren's hockey stick). Most headlights were drawn too small, so they are now the real size.
+- **Real tail lights:** red glass over a dark-red lamp with bright LED bars inside.
+- **Real air intakes:** grilles and intakes are cut into the body instead of being black stickers, with a honeycomb mesh set back inside them. Vents, gills, louvres and scoops are real slots.
+- **Tail lights in the right place:** on many cars the tail lights had slipped into the middle of the tail. They now sit at the corners and wrap round the sides, like the real ones (GR86, Supra, Revuelto, Model S, M4, Corvette, Mustang, Phantom and more).
+- **Real wheel designs:** each car gets wheels shaped like its real ones. There are Y-spokes (M4 CSL, R8, Chiron Pur Sport), swept "turbine" blades (Taycan, Revuelto, Model S, W1), a cross-spoke lattice (Devel Sixteen, Phantom), aero covers (Cybertruck, Bolide, AMG ONE) and the CC850's "phone dial" with six round holes.
+- **Real grilles:** the BMW kidneys, the Audi Singleframe and the Rolls-Royce Pantheon grille are real openings with the slats or vanes set inside, not stickers.
+- **Better body lines:** a flat floor with a tight sill, a crisper shoulder line, and a rounded nose where the real car has one (the wedge supercars keep their sharp blade).
+- **Fixes for the famous faces:**
+  - the 911s have tall front fenders with upright round lamps (the "frog eyes")
+  - the GR86 and GR Supra have their long swept lamps and wide grilles
+  - the Lamborghinis and Ferraris have bigger lamps and wider mouths
+  - the McLarens have their big "eye socket" lamps with an intake under each one
+  - the Bugattis have a bigger horseshoe grille that is a real opening, with the number plate moved off it
+  - the Koenigseggs have their wide "smile" mouth
+  - the Teslas, BMWs, Audis, Mercedes, Rolls-Royces, Mustang, GT-R, Corvette, NSX and Pagani have real-size lamps
+
+In the game, the new parts have their own materials: clear and red lens glass, a shiny lamp reflector, glowing LED strips, and a grille material with real see-through honeycomb holes.
+
 ### Traffic cars from Blender 🚕
 
 The cars driving around the city are real Blender models now too, made with the same car kit as the cars you drive (`models/blender/traffic.py`):

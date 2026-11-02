@@ -54,11 +54,28 @@ def edit(rows, x, **kw):
         out.append(tuple(r))
     return out
 
-VIEWS = {'front34': (5.4, -4.3, 1.45), 'rear34': (-5.2, -4.5, 2.0), 'side': (0.05, -8.4, 0.95),
+VIEWS = {'front34': (5.4, -4.3, 1.45), 'rear34': (-5.2, -4.5, 2.0), 'side': (0.05, -8.4, 0.95), 'nose': (3.6, -2.3, 1.05), 'tail': (-3.5, -2.4, 1.25),
          'top': (0.3, -3.2, 7.6), 'front': (8.2, 0.0, 1.15), 'rear': (-8.2, 0.0, 1.5)}
+
+# every real car's wheel design, as near as the kit's styles get (see Car.wheels); anything not listed: straight spokes
+WHEEL_STYLE = {
+    '918': 'y', 'taycangt': 'turbine', 'cayennegt': 'y', 'cayenneeh': 'y', 'macanev': 'turbine',
+    'revuelto': 'turbine', 'svj': 'y', 'temerario': 'turbine', 'urusp': 'y',
+    'sf90': 'y', '812c': 'y', '12cil': 'turbine', '296gtb': 'y', 'f8': 'y', 'purosangue': 'turbine',
+    'w1': 'turbine', '750s': 'turbine', 'artura': 'y', 'gts': 'turbine', 'p1': 'y',
+    'tourbillon': 'turbine', 'chironss': 'turbine', 'chironps': 'y', 'divo': 'y', 'bolide': 'disc',
+    'roadster2': 'turbine', 'modelsplaid': 'turbine', 'model3p': 'turbine', 'modelxplaid': 'turbine', 'modelyp': 'turbine',
+    'cyberbeast': 'disc', 'cybercab': 'disc',
+    'jesko': 'y', 'jeskoattack': 'y', 'regera': 'turbine', 'gemera': 'turbine', 'cc850': 'dial',
+    'grsupra': 'y', 'lc300': 'y', 'grgt': 'turbine',
+    'm2': 'y', 'm4csl': 'y', 'm5': 'y', 'xm': 'turbine', 'r8': 'y', 'rs6': 'y', 'rsetrongt': 'turbine', 'rsq8': 'y', 'devel16': 'mesh',
+    'amggt': 'y', 'amgone': 'disc', 'c63': 'y', 'spectre': 'turbine', 'phantom': 'mesh',
+    'corvette': 'y', 'nsx': 'y', 'utopia': 'turbine',
+}
 
 class Car:
     def __init__(self, key, paint='#f2c20f', rim='#1b1b1d', caliper='#e3c11b', metal=0.15):
+        self.lamp_scale = 1.0
         bpy.ops.wm.read_factory_settings(use_empty=True)
         self.key, self.scene, self.parts, self.bvh, self.body, self.lift = key, bpy.context.scene, [], None, None, 0.0
         mat = self.material
@@ -88,14 +105,25 @@ class Car:
             'Dash': mat('Dash', (0.012, 0.012, 0.014), rough=0.6),
             'Screen': mat('Screen', (0.01, 0.04, 0.1), rough=0.1, emit=(0.15, 0.55, 1.0), strength=0.5),
             'Plate': mat('Plate', (0.86, 0.87, 0.84), rough=0.4),                 # Japanese number plates (the game paints the number on)
+            # real lamps and openings (pocket()): a clear or red glass cover flush with the body, a chrome or dark back
+            # behind it, LED light guides that are always lit (DRL), projector lenses, the mesh in a grille, deep black
+            'LensClear': mat('LensClear', (0.95, 0.96, 0.97), rough=0.02, coat=1.0, alpha=0.12, transmission=1.0),
+            'LensRed': mat('LensRed', (0.5, 0.0, 0.01), rough=0.04, coat=1.0, alpha=0.55, transmission=0.7),
+            'LampBack': mat('LampBack', (0.78, 0.80, 0.83), metal=0.85, rough=0.30),   # a silver reflector (reads as a lamp even in a dark studio)
+            'TailBack': mat('TailBack', (0.10, 0.0, 0.004), metal=0.5, rough=0.3),
+            'DRL': mat('DRL', (0.95, 0.97, 1.0), rough=0.1, emit=(0.92, 0.96, 1.0), strength=6.0),
+            'LensGlass': mat('LensGlass', (0.01, 0.012, 0.016), metal=0.3, rough=0.03, coat=1.0),
+            'Grille': mat('Grille', (0.014, 0.014, 0.015), metal=0.35, rough=0.4),
+            'Pocket': mat('Pocket', (0.004, 0.004, 0.005), rough=0.85),
             'Cutter': mat('Cutter', (1, 0, 1)),                                   # window cutters' walls, deleted again
         }
 
     # ------------------------------------------------------------ plumbing
-    def material(self, name, color, metal=0.0, rough=0.5, coat=0.0, emit=None, strength=0.0, alpha=1.0):
+    def material(self, name, color, metal=0.0, rough=0.5, coat=0.0, emit=None, strength=0.0, alpha=1.0, transmission=0.0):
         m = bpy.data.materials.new(name); m.use_nodes = True
         b = m.node_tree.nodes['Principled BSDF']
-        if alpha < 1: b.inputs['Alpha'].default_value = alpha
+        if alpha < 1 and not transmission: b.inputs['Alpha'].default_value = alpha
+        if transmission: b.inputs['Transmission Weight'].default_value = transmission   # (Cycles photos: real glass; the game uses its own lens)
         b.inputs['Base Color'].default_value = (*color, 1)
         b.inputs['Metallic'].default_value = metal
         b.inputs['Roughness'].default_value = rough
@@ -123,10 +151,12 @@ class Car:
         return h[0], h[1]
 
     # ------------------------------------------------------------ body
-    def loft(self, st, crease_front=0.55, crease_rear=0.75, crease_lines=0.35, crisp_front=0.7, crisp=0.3, crease_all=None, levels=3):
+    def loft(self, st, crease_front=0.3, crease_rear=0.75, crease_lines=0.35, crisp_front=0.7, crisp=0.3, crease_all=None, levels=3):
         """the main shell from a station table (see stations()); creases keep nose/tail faces, sill and beltline crisp"""
         def half(s):
-            return [(0, s['zb']), (s['w'] * .74, s['zb']), (s['w'] * .91, lerp(s['zb'], s['zs'], .17)), (s['w'] * .985, lerp(s['zb'], s['zs'], .70)),
+            # a flat floor out to a tight sill corner, then a near-upright door skin to the widest point (a real car's
+            # section; the old rounder one made every car a bar of soap)
+            return [(0, s['zb']), (s['w'] * .84, s['zb']), (s['w'] * .95, lerp(s['zb'], s['zs'], .10)), (s['w'] * .992, lerp(s['zb'], s['zs'], .55)),
                     (s['w'], s['zs']), (s['wb'], s['zbl']), (s['wg'], s['zg']), (s['wr'], s['zr']), (0, s['zt'])]
         def loop(s):
             h = half(s)
@@ -141,7 +171,9 @@ class Car:
         if max(bm.faces, key=lambda f: f.calc_center_median().z).normal.z < 0:   # make sure the shell faces outward
             bmesh.ops.reverse_faces(bm, faces=bm.faces)
         cr = bm.edges.layers.float.new('crease_edge')
-        crease_front, crease_rear = max(crease_front, 0.6), max(crease_rear, 0.8)   # crisp nose and tail panels
+        # the nose is as crisp as the car asks (a wedge supercar's blade, or by default a rounded nose: a real bonnet
+        # flows down into the bumper) and the tail panel is always crisp
+        crease_rear = max(crease_rear, 0.8)
         for r, c in ((rings[0], crease_front), (rings[-1], crease_rear)):
             for j in range(n): bm.edges.get((r[j], r[(j + 1) % n]))[cr] = c
         for a, b in zip(rings, rings[1:]):
@@ -150,7 +182,9 @@ class Car:
                 for j in (6, 7, n - 6, n - 7): bm.edges.get((a[j], b[j]))[cr] = crisp
         for a, b in zip(rings, rings[1:]):              # a crisp shoulder and beltline the whole length of the car
             for j in (5, 6, n - 5, n - 6):
-                e = bm.edges.get((a[j], b[j])); e[cr] = max(e[cr], 0.5)
+                e = bm.edges.get((a[j], b[j])); e[cr] = max(e[cr], 0.72)
+            for j in (4, n - 4):                        # and a soft character line along the widest point of the doors
+                e = bm.edges.get((a[j], b[j])); e[cr] = max(e[cr], 0.3)
         if crease_all is not None:                      # flat-panel bodies (Cybertruck): every edge stays sharp
             for e in bm.edges: e[cr] = crease_all
         body = self.mesh('Body', bm, 'Paint')
@@ -270,7 +304,136 @@ class Car:
         bm.normal_update()
         if sum((f.normal.dot(nsum) for f in bm.faces), 0) < 0: bmesh.ops.reverse_faces(bm, faces=bm.faces)
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
-        return self.mesh(name, bm, mat, part=True)
+        return self._dress(self.mesh(name, bm, mat, part=True), name, mat)
+    # names of decals that are openings: intakes, grilles and mouths get a pocket with a mesh set into it; gills, vents,
+    # louvres, scoops, ducts and curtains become plain slots
+    MESHED = ('grille', 'intake', 'mouth', 'rearbg', 'nostril', 'kidney', 'singleframe', 'pantheon')
+    SLOTS = ('gill', 'vent', 'louvre', 'scoop', 'curtain', 'duct')
+    def _dress(self, o, name, mat):
+        """every car gets real openings and lamps, whatever its script asks for: a dark intake decal becomes a recess with a
+        grille mesh inside, a slot becomes a recess, and a plain lamp decal becomes a glass cover over a recessed lamp"""
+        if getattr(self, 'lite', False) or self.body is None or name.startswith('li_'): return o
+        mname = mat if isinstance(mat, str) else getattr(mat, 'name', '')
+        low = name.lower()
+        if mname in ('Gloss', 'Black', 'Carbon') and any(k in low for k in self.MESHED + self.SLOTS):
+            slot = any(k in low for k in self.SLOTS) and not any(k in low for k in self.MESHED)
+            area = sum(p.area for p in o.data.polygons)
+            if area < 4e-4: return o
+            depth = min(0.10, max(0.03, math.sqrt(area) * 0.35))
+            N = self.pocket(o, depth=depth, border=min(0.012, math.sqrt(area) * 0.12), mat='Pocket', wall='Pocket')
+            if N is None: return o
+            self.rim(o, min(0.012, math.sqrt(area) * 0.1), 'Gloss')
+            if slot:   # just the slot: the decal goes
+                self.parts.remove(o); bpy.data.objects.remove(o); return None
+            o.data.materials.clear(); o.data.materials.append(self.M['Grille'])   # the mesh, set back into the opening
+            for v in o.data.vertices: v.co -= o.matrix_world.inverted().to_3x3() @ (N * depth * 0.32)
+            return o
+        if mname in ('Headlight', 'Taillight') and len(o.data.polygons) >= 2:
+            red = mname == 'Taillight'
+            N = self.lamp_cover(o, 'LensRed' if red else 'LensClear', depth=0.022 if red else 0.03, back='TailBack' if red else 'LampBack')
+            if N is not None and not red:   # a big white decal is a reflector behind the glass; it glows at night
+                o.data.materials.clear(); o.data.materials.append(self.M['Headlight'])
+        return o
+    def rim(self, patch, width=0.008, mat='Gloss'):
+        """a thin trim band round a decal's outline, at the surface: the black surround of an intake or a lamp, which also
+        hides the stepped edge of the pocket behind it (the skin only moves vertex by vertex)"""
+        bm = bmesh.new(); bm.from_mesh(patch.data); bm.transform(patch.matrix_world)
+        if all(any(v.is_boundary for v in f.verts) for f in bm.faces):   # a thin slot: split it so it keeps an open middle
+            bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=2, use_grid_fill=True)
+        ring = self.frame_ring(bm, width)
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if f not in ring], context='FACES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+        if not bm.faces: bm.free(); return None
+        bm.normal_update()
+        for v in bm.verts: v.co += v.normal * 0.0015
+        return self.mesh('li_rim', bm, mat, smooth=False, part=True)
+    def pocket(self, patch, depth=0.05, border=0.01, mat='Pocket', wall='Pocket'):
+        """a recess `depth` deep behind a decal patch, for a lamp or an opening: the patch thickened into a block and cut
+        out of the body with an exact boolean, so its edge is as crisp as the decal's outline; the floor gets `mat` and
+        the walls `wall`. If the cut goes wrong (the body changes size) it is undone and the skin is pushed back
+        instead (_pocket_move). Returns the patch's mean normal (None if nothing changed)."""
+        if getattr(self, 'lite', False) or self.body is None: return None
+        bm = bmesh.new(); bm.from_mesh(patch.data); bm.transform(patch.matrix_world); bm.normal_update()
+        nsum = sum((f.normal * f.calc_area() for f in bm.faces), Vector())
+        if not bm.faces or nsum.length < 1e-9: bm.free(); return None
+        N = nsum.normalized(); out = 0.012
+        def reach(p, n):   # how far in from p the shell's far side is (the block stops short of it)
+            h = self.bvh.ray_cast(p - n * 0.02, -n, 3.0) if self.bvh else (None,)
+            return (h[0] - p).length if h[0] is not None else 3.0
+        blk = self.block(bm, out=out, depth=depth + out, reach=reach)
+        cut = self.mesh('cut', blk, None, smooth=False)
+        cut.data.materials.append(self.M[mat]); cut.data.materials.append(self.M[wall])
+        for p in cut.data.polygons: p.material_index = 0 if p.normal.dot(N) < -0.5 else 1
+        me = self.body.data; before = me.copy(); nv0 = len(me.vertices)
+        bb0 = [min(v.co[i] for v in me.vertices) for i in range(3)] + [max(v.co[i] for v in me.vertices) for i in range(3)]
+        mod = self.body.modifiers.new('pocket', 'BOOLEAN'); mod.operation = 'DIFFERENCE'; mod.object = cut; mod.solver = 'EXACT'; mod.material_mode = 'TRANSFER'
+        try: self.apply(self.body); ok = True
+        except Exception: ok = False
+        bpy.data.objects.remove(cut)
+        me = self.body.data
+        if ok:
+            bb1 = [min(v.co[i] for v in me.vertices) for i in range(3)] + [max(v.co[i] for v in me.vertices) for i in range(3)]
+            ok = len(me.vertices) > nv0 * 0.9 and max(abs(a - b) for a, b in zip(bb0, bb1)) < 0.02 and len(me.vertices) != nv0
+        if not ok:   # put the body back and push the skin instead
+            for m_ in list(self.body.modifiers): self.body.modifiers.remove(m_)
+            old = self.body.data; self.body.data = before; bpy.data.meshes.remove(old)
+            return self._pocket_move(patch, depth, border, mat, wall)
+        bpy.data.meshes.remove(before)
+        for p in me.polygons: p.use_smooth = True
+        self.surface()
+        return N
+    def _pocket_move(self, patch, depth=0.05, border=0.01, mat='Pocket', wall='Pocket'):
+        """the fallback recess: skin under the patch moves straight back along the patch's mean normal; within `border`
+        of its edge it moves part of the way. Faces wholly inside get `mat`, the walls `wall`."""
+        if getattr(self, 'lite', False) or self.body is None: return None
+        me = self.body.data; Mw = patch.matrix_world
+        bm = bmesh.new(); bm.from_mesh(patch.data); bm.transform(Mw); bmesh.ops.triangulate(bm, faces=bm.faces); bm.normal_update()
+        nsum = sum((f.normal * f.calc_area() for f in bm.faces), Vector())
+        if not bm.faces or nsum.length < 1e-9: bm.free(); return None
+        N = nsum.normalized()
+        edges = [(e.verts[0].co.copy(), e.verts[1].co.copy()) for e in bm.edges if len(e.link_faces) == 1]
+        pts = [v.co.copy() for v in bm.verts]; tree = BVHTree.FromBMesh(bm); bm.free()
+        pad = 0.03
+        lo = Vector((min(p.x for p in pts) - pad, min(p.y for p in pts) - pad, min(p.z for p in pts) - pad))
+        hi = Vector((max(p.x for p in pts) + pad, max(p.y for p in pts) + pad, max(p.z for p in pts) + pad))
+        def seg_d(p, a, b):
+            ab = b - a; t = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.length_squared, 1e-12))); return (a + ab * t - p).length
+        w = {}
+        for v in me.vertices:
+            co = v.co
+            if not (lo.x <= co.x <= hi.x and lo.y <= co.y <= hi.y and lo.z <= co.z <= hi.z): continue
+            if v.normal.dot(N) < 0.25: continue                       # only the skin that faces the way the patch does
+            h = tree.ray_cast(co - N * 0.006, N, 0.045)
+            if h[0] is None: continue
+            t = clamp01(min(seg_d(h[0], a, b) for a, b in edges) / max(border, 1e-4)); w[v.index] = t * t * (3 - 2 * t)
+        if len(w) < 3: return None
+        for i, t in w.items(): me.vertices[i].co -= N * depth * t
+        names = [m.name for m in me.materials]
+        def slot(m):
+            mm = self.M[m]
+            if mm.name not in names: me.materials.append(mm); names.append(mm.name)
+            return names.index(mm.name)
+        si, sw = slot(mat), slot(wall)
+        for p in me.polygons:
+            ts = [w.get(i, -1.0) for i in p.vertices]
+            if min(ts) < 0: continue
+            p.material_index = si if min(ts) > 0.97 else sw
+        me.update(); self.surface()
+        return N
+    def lamp_cover(self, patch, lens='LensClear', depth=0.03, back='LampBack', shrink=0.88):
+        """a lamp from a plain decal: a glass cover where the decal was, the body recessed behind it, and the decal itself
+        moved down into the recess (a little smaller, so a dark rim of the lamp's back shows round it)"""
+        cover = patch.copy(); cover.data = patch.data.copy(); self.link(cover); self.parts.append(cover)
+        cover.name = 'li_lens'; cover.data.materials.clear(); cover.data.materials.append(self.M[lens])
+        N = self.pocket(patch, depth=depth, border=min(0.01, depth * 0.4), mat=back, wall='Gloss')
+        if N is None: return None
+        self.rim(patch, min(0.008, depth * 0.3), 'Gloss')
+        Minv = patch.matrix_world.inverted().to_3x3(); vs = patch.data.vertices
+        if len(vs):
+            c = sum((v.co for v in vs), Vector()) / len(vs)
+            for v in vs: v.co = c + (v.co - c) * shrink - Minv @ (N * depth * 0.7)
+        for v in cover.data.vertices: v.co += Minv @ (N * 0.002)
+        return N
     VIEW = {'front': lambda a, b: (V(6, a, b), V(-1, 0, 0)), 'rear': lambda a, b: (V(-6, a, b), V(1, 0, 0)),
             'top': lambda a, b: (V(a, b, 5), V(0, 0, -1)), 'left': lambda a, b: (V(a, 5, b), V(0, -1, 0)),
             'right': lambda a, b: (V(a, -5, b), V(0, 1, 0))}
@@ -351,72 +514,135 @@ class Car:
 
     # ------------------------------------------------------------ lights
     def headlight_911(self, c, f, rx=0.112, ry=0.090, ring=1.14, bowl='Chrome', drl=(0.23, 0.22, 0.63), dome=0.0):
-        """992-style: oval lens in a gloss-black surround, a bowl (chrome, or dark like the 992's), a chrome-ringed
-        projector and the 4-point LED signature (drl = dot width, dot height and distance from the middle, as fractions
-        of rx/ry). Projected along -f, so a lamp facing forward onto a sloping fender is round from the front and a
-        long teardrop from the side, like the real thing. dome>0 bulges the lens out of the fender by that much at its
-        middle (the 911's frog eyes)."""
+        """992-style: an oval glass cover in a gloss-black surround over a recessed bowl (chrome, or dark like the 992's),
+        a chrome-ringed projector in the middle and the 4-point LED signature (drl = dot width, dot height and distance
+        from the middle, as fractions of rx/ry). Projected along -f, so a lamp facing forward onto a sloping fender is
+        round from the front and a long teardrop from the side, like the real thing. dome>0 bulges the glass out of the
+        fender by that much at its middle (the 911's frog eyes)."""
+        rx, ry = rx * self.lamp_scale, ry * self.lamp_scale
         for s in (1, -1):
             cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2])
             fn, e1, e2 = self.basis(fs)
-            lamp = [self.oval('headlight_ring', 'Gloss', cs, fs, rx * ring, ry * ring, .004, ring=0.80),
-                    self.oval('headlight', bowl, cs, fs, rx, ry, .006, n=14 if dome else 10)]
-            if bowl != 'Chrome': lamp.append(self.oval('headlight_proj', 'Chrome', cs, fs, rx * .40, ry * .41, .008, ring=0.7))
-            lamp.append(self.oval('headlight_core', 'Headlight', cs, fs, rx * .32, ry * .33, .009, n=6))
+            self.oval('headlight_ring', 'Gloss', cs, fs, rx * ring, ry * ring, .004, ring=0.80)
+            lens = self.oval('li_lens', 'LensClear', cs, fs, rx, ry, .006, n=14 if dome else 10)
+            if self.pocket(lens, depth=0.05, border=0.012, mat='LampBack' if bowl == 'Chrome' else 'Gloss', wall='Gloss') is None:
+                lens.data.materials.clear(); lens.data.materials.append(self.M[bowl])   # (no room for a recess: the old flat lamp)
+            self.oval('li_projring', 'Chrome', cs, fs, rx * .40, ry * .41, .006, ring=0.68)
+            self.oval('li_projector', 'LensGlass', cs, fs, rx * .29, ry * .30, .008, n=6)
+            self.oval('li_core', 'Headlight', cs, fs, rx * .11, ry * .11, .011, n=4)
             for k in range(4):
                 a = k * math.pi / 2 + math.pi / 4
-                lamp.append(self.oval('drl', 'Headlight', cs + (e1 * math.cos(a) * rx + e2 * math.sin(a) * ry) * drl[2], fs, rx * drl[0], ry * drl[1], .010, n=4))
-            if dome:   # lift every layer by the same bump, so the dots ride on the lens
-                for o in lamp:
-                    for v in o.data.vertices:
-                        d = v.co - cs; x, y = d.dot(e1) / rx, d.dot(e2) / ry
-                        v.co += fn * dome * max(0.0, 1 - x * x - y * y)
+                self.oval('li_drl', 'DRL', cs + (e1 * math.cos(a) * rx + e2 * math.sin(a) * ry) * drl[2], fs, rx * drl[0], ry * drl[1], .010, n=4)
+            if dome:   # the glass bulges out of the fender (the lamp inside stays where it is)
+                for v in lens.data.vertices:
+                    d = v.co - cs; x, y = d.dot(e1) / rx, d.dot(e2) / ry
+                    v.co += fn * dome * max(0.0, 1 - x * x - y * y)
+    def _lamp_unit(self, cs, fs, w, h, sl, taper, inner, depth=0.045, ring=(1.12, 1.2)):
+        """one recessed headlight: a gloss-black surround, a clear glass cover, the body pushed back behind it (a chrome
+        back) and `inner(at, fs)` placing what sits inside (at(px, py) maps -0.5..0.5 across and up the lamp)"""
+        self.rect('headlight_ring', 'Gloss', cs, fs, w * ring[0], h * ring[1], .004, 12, 5, slant=sl, taper=taper)
+        lens = self.rect('li_lens', 'LensClear', cs, fs, w, h, .006, 12, 5, slant=sl, taper=taper)
+        if self.pocket(lens, depth=depth, border=min(0.012, h * 0.18), mat='LampBack', wall='Gloss') is None:
+            lens.data.materials.clear(); lens.data.materials.append(self.M['Chrome'])
+        _, e1, e2 = self.basis(fs)
+        inner(lambda px, py: cs + e1 * (px * w * (1 - taper * (py + .5)) + sl * py) + e2 * py * h, fs, e1, e2)
+    def _projector(self, c, fs, r):
+        """a projector module: chrome ring, dark glass lens, the bulb's glow (the 'Headlight' material: lit at night)"""
+        self.oval('li_projring', 'Chrome', c, fs, r * 1.25, r * 1.25, .006, ring=.72)
+        self.oval('li_projector', 'LensGlass', c, fs, r, r, .008, n=5)
+        self.oval('li_core', 'Headlight', c, fs, r * .42, r * .42, .011, n=4)
     def headlight_quad(self, c, f, w, h, slant=0.0, taper=0.0, dots=4):
-        """Taycan / Cayenne style: rounded housing with four LED points in a 2x2 grid (or a row with dots='row')"""
+        """Taycan / Cayenne style: a recessed lamp behind glass with four LED points in a 2x2 grid; dots='row': a slim
+        LED light guide along the lamp and two projectors (most modern cars)"""
+        w, h = w * self.lamp_scale, h * self.lamp_scale
         for s in (1, -1):
-            cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2])
-            self.rect('headlight_ring', 'Gloss', cs, fs, w * 1.12, h * 1.2, .004, slant=s * slant, taper=taper)
-            self.rect('headlight', 'Chrome', cs, fs, w, h, .006, slant=s * slant, taper=taper)
-            _, e1, e2 = self.basis(fs)
-            pts = [(-.25, .22), (.25, .22), (-.25, -.22), (.25, -.22)] if dots == 4 else [(-.33, 0), (-.11, 0), (.11, 0), (.33, 0)]
-            for px, py in pts:
-                self.oval('drl', 'Headlight', cs + e1 * (px * w + s * slant * py) + e2 * py * h, fs, w * .11, h * .14, .010, n=4)
+            cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]); sl = s * slant
+            def inner(at, fs, e1, e2):
+                if dots == 4:
+                    for px, py in ((-.25, .22), (.25, .22), (-.25, -.22), (.25, -.22)):
+                        self.oval('li_drl', 'DRL', at(px, py), fs, w * .11, h * .14, .010, n=4)
+                    self._projector(at(0, 0), fs, min(w, h) * .16)
+                else:
+                    self.rect('li_drl', 'DRL', at(0, .30), fs, w * .9, max(0.008, h * .14), .010, 12, 1, slant=sl, taper=taper * .5)
+                    for px in (-.24, .12):
+                        self._projector(at(s * px, -.08), fs, min(h * .26, w * .12))
+            self._lamp_unit(cs, fs, w, h, sl, taper, inner, depth=min(0.05, max(0.03, h * 0.45)))
     def lamp(self, c, f, w, h, style='quad', slant=0.0, taper=0.0, mirror=True):
-        """a detailed headlight on both sides: gloss-black housing, chrome reflector, then per style
-        'quad'   Porsche 4-point LED signature (four bright pads in a 2x2 grid)
+        """a detailed recessed headlight on both sides: gloss-black surround, glass cover, chrome back, then per style
+        'quad'   Porsche 4-point LED signature (four bright pads in a 2x2 grid) round a projector
         'tesla'  slim lamp: LED eyebrow along the top edge + two projector lenses
-        'strip'  one long LED strip (split-light upper unit)"""
+        'strip'  one long LED light guide (split-light upper unit)"""
+        w, h = w * self.lamp_scale, h * self.lamp_scale
         for s in ((1, -1) if mirror else (1,)):
             cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]); sl = s * slant
-            self.rect('lamp_housing', 'Gloss', cs, fs, w * 1.1, h * 1.28, .004, 12, 5, slant=sl, taper=taper)
-            _, e1, e2 = self.basis(fs)
-            at = lambda px, py: cs + e1 * (px * w * (1 - taper * (py + .5)) + sl * py) + e2 * py * h
-            if style == 'strip':
-                self.rect('lamp_led', 'Headlight', cs, fs, w, h * .55, .008, 12, 2, slant=sl, taper=taper); continue
-            self.rect('lamp_reflector', 'Chrome', cs, fs, w, h, .006, 12, 5, slant=sl, taper=taper)
-            if style == 'quad':
-                for px, py in ((-.2, .2), (.2, .2), (-.2, -.2), (.2, -.2)):
-                    self.rect('lamp_led', 'Headlight', at(px, py), fs, w * .26, h * .26, .010, 3, 3)
-            else:   # tesla
-                self.rect('lamp_led', 'Headlight', at(0, .36), fs, w * .92, h * .14, .010, 10, 1, slant=sl * .3, taper=taper)
-                for px in (-.22, .18):
-                    self.oval('lamp_proj', 'Headlight', at(px, -.12), fs, h * .26, h * .26, .011, n=5)
-                    self.oval('lamp_projring', 'Black', at(px, -.12), fs, h * .34, h * .34, .009, ring=.78)
+            def inner(at, fs, e1, e2):
+                if style == 'strip':
+                    self.rect('li_drl', 'DRL', at(0, 0), fs, w * .96, h * .38, .010, 12, 2, slant=sl, taper=taper); return
+                if style == 'quad':
+                    for px, py in ((-.2, .2), (.2, .2), (-.2, -.2), (.2, -.2)):
+                        self.rect('li_drl', 'DRL', at(px, py), fs, w * .2, h * .2, .010, 3, 3)
+                    self._projector(at(0, 0), fs, min(w, h) * .14)
+                else:   # tesla
+                    self.rect('li_drl', 'DRL', at(0, .36), fs, w * .92, h * .12, .010, 10, 1, slant=sl * .3, taper=taper)
+                    for px in (-.22, .18):
+                        self._projector(at(px, -.12), fs, h * .24)
+            self._lamp_unit(cs, fs, w, h, sl, taper, inner, depth=min(0.05, max(0.025, h * 0.5)), ring=(1.1, 1.28))
     def curtain(self, c, f, w, h, slant=0.0, mat='Gloss'):
-        """vertical air-curtain intake at the bumper corners (both sides)"""
+        """vertical air-curtain intake at the bumper corners (both sides): a real slot (see _dress)"""
         for s in (1, -1):
             self.rect('curtain', mat, V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]), w, h, .005, 3, 8, slant=s * slant)
     def drl_strip(self, c, f, w, h, slant=0.0):
+        """a slim LED light guide in a gloss-black slot (always lit)"""
+        w, h = w * self.lamp_scale, h * self.lamp_scale
         for s in (1, -1):
-            self.rect('drl', 'Headlight', V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2]), w, h, .007, slant=s * slant, nu=6, nv=2)
+            cs, fs = V(c[0], s * c[1], c[2]), V(f[0], s * f[1], f[2])
+            self.rect('drl_slot', 'Gloss', cs, fs, w * 1.06, h * 1.8, .004, slant=s * slant, nu=6, nv=2)
+            self.rect('li_drl', 'DRL', cs, fs, w, h, .007, slant=s * slant, nu=6, nv=2)
     def light_bar(self, ox, z0, z1, ang, bg=0.02, bar_ang=None, frac=0.45):
-        """full-width rear light bar fanned round the tail corners, on a gloss-black band"""
+        """full-width rear light bar fanned round the tail corners: a gloss-black band, a dark red recessed strip, a thin
+        bright LED line inside it and a red glass cover over it"""
         self.fan('taillight_bg', 'Gloss', ox, z0 - bg, z1 + bg, -ang * 1.02, ang * 1.02, 60, 3, off=.003)
-        zc = (z0 + z1) / 2; hz = (z1 - z0) * frac / 2
-        self.fan('taillight', 'Taillight', ox, zc - hz, zc + hz, -(bar_ang or ang), bar_ang or ang, 60, 2, off=.006)
+        zc = (z0 + z1) / 2; hz = (z1 - z0) * frac / 2; A = bar_ang or ang
+        lens = self.fan('li_lens', 'LensRed', ox, zc - hz * 1.6, zc + hz * 1.6, -A, A, 60, 3, off=.006)
+        self.pocket(lens, depth=0.018, border=min(0.008, hz), mat='TailBack', wall='Gloss')
+        self.fan('li_led', 'Taillight', ox, zc - hz * .55, zc + hz * .55, -A * .995, A * .995, 60, 2, off=.004)
     def tail_clusters(self, ox, z0, z1, a0, a1):
+        """rear lamps at the corners: a red glass cover over a recessed dark-red lamp with LED bars inside. The lamps are
+        fanned from (ox, 0) at angles a0..a1; when that puts them in the middle of the tail (angles worked out for an
+        older body), they are turned out to the corners, where a real car has them. Returns the angles used."""
+        a0, a1 = self._corner_fan(ox, (z0 + z1) / 2, a0, a1)
         for s in (1, -1):
-            self.fan('tailcluster', 'Taillight', ox, z0, z1, s * a0, s * a1, 10, 3, off=.006)
+            lens = self.fan('li_lens', 'LensRed', ox, z0, z1, s * a0, s * a1, 12, 4, off=.006)
+            if self.pocket(lens, depth=0.03, border=min(0.01, (z1 - z0) * .2), mat='TailBack', wall='Gloss') is None:
+                lens.data.materials.clear(); lens.data.materials.append(self.M['Taillight']); continue
+            self.rim(lens, min(0.008, (z1 - z0) * .15), 'Gloss')
+            m = (z1 - z0)
+            for f0, f1 in ((.18, .34), (.62, .78)):   # two LED bars across the lamp
+                self.fan('li_led', 'Taillight', ox, z0 + m * f0, z0 + m * f1, s * (a0 + (a1 - a0) * .06), s * (a1 - (a1 - a0) * .06), 10, 1, off=.005)
+        return a0, a1
+    def _corner_fan(self, ox, z, a0, a1, wide=0.30):
+        """the fan angles a0..a1 from (ox, 0, z) moved out to the tail's corner if their outer edge falls short of 72% of
+        the body's half width there: the outer edge goes to where the tail turns into the side (so the lamp wraps
+        round a little, like a real one) and the lamp keeps its width, at least `wide` m"""
+        def at(a):
+            p, n = self.hit(V(ox, 0, z), V(-math.cos(a), math.sin(a), 0))
+            return (abs(p.y), n) if p is not None else (None, None)
+        y1, _ = at(a1); y0, _ = at(a0)
+        xs = [self.hit(V(ox - d, 6, z), V(0, -1, 0))[0] for d in (0.05, 0.15, 0.25)]
+        W = max((abs(p.y) for p in xs if p is not None), default=None)
+        if W is None or y1 is None or y1 >= 0.72 * W: return a0, a1
+        a = a1
+        while a < 1.5:
+            y, n = at(a)
+            if y is None or abs(n.y) > 0.7 or y > 0.985 * W: break
+            a += 0.015
+        width = max(wide, (y1 - y0) if y0 is not None else wide)
+        b = a
+        while b > 0.02:
+            y, _ = at(b)
+            if y is None or y <= at(a)[0] - width: break
+            b -= 0.015
+        return b, a
 
     # ------------------------------------------------------------ parts
     def box(self, name, mat, center, size, rot=(0, 0, 0), bevel=0.0, sub=0, smooth=False):
@@ -633,11 +859,42 @@ class Car:
             out = Vector((-c.x, 0, -c.z)) if core is None else c - Vector((c.x / r * core, 0, c.z / r * core))
             if f.normal.dot(out) < 0: f.normal_flip()
         return self.mesh(name, bm, mat)
-    def wheels(self, spokes=10, pairs=False, spoke_w=(0.022, 0.014), nut='centrelock', offroad=False, caliper=(0.22, 0.075, 0.09)):
-        """four wheels from self.wheel_spec (set by arches): tyre, barrel, lip, spokes, hub, nut, disc; plus calipers"""
+    def wheels(self, spokes=10, pairs=False, spoke_w=(0.022, 0.014), nut='centrelock', offroad=False, caliper=(0.22, 0.075, 0.09), style=None):
+        """four wheels from self.wheel_spec (set by arches): tyre, barrel, lip, spokes, hub, nut, disc; plus calipers.
+        style: 'straight' spokes (or pairs), 'y' (each spoke forks towards the rim), 'turbine' (swept blades), 'mesh'
+        (a cross-spoke lattice), 'disc' (an aero cover with ribs) or 'dial' (a dish with six round holes); by default
+        the car's real design from WHEEL_STYLE"""
+        style = style or WHEEL_STYLE.get(self.key, 'straight')
         for key, wd in self.wheel_spec.items():
-            for s in (1, -1): self._wheel(key, wd, s, spokes, pairs, spoke_w, nut, offroad, caliper)
-    def _wheel(self, key, wd, s, spokes, pairs, spoke_w, nut, offroad, caliper):
+            for s in (1, -1): self._wheel(key, wd, s, spokes, pairs, spoke_w, nut, offroad, caliper, style)
+    def _spoke(self, out, a, r0, r1, w0, w1, y0, y1, a1=None, sweep=False, n=1, face=True):
+        """one spoke: a box strip of n segments from radius r0 at angle a (depth y0) to radius r1 at angle a1 (depth y1;
+        a concave wheel has the hub deeper), straight or swept (the angle grows with the square of the radius), with a
+        diamond-cut strip down its outer face"""
+        a1 = a if a1 is None else a1
+        ang = lambda t: lerp(a, a1, t * t if sweep else t)
+        bm = bmesh.new(); rows = []
+        for i in range(n + 1):
+            t = i / n; r, w, yy = lerp(r0, r1, t), lerp(w0, w1, t), lerp(y0, y1, t); M = Matrix.Rotation(ang(t), 3, 'Y')
+            rows.append([bm.verts.new(M @ Vector((r, yy + out * dz, ww))) for dz in (-.012, .012) for ww in (-w, w)])
+        for A, B in zip(rows, rows[1:]):
+            for i, j in ((0, 1), (1, 3), (3, 2), (2, 0)): bm.faces.new((A[i], A[j], B[j], B[i]))
+        bm.faces.new((rows[0][0], rows[0][2], rows[0][3], rows[0][1])); bm.faces.new((rows[-1][0], rows[-1][1], rows[-1][3], rows[-1][2]))
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        objs = [self.mesh('spoke', bm, 'Rim', smooth=False)]
+        if face and not getattr(self, 'lite', False):
+            bm = bmesh.new(); prev = None
+            for i in range(n + 1):
+                t = i / n; M = Matrix.Rotation(ang(t), 3, 'Y')
+                r, w, yy = lerp(r0 + .012, r1 - .012, t), lerp(w0, w1, t) * .42, lerp(y0, y1, t) + out * .0135
+                cur = [bm.verts.new(M @ Vector((r, yy, -w))), bm.verts.new(M @ Vector((r, yy, w)))]
+                if prev:
+                    f = bm.faces.new((prev[0], cur[0], cur[1], prev[1])); f.normal_update()
+                    if f.normal.y * out < 0: f.normal_flip()
+                prev = cur
+            objs.append(self.mesh('spokeface', bm, 'RimLip', smooth=False))
+        return objs
+    def _wheel(self, key, wd, s, spokes, pairs, spoke_w, nut, offroad, caliper, style='straight'):
         R, W, RR = wd['r'], wd['w'], wd['rim']; h = W / 2; out = s
         objs = []
         if offroad:   # all-terrain: tall rounded sidewall, deep blocks
@@ -670,27 +927,42 @@ class Car:
         bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=segs, radius1=RR + .008, radius2=RR + .008, depth=.016, cap_ends=False)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .02), 0)); objs.append(self.mesh('lip', bm, 'RimLip'))
-        angles = []
-        for k in range(spokes):
-            a = k * 2 * math.pi / spokes
-            angles += [a - .11, a + .11] if pairs else [a]
-        for a in angles:   # concave spokes: the hub sits deeper than the rim edge
-            bm = bmesh.new()
-            r0, r1, w0, w1 = 0.065, RR - .004, spoke_w[0], spoke_w[1]
-            y_in, y_out = out * (h - .075), out * (h - .028)
-            quad = [(r0, -w0, y_in), (r1, -w1, y_out), (r1, w1, y_out), (r0, w0, y_in)]
-            vs = [bm.verts.new((r, yy + out * dz, t)) for dz in (-.012, .012) for r, t, yy in quad]
-            for ids in [[0, 1, 2, 3], [7, 6, 5, 4], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]: bm.faces.new([vs[i] for i in ids])
-            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-            bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
-            objs.append(self.mesh('spoke', bm, 'Rim', smooth=False))
-            if lite: continue
-            bm = bmesh.new()   # a diamond-cut strip down the middle of the spoke's outer face (two-tone wheels)
-            fq = [(r0 + .012, -w0 * .42, y_in), (r1 - .012, -w1 * .42, y_out), (r1 - .012, w1 * .42, y_out), (r0 + .012, w0 * .42, y_in)]
-            f = bm.faces.new([bm.verts.new((r, yy + out * .0135, t)) for r, t, yy in fq]); bm.normal_update()
-            if f.normal.y * out < 0: f.normal_flip()
-            bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
-            objs.append(self.mesh('spokeface', bm, 'RimLip', smooth=False))
+        r0, r1, w0, w1 = 0.065, RR - .004, spoke_w[0], spoke_w[1]
+        y_in, y_out = out * (h - .075), out * (h - .028)   # concave: the hub sits deeper than the rim edge
+        lite = getattr(self, 'lite', False)
+        if style == 'y':            # Y spokes: a trunk that forks halfway out (5 for a 10-spoke car)
+            n = spokes // 2 if spokes >= 8 else spokes; d = 0.34 * math.pi / n
+            rm, ym = lerp(r0, r1, .45), lerp(y_in, y_out, .45)
+            for k in range(n):
+                a = k * 2 * math.pi / n
+                objs += self._spoke(out, a, r0, rm, w0 * 1.15, w0, y_in, ym, face=not lite)
+                for e in (-d, d): objs += self._spoke(out, a, rm - .012, r1, w0 * .62, w1 * .8, ym, y_out, a1=a + e, n=4, face=not lite)
+        elif style in ('turbine', 'mesh'):   # swept blades (or two crossing sets of them: a lattice)
+            n = max(spokes * (2 if pairs else 1), 8) if style == 'turbine' else max(spokes, 10)
+            for k in range(n):
+                a = k * 2 * math.pi / n
+                for tw in ((0.62,) if style == 'turbine' else (0.42, -0.42)):
+                    objs += self._spoke(out, a, r0, r1, w0 * (1 if style == 'turbine' else .62), w1 * (1.1 if style == 'turbine' else .62),
+                                        y_in, y_out, a1=a + tw * out, sweep=True, n=6, face=style == 'turbine' and not lite)
+        elif style == 'disc':       # aero cover: a shallow dish over the spokes with raised ribs
+            objs.append(self.lathe([(0.07, y_in + out * .004), (RR - .012, y_out - out * .004)], segs, 'Rim', 'aerodisc'))
+            for k in range(max(spokes, 5)):
+                a = k * 2 * math.pi / max(spokes, 5)
+                objs += self._spoke(out, a, r0 + .02, r1 - .01, w0 * .7, w1 * .9, y_in + out * .006, y_out + out * .004, face=not lite)
+        elif style == 'dial':       # Koenigsegg CC850 'phone dial': a flat dish with six big round holes
+            ym = out * (h - .035)
+            objs.append(self.lathe([(0.07, ym), (RR - .012, ym)], segs, 'Rim', 'aerodisc'))
+            for k in range(6):
+                bm = bmesh.new(); bmesh.ops.create_circle(bm, cap_ends=True, segments=20, radius=RR * .2)
+                bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(-out * math.pi / 2, 3, 'X'))
+                bmesh.ops.translate(bm, verts=bm.verts, vec=(RR * .56, ym + out * .003, 0))
+                bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(k * math.pi / 3, 3, 'Y'))
+                objs.append(self.mesh('dialhole', bm, 'Black', smooth=False))
+        else:                       # straight spokes, single or in pairs
+            for k in range(spokes):
+                a = k * 2 * math.pi / spokes
+                for a_ in ([a - .11, a + .11] if pairs else [a]):
+                    objs += self._spoke(out, a_, r0, r1, w0, w1, y_in, y_out, face=not lite)
         bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=24, radius1=.075, radius2=.06, depth=.05, cap_ends=True)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(-out * math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .07), 0)); objs.append(self.mesh('hub', bm, 'Rim'))
@@ -883,7 +1155,7 @@ class Car:
         if getattr(self, 'lite', False) or 'plate' in {o.name.split('.')[0] for o in self.parts}: return
         F, R = self.wheel_spec['F'], self.wheel_spec['R']; xm = (F['x'] + R['x']) / 2
         p, _ = self.hit((xm, 0, -3), (0, 0, 1)); zb = p.z if p else 0.2
-        busy = [o.matrix_world @ v.co for o in self.parts if o.name.split('.')[0] in ('badge', 'exhaust', 'tailpipe', 'hitch', 'towhook')
+        busy = [o.matrix_world @ v.co for o in self.parts if o.name.split('.')[0] in ('badge', 'exhaust', 'tailpipe', 'hitch', 'towhook', 'horseshoe')
                 or (o.data.materials and o.data.materials[0].name in ('Headlight', 'Taillight', 'Titanium')) for v in o.data.vertices]
         for sx, z0, z1, zp in ((1, 0.12, 0.6, 0.30), (-1, 0.2, 0.8, 0.42)):
             best = None
@@ -1203,7 +1475,9 @@ def main(cars, script):
     for cid in ids:
         fn, paint, rim, cal = cars[cid]
         if arg('--paint'): paint = arg('--paint')            # e.g. the game's default colour for the photo
-        k = Car(cid, paint, rim, cal); k.script = script; fn(k)
+        k = Car(cid, paint, rim, cal); k.script = script
+        k.lamp_scale = getattr(sys.modules.get('__main__'), 'LAMP_SCALE', 1.0)   # a script whose lamps were drawn too small
+        fn(k)
         if arg('--renders'):
             views = arg('--views', 'front34,rear34,side,front,rear,top').split(',')
             sheet = '--sheet' in argv

@@ -27,7 +27,7 @@ def glass(k, X, Z, ws, rw, top, bot, pillars=(), ws_top=None, frame='Gloss'):
 def tesla_face(k, c, f, w=0.26, h=0.07, intake=(0.40, 0.20, 0.30)):
     """smooth grille-less nose: sleek tapered lamps (LED eyebrow + twin projectors), a lower intake with a body bar,
     slim corner air curtains and a gloss lip"""
-    k.lamp(c, f, w * 1.3, h * 1.7, 'tesla', slant=0.05, taper=0.35)
+    k.lamp(c, f, w * 1.65, h * 1.9, 'tesla', slant=0.05, taper=0.35)   # the real lamps are long sweeps (Model S: ~0.5 m)
     hw, z0, z1 = intake
     k.project('intake', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(hw, hw * .88, v), lerp(z0, z1 + .02, v)), 16, 3)
     k.decal('intakebar', 'Paint', 'front', -hw * .55, hw * .55, (z0 + z1) / 2, (z0 + z1) / 2 + .012, 10, 1, off=.010)
@@ -140,7 +140,7 @@ def roadster08(k):
     k.box('hoop', 'Black', (X(-0.62), 0, 1.02), (0.06, 1.0, 0.10), bevel=.02)            # roll hoop behind the seats
     for s in (1, -1):    # round-ish Lotus-era headlights
         k.oval('headlight', 'Chrome', V(1.80, s * 0.58, 0.64), V(0.75, s * 0.25, 0.55), 0.10, 0.075, .006, n=8)
-        k.oval('headlight_core', 'Headlight', V(1.80, s * 0.58, 0.64), V(0.75, s * 0.25, 0.55), 0.045, 0.04, .009, n=5)
+        k.oval('li_core', 'Headlight', V(1.80, s * 0.58, 0.64), V(0.75, s * 0.25, 0.55), 0.045, 0.04, .009, n=5)
     k.decal('intake', 'Gloss', 'front', -0.42, 0.42, 0.20, 0.32, 16, 3)
     k.tail_clusters(X(-1.40), 0.78, 0.86, 0.40, 0.80)
     k.fan('diffuser', 'Gloss', X(-1.40), 0.28, 0.42, -0.60, 0.60, 30, 3)
@@ -185,7 +185,7 @@ def cyberbeast(k):
     k.windscreen(1.80, 0.25, 1.385, (1.90 - 1.385) / (1.80 - 0.25), 0.60, 0.50, sweep=0.0)
     k.side_glass([(1.60, 1.22), (1.00, 1.47), (0.15, 1.72), (-0.70, 1.55), (-1.20, 1.42)],
                  [(1.60, 1.20), (0.0, 1.20), (-1.20, 1.21)], pillars=[0.10], pillar_w=0.07)
-    k.fan('headbar', 'Headlight', 0.0, 1.035, 1.050, -0.42, 0.42, 40, 1, off=.006, rear=False)
+    k.fan('li_headbar', 'DRL', 0.0, 1.035, 1.050, -0.42, 0.42, 40, 1, off=.006, rear=False)
     k.fan('headbar_bg', 'Gloss', 0.0, 1.02, 1.065, -0.44, 0.44, 40, 2, off=.003, rear=False)
     k.light_bar(-1.0, 1.10, 1.125, 0.42, bg=0.012, frac=1.0)
     k.fan('tailgate', 'Black', -1.0, 0.55, 0.75, -0.38, 0.38, 30, 3)
@@ -238,7 +238,7 @@ def cybercab(k):
     flush_handles(k, [-0.55], 0.88)
     # light bars: one thin strip right across the nose, one across the tail
     k.fan('headbar_bg', 'Gloss', 0.6, 0.705, 0.745, -0.62, 0.62, 50, 2, off=.003, rear=False)
-    k.fan('headbar', 'Headlight', 0.6, 0.716, 0.734, -0.60, 0.60, 50, 1, off=.006, rear=False)
+    k.fan('li_headbar', 'DRL', 0.6, 0.716, 0.734, -0.60, 0.60, 50, 1, off=.006, rear=False)
     k.decal('intake', 'Gloss', 'front', -0.50, 0.50, 0.20, 0.30, 16, 3)
     k.light_bar(-1.0, 0.905, 0.93, 0.55, bg=0.012, frac=0.8)
     k.fan('diffuser', 'Gloss', -1.0, 0.30, 0.44, -0.60, 0.60, 30, 3)

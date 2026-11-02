@@ -21,13 +21,13 @@ T911 = [
     ( 2.19, .19, .53, .42, .51, .545, .44, .58, .24, .575, .57),
     ( 2.12, .175, .62, .425, .60, .57, .53, .615, .30, .595, .585),
     ( 2.05, .17, .70, .43, .68, .60, .60, .645, .35, .615, .605),
-    ( 1.97, .165, .78, .44, .76, .63, .66, .68, .39, .635, .625),
-    ( 1.88, .16, .865, .46, .845, .66, .70, .72, .42, .66, .645),
-    ( 1.78, .155, .905, .48, .89, .70, .715, .765, .44, .685, .67),
-    ( 1.66, .15, .925, .51, .91, .75, .725, .815, .46, .715, .70),
-    ( 1.53, .15, .94, .54, .925, .80, .735, .86, .47, .745, .73),
-    ( 1.38, .15, .95, .57, .935, .835, .74, .885, .48, .77, .755),
-    ( 1.22, .15, .952, .60, .938, .855, .745, .898, .49, .795, .78),
+    ( 1.97, .165, .78, .44, .76, .64, .66, .70, .39, .635, .625),
+    ( 1.88, .16, .865, .46, .845, .69, .70, .785, .42, .655, .64),
+    ( 1.78, .155, .905, .48, .89, .74, .715, .85, .44, .675, .66),
+    ( 1.66, .15, .925, .51, .91, .78, .725, .878, .46, .70, .69),
+    ( 1.53, .15, .94, .54, .925, .815, .735, .89, .47, .73, .72),
+    ( 1.38, .15, .95, .57, .935, .84, .74, .895, .48, .76, .75),
+    ( 1.22, .15, .952, .60, .938, .855, .745, .90, .49, .79, .775),
     ( 1.05, .145, .952, .62, .936, .87, .75, .91, .50, .82, .805),
     ( 0.90, .135, .945, .625, .928, .88, .755, .92, .52, .845, .835),
     ( 0.78, .135, .935, .625, .915, .885, .76, .93, .55, .91, .905),
@@ -67,7 +67,7 @@ def body_911(k, ys=1.0, rows=T911, wheels=W911, rear_intakes=True, roof='Carbon'
         k.decal('handle', 'Black', side(s), -0.48, -0.30, 0.705, 0.725, 4, 1, off=.003)
         if rear_intakes: k.slanted('sideintake', 'Gloss', s, -0.70, -0.86, 0.56, 0.74, lean=0.08, nu=6)
     # the round 992 headlights sit in the noses of the front fenders, looking forward and a little up
-    k.headlight_911((1.84, 0.69 * ys, 0.74), (0.96, 0.08, 0.26), rx=0.13, ry=0.128, bowl='Gloss', drl=(0.2, 0.11, 0.65), dome=0.045)
+    k.headlight_911((1.85, 0.675 * ys, 0.745), (0.80, 0.10, 0.59), rx=0.125, ry=0.125, bowl='Chrome', drl=(0.2, 0.11, 0.65), dome=0.04)
     k.mirrors(0.34, 0.90 * ys, 0.945, size=(0.15, 0.21, 0.105))
     k.light_bar(-1.55, 0.712, 0.758, 0.86, bg=0.02, frac=0.55)
     k.interior(-0.25, 1.3 * ys, 0.72)
@@ -231,7 +231,7 @@ def front_718(k):
     k.decal('intakeC', 'Gloss', 'front', -0.34, 0.34, 0.22, 0.36, 16, 5)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.44, s * 0.72, 0.22, 0.42, 8, 6))
     k.decal('splitter', 'Carbon', 'front', -0.80, 0.80, 0.175, 0.215, 30, 2)
-    k.headlight_911((1.99, 0.60, 0.665), (0.72, 0.24, 0.62), rx=0.105, ry=0.085)
+    k.headlight_911((1.98, 0.60, 0.67), (0.72, 0.24, 0.62), rx=0.125, ry=0.10)
 def rear_718(k, tail_z=(0.80, 0.86)):
     k.fan('tailband', 'Gloss', -1.40, tail_z[0] - .02, tail_z[1] + .02, -0.80, 0.80, 50, 3, off=.003)
     k.tail_clusters(-1.40, tail_z[0], tail_z[1], 0.42, 0.80)
@@ -335,7 +335,7 @@ def p918(k):
         k.decal('skirt', 'Carbon', side(s), -0.95, 1.00, 0.14, 0.21, 30, 2)
     k.decal('deckgrille', 'Gloss', 'top', -1.80, -1.20, -0.30, 0.30, 8, 8)
     # front: vertical teardrop headlights, big intakes
-    k.headlight_911((2.12, 0.66, 0.60), (0.78, 0.20, 0.58), rx=0.075, ry=0.115)
+    k.headlight_911((2.10, 0.66, 0.61), (0.78, 0.20, 0.58), rx=0.09, ry=0.14)
     k.decal('intakeC', 'Gloss', 'front', -0.30, 0.30, 0.20, 0.30, 12, 4)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.40, s * 0.78, 0.19, 0.40, 10, 6))
     k.decal('splitter', 'Carbon', 'front', -0.86, 0.86, 0.15, 0.19, 30, 2)
@@ -382,7 +382,7 @@ def taycangt(k):
         for xh in (0.15, -0.85): k.decal('handle', 'Black', side(s), xh - .14, xh, 0.86, 0.875, 4, 1, off=.003)
         k.decal('skirt', 'Carbon', side(s), -1.00, 1.05, 0.16, 0.24, 30, 2)
     # Taycan face: 4-point lamps on the fender peaks, tall air curtains below them, wide low intake with a body bar
-    k.lamp((2.22, 0.63, 0.695), (0.70, 0.30, 0.55), 0.31, 0.15, 'quad', slant=0.04, taper=0.18)
+    k.lamp((2.20, 0.63, 0.70), (0.70, 0.30, 0.55), 0.37, 0.17, 'quad', slant=0.04, taper=0.18)
     k.curtain((2.40, 0.70, 0.40), (0.85, 0.48, 0.05), 0.075, 0.24, slant=0.015)
     k.project('intakeC', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.56, 0.48, v), lerp(0.20, 0.37, v)), 18, 5)
     k.decal('intakebar', 'Paint', 'front', -0.30, 0.30, 0.285, 0.30, 12, 1, off=.010)
@@ -443,7 +443,7 @@ def suv_common(k, glass_top, glass_bot, pillars, doors, handles, mirror_x, cabin
 def cayenne_front(k, carbon=False):
     """Cayenne face: big matrix 4-point lamps, a trapezoid grille (wider at the bottom) with slats and a frame,
     tall corner intakes with a vertical blade, and a lower lip"""
-    k.lamp((2.30, 0.69, 0.925), (0.75, 0.30, 0.45), 0.36, 0.14, 'quad', slant=0.03, taper=0.12)
+    k.lamp((2.29, 0.68, 0.925), (0.75, 0.30, 0.45), 0.43, 0.165, 'quad', slant=0.03, taper=0.12)
     gr = lambda grow: (lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * (lerp(0.52, 0.42, v) + grow), lerp(0.42 - grow, 0.75 + grow * .6, v)))
     k.project('grille_frame', 'Chrome' if not carbon else 'Gloss', gr(0.025), 20, 6, off=.003)
     k.project('grille', 'Gloss', gr(0.0), 20, 6, off=.005)
@@ -506,8 +506,8 @@ def macanev(k):
     # split lights: slim LED strip on top, the 4-point main lights low in the bumper corners
     # Macan Electric split lights: slim LED strip on the fender edge, 4-point main lamps low in the bumper,
     # smooth grille-less nose, wide black lower intake and corner air curtains
-    k.lamp((2.25, 0.63, 0.86), (0.78, 0.24, 0.55), 0.34, 0.045, 'strip', slant=0.02, taper=0.25)
-    k.lamp((2.36, 0.66, 0.635), (0.85, 0.35, 0.20), 0.22, 0.12, 'quad', slant=0.01)
+    k.lamp((2.24, 0.63, 0.86), (0.78, 0.24, 0.55), 0.40, 0.05, 'strip', slant=0.02, taper=0.25)
+    k.lamp((2.36, 0.66, 0.635), (0.85, 0.35, 0.20), 0.27, 0.14, 'quad', slant=0.01)
     k.project('intake', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.64, 0.56, v), lerp(0.27, 0.46, v)), 20, 4)
     k.decal('intakebar', 'Gloss', 'front', -0.50, 0.50, 0.36, 0.372, 16, 1, off=.010)
     k.curtain((2.30, 0.86, 0.50), (0.80, 0.55, 0.10), 0.06, 0.20, slant=0.02)

@@ -55,8 +55,8 @@ PSUPRA = dict(L=4.379, W=1.854, H=1.292, WB=2.47, fo=0.97, clear=0.12, nose_zb=0
               cab=(0.15, -0.45, -1.0, -1.60), bulge=0.06, hip=0.06, side=(0.08, -1.25), doors=(0.10,), mirror_x=0.04, rw_w=0.85)
 def grsupra(k):
     S = build(k, PSUPRA, dict(r=0.33, w=0.255, rim=0.241), dict(r=0.337, w=0.275, rim=0.241), crease=SOFT)
-    k.headlight_quad((1.95, 0.62, 0.64), (0.66, 0.34, 0.55), 0.24, 0.08, slant=0.05, taper=0.3, dots='row')
-    k.decal('mouth', 'Gloss', 'front', -0.44, 0.44, 0.20, 0.42, 18, 5)
+    k.headlight_quad((1.98, 0.64, 0.665), (0.60, 0.45, 0.50), 0.40, 0.13, slant=0.04, taper=0.30, dots='row')
+    k.decal('mouth', 'Gloss', 'front', -0.46, 0.46, 0.18, 0.42, 18, 5)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.56, s * 0.80, 0.22, 0.40, 8, 4))
     both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.05, 1.35, s * 0.18, s * 0.30, 4, 3))
     both(lambda s: k.slanted('doorvent', 'Gloss', s, 0.75, 0.55, 0.32, 0.44, lean=0.03, nu=4, nv=3))
@@ -78,14 +78,19 @@ P86 = dict(L=4.265, W=1.775, H=1.31, WB=2.575, fo=0.85, clear=0.13, nose_zb=0.26
            cab=(0.45, -0.35, -1.05, -1.65), bulge=0.05, hip=0.04, side=(0.38, -1.35), pillars=(-1.0,), doors=(0.40,),
            mirror_x=0.34, rw_w=0.85)
 def gr86(k):
-    S = build(k, P86, dict(r=0.315, w=0.215, rim=0.229), dict(r=0.315, w=0.215, rim=0.229), crease=SOFT)
-    k.headlight_quad((1.90, 0.58, 0.64), (0.66, 0.34, 0.55), 0.26, 0.07, slant=0.05, taper=0.3, dots='row')
-    k.project('hexmouth', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.30, 0.42, min(v, 1 - v) * 2), lerp(0.20, 0.44, v)), 12, 6)
-    both(lambda s: k.slanted('gill', 'Gloss', s, 0.98, 0.88, 0.44, 0.66, lean=0.02, nu=2, nv=6))
-    k.tail_clusters(-1.80, 0.82, 0.90, 0.45, 0.80)
-    k.fan('diffuser', 'Gloss', -1.80, 0.28, 0.42, -0.60, 0.60, 30, 3)
-    k.exhaust(0.55, 0.36, r=0.045)
-    k.join(); k.wheels(spokes=10, nut='bolts', spoke_w=(0.02, 0.014))
+    # from photos: a wide trapezoid mesh grille low in the nose, slim headlights wrapping the front corners above it,
+    # front fenders peaking well above the bonnet, black corner inlets, gills behind the front wheels, wide tail lamps
+    # joined by a black panel, a black diffuser with a pipe at each corner
+    S = build(k, dict(P86, bulge=0.075, crown_w=0.8), dict(r=0.315, w=0.215, rim=0.229), dict(r=0.315, w=0.215, rim=0.229), crease=SOFT)
+    k.headlight_quad((1.93, 0.63, 0.695), (0.55, 0.45, 0.55), 0.44, 0.125, slant=0.05, taper=0.35, dots='row')
+    k.project('grille', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.64, 0.48, v), lerp(0.16, 0.42, v)), 16, 6)
+    both(lambda s: k.decal('cornerintake', 'Gloss', 'front', s * 0.70, s * 0.79, 0.19, 0.42, 3, 6))
+    both(lambda s: k.slanted('gill', 'Gloss', s, 0.98, 0.86, 0.44, 0.68, lean=0.03, nu=2, nv=6))
+    k.fan('tailpanel', 'Gloss', -1.80, 0.83, 0.93, -0.30, 0.30, 24, 2, off=.004)
+    k.tail_clusters(-1.80, 0.83, 0.94, 0.28, 0.82)
+    k.fan('diffuser', 'Gloss', -1.80, 0.27, 0.42, -0.62, 0.62, 30, 3)
+    k.exhaust(0.62, 0.34, r=0.048)
+    k.join(); k.wheels(spokes=10, pairs=True, nut='bolts', spoke_w=(0.022, 0.016))
 
 # ---- GR GT: 4.82 x 2.00 x 1.20 m, 2.73 m wheelbase. The long-nose front-mid V8 flagship: slim LEDs over a wide
 # mouth, a carbon roof, the cabin set back, a light bar, twin centre pipes and an active spoiler
@@ -99,7 +104,7 @@ PGRGT = dict(L=4.82, W=2.0, H=1.195, WB=2.725, fo=1.0, clear=0.11, nose_zb=0.24,
              cab=(0.35, -0.35, -0.95, -1.65), bulge=0.06, hip=0.05, side=(0.28, -1.10), doors=(0.30,), mirror_x=0.24, rw_w=0.85)
 def grgt(k):
     S = build(k, PGRGT, dict(r=0.347, w=0.265, rim=0.254), dict(r=0.35, w=0.325, rim=0.254), crease=SOFT)
-    k.drl_strip((2.14, 0.70, 0.60), (0.70, 0.34, 0.40), 0.32, 0.03, slant=0.04)
+    k.drl_strip((2.12, 0.70, 0.61), (0.70, 0.34, 0.40), 0.40, 0.035, slant=0.04)
     k.decal('mouth', 'Gloss', 'front', -0.64, 0.64, 0.16, 0.36, 18, 4)
     k.decal('splitter', 'Carbon', 'front', -0.92, 0.92, 0.12, 0.17, 30, 2)
     both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.30, 1.75, s * 0.12, s * 0.36, 6, 4))
@@ -124,7 +129,7 @@ def hatch(k, base, xs, ys, zf, wheels, top, bot, rw, pillars, crease=SOFT):
 
 def gr_face(k, z, light=(0.62, 0.70), x=1.95):
     """GR 'functional matrix' grille: a big black mesh mouth with the lights tucked above its corners"""
-    k.headlight_quad((x, light[0], light[1]), (0.72, 0.30, 0.55), 0.22, 0.07, slant=0.05, taper=0.25, dots='row')
+    k.headlight_quad((x, light[0], light[1]), (0.72, 0.30, 0.55), 0.29, 0.09, slant=0.05, taper=0.25, dots='row')
     k.decal('grille', 'Gloss', 'front', -0.48, 0.48, z[0], z[1], 18, 6)
     for i in range(4): k.decal('mesh', 'Black', 'front', -0.46, 0.46, z[0] + .03 + i * (z[1] - z[0]) / 4.5, z[0] + .035 + i * (z[1] - z[0]) / 4.5, 18, 1, off=.008)
 
@@ -186,7 +191,7 @@ def lc300(k):
     S = build(k, PLC, dict(r=0.40, w=0.265, rim=0.254, gap=0.07), dict(r=0.40, w=0.265, rim=0.254, gap=0.07), crease=SHARP)
     k.decal('grille', 'Gloss', 'front', -0.56, 0.56, 0.62, 1.10, 18, 6)
     for i in range(5): k.decal('bar', 'Chrome', 'front', -0.54, 0.54, 0.68 + i * .085, 0.68 + i * .085 + .02, 18, 1, off=.009)
-    k.headlight_quad((2.32, 0.74, 1.10), (0.90, 0.25, 0.20), 0.30, 0.11, slant=0.02, dots='row')
+    k.headlight_quad((2.32, 0.72, 1.10), (0.90, 0.25, 0.20), 0.38, 0.13, slant=0.02, dots='row')
     k.decal('skid', 'Black', 'front', -0.62, 0.62, 0.32, 0.46, 18, 2, off=.006)
     k.arch_trim(0.07)
     both(lambda s: k.decal('cladding', 'Black', side(s), -1.10, 1.10, 0.26, 0.42, 30, 3, off=.006))

@@ -7,6 +7,7 @@
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main
+LAMP_SCALE = 1.3   # the headlights were drawn smaller than the real ones (checked against photos); see Car.lamp_scale
 from supercars import SOFT, SHARP
 from carshape import build, scaled
 

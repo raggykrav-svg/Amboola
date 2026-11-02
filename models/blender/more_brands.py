@@ -10,6 +10,7 @@
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main
+LAMP_SCALE = 1.3   # the headlights were drawn smaller than the real ones (checked against photos); see Car.lamp_scale
 from supercars import TFER, remap, SOFT, SHARP
 from toyota import gt_coupe
 from hypercars import glasshouse
@@ -35,7 +36,7 @@ def mustang(k):
     # face: wide tri-bar LED headlights over the corners, the big dark trapezoid grille, fog-light nostrils, splitter
     k.headlight_quad((2.16, 0.70, 0.70), (0.80, 0.30, 0.30), 0.36, 0.07, slant=0.02, taper=0.15, dots='row')
     for s in (1, -1):
-        for i in range(3): k.rect('tribar', 'Headlight', V(2.16, s * (0.60 + i * .07), 0.62), V(0.8, s * 0.35, 0.2), 0.016, 0.07, .010, 1, 3)
+        for i in range(3): k.rect('li_tribar', 'DRL', V(2.16, s * (0.60 + i * .07), 0.62), V(0.8, s * 0.35, 0.2), 0.016, 0.07, .010, 1, 3)
     k.project('grille', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.50, 0.62, v), lerp(0.24, 0.58, v)), 16, 6, off=.007)
     k.oval('horse', 'Chrome', V(3.0, 0, 0.44), V(1, 0, 0), .07, .045, .011, n=8)
     both(lambda s: k.decal('nostril', 'Gloss', 'front', s * 0.64, s * 0.80, 0.30, 0.42, 6, 4))
@@ -44,8 +45,10 @@ def mustang(k):
     k.decal('powerdome', 'Paint', 'top', 0.4, 1.7, -0.16, 0.16, 12, 4, off=.012)
     # tail: three upright bars each side on a gloss-black panel, black diffuser, quad pipes, gurney spoiler
     k.fan('tailpanel', 'Gloss', -1.9, 0.80, 0.94, -0.80, 0.80, 40, 3)
+    a0, a1 = k._corner_fan(-1.9, 0.87, 0.48, 0.69, wide=0.34)                    # the tri-bars sit at the corners
     for s in (1, -1):
-        for i in range(3): k.fan('tailbar', 'Taillight', -1.9, 0.81, 0.93, s * (0.48 + i * .085), s * (0.52 + i * .085), 2, 4, off=.007)
+        for i in range(3):
+            b0 = a0 + (a1 - a0) * i / 3; k.fan('tailbar', 'Taillight', -1.9, 0.81, 0.93, s * b0, s * (b0 + (a1 - a0) * .2), 2, 4, off=.007)
     k.fan('diffuser', 'Gloss', -1.9, 0.30, 0.46, -0.66, 0.66, 30, 3)
     quad_pipes(k, 0.46, 0.38, r=0.05)
     k.spoiler(-2.36, 1.06, 0.18, 1.50, aoa=-6, mat='Gloss', strut_y=0.45, thick=0.08)
@@ -67,7 +70,7 @@ GTR = dict(L=4.69, W=1.895, H=1.37, WB=2.78, fo=0.95, clear=0.12, nose_zb=0.26, 
 def gtr(k):
     S = build(k, GTR, dict(r=0.356, w=0.255, rim=0.254), dict(r=0.354, w=0.285, rim=0.254), crease=SHARP)
     k.headlight_quad((2.12, 0.66, 0.68), (0.72, 0.32, 0.45), 0.32, 0.08, slant=0.07, taper=0.35, dots='row')
-    for s in (1, -1): k.rect('boomerang', 'Headlight', V(2.12, s * 0.66, 0.62), V(0.72, s * 0.32, 0.45), 0.24, 0.012, .010, 6, 1, slant=s * -0.05)
+    for s in (1, -1): k.rect('li_boomerang', 'DRL', V(2.12, s * 0.66, 0.62), V(0.72, s * 0.32, 0.45), 0.24, 0.012, .010, 6, 1, slant=s * -0.05)
     k.project('grille', 'Gloss', lambda u, v: k.VIEW['front'](lerp(-1, 1, u) * lerp(0.36, 0.44, v), lerp(0.24, 0.56, v)), 14, 6, off=.007)
     for s in (1, -1): k.rect('vbar', 'Chrome', V(2.40, s * 0.20, 0.42), V(1, 0, 0), .025, .30, .011, 2, 6, slant=s * .16)
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.56, s * 0.84, 0.22, 0.40, 8, 4))
@@ -107,9 +110,10 @@ def corvette(k):
     both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.44, s * 0.82, 0.18, 0.42, 10, 5))
     k.decal('splitter', 'Carbon', 'front', -0.92, 0.92, 0.12, 0.17, 30, 2)
     k.decal('frunkvent', 'Gloss', 'top', 1.55, 1.85, -0.30, 0.30, 8, 4)
+    a0, a1 = k._corner_fan(-1.75, 0.89, 0.48, 0.84, wide=0.40)                   # the angular lamps sit at the corners
     for s in (1, -1):
-        k.fan('tail', 'Taillight', -1.75, 0.86, 0.92, s * 0.48, s * 0.84, 12, 2, off=.007)
-        k.fan('tail', 'Taillight', -1.75, 0.78, 0.86, s * 0.48, s * 0.58, 4, 3, off=.007)
+        k.fan('tail', 'Taillight', -1.75, 0.86, 0.92, s * a0, s * a1, 12, 2, off=.007)
+        k.fan('tail', 'Taillight', -1.75, 0.78, 0.86, s * a0, s * (a0 + (a1 - a0) * .28), 4, 3, off=.007)
     k.fan('rearpanel', 'Gloss', -1.75, 0.46, 0.66, -0.66, 0.66, 30, 4)
     k.fan('diffuser', 'Carbon', -1.75, 0.26, 0.46, -0.66, 0.66, 30, 3)
     for y in (-0.17, -0.06, 0.06, 0.17): k.exhaust(y, 0.56, r=0.045, mirror=False)
@@ -177,7 +181,7 @@ def utopia(k):
         k.oval('lamppod', 'Gloss', V(2.04, s * 0.68, 0.62), V(0.70, s * 0.34, 0.45), 0.17, 0.085, .005, n=10)
         for dy in (-0.06, 0.06):
             k.oval('lamp', 'Chrome', V(2.04, s * (0.68 + dy), 0.62), V(0.70, s * 0.34, 0.45), 0.055, 0.055, .008, n=8)
-            k.oval('lampled', 'Headlight', V(2.04, s * (0.68 + dy), 0.62), V(0.70, s * 0.34, 0.45), 0.032, 0.032, .011, n=6)
+            k.oval('li_lampled', 'DRL', V(2.04, s * (0.68 + dy), 0.62), V(0.70, s * 0.34, 0.45), 0.032, 0.032, .011, n=6)
         k.slanted('sideintake', 'Gloss', s, -0.40, -0.90, 0.58, 0.84, lean=0.08, nu=6, nv=6, off=.006)
         for y in (0.58, 0.76): k.oval('tailround', 'Taillight', V(-2.10, s * y, 0.86), V(-1, s * 0.25 * y, 0.1), 0.06, 0.06, .006, n=6)
     k.decal('mouth', 'Gloss', 'front', -0.42, 0.42, 0.18, 0.34, 14, 4)

@@ -42,13 +42,15 @@ def mclaren(k, P, wheels=WMCL, tail='bar'):
     for s in (1, -1):
         k.slanted('doorscoop', 'Gloss', s, -0.30, -0.95, 0.40, 0.82, lean=0.2, nu=8, nv=8, off=.006)   # the door scoop
         k.decal('skirt', 'Carbon', side(s), -0.95, 1.0, 0.11, 0.19, 30, 2)
-    # "eye socket" headlights: a tapered housing with an intake in the bottom of it
-    k.headlight_quad((xn - 0.28, 0.66, 0.60), (0.66, 0.34, 0.52), 0.26, 0.09, slant=0.04, taper=0.35, dots='row')
-    both(lambda s: k.decal('socket', 'Gloss', 'front', s * 0.52, s * 0.80, 0.28, 0.44, 8, 4))
+    # "eye socket" headlights: a big dark socket at each front corner, the lamp (its LED hockey stick along the top)
+    # in the top of it and a real intake opening in the bottom
+    both(lambda s: k.decal('socketintake', 'Gloss', 'front', s * 0.50, s * 0.80, 0.26, 0.41, 8, 4))
+    k.headlight_quad((xn - 0.30, 0.66, 0.61), (0.66, 0.34, 0.52), 0.37, 0.115, slant=0.04, taper=0.35, dots='row')
     k.decal('intakeC', 'Gloss', 'front', -0.40, 0.40, 0.18, 0.30, 16, 4)
     k.decal('splitter', 'Carbon', 'front', -0.88, 0.88, 0.12, 0.17, 30, 2)
     if tail == 'bar': k.light_bar(-1.7, 0.86, 0.89, 0.80, bg=0.015, frac=0.6)
-    for s in (1, -1): k.fan('tailC', 'Taillight', -1.7, 0.74, 0.90, s * 0.78, s * 0.86, 3, 5, off=.007)
+    c0, c1 = k._corner_fan(-1.7, 0.82, 0.78, 0.86, wide=0.07)                  # the C lamps sit right at the corners
+    for s in (1, -1): k.fan('tailC', 'Taillight', -1.7, 0.74, 0.90, s * c0, s * c1, 3, 5, off=.007)
     k.fan('rearbg', 'Gloss', -1.7, 0.44, 0.74, -0.66, 0.66, 30, 4, off=.003)
     k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.44, -0.70, 0.70, 30, 3)
     return S
@@ -134,8 +136,9 @@ PCHI = dict(L=4.544, W=2.038, H=1.212, WB=2.711, fo=0.98, clear=0.11, nose_zb=0.
 WBUG = (dict(r=0.35, w=0.285, rim=0.254), dict(r=0.37, w=0.355, rim=0.267))
 
 def horseshoe(k, xn, z=0.40, s=1.0):
-    k.oval('horseshoe_in', 'Black', (xn - 0.05, 0, z), (1, 0, 0.1), 0.12 * s, 0.16 * s, .006, n=8)
-    k.oval('horseshoe', 'Chrome', (xn - 0.05, 0, z), (1, 0, 0.1), 0.15 * s, 0.19 * s, .008, ring=0.8)
+    # a real opening with the mesh set back in it (see Car._dress), in a broad chrome horseshoe
+    k.oval('horseshoegrille', 'Black', (xn - 0.05, 0, z), (1, 0, 0.1), 0.145 * s, 0.19 * s, .006, n=8)
+    k.oval('horseshoe', 'Chrome', (xn - 0.05, 0, z), (1, 0, 0.1), 0.175 * s, 0.22 * s, .008, ring=0.82)
 
 def c_line(k, cx=-0.30, cz=0.60, r=0.36, mat='Chrome'):
     """Bugatti's C-shaped side sweep, with a dark intake inside it"""
@@ -148,8 +151,8 @@ def bugatti(k, P, wheels=WBUG):
     S = build(k, P, *wheels, crease=dict(crease_lines=0.3, crisp_front=-9, crisp=0.25, crease_front=0.5, crease_rear=0.8))
     for s in (1, -1): k.decal('skirt', 'Carbon', side(s), -0.95, 1.0, 0.11, 0.19, 30, 2)
     k.decal('spine', 'Chrome', 'top', -1.30, 0.20, -0.012, 0.012, 20, 1, off=.006)     # the spine over the roof
-    k.headlight_quad((S.nose - 0.24, 0.70, 0.60), (0.66, 0.34, 0.52), 0.22, 0.08, slant=0.03)   # four-point lights
-    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.30, s * 0.82, 0.16, 0.36, 12, 4))
+    k.headlight_quad((S.nose - 0.26, 0.70, 0.61), (0.66, 0.34, 0.52), 0.32, 0.09, slant=0.03)   # four-point lights
+    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.24, s * 0.82, 0.17, 0.45, 12, 5))     # the big mesh intakes either side of the horseshoe
     k.decal('splitter', 'Carbon', 'front', -0.90, 0.90, 0.12, 0.17, 30, 2)
     k.fan('rearbg', 'Gloss', -1.7, 0.40, 0.74, -0.66, 0.66, 30, 5, off=.003)
     k.fan('diffuser', 'Carbon', -1.7, 0.24, 0.40, -0.72, 0.72, 30, 3)
@@ -219,7 +222,7 @@ def bolide(k):
     S = bugatti(k, P_BOL, (dict(r=0.33, w=0.27, rim=0.254), dict(r=0.35, w=0.34, rim=0.254))); horseshoe(k, S.nose, z=0.36, s=0.9)
     for s in (1, -1):   # X-shaped lights front and rear
         for a in (0.6, -0.6):
-            k.rect('xlight', 'Headlight', V(S.nose - 0.25, s * 0.62, 0.52), V(0.75, s * 0.25, 0.45), 0.18, 0.02, .010, nu=6, nv=1, slant=a * 0.10 * s)
+            k.rect('li_xlight', 'DRL', V(S.nose - 0.25, s * 0.62, 0.52), V(0.75, s * 0.25, 0.45), 0.18, 0.02, .010, nu=6, nv=1, slant=a * 0.10 * s)
             k.fan('xtail', 'Taillight', -1.7, 0.72, 0.76, s * (0.55 + a * .1), s * (0.75 - a * .1), 6, 2, off=.006)
     k.pod('roofscoop', 'Carbon', [(0.10, 0, 1.01, 0.04, 0.02), (0.0, 0, 1.09, 0.14, 0.07), (-0.60, 0, 1.06, 0.14, 0.05), (-1.0, 0, 0.97, 0.08, 0.02)], mirror=False, flat=0.7)
     k.pod('fin', 'Carbon', [(-0.90, 0.0, 1.0, 0.01, 0.01), (-1.20, 0.0, 1.02, 0.012, 0.10), (-2.10, 0.0, 0.97, 0.012, 0.08)], mirror=False, sub=1)

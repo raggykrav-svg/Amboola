@@ -8,6 +8,7 @@
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main
+LAMP_SCALE = 1.3   # the headlights were drawn smaller than the real ones (checked against photos); see Car.lamp_scale
 from supercars import SOFT, SHARP, PSF90
 from bmw_audi import quad_pipes, PM5
 from carshape import build, scaled
@@ -161,9 +162,10 @@ PPHANTOM = dict(L=5.762, W=2.018, H=1.646, WB=3.552, fo=0.95, clear=0.15, nose_z
 def phantom(k):
     S = build(k, PPHANTOM, dict(r=0.394, w=0.255, rim=0.267), dict(r=0.395, w=0.285, rim=0.267), crease=SOFT)
     rr_face(k, ((2.62, 0.70, 0.98), (0.85, 0.25, 0.30), 0.34, 0.06), (0.36, 0.58, 1.02), 2.55)
+    a0, a1 = k._corner_fan(-2.4, 1.05, 0.62, 0.84, wide=0.22)                    # the tall lamps sit at the corners
     for s in (1, -1):
         k.decal('chromeline', 'Chrome', side(s), -2.80, 2.50, 1.20, 1.22, 40, 1, off=.005)
-        k.fan('tail', 'Taillight', -2.4, 0.92, 1.18, s * 0.62, s * 0.84, 6, 6, off=.006)
+        k.fan('tail', 'Taillight', -2.4, 0.92, 1.18, s * a0, s * a1, 6, 6, off=.006)
     k.decal('rearchrome', 'Chrome', 'rear', -0.60, 0.60, 0.70, 0.73, 12, 1, off=.008)
     k.join(); k.wheels(spokes=12, spoke_w=(0.018, 0.012), nut='bolts')
 
