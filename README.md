@@ -948,6 +948,19 @@ In the garage, pick **any car** and press **🚕 TAXI**, or choose **P → TAXI 
 3. **Drop them off** by stopping at the green marker. You get a fare based on the distance, plus a tip for arriving early. Crashes shrink the tip, and arriving late means no tip and a lower fare.
 4. **Keep going.** The next passenger appears right away. The job bar at the top shows the task, distance, time left, money earned and number of fares. Your all-time earnings are saved. **P → END TAXI SHIFT** stops.
 
+## 60 FPS ⚡
+
+The game keeps itself at **60 frames a second**. It's on by default. To turn it off, or to show the FPS counter, use **⚙ SETTINGS → 60 FPS** or **Frame rate** in the garage.
+
+- **Lighter to draw:** each frame now draws about half the triangles it used to, and a quarter to a third fewer things (draw calls):
+  - **Trees and street lamps:** only the ones near you are drawn (650 m on High). Only the ones within 170 m cast shadows, and the far trees use a simpler crown.
+  - **People on the pavements:** only the ones you can see are drawn, with a lighter model (they're seen from a car).
+  - **Small far-off things** (parked cars, kiosks, signs) aren't drawn once they're tiny dots, and nothing past the fog is drawn at all.
+  - **Reflections:** the car's live reflection and the wet road's mirror skip the far trees and the crowd, and update a little less often on High.
+- **Holds 60 by itself:** if your computer or phone can't keep up, the game steps down one level at a time. It first makes the picture a little softer, then updates the car reflection less often and draws trees and far things less far, and at the very bottom it switches off anti-aliasing and bloom. When it has run at a steady 60 for a few seconds it tries one level better. If your screen or battery saver limits the frame rate, the game notices that lowering the picture doesn't help and goes back to full quality.
+- **The FPS counter** shows in the top-left corner: green at 55 or more, yellow from 40, red below that. A ⚡ number shows how many levels down the game had to go.
+- **Fixed:** with Low graphics in the rain (the phone setting), the wet road made every frame fail, so the game stopped drawing.
+
 ## Graphics
 
 Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Three.js with physically based materials: clear-coat car paint and reflective glass lit by an environment map. It adds dynamic sun shadows, ACES tone mapping, bloom, SMAA anti-aliasing, fog and three times of day with lit windows at night. You can pick HD, Ultra, High or Low graphics in the garage. Low is meant for laptops and phones.

@@ -122,6 +122,8 @@
 
   /* ---------- HUD ---------- */
   #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+  #fpsMeter { position:fixed; left:6px; top:2px; z-index:60; font:700 11px/1.3 'Orbitron',sans-serif; letter-spacing:.08em; padding:1px 7px; border-radius:4px; background:rgba(0,0,0,.5); pointer-events:none; color:#5dff8a; }
+  #fpsMeter.mid { color:#ffd02d; } #fpsMeter.bad { color:#ff5a4a; } #fpsMeter.hidden { display:none; }
   #tacho { position:absolute; right:18px; bottom:14px; width:260px; height:260px; }
   #dmgHud { position:absolute; right:280px; bottom:28px; width:40px; height:65px; }
   #nitroBar { position:absolute; right:48px; bottom:282px; width:200px; height:12px; background:rgba(0,0,0,.5); border:1px solid #2fe0ff; }
@@ -575,6 +577,8 @@
     <div class="opts" id="optWx"><div class="opt" data-v="clear">☀ Clear</div><div class="opt" data-v="rain">🌧 Rain</div></div>
     <div class="optlbl">Graphics</div>
     <div class="opts" id="optQ"><div class="opt" data-v="hd">HD</div><div class="opt" data-v="ultra">Ultra</div><div class="opt" data-v="high">High</div><div class="opt" data-v="low">Low</div></div>
+    <div class="optlbl">Frame rate</div>
+    <div class="opts" id="optFps"><div class="opt" data-v="on">⚡ 60 FPS</div><div class="opt" data-v="off">Free</div><div class="opt" data-v="show">FPS meter</div></div>
   </div>
   <button id="dragBtn">🚦 DRAG RACE</button>
   <button id="raceBtn">🏁 RACES</button>
@@ -589,6 +593,7 @@
 </div>
 
 <div id="seaFx" class="hidden"></div>
+<div id="fpsMeter" class="hidden"></div>
 <div id="hud" class="hidden">
   <div id="carname"></div>
   <div id="helpbtn">[H] CONTROLS</div>
@@ -654,6 +659,7 @@
 </div>
 <div id="tiSettings" class="tiPanel hidden"><h2>⚙ SETTINGS · 設定</h2>
   <div class="tiRow"><b>GRAPHICS</b><div class="tiOpts" id="tiGfx"><button data-v="low">LOW</button><button data-v="high">HIGH</button><button data-v="ultra">ULTRA</button><button data-v="hd">HD</button></div><small id="tiGfxInfo"></small></div>
+  <div class="tiRow"><b>60 FPS</b><div class="tiOpts" id="tiFps"><button data-v="on">⚡ ON</button><button data-v="off">OFF</button></div><div class="tiOpts" id="tiFpsShow"><button data-v="1">SHOW FPS</button><button data-v="0">HIDE FPS</button></div><small>ON: the game keeps itself at 60 frames a second. If your computer or phone can't keep up, the picture gets a little softer and far-away trees thinner, then sharp again as soon as it can.</small></div>
   <div class="tiRow"><b>GAME MODE</b><div class="tiOpts" id="tiDiff"><button data-v="easy">😊 EASY</button><button data-v="medium">🙂 MEDIUM</button><button data-v="hard">😈 HARD</button></div><small id="tiDiffInfo"></small></div>
   <div class="tiRow"><b>TRAFFIC</b><div class="tiOpts" id="tiTraffic"><button data-v="0">NORMAL</button><button data-v="1000">1,000</button><button data-v="3000">3,000</button><button data-v="6000">6,000</button><button data-v="10000">10,000</button></div><small>Extra cars on the Tokyo streets. Lots of cars need a strong computer.</small></div>
   <div class="tiRow"><b>SOUND</b><div class="tiOpts" id="tiSound"><button data-v="on">🔊 ON</button><button data-v="off">🔇 OFF</button></div></div>
@@ -983,12 +989,21 @@ function warmUp(delay = 400) {
     if (warmBusy) return warmUp(800);
     warmBusy = true;
     try {
-      await renderer.compileAsync(scene, camera);
+      await compileSafe(scene, camera);
       scene.traverse(o => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
         for (const m of ms) for (const k of TEX_KEYS) { const t = m[k]; if (t?.isTexture && !t.isRenderTargetTexture && !warmSeen.has(t)) { warmSeen.add(t); warmQ.push(t); } } });
     } catch (e) { }
     warmBusy = false;
   }, delay);
+}
+// three's compileAsync, minus its crash: a material thrown away while it waits (the wet road rebuilt after a resize or a
+// 60 FPS step) has no program any more, its timer threw, the promise never ended and the warm-ups stopped for good
+async function compileSafe(sc, cam) {
+  const mats = renderer.compile(sc, cam);
+  for (let i = 0; i < 600 && mats?.size; i++) {
+    for (const m of mats) { const pr = renderer.properties.get(m).currentProgram; if (!pr || pr.isReady()) mats.delete(m); }
+    if (mats.size) await new Promise(r => setTimeout(r, 10));
+  }
 }
 function warmTick() {   // one texture upload a frame
   while (warmQ.length) { const t = warmQ.pop(); if (t.image && t.version > 0 && !renderer.properties.get(t).__webglInit) { renderer.initTexture(t); return; } }
@@ -996,8 +1011,22 @@ function warmTick() {   // one texture upload a frame
 const gCamera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 200);
 
 let composer, renderPass, bloomPass, smaaPass, quality = localStorage.getItem('amboola.q') || (isTouch ? 'low' : 'high');
+/* ---- 60 FPS mode (state; the watcher is fpsWatch, by the main loop): each level is a step lighter than the one before.
+   s: render scale (× the graphics setting's pixel ratio), refl: car reflection one cube side every n frames (-1: frozen,
+   0: the setting's own), near: the trees' and lamps' draw distance ×, bloom / aa: those passes on or off */
+const FPS_LEVELS = [   // (far: the draw distance of small far-off things and of the crowd ×)
+  { s: 1, refl: 0, near: 1, far: 1, bloom: true, aa: true },
+  { s: .85, refl: 0, near: 1, far: 1, bloom: true, aa: true },
+  { s: .75, refl: 4, near: .85, far: .9, bloom: true, aa: true },
+  { s: .66, refl: 6, near: .7, far: .75, bloom: true, aa: false },
+  { s: .58, refl: -1, near: .6, far: .6, bloom: true, aa: false },
+  { s: .5, refl: -1, near: .5, far: .5, bloom: false, aa: false },
+];
+const FPS60 = { on: localStorage.getItem('amboola.fps60') !== '0', show: localStorage.getItem('amboola.fpsShow') === '1', level: 0, scale: 1,
+  ft: [], sum: 0, slow: 0, last: 0, hold: 3, good: 0, wait: FPS_LEVELS.map(() => 6), probe: null, ep: null, noHelp: 0, fps: 0, frames: 0, meterT: 0 };
+const FPS_L = () => FPS_LEVELS[FPS60.level];
 // HD renders at least 1.5× the screen's pixels (a supersampled picture even on an ordinary 1080p screen), up to 2×
-const qualityPR = () => quality === 'hd' ? Math.min(Math.max(devicePixelRatio, 1.5), 2) : quality === 'ultra' ? Math.min(devicePixelRatio, 2) : quality === 'high' ? Math.min(devicePixelRatio, 1.25) : Math.min(devicePixelRatio, 1);
+const qualityPR = () => (quality === 'hd' ? Math.min(Math.max(devicePixelRatio, 1.5), 2) : quality === 'ultra' ? Math.min(devicePixelRatio, 2) : quality === 'high' ? Math.min(devicePixelRatio, 1.25) : Math.min(devicePixelRatio, 1)) * FPS60.scale;   // (×: the 60 FPS mode's render scale)
 const qUltra = () => quality === 'ultra' || quality === 'hd';   // HD has everything Ultra has
 function setupComposer() {
   const pr = qualityPR();
@@ -1016,7 +1045,8 @@ function setupComposer() {
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
   composer.addPass(makeHorizonPass());
-  if (quality !== 'low') { smaaPass = new SMAAPass(innerWidth * pr, innerHeight * pr); composer.addPass(smaaPass); }
+  if (quality !== 'low') { smaaPass = new SMAAPass(innerWidth * pr, innerHeight * pr); composer.addPass(smaaPass); smaaPass.enabled = FPS_L().aa; }
+  bloomPass.enabled = FPS_L().bloom;
   composer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = quality !== 'low';
   if (sun) { sun.shadow.mapSize.setScalar(qUltra() ? 4096 : 2048); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
@@ -1114,19 +1144,33 @@ function carReflect() {
   if (quality === 'low' || !player?.car) { carEnvRelease(); return; }
   const size = quality === 'hd' ? 512 : quality === 'ultra' ? 256 : 128;
   if (CAR_ENV.size !== size) { CAR_ENV.rt?.dispose(); CAR_ENV.rt = new THREE.WebGLCubeRenderTarget(size, { type: THREE.HalfFloatType }); CAR_ENV.cam = new THREE.CubeCamera(1, 700, CAR_ENV.rt); CAR_ENV.size = size; CAR_ENV.ready = false; CAR_ENV.face = 0; carEnvRelease(); }
-  if (++CAR_ENV.frame % (qUltra() ? 1 : 2)) return;
+  const every = FPS_L().refl || (qUltra() ? 1 : quality === 'high' ? 3 : 2);   // (High: one side every 3rd frame; the 60 FPS mode can slow it or freeze it)
+  if (every < 0 && CAR_ENV.ready) { if (CAR_ENV.car !== player.car) carEnvApply(player.car); return; }   // (frozen: a new car still gets the last picture)
+  if (++CAR_ENV.frame % Math.max(1, every)) return;
   const C = CAR_ENV.cam, p = player;
   if (C.coordinateSystem !== renderer.coordinateSystem) { C.coordinateSystem = renderer.coordinateSystem; C.updateCoordinateSystem(); }
   C.position.set(p.x, (p.y || 0) + 1.1, p.z); C.updateMatrixWorld(true);
-  const hide = [p.car.group, WX.film, WX.rain, WX.snow, ...Smoke.all.map(S => S.pts)].filter(o => o?.isObject3D), vis = hide.map(o => o.visible);
+  const hide = [p.car.group, WX.film, WX.rain, WX.snow, ...Smoke.all.map(S => S.pts)].filter(o => o?.isObject3D);
+  const diet = qUltra() ? null : reflDiet(true);   // a 128 px reflection: the far city blocks are too small to see in it as well
+  const vis = hide.map(o => o.visible);
   hide.forEach(o => o.visible = false);
   const prev = renderer.getRenderTarget(), au = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
   renderer.setRenderTarget(CAR_ENV.rt, CAR_ENV.face); renderer.render(scene, C.children[CAR_ENV.face]);
   renderer.setRenderTarget(prev); renderer.shadowMap.autoUpdate = au;
-  hide.forEach((o, i) => o.visible = vis[i]);
+  hide.forEach((o, i) => o.visible = vis[i]); if (diet) reflDiet(diet);
   CAR_ENV.face = (CAR_ENV.face + 1) % 6;
   if (CAR_ENV.face === 0) { CAR_ENV.rt.texture.needsPMREMUpdate = true; CAR_ENV.ready = true; }   // a full turn done: blur it for the rough parts
   if (CAR_ENV.ready && CAR_ENV.car !== p.car) carEnvApply(p.car);
+}
+// what the reflections (the car's cube camera, the wet road's mirror) can do without: the far rings of trees and lamps
+// (past NEAR.shadow), the crowd and (blocks: true) Tokyo's far city blocks. reflDiet(list) puts them back.
+function reflDiet(arg) {
+  if (Array.isArray(arg)) { for (const [o, v] of arg) o.visible = v; return; }
+  const out = [], off = o => { if (o) { out.push([o, o.visible]); o.visible = false; } };
+  for (const D of NEAR.list) off(D.far);
+  if (CROWD.ims) for (const im of Object.values(CROWD.ims)) off(im);
+  if (arg === true) for (const sl of TOKYO.city?.slots || []) if (!sl.near) off(sl.im);
+  return out;
 }
 function carEnvApply(car) {
   carEnvRelease();
@@ -1204,15 +1248,16 @@ class AOPass extends Pass {
   dispose() { this.rt.dispose(); this.aoMat.dispose(); this.mixMat.dispose(); this.quad.dispose(); }
 }
 let sun = null;
-addEventListener('resize', () => {
+function applyRes() {   // a new window size, browser zoom, another monitor (devicePixelRatio) or the 60 FPS render scale
   camera.aspect = gCamera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix(); gCamera.updateProjectionMatrix();
-  const pr = qualityPR(); // browser zoom / moving to another monitor changes devicePixelRatio
+  const pr = qualityPR();
   renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false);
   composer.setPixelRatio(pr); composer.setSize(innerWidth, innerHeight);
   if (smoke) Smoke.all.forEach(S => S.mat.uniforms.scale.value = innerHeight * pr);
   if (WX.film) WX.filmQ = null;   // rebuild the reflection at the new size
-});
+}
+addEventListener('resize', applyRes);
 
 /* =====================================================================
    CANVAS TEXTURES
@@ -1734,7 +1779,17 @@ function buildWetFilm() {
   if (quality === 'low') {
     film = new THREE.Mesh(geo, new THREE.ShaderMaterial({ ...WET_SHADER, uniforms: THREE.UniformsUtils.clone(WET_SHADER.uniforms) }));
     film.material.uniforms.color.value = new THREE.Color(1, 1, 1); film.material.uniforms.uRefl.value = 0;
-  } else film = new Reflector(geo, { textureWidth: Math.round(innerWidth * pr * k), textureHeight: Math.round(innerHeight * pr * k), clipBias: .002, multisample: 0, color: 0xd8dde6, shader: WET_SHADER });
+    film.material.uniforms.textureMatrix.value = new THREE.Matrix4();   // (no mirror on Low, but the shader still reads it: a null one stopped every frame in the rain)
+  } else {
+    film = new Reflector(geo, { textureWidth: Math.round(innerWidth * pr * k), textureHeight: Math.round(innerHeight * pr * k), clipBias: .002, multisample: 0, color: 0xd8dde6, shader: WET_SHADER });
+    // the mirror is a whole extra view of the city: on High it is redrawn every 2nd frame (every 3rd at the lightest
+    // 60 FPS levels; the rain and the puddles blur it anyway) and without the far trees and the crowd
+    const draw = film.onBeforeRender; let n = 0;
+    film.onBeforeRender = function (...a) {
+      if (n++ % (qUltra() ? 1 : FPS_L().refl < 0 ? 3 : 2)) return;
+      const diet = reflDiet(); try { draw.apply(this, a); } finally { reflDiet(diet); }
+    };
+  }
   Object.assign(film.material, { transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   film.rotation.x = -Math.PI / 2; film.position.y = .075; film.renderOrder = 2; film.frustumCulled = false;
   const U = film.material.uniforms; U.uShore.value = HALF + 40; U.uIsland.value = [new THREE.Vector4(BEACH.x0, BEACH.z0, BEACH.x1, BEACH.sand), ...COUNTRIES.map(C => new THREE.Vector4(C.x0, C.z0, C.x1, C.z1))];   // island towns are land too
@@ -1777,6 +1832,141 @@ function updateWeather(dt, p) {
    ===================================================================== */
 let ocean = null, spray = null, dust = null, dmgSmoke = null, mudFx = null;
 const trafficPaths = [];
+/* =====================================================================
+   PERFORMANCE: NEAR INSTANCES
+   A big InstancedMesh spread over a whole city (the 1,500 street trees, 1,700 lamps, the country pines) is one object
+   to three.js: if any of it is on screen all of it is drawn, and if any of it is near the car all of it goes into the
+   sun's shadow map as well. nearWorld() (end of buildWorld) turns each one into a "near" batch: only the instances
+   within NEAR.R() of the camera are copied into it (refilled every ~30 m the camera moves, like the Tokyo buildings),
+   and of those only the ones within NEAR.shadow m cast shadows (the rest go into a second, shadowless batch). Still
+   one or two draw calls per batch, a fraction of the triangles; past the radius the fog has them half-hidden anyway.
+   Everything that kept the object (smashing a tree, the seasons' colours, the Blender upgrades swapping its geometry)
+   still works through it by the old instance numbers: setMatrixAt/getMatrixAt/setColorAt/getColorAt act on a master
+   copy and on the instance's current slot. Batches that change at run time are left alone (userData.noNear marks some).
+   ===================================================================== */
+const NEAR = { list: [], minTris: 12000, shadow: 170, R: () => Math.round((quality === 'low' ? 450 : quality === 'high' ? 650 : quality === 'ultra' ? 850 : 1100) * FPS_L().near) };
+function nearInstances(im) {
+  const n = im.count, g = im.geometry;
+  if (n < 24 || im.userData.near || im.userData.noNear) return false;
+  if (!g.boundingSphere) g.computeBoundingSphere();
+  if (g.boundingSphere.radius > 12) return false;   // buildings and the like have their own level of detail
+  if (n * (g.index ? g.index.count : g.attributes.position.count) / 3 < NEAR.minTris) return false;   // light enough as it is
+  im.updateMatrixWorld(true);
+  const src = Float32Array.from(im.instanceMatrix.array.subarray(0, n * 16)), W = im.matrixWorld, v = new THREE.Vector3(), M = new THREE.Matrix4();
+  const xs = new Float32Array(n), zs = new Float32Array(n);
+  let y = 0, sc = 0;
+  for (let k = 0; k < n; k++) { M.fromArray(src, k * 16); v.setFromMatrixPosition(M).applyMatrix4(W); xs[k] = v.x; zs[k] = v.z; y += v.y / n; sc = Math.max(sc, M.getMaxScaleOnAxis()); }
+  // the shadowless far batch: a twin drawn with the same geometry and material
+  const far = im.castShadow ? new THREE.InstancedMesh(im.userData.lo || g, im.material, n) : null;   // (userData.lo: a lighter shape for the far ring)
+  if (far) { Object.assign(far, { castShadow: false, receiveShadow: im.receiveShadow, renderOrder: im.renderOrder, onBeforeRender: im.onBeforeRender, frustumCulled: false }); far.layers.mask = im.layers.mask; far.userData.nearFar = true; far.count = 0; im.add(far); far.matrixAutoUpdate = false; far.matrix.identity(); }
+  const D = { im, far, n, src, cols: im.instanceColor ? Float32Array.from(im.instanceColor.array.subarray(0, n * 3)) : null, xs, zs, y, size: g.boundingSphere.radius * sc,
+    slot: new Int32Array(n).fill(-1), inFar: new Uint8Array(n), at: null, R: 0, grid: new Map() };
+  // a 160 m grid of the instances, so a refill only looks at the cells round the camera (some batches cover 10 km)
+  for (let k = 0; k < n; k++) { const key = Math.floor(xs[k] / 160) * 65536 + Math.floor(zs[k] / 160); let a = D.grid.get(key); if (!a) D.grid.set(key, a = []); a.push(k); }
+  const put = (k, write) => { const j = D.slot[k]; if (j < 0) return; const t = D.inFar[k] ? far : im; write(t, j); };
+  im.setMatrixAt = (k, m) => { m.toArray(src, k * 16); put(k, (t, j) => { m.toArray(t.instanceMatrix.array, j * 16); t.instanceMatrix.needsUpdate = true; }); return im; };
+  im.getMatrixAt = (k, m) => m.fromArray(src, k * 16);
+  im.setColorAt = (k, c) => {
+    if (!D.cols) { D.cols = new Float32Array(n * 3).fill(1); D.at = null; }
+    c.toArray(D.cols, k * 3);
+    put(k, (t, j) => { if (!t.instanceColor) t.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3).fill(1), 3); c.toArray(t.instanceColor.array, j * 3); t.instanceColor.needsUpdate = true; });
+    return im;
+  };
+  im.getColorAt = (k, c) => D.cols ? c.fromArray(D.cols, k * 3) : c.setRGB(1, 1, 1);
+  if (far) for (const key of ['geometry', 'material', 'receiveShadow']) {   // a swapped shape or material goes to the twin too
+    let val = im[key];
+    Object.defineProperty(im, key, { configurable: true, enumerable: true, get: () => val, set: x => { val = x; if (key !== 'geometry' || !im.userData.lo) far[key] = x; } });
+  }
+  im.userData.near = D; NEAR.list.push(D);
+  return true;
+}
+function nearWorld(root = scene) {
+  const list = [];
+  root.traverse(o => { if (o.isInstancedMesh && o.frustumCulled && !o.userData.near && !o.userData.nearFar && !o.userData.noNear && o.count === o.instanceMatrix.count && o.instanceMatrix.usage === THREE.StaticDrawUsage) list.push(o); });
+  for (const o of list) nearInstances(o);
+  nearUpdate(true);
+}
+function nearUpdate(force) {   // refill the batches round the camera when it has moved ~30 m (or jumped, or the radius changed)
+  const cx = camera.position.x, cz = camera.position.z, R = NEAR.R();
+  // the batches that are due, the most out of date first; a few a frame (a full refill of all of them at once was a
+  // regular little hitch while driving), all of them after a jump
+  const due = [];
+  for (const D of NEAR.list) { const m = D.at ? Math.hypot(D.at[0] - cx, D.at[1] - cz) : 1e9; if (force || !D.at || D.R !== R || m >= 30) due.push([m, D]); }
+  if (!due.length) return;
+  due.sort((a, b) => b[0] - a[0]);
+  const t0 = performance.now();
+  for (let i = 0; i < due.length; i++) {
+    if (!force && i >= 4 && due[i][0] < 400 && performance.now() - t0 > .6) break;   // the rest next frame (a jump: all now)
+    nearFill(due[i][1], cx, cz, R);
+  }
+}
+function nearFill(D, cx, cz, R) {
+  const S2 = NEAR.shadow * NEAR.shadow;
+  {
+    const { im, far, n, src, cols, xs, zs, slot, inFar } = D, R2 = (R + D.size) * (R + D.size);
+    const A = im.instanceMatrix.array, B = far?.instanceMatrix.array;
+    if (cols) for (const t of far ? [im, far] : [im]) if (!t.instanceColor) t.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3).fill(1), 3);
+    const CA = cols && im.instanceColor.array, CB = cols && far?.instanceColor.array;
+    let a = 0, b = 0;
+    slot.fill(-1);
+    const RR = R + D.size, i0 = Math.floor((cx - RR) / 160), i1 = Math.floor((cx + RR) / 160), j0 = Math.floor((cz - RR) / 160), j1 = Math.floor((cz + RR) / 160);
+    for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+      const cell = D.grid.get(i * 65536 + j); if (!cell) continue;
+      for (const k of cell) {
+        const dx = xs[k] - cx, dz = zs[k] - cz, d2 = dx * dx + dz * dz;
+        if (d2 > R2) continue;
+        if (!far || d2 < S2) { A.set(src.subarray(k * 16, k * 16 + 16), a * 16); if (cols) CA.set(cols.subarray(k * 3, k * 3 + 3), a * 3); slot[k] = a++; inFar[k] = 0; }
+        else { B.set(src.subarray(k * 16, k * 16 + 16), b * 16); if (cols) CB.set(cols.subarray(k * 3, k * 3 + 3), b * 3); slot[k] = b++; inFar[k] = 1; }
+      }
+    }
+    im.count = a; im.instanceMatrix.needsUpdate = true; if (cols) im.instanceColor.needsUpdate = true;
+    // the batch is a disc round the camera: its bounding sphere says so (the old one covered the whole city)
+    (im.boundingSphere ??= new THREE.Sphere()).set(v3(cx, D.y, cz).applyMatrix4(D.inv ??= im.matrixWorld.clone().invert()), (far ? Math.sqrt(S2) : R) + D.size);
+    if (far) { far.count = b; far.instanceMatrix.needsUpdate = true; if (cols) far.instanceColor.needsUpdate = true; }
+    D.at = [cx, cz]; D.R = R;
+  }
+}
+const v3 = (x, y, z) => (v3.v ??= new THREE.Vector3()).set(x, y, z);
+/* ---- far culling: hundreds of small things (parked cars, kiosks, booths, signs, trucks) all over the map each cost
+   draw calls wherever you are. A top-level object smaller than 200 m isn't drawn once it is further from the camera
+   than about 160x its size (300 m for a car, at most 1.5 km), or past the fog. It is hidden with layers (layer 31, which
+   no camera sees, its descendants too), so the game's own .visible switches are never touched. Things with fog-free
+   materials (the sky, Fuji's silhouette, the giants on the mountains) and anything marked userData.noCull are left. */
+const FARCULL = { list: [], seen: new WeakSet(), at: 0, scan: 0, mask: new WeakMap(), hidden: 0 };
+function farCullScan() {
+  const box = new THREE.Box3(), sp = new THREE.Sphere();
+  for (const o of scene.children) {
+    if (FARCULL.seen.has(o)) continue;
+    FARCULL.seen.add(o);
+    if (o.isLight || o.isCamera || o.userData.noCull || o.userData.near || o === sky || o === WX.rain || o === WX.snow || o === WX.film || o === TOKYO.city?.grp) continue;
+    let meshes = 0, fogFree = false;
+    o.traverse(c => { if (c.isMesh || c.isPoints || c.isLine) { meshes++; for (const m of [].concat(c.material)) if (m && m.fog === false) fogFree = true; } });
+    if (!meshes || fogFree) continue;
+    o.updateMatrixWorld(true); box.setFromObject(o); if (box.isEmpty()) continue; box.getBoundingSphere(sp);
+    if (!(sp.radius < 200)) continue;
+    FARCULL.list.push({ o, off: sp.center.clone().sub(o.position), r: sp.radius, culled: false });
+  }
+}
+function farCullSet(e, culled) {
+  e.culled = culled; FARCULL.hidden += culled ? 1 : -1;
+  e.o.traverse(c => {
+    if (culled) { if (!FARCULL.mask.has(c)) FARCULL.mask.set(c, c.layers.mask); c.layers.set(31); }
+    else { const m = FARCULL.mask.get(c); c.layers.mask = m ?? 1; }
+  });
+}
+function farCull(cam) {
+  if (++FARCULL.at % 6) return;   // every 6th frame is plenty
+  if (FARCULL.scan !== scene.children.length) { FARCULL.scan = scene.children.length; farCullScan(); }   // new things in the world
+  const fogFar = 2.6 / Math.max(1e-5, scene.fog?.density || 1e-5), c = cam.position, pc = player?.car?.group;
+  for (let i = FARCULL.list.length - 1; i >= 0; i--) {
+    const e = FARCULL.list[i];
+    if (e.o.parent !== scene) { if (e.culled) farCullSet(e, false); FARCULL.list.splice(i, 1); FARCULL.seen.delete(e.o); continue; }   // gone (or moved into something else)
+    if (e.o === pc) { if (e.culled) farCullSet(e, false); continue; }
+    const p = e.o.position, d = Math.hypot(p.x + e.off.x - c.x, p.y + e.off.y - c.y, p.z + e.off.z - c.z) - e.r;
+    const cull = d > Math.min(fogFar, clamp(e.r * 160, 300, 1500) * FPS_L().far);
+    if (cull !== e.culled) farCullSet(e, cull);
+  }
+}
 async function buildWorld() {
   rand = mulberry32(4242);
   const roadTex = ROAD_TEX(), interTex = INTER_TEX(), xwTex = XWALK_TEX(), swTex = SIDEWALK_TEX(), grassTex = GRASS_TEX();
@@ -2038,6 +2228,7 @@ async function buildWorld() {
   const all = [...trees.map(t => [...t, 0]), ...sakura.map(t => [...t, 1])];
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x4a3627, roughness: 1 }), all.length);
   const crown = new THREE.InstancedMesh(crownGeo, foliageLook(new THREE.MeshStandardMaterial({ roughness: .85 }), 1, [4.4, 1.15]), all.length); crown.customDepthMaterial = crown.material.userData.depth;
+  crown.userData.lo = cloudCrown(true);   // (the far ring's crowns: see nearInstances)
   const cc = new THREE.Color();
   all.forEach(([x, z, s, sak], k) => {
     trunk.setMatrixAt(k, mat(x, 0, z, rand() * 6, s, s, s)); crown.setMatrixAt(k, mat(x, 0, z, rand() * 6, s * rr(.9, 1.2), s * rr(.8, 1.1), s * rr(.9, 1.2)));
@@ -2070,6 +2261,7 @@ async function buildWorld() {
   buildCountries(); buildTokyoAirport();
   buildSpeedCams(); buildPatrols(); buildActs(); buildChallenges();
   buildMinimapImage();
+  nearWorld();   // (performance: see nearInstances)
 }
 
 function addPark(x0, z0, x1, z1, grassTex, trees, sakura, sakuraRatio) {
@@ -4748,6 +4940,7 @@ function buildMenu() {
   document.querySelectorAll('#optTime .opt').forEach(o => o.onclick = () => { applyTime(o.dataset.v); updateMenu(); });
   document.querySelectorAll('#optWx .opt').forEach(o => o.onclick = () => { setWeather(o.dataset.v); updateMenu(); });
   document.querySelectorAll('#optQ .opt').forEach(o => o.onclick = () => setQuality(o.dataset.v));
+  document.querySelectorAll('#optFps .opt').forEach(o => o.onclick = () => o.dataset.v === 'show' ? fpsSet(undefined, !FPS60.show) : fpsSet(o.dataset.v === 'on'));
   $('drive').onclick = garageGo;
   updateMenu();
 }
@@ -5008,7 +5201,7 @@ function updateMenu() {
   $('paintname').textContent = PAINTS[paintIdx].n;
   document.querySelectorAll('#optTime .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === timeName));
   document.querySelectorAll('#optWx .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === weather));
-  document.querySelectorAll('#optQ .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === quality));
+  document.querySelectorAll('#optQ .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === quality)); fpsMenu();
 }
 
 /* =====================================================================
@@ -8301,9 +8494,10 @@ function lumpyCrown(r, detail = 3) {
   for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const d = v.clone().normalize(); v.multiplyScalar(1 + .16 * n3(d.x * 2, d.y * 2, d.z * 2) - .12 * Math.max(0, -d.y)); P.setXYZ(i, v.x, v.y, v.z); }
   g.deleteAttribute('uv'); const m = mergeVertices(g); m.computeVertexNormals(); return m;   // shared vertices: smooth, not faceted
 }
-function cloudCrown() {   // a street tree's crown: one big leafy blob and four small ones round it, like the Blender tree but round
+function cloudCrown(lo = false) {   // a street tree's crown: one big leafy blob and four small ones round it, like the Blender tree but round
+  // (lo: the far trees' crown, a quarter of the triangles; past 170 m nobody can tell)
   return mergeGeometries([[2, 2, 0, 4.4, 0], [1.2, 1, 1.2, 3.8, -.4], [1.2, 1, -1.1, 3.9, -.6], [1.2, 1, .2, 3.9, 1.2], [1, 1, 0, 5.4, 0]]
-    .map(([r, d, x, y, z]) => lumpyCrown(r, d).scale(1, .85, 1).translate(x, y, z)));
+    .map(([r, d, x, y, z]) => lumpyCrown(r, lo ? d - 1 : d).scale(1, .85, 1).translate(x, y, z)));
 }
 function foliageLook(m, sway = 1, crown = null) {   // crown [centre y, y squash]: light it like one soft rounded crown, not hard facets
   if (m.userData.foliage) return m; m.userData.foliage = true; m.flatShading = false;
@@ -9350,16 +9544,21 @@ function updateCountryCulling(dt) {
   const cx = camera.position.x, cz = camera.position.z;   // every frame: a teleport or the jet moves the camera kilometres at once
   updateTokyoLOD(); futUpdate(dt || 0);
   const fut = FUT.on && FUT.ready;
+  // past fogFar the fog (exp2) hides everything, so what lies beyond it isn't drawn at all (rain, low cloud: nearer;
+  // flying high: further, as the fog thins)
+  const fogFar = 2.6 / Math.max(1e-5, scene.fog?.density || 1e-5);
   for (const C of COUNTRIES) {
     if (C.town) { const dT = Math.hypot(C.cx - cx, C.cz - cz), T = fut && dT < 2600 ? futBuildTown(C) : FUT.towns.get(C); if (T) T.grp.visible = fut && dT < 2600; C.town.meshes.forEach(m => m.visible = !fut && !C.city); }   // the year 3000's town
-    for (const g of C.R.chunks || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 7500;
-    const d = Math.hypot(C.cx - cx, C.cz - cz); if (C.group) C.group.visible = d < 12000;
+    for (const g of C.R.chunks || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < Math.min(7500, fogFar + 400);
+    const R = C.rad ??= (Number.isFinite(C.x1 - C.x0) && Number.isFinite(C.z1 - C.z0) ? Math.hypot(C.x1 - C.x0, C.z1 - C.z0) / 2 : 3000) + 300;
+    const d = Math.hypot(C.cx - cx, C.cz - cz); if (C.group) C.group.visible = d < Math.min(12000, fogFar + R);
     if (d < 9000 && !C.cityAsked && CITY_CFG[C.id]) { C.cityAsked = true; loadModel('city_' + C.id).then(m => { if (m) { upgradeCity(C); warmUp(); } }); }   // its Blender town
-    if (C.city) for (const g of C.city.trees || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < 1300;
+    if (C.city) for (const g of C.city.trees || []) g.visible = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz) < Math.min(1300, fogFar + 150);
     if (C.city) for (const g of C.city.cells) {   // detailed houses near the camera, the plain ones further out
       const dc = Math.hypot(g.userData.c[0] - cx, g.userData.c[1] - cz), lo = g.userData.lo;
       const near = quality === 'low' ? 0 : CITY_NEAR * (quality === 'hd' ? 1.5 : 1);   // graphics LOW: only the plain houses
-      g.visible = !fut && dc < (lo ? near : 1700); if (lo) lo.visible = !fut && dc >= near && dc < 1700;
+      const far = Math.min(1700, fogFar + 250);
+      g.visible = !fut && dc < (lo ? near : far); if (lo) lo.visible = !fut && dc >= near && dc < far;
     }
   }
 }
@@ -10233,16 +10432,23 @@ function endChase(escaped, p) {
    crowds on the pavements (one InstancedMesh per part). Vertex colours mark the dark bits (shoes, belt, eyes); each
    person's shirt, skin, hair and trouser colours are multiplied on top.
    ===================================================================== */
-const PERSON = (() => {
+// a person's five parts; lo: the street crowd's lighter build (about a quarter of the triangles, same joints and shading:
+// they are seen from a car, and 170 of them in full detail cost as much as the whole of the city's trees)
+const personKit = lo => {
   const shade = (g, f) => { const p = g.attributes.position, c = new Float32Array(p.count * 3); for (let i = 0; i < p.count; i++) c.fill(f(p.getX(i), p.getY(i), p.getZ(i)), i * 3, i * 3 + 3); g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g; };
-  const S = (r, w, h, ...a) => new THREE.SphereGeometry(r, w, h, ...a);
+  const S = (r, w, h, ...a) => new THREE.SphereGeometry(r, w, h, ...a), q = (full, light) => lo ? light : full;
   return {
     // joints: the hips at the top of each leg, the hips at the bottom of the torso, the neck under the head and hair, the shoulders at the top of each arm
-    leg: shade(mergeGeometries([new THREE.CapsuleGeometry(.075, .66, 3, 8).translate(0, -.42, 0), new THREE.BoxGeometry(.13, .09, .26).translate(0, -.855, .04)]), (x, y) => y < -.8 ? .2 : 1),
-    torso: shade(mergeGeometries([new THREE.CapsuleGeometry(.17, .3, 4, 10).scale(1, 1, .64).translate(0, .33, 0), S(.085, 8, 6).translate(.19, .55, 0), S(.085, 8, 6).translate(-.19, .55, 0), new THREE.CylinderGeometry(.15, .14, .12, 10).scale(1, 1, .72).translate(0, .03, 0)]), (x, y) => y < .085 ? .3 : 1),
-    head: shade(mergeGeometries([new THREE.CylinderGeometry(.05, .055, .12, 8).translate(0, .04, 0), S(.122, 14, 10).scale(1, 1.08, 1).translate(0, .21, 0), S(.019, 6, 4).translate(.045, .23, .108), S(.019, 6, 4).translate(-.045, .23, .108)]), (x, y, z) => Math.hypot(Math.abs(x) - .045, y - .23, z - .108) < .021 ? .06 : 1),
-    hair: shade(mergeGeometries([S(.132, 14, 8, 0, Math.PI * 2, 0, Math.PI * .5).scale(1, 1.1, 1.05).translate(0, .22, -.006), S(.13, 12, 6, Math.PI * 1.1, Math.PI * .8, Math.PI * .45, Math.PI * .32).translate(0, .21, -.012)]), () => 1),
-    arm: shade(mergeGeometries([new THREE.CapsuleGeometry(.05, .5, 3, 8).translate(0, -.3, 0), S(.058, 8, 6).translate(0, -.62, .01)]), () => 1),
+    leg: shade(mergeGeometries([new THREE.CapsuleGeometry(.075, .66, q(3, 2), q(8, 5)).translate(0, -.42, 0), new THREE.BoxGeometry(.13, .09, .26).translate(0, -.855, .04)]), (x, y) => y < -.8 ? .2 : 1),
+    torso: shade(mergeGeometries([new THREE.CapsuleGeometry(.17, .3, q(4, 2), q(10, 6)).scale(1, 1, .64).translate(0, .33, 0), S(.085, q(8, 5), q(6, 3)).translate(.19, .55, 0), S(.085, q(8, 5), q(6, 3)).translate(-.19, .55, 0), new THREE.CylinderGeometry(.15, .14, .12, q(10, 6)).scale(1, 1, .72).translate(0, .03, 0)]), (x, y) => y < .085 ? .3 : 1),
+    head: shade(mergeGeometries([new THREE.CylinderGeometry(.05, .055, .12, q(8, 5)).translate(0, .04, 0), S(.122, q(14, 8), q(10, 6)).scale(1, 1.08, 1).translate(0, .21, 0), S(.019, q(6, 4), q(4, 2)).translate(.045, .23, .108), S(.019, q(6, 4), q(4, 2)).translate(-.045, .23, .108)]), (x, y, z) => Math.hypot(Math.abs(x) - .045, y - .23, z - .108) < .021 ? .06 : 1),
+    hair: shade(mergeGeometries([S(.132, q(14, 8), q(8, 4), 0, Math.PI * 2, 0, Math.PI * .5).scale(1, 1.1, 1.05).translate(0, .22, -.006), S(.13, q(12, 6), q(6, 3), Math.PI * 1.1, Math.PI * .8, Math.PI * .45, Math.PI * .32).translate(0, .21, -.012)]), () => 1),
+    arm: shade(mergeGeometries([new THREE.CapsuleGeometry(.05, .5, q(3, 2), q(8, 5)).translate(0, -.3, 0), S(.058, q(8, 5), q(6, 3)).translate(0, -.62, .01)]), () => 1),
+  };
+};
+const PERSON = (() => {
+  return {
+    ...personKit(false),
     SKIN: ['#f1c9a5', '#e0ac85', '#c68863', '#8d5a3b', '#f6d7bd', '#5c3a24'],
     SHIRT: ['#c8141b', '#1d5fc4', '#2a2b2e', '#f2f2f2', '#e0a030', '#4aa83a', '#8a3fbf', '#e36b9a', '#2fb8c8', '#ff7a1f', '#ffd21f', '#7a8a9a'],
     PANTS: ['#1c2233', '#2a2b2e', '#5a4a3a', '#39424f', '#3b5a8a', '#c9b48a', '#6b6f75'],
@@ -10444,7 +10650,8 @@ const CROWD = { n: isTouch ? 64 : 170, list: [], ims: null, M: poseMats(), zero:
 function buildCrowd() {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .8 }), n = CROWD.n;
   const mk = (geo, k) => { const im = new THREE.InstancedMesh(geo, mat, n * k); im.frustumCulled = false; im.castShadow = !isTouch; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); for (let i = 0; i < n * k; i++) { im.setMatrixAt(i, CROWD.zero); im.setColorAt(i, CROWD.col.set(1, 1, 1)); } scene.add(im); return im; };
-  CROWD.ims = { torso: mk(PERSON.torso, 1), head: mk(PERSON.head, 1), hair: mk(PERSON.hair, 1), leg: mk(PERSON.leg, 2), arm: mk(PERSON.arm, 2) };
+  const L = personKit(true);   // (the light build: see personKit)
+  CROWD.ims = { torso: mk(L.torso, 1), head: mk(L.head, 1), hair: mk(L.hair, 1), leg: mk(L.leg, 2), arm: mk(L.arm, 2) };
   for (let k = 0; k < n; k++) CROWD.list.push({ k, on: false });
 }
 const crowdZone = (x, z) => Math.abs(x) < HALF + 20 && Math.abs(z) < HALF + 20 ? 'tokyo' : COUNTRIES.find(C => !C.jungle && x > C.x0 - 60 && x < C.x1 + 60 && z > C.z0 - 60 && z < C.z1 + 60) || null;
@@ -10463,14 +10670,11 @@ function crowdSpawn(q, zone, fx, fz) {
     q.u = Math.random() * 1000; const [x, z] = crowdPath(q), d = Math.hypot(x - fx, z - fz);
     if (d > 240 || (CROWD.filled && d < 110)) continue;   // once the streets are full, new people come from out of sight
     Object.assign(q, { on: true, x, z, h: 0, dir: Math.random() < .5 ? 1 : -1, v: 1 + Math.random() * .6, ph: Math.random() * 6, stand: Math.random() < .15 ? 3 + Math.random() * 8 : 0, ox: 0, oz: 0, hop: 0, y: 0 });
-    const I = CROWD.ims, c = CROWD.col, k = q.k;
+    const I = CROWD.ims, C = q.col ??= { torso: new THREE.Color(), head: new THREE.Color(), hair: new THREE.Color(), leg: new THREE.Color(), arm: new THREE.Color() };
     if (FUT.on && FUT.robot && I.torso.material === FUT.mat) {   // a robot: one finish all over (its glow colour comes from it)
-      c.set(pick(FUT_PAL.robot)); for (const im of [I.torso, I.head, I.hair]) im.setColorAt(k, c); for (const im of [I.leg, I.arm]) { im.setColorAt(2 * k, c); im.setColorAt(2 * k + 1, c); }
-      for (const im of Object.values(I)) im.instanceColor.needsUpdate = true; continue;
+      C.torso.set(pick(FUT_PAL.robot)); for (const k in C) C[k].copy(C.torso); continue;
     }
-    I.torso.setColorAt(k, c.set(pick(PERSON.SHIRT))); I.head.setColorAt(k, c.set(pick(PERSON.SKIN))); I.arm.setColorAt(2 * k, c); I.arm.setColorAt(2 * k + 1, c);
-    I.hair.setColorAt(k, c.set(pick(PERSON.HAIR))); I.leg.setColorAt(2 * k, c.set(pick(PERSON.PANTS))); I.leg.setColorAt(2 * k + 1, c);
-    for (const im of Object.values(I)) im.instanceColor.needsUpdate = true;
+    C.torso.set(pick(PERSON.SHIRT)); C.head.set(pick(PERSON.SKIN)); C.arm.copy(C.head); C.hair.set(pick(PERSON.HAIR)); C.leg.set(pick(PERSON.PANTS));
   }
 }
 function updateCrowd(dt, fx, fz) {
@@ -10478,10 +10682,13 @@ function updateCrowd(dt, fx, fz) {
   const zone = state === 'drive' && !race && !drag && !soccer ? crowdZone(fx, fz) : null, I = CROWD.ims, M = CROWD.M, p = player;
   if (zone !== CROWD.zone) { CROWD.zone = zone; CROWD.filled = false; for (const q of CROWD.list) q.on = false; }
   const pf = [Math.sin(p.heading), Math.cos(p.heading)], car = !foot && p.speed > 2.5 && !p.air;
+  // the people you can see (or right by you, for their shadows) are drawn; the slots are filled from 0 every frame
+  const F = CROWD.frustum ??= new THREE.Frustum(), S = CROWD.sphere ??= new THREE.Sphere(new THREE.Vector3(), 1.2), cp = camera.position;
+  camera.updateMatrixWorld(); F.setFromProjectionMatrix((CROWD.pv ??= new THREE.Matrix4()).multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+  let n = 0;
   for (const q of CROWD.list) {
-    const k = q.k;
     if (zone && (!q.on || Math.hypot(q.x - fx, q.z - fz) > 280)) crowdSpawn(q, zone, fx, fz);
-    if (!zone || !q.on) { for (const [im, i] of [[I.torso, k], [I.head, k], [I.hair, k], [I.leg, 2 * k], [I.leg, 2 * k + 1], [I.arm, 2 * k], [I.arm, 2 * k + 1]]) im.setMatrixAt(i, CROWD.zero); continue; }
+    if (!zone || !q.on) continue;
     if (q.stand > 0) q.stand -= dt; else { q.u += q.v * q.dir * dt; if (Math.random() < dt * .015) q.stand = 2 + Math.random() * 7; }
     let [x, z, h] = crowdPath(q); if (q.dir < 0) h += Math.PI;
     // a car coming: jump to the side it's already on
@@ -10499,11 +10706,17 @@ function updateCrowd(dt, fx, fz) {
     if (foot) { const dx = q.x - foot.x, dz = q.z - foot.z, d = Math.hypot(dx, dz); if (d < .65 && d > 1e-3) { q.ox += dx / d * (.65 - d); q.oz += dz / d * (.65 - d); q.x = x + q.ox; q.z = z + q.oz; } }   // or bumping through you
     q.h += wrapA((q.hop > 0 ? Math.atan2(q.dvx, q.dvz) : h) - q.h) * Math.min(1, dt * 6);
     const walk = q.stand > 0 || q.hop > 0 ? 0 : 1; q.ph += walk * q.v * dt * 4.4; q.amp = damp(q.amp || 0, walk, 5, dt);
+    const dc = Math.hypot(q.x - cp.x, q.z - cp.z);
+    if (dc > 210 * FPS_L().far || (Math.hypot(q.x - p.x, q.z - p.z) > 30 && !F.intersectsSphere(S.set(S.center.set(q.x, q.y + .9, q.z), 1.2)))) continue;
     posePerson(M, q.x, q.y, q.z, q.h, q.ph, q.amp, 0, q.hop > 0 ? 1 : 0);
-    I.torso.setMatrixAt(k, M[0]); I.head.setMatrixAt(k, M[1]); I.hair.setMatrixAt(k, M[2]); I.leg.setMatrixAt(2 * k, M[3]); I.leg.setMatrixAt(2 * k + 1, M[4]); I.arm.setMatrixAt(2 * k, M[5]); I.arm.setMatrixAt(2 * k + 1, M[6]);
+    const C = q.col;
+    I.torso.setMatrixAt(n, M[0]); I.head.setMatrixAt(n, M[1]); I.hair.setMatrixAt(n, M[2]); I.leg.setMatrixAt(2 * n, M[3]); I.leg.setMatrixAt(2 * n + 1, M[4]); I.arm.setMatrixAt(2 * n, M[5]); I.arm.setMatrixAt(2 * n + 1, M[6]);
+    if (C) { I.torso.setColorAt(n, C.torso); I.head.setColorAt(n, C.head); I.hair.setColorAt(n, C.hair); I.leg.setColorAt(2 * n, C.leg); I.leg.setColorAt(2 * n + 1, C.leg); I.arm.setColorAt(2 * n, C.arm); I.arm.setColorAt(2 * n + 1, C.arm); }
+    n++;
   }
   if (zone) CROWD.filled = true;
-  for (const im of Object.values(I)) im.instanceMatrix.needsUpdate = true;
+  I.torso.count = I.head.count = I.hair.count = n; I.leg.count = I.arm.count = 2 * n;
+  for (const im of Object.values(I)) { im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
 }
 /* =====================================================================
    TRAFFIC JAMS — now and then a crash (two cars and a police car) or road works (barriers, cones, a digger and a
@@ -16704,13 +16917,14 @@ function updateTitle(dt) {
   T.flags.forEach((f, i) => { f.o.rotation.y = f.ry + Math.sin(t * 1.8 + i * 1.3) * .09; });
 }
 function setQuality(v) {
+  Object.assign(FPS60, { level: 0, scale: 1, hold: 3, good: 0, probe: null, ep: null, noHelp: 0, sum: 0 }); FPS60.ft.length = 0; FPS60.wait.fill(6);   // (a new setting: the 60 FPS mode starts again from the top)
   quality = v; localStorage.setItem('amboola.q', quality); setupComposer(); applyTime(timeName); updateMenu();
   if (state === 'title') titleView();
 }
 function titleSettings() {
   const mark = (id, v) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('sel', b.dataset.v === v));
   document.querySelector('#tiMusic [data-v=spotify]').textContent = spotMix() ? '🦂 SCORPIONS' : '🎸 SPOTIFY';
-  mark('tiGfx', quality); mark('tiDiff', diff); mark('tiTraffic', String(MASS.n)); mark('tiSound', audio.muted ? 'off' : 'on'); mark('tiMusic', music.mode);
+  mark('tiGfx', quality); fpsMenu(); mark('tiDiff', diff); mark('tiTraffic', String(MASS.n)); mark('tiSound', audio.muted ? 'off' : 'on'); mark('tiMusic', music.mode);
   $('tiGfxInfo').textContent = { low: 'Fastest. Best for phones and older computers.', high: 'Sharp, with shadows and shiny car reflections.', ultra: 'Very pretty. Needs a strong computer.', hd: 'HD: super-sharp picture, soft shadows in every corner and the sharpest reflections. Needs a gaming computer.' }[quality];
   $('tiDiffInfo').textContent = DIFFS[diff].d;
 }
@@ -16736,6 +16950,8 @@ $('tiSet').onclick = () => { titleSettings(); $('tiSettings').classList.remove('
 $('tiChal').onclick = () => { renderChallenges(); $('tiChallenges').classList.remove('hidden'); $('tiList').scrollTop = 0; };
 document.querySelectorAll('.tiBack').forEach(b => b.onclick = titleClose);
 document.querySelectorAll('#tiGfx button').forEach(b => b.onclick = () => { setQuality(b.dataset.v); titleSettings(); });
+document.querySelectorAll('#tiFps button').forEach(b => b.onclick = () => fpsSet(b.dataset.v === 'on'));
+document.querySelectorAll('#tiFpsShow button').forEach(b => b.onclick = () => fpsSet(undefined, b.dataset.v === '1'));
 document.querySelectorAll('#tiTraffic button').forEach(b => b.onclick = () => { massBuild(+b.dataset.v); trafficLabel(); titleSettings(); });
 const trafficLabel = () => { const b = $('bTraffic'); if (b) b.textContent = `🚗 TRAFFIC: ${MASS.n ? MASS.n.toLocaleString() + ' CARS' : 'NORMAL'}`; };
 $('bTraffic').onclick = () => { massBuild(MASS_OPTS[(MASS_OPTS.indexOf(MASS.n) + 1) % MASS_OPTS.length]); trafficLabel(); toast('🚗 TRAFFIC', MASS.n ? `${MASS.n.toLocaleString()} EXTRA CARS ON THE STREETS` : 'NORMAL'); };
@@ -16772,16 +16988,85 @@ function simStep(dt, inp) {
 }
 const clock = new THREE.Clock();
 let fpsAcc = 0, fpsN = 0;
+/* =====================================================================
+   60 FPS MODE (on by default: Settings / garage → 60 FPS). fpsWatch() times every real frame and looks at the median of
+   the last 40 (so a single hitch, like a model loading, doesn't count). When frames run slower than ~54 a second it
+   steps one level lighter (FPS_LEVELS: a slightly lower render resolution first, then fewer car-reflection updates,
+   a shorter draw distance for trees and lamps, no anti-aliasing, at the very bottom no bloom), waits 1.5 s, and checks
+   again. After several seconds at a steady 60 it tries one level better; if that brings the slow frames back it steps
+   down again and waits twice as long before the next try. A step that didn't help at all (a screen or a battery saver
+   that caps the frame rate) is undone, so the picture never gets worse for nothing. The FPS meter shows the rate.
+   ===================================================================== */
+function fpsLevel(L) {
+  L = clamp(L, 0, FPS_LEVELS.length - 1); if (L === FPS60.level && FPS60.scale === FPS_LEVELS[L].s) return;
+  FPS60.level = L; const S = FPS_LEVELS[L];
+  if (FPS60.scale !== S.s) { FPS60.scale = S.s; if (composer) applyRes(); }
+  if (bloomPass) bloomPass.enabled = S.bloom;
+  if (smaaPass) smaaPass.enabled = S.aa;
+  fpsMeter();
+}
+function fpsWatch(t) {
+  const F = FPS60, dt = F.last ? (t - F.last) / 1000 : 0; F.last = t;
+  const restart = () => { F.ft.length = 0; F.sum = 0; };
+  if (!(dt > 0) || dt > 2) { restart(); F.slow = 0; return; }   // a hidden tab (no frames for a while): start the count again
+  F.frames++; F.meterT += dt;
+  if (F.meterT >= .5) { F.fps = F.frames / F.meterT; F.frames = 0; F.meterT = 0; fpsMeter(); }
+  // one long frame is a hitch (a model arriving, a shader compiling) and doesn't count; a run of them is a slow device
+  if (dt > .25) { if (++F.slow < 4) return; } else F.slow = 0;
+  F.ft.push(dt); F.sum = (F.sum || 0) + dt;
+  while (F.ft.length > 40 || (F.ft.length > 10 && F.sum > 2)) F.sum -= F.ft.shift();   // the last 40 frames, or 2 s on a slow device
+  if (F.probe && (F.probe.t += dt) > 5) F.probe = null;   // the level we tried held up
+  if (!F.on || (F.ft.length < 40 && F.sum < 2) || (F.hold -= dt) > 0 || !['drive', 'heli', 'fly', 'garage', 'title', 'photo', 'ferry'].includes(state)) return;
+  const sorted = [...F.ft].sort((a, b) => a - b), med = sorted[sorted.length >> 1];
+  if (med > 1 / 54) {   // too slow
+    F.good = 0;
+    if (!F.ep) F.ep = { from: F.level, base: med, steps: 0 };   // a slow spell starts here
+    const capped = F.ep.steps >= 2 && med > F.ep.base * .97;   // two steps lighter and not a bit faster: something else holds the rate
+    if (!capped && F.level < FPS_LEVELS.length - 1) {   // one step lighter (a step that saves pixels may not help a busy processor: the next ones save other work)
+      F.ep.steps++;
+      if (F.probe && F.probe.from === F.level + 1) F.wait[F.level + 1] = Math.min(120, F.wait[F.level + 1] * 2);   // that step up was too much
+      F.probe = null; fpsLevel(F.level + 1); F.hold = 1.5; restart();
+    } else if (!F.ep.judged) {   // the lightest level (or no gain at all) and still slow: did all that help?
+      F.ep.judged = true;
+      if (capped || med > F.ep.base * .9) { F.noHelp = (F.noHelp || 0) + 1; fpsLevel(F.ep.from); F.hold = 20 * 2 ** (F.noHelp - 1); F.ep = null; restart(); }   // no: the limit isn't the picture (a screen or a battery saver capping the rate). Back as it was, and leave it a while (longer each time)
+      else F.noHelp = 0;   // yes, just not enough: a slow device, it stays light
+    }
+  } else if (med < 1 / 58) {   // a steady 60 (or better): after a while, try one step up
+    F.good += dt; F.ep = null; F.noHelp = 0;
+    if (F.level > 0 && F.good > F.wait[F.level]) { F.probe = { from: F.level, t: 0 }; fpsLevel(F.level - 1); F.hold = 2; F.good = 0; restart(); }
+  } else { F.good = 0; F.ep = null; }   // 54-58: close enough, stay
+}
+function fpsMeter() {
+  const el = $('fpsMeter'); if (!el) return;
+  el.classList.toggle('hidden', !FPS60.show);
+  if (!FPS60.show) return;
+  const f = Math.round(FPS60.fps);
+  el.textContent = `${f} FPS` + (FPS60.on && FPS60.level ? ` · ⚡${FPS60.level}` : '');
+  el.className = f >= 55 ? 'ok' : f >= 40 ? 'mid' : 'bad';
+}
+function fpsSet(on, show) {
+  if (on !== undefined) { FPS60.on = on; localStorage.setItem('amboola.fps60', on ? '1' : '0'); if (!on) fpsLevel(0); Object.assign(FPS60, { sum: 0, hold: 2, probe: null, ep: null, noHelp: 0 }); FPS60.ft.length = 0; FPS60.wait.fill(6); }
+  if (show !== undefined) { FPS60.show = show; localStorage.setItem('amboola.fpsShow', show ? '1' : '0'); }
+  fpsMeter(); fpsMenu();
+}
+function fpsMenu() {
+  document.querySelectorAll('#tiFps button').forEach(b => b.classList.toggle('sel', b.dataset.v === (FPS60.on ? 'on' : 'off')));
+  document.querySelectorAll('#tiFpsShow button').forEach(b => b.classList.toggle('sel', b.dataset.v === (FPS60.show ? '1' : '0')));
+  document.querySelectorAll('#optFps .opt').forEach(o => o.classList.toggle('sel', o.dataset.v === 'show' ? FPS60.show : o.dataset.v === (FPS60.on ? 'on' : 'off')));
+}
 // frame(): the normal real-time loop. tick(dt): one frame of the game. Recording tools set window.__manualFrames and call
 // window.amboola.tick(1/24) themselves so each captured video frame advances the game by exactly one step.
-function frame() {
+function frame(t) {
   requestAnimationFrame(frame);
   if (window.__manualFrames) { clock.getDelta(); return; }
+  fpsWatch(t ?? performance.now());
   tick(Math.min(clock.getDelta(), 1 / 20));
 }
 let simTime = 0;   // game seconds (the wheel blur measures spin against it)
 function tick(dt) {
   simTime += dt;
+  nearUpdate();   // (the near-instance batches follow the camera, whatever the view: see nearInstances)
+  if (renderPass?.scene === scene) farCull(renderPass.camera);   // (and far-off small things aren't drawn: see farCull)
   if (player?.car?.cockpit?.on && !['drive', 'pause', 'overlay', 'map'].includes(state)) cockpitView(player, false);
   updateSpotify();
   if (state === 'ad') { updateAd(dt); return; }
@@ -16837,7 +17122,7 @@ function tick(dt) {
   if (state === 'map') { drawBigMap(); return; }
   if (state === 'drive' || state === 'pause' || state === 'overlay') { composer.render(dt); if (camPhotoReq) takeCamPhoto(); }
   fpsAcc += dt; fpsN++;
-  if (fpsAcc > 4 && quality !== 'low' && state === 'drive') { const fps = fpsN / fpsAcc; if (fps < 22 && !window.__lowWarned) { window.__lowWarned = true; toast('LOW FPS', 'TRY GRAPHICS: LOW IN GARAGE'); } fpsAcc = 0; fpsN = 0; }
+  if (fpsAcc > 4 && quality !== 'low' && state === 'drive') { const fps = fpsN / fpsAcc; if (fps < 22 && (!FPS60.on || FPS60.level === FPS_LEVELS.length - 1) && !window.__lowWarned) { window.__lowWarned = true; toast('LOW FPS', 'TRY GRAPHICS: LOW IN GARAGE'); } fpsAcc = 0; fpsN = 0; }
 }
 
 /* =====================================================================
@@ -16866,11 +17151,11 @@ async function boot() {
   setLoad(1, 'Ready');
   await new Promise(r => setTimeout(r, 250));
   $('loading').classList.add('hidden');
-  buildTitle(); enterTitle(); frame();
+  buildTitle(); enterTitle(); fpsMeter(); frame();
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { FPS60, FPS_LEVELS, fpsLevel, fpsWatch, fpsSet, NEAR, nearUpdate, FARCULL, get quality() { return quality; }, FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

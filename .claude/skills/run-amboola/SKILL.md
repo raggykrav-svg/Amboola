@@ -515,6 +515,27 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - **HD photo refresh:** `photos/run.sh` (scratchpad) reads `id script look paint` lines built from `CARS[].paint` → `PAINTS[i].c` and `HD_PHOTOS`. It renders `--samples 20` (OIDN; about 2 min a photo on 4 CPUs, 3–4 min while exports run) and writes `media/hd-cars/<id>-<look>.jpg` (q90) plus the 384×216 thumbnail. The contact sheet `media/hd-cars.jpg` is the thumbnails in a 12-wide grid, in file-name order.
 - **Check renders while exporting:** `--renders DIR --views front34 --samples 8 --sheet` on the export run costs about 5 s per car.
 
+## 60 FPS and frame cost
+
+- **Measure:** set `renderer.info.autoReset = false`, wrap `renderer.render` to log each call's draw calls and triangles (the shadow pass is inside the main call; the car-reflection face and the wet-road `Reflector` are their own calls), and tick by hand (`__manualFrames`). Baseline on High at the spawn was 1,380 calls and 4.6 M triangles; now it is 1,066 and 2.2 M. On Low it was 955 and 2.7 M; now 642 and 1.3 M. SwiftShader can't time the GPU, so only these counts and the JS time (stub `composer.render` and `renderer.render`) mean anything.
+- **`nearInstances(im)`** (swept by `nearWorld()` at the end of `buildWorld`): a static InstancedMesh (StaticDraw, `frustumCulled`, full count, geometry radius ≤ 12 m, ≥ 12k triangles in all) becomes a batch that holds only the instances within `NEAR.R()` of the camera.
+  - `NEAR.R()` is 450/650/850/1100 m by quality, × `FPS_L().near`.
+  - Shadow casters get a shadowless child twin (`D.far`) for the ring beyond `NEAR.shadow` (170 m). It can use a lighter shape (`im.userData.lo`: `cloudCrown(true)` for the street trees).
+  - The master copy is in `D.src`/`D.cols`, and the old handle still works: `setMatrixAt`/`getMatrixAt`/`setColorAt`/`getColorAt` by the old index (smashing, seasons). `geometry`/`material`/`receiveShadow` setters reach the twin.
+  - `nearUpdate()` (top of `tick`) refills a batch when the camera has moved 30 m. Most out of date first, at least 4 a frame, the rest within a 0.6 ms budget (all of them after a jump). Each refill walks only the 160 m grid cells in range (`D.grid`). A full refill of all 77 batches takes about 1.2 ms; while driving it is 0 ms median and 0.6 ms p95 a frame.
+  - Mark a batch `userData.noNear` to keep it whole.
+- **Crowd:** `personKit(true)` is the light build (about 600 instead of 2,300 triangles a person). `updateCrowd` fills slots from 0 every frame with only the people in the camera frustum or within 30 m of the car (and within 210 m × `FPS_L().far`). The colours live on `q.col`, and the counts are set per frame.
+- **`farCull(cam)`** (every 6th frame, from `tick` when the world is being drawn): each top-level scene child under 200 m across (no fog-free materials, not `userData.noCull`, not the sky, rain, film or Tokyo) is hidden by moving it and its descendants to layer 31 (masks are kept in `FARCULL.mask`). That happens beyond `min(fogFar, clamp(r·160, 300, 1500) · FPS_L().far)`, where `fogFar = 2.6 / fog.density`. Game code's `.visible` is never touched. At the spawn about 490 objects are hidden.
+- **Countries:** `updateCountryCulling` limits the country groups, road chunks, city trees and cells by `fogFar` too.
+- **`reflDiet()`** hides the far rings, the crowd and (for the cube camera, below Ultra) Tokyo's far city slots while a reflection renders. The cube camera does one face every 3rd frame on High. The wet-road `Reflector` is wrapped (`onBeforeRender`) to redraw every 2nd frame below Ultra (every 3rd at the frozen levels) on the same diet.
+- **60 FPS mode:** `FPS60` and `FPS_LEVELS` sit by `qualityPR()`, which multiplies by `FPS60.scale`. `fpsWatch(t)` is called from `frame(t)` (not in `__manualFrames` recordings).
+  - Window: the last 40 frame times, or 2 s on a slow device. A frame over 0.25 s is skipped unless 4 come in a row. A gap over 2 s (hidden tab) restarts the window.
+  - A median over 1/54 s steps one level down (`fpsLevel`: `applyRes()` for the scale, `bloomPass`/`smaaPass.enabled`, reflection schedule, `NEAR`/far factors). Then it holds 1.5 s.
+  - A spell (`F.ep`) remembers where it started. If two steps gave no gain at all, or the lightest level isn't 10% faster, it goes back to the start level and holds 20 s, 40 s, … (a capped screen).
+  - A median under 1/58 s for `F.wait[level]` s (6 s, doubled each time that step up failed, at most 120 s) tries one level up.
+  - `setQuality` resets it. Test it with synthetic timestamps (`fpsWatch(t)` in a loop under `__manualFrames`). SwiftShader's sub-1 fps loop can't exercise it, and `driver.mjs` turns the mode off unless `AMBOOLA_FPS60=1`.
+- **Fixes:** the Low wet film had a null `textureMatrix`, which threw in every rain frame on Low. `warmUp` uses `compileSafe` (three's `compileAsync` threw from its timer when a material was disposed mid-wait, which stopped warm-ups for good).
+
 ## Realistic car materials
 
 - **Paint (`paintShine`):** `uCarY` (per material, `this.userData.carY`; the player's is set in `Player.sync` to `this.y`). `carAO = mix(.42, 1, smoothstep(.04, .7, worldY − uCarY))` scales indirect diffuse ×carAO, indirect specular ×mix(.55, 1, carAO) and clearcoat indirect ×mix(.5, 1, carAO). Other cars keep `uCarY` 0, so a car higher up just gets no shade.

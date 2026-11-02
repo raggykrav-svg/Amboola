@@ -49,6 +49,9 @@ async function open(viewport = { width: 1280, height: 720 }) {
   });
   // the start-up car commercial would cover the garage; skip it unless AMBOOLA_AD=1
   if (!process.env.AMBOOLA_AD) await page.addInitScript(() => localStorage.setItem('amboola.noad', '1'));
+  // the 60 FPS mode would drop SwiftShader's ~2 fps to the lightest level, so the pictures stay at full quality unless
+  // AMBOOLA_FPS60=1 (test the mode itself)
+  await page.addInitScript(v => localStorage.setItem('amboola.fps60', v), process.env.AMBOOLA_FPS60 ? '1' : '0');
   await page.goto('http://amboola.test/index.html');
   await page.waitForFunction(() => document.getElementById('loading').classList.contains('hidden') || /Error/.test(document.getElementById('loadmsg').textContent), null, { timeout: 180000 })
     .catch(e => { throw new Error('game never finished loading (a script error stops the module from running at all):\n' + errors.join('\n')); });
