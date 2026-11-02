@@ -113,7 +113,7 @@ class Car:
             'TailBack': mat('TailBack', (0.10, 0.0, 0.004), metal=0.5, rough=0.3),
             'DRL': mat('DRL', (0.95, 0.97, 1.0), rough=0.1, emit=(0.92, 0.96, 1.0), strength=6.0),
             'LensGlass': mat('LensGlass', (0.01, 0.012, 0.016), metal=0.3, rough=0.03, coat=1.0),
-            'Grille': mat('Grille', (0.014, 0.014, 0.015), metal=0.35, rough=0.4),
+            'Grille': mat('Grille', (0.012, 0.012, 0.013), metal=0.15, rough=0.6),   # dark mesh: no studio-light sheen in photos
             'Pocket': mat('Pocket', (0.004, 0.004, 0.005), rough=0.85),
             'Cutter': mat('Cutter', (1, 0, 1)),                                   # window cutters' walls, deleted again
         }
@@ -631,16 +631,17 @@ class Car:
         xs = [self.hit(V(ox - d, 6, z), V(0, -1, 0))[0] for d in (0.05, 0.15, 0.25)]
         W = max((abs(p.y) for p in xs if p is not None), default=None)
         if W is None or y1 is None or y1 >= 0.72 * W: return a0, a1
-        a = a1
+        a, ya = a1, y1
         while a < 1.5:
-            y, n = at(a)
-            if y is None or abs(n.y) > 0.7 or y > 0.985 * W: break
-            a += 0.015
+            y, n = at(a + 0.015)
+            if y is None: break                                  # (a fan from outside the body can run off it)
+            a, ya = a + 0.015, y
+            if abs(n.y) > 0.7 or y > 0.985 * W: break
         width = max(wide, (y1 - y0) if y0 is not None else wide)
         b = a
         while b > 0.02:
             y, _ = at(b)
-            if y is None or y <= at(a)[0] - width: break
+            if y is None or y <= ya - width: break
             b -= 0.015
         return b, a
 
