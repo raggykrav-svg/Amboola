@@ -1158,6 +1158,10 @@ Every car was compared with real photos of the real car (from Wikimedia Commons)
 
 In the game, the new parts have their own materials: clear and red lens glass, a shiny lamp reflector, glowing LED strips, and a grille material with real see-through honeycomb holes.
 
+The HD photos in the garage were taken again with the new models. Here are some of them, before and after:
+
+![Before and after: the 911 GT3 RS, Jesko, W1, GR86, Revuelto and Chiron Super Sport](media/cars-before-after.jpg)
+
 ### Traffic cars from Blender 🚕
 
 The cars driving around the city are real Blender models now too, made with the same car kit as the cars you drive (`models/blender/traffic.py`):
