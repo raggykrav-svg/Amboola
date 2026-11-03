@@ -341,9 +341,24 @@ The Mercedes cars have the vertical-slat grille with the three-pointed star. The
 ### Ford, Chevrolet, Nissan, Honda and Pagani
 Made in Blender (`models/blender/more_brands.py`): the **Ford Mustang Dark Horse** (5.0 V8, manual, three-bar tail lights, $60,000), the **Chevrolet Corvette Z06** (mid-engine flat-plane V8, 680 PS, $115,000), the **Nissan GT-R NISMO** "Godzilla" (four round tail lights, 600 PS, $220,000), the **Honda NSX Type S** (hybrid V6, 608 PS, $170,000) and the **Pagani Utopia** (twin-turbo V12 with a manual gearbox and the four-pipe exhaust, 864 PS, $3,100,000).
 
+### The classics 🏁 (1954–1973)
+![The Toyota 2000GT, Jaguar E-Type, Ferrari 250 GTO, Mercedes-Benz 300 SL and Porsche 911 Carrera RS 2.7, photographed in Blender](media/classics.jpg)
+
+Made in Blender (`models/blender/classics.py`) from each car's real length, width, height, wheelbase and tyre sizes. They have what makes an old car look old: thin chrome bumpers, round lamps in chrome rings or under glass covers, wire wheels with knock-off spinners, tall narrow tyres and chrome window frames. None of the modern add-ons: no carbon splitter, no diffuser, no shark-fin aerial. They drive like old cars too, with four- and five-speed manual gearboxes, slower gear changes and much less grip than a modern car. Each one reaches 100 km/h in its real time (the physics bench gives 8.6 s for the 2000GT and 6.0 s for the 250 GTO) and goes as fast as the real one. Find them at the end of the garage list, under **CLASSICS**.
+
+| Car | Year | Engine | Power | Weight | Top speed | 0–100 | Price |
+|---|---|---|---|---|---|---|---|
+| Toyota 2000GT | 1967 | 2.0 L twin-cam straight-six | 150 PS | 1,120 kg | 220 km/h | 8.6 s | $1,200,000, or win it in 🏁 Grandpa's Classics |
+| Jaguar E-Type | 1961 | 3.8 L straight-six | 269 PS | 1,234 kg | 241 km/h | 7.1 s | $280,000 |
+| Ferrari 250 GTO | 1962 | 3.0 L V12 | 300 PS | 1,000 kg | 280 km/h | 6.1 s | $48,400,000 |
+| Mercedes-Benz 300 SL "Gullwing" | 1954 | 3.0 L fuel-injected straight-six | 215 PS | 1,295 kg | 250 km/h | 8.8 s | $1,600,000 |
+| Porsche 911 Carrera RS 2.7 | 1973 | 2.7 L flat-six | 210 PS | 975 kg | 245 km/h | 5.8 s | $950,000 |
+
+The 250 GTO is one of the most valuable cars in the world (only 36 were made); the 2000GT was Japan's first supercar (351 were made). The straight-sixes have their own engine sound.
+
 ### HD photos from Blender 📸
 
-The game's own car models, photographed in Blender's Cycles renderer at full HD (1920 × 1080), like the pictures in a car magazine. **Every car in the garage has one:** all 125, including the challenge special editions, the seven F1 teams, the AMBOOLA Helicopter and the AMBOOLA Jet, each in its own garage colour. Every picture is in [`media/hd-cars/`](media/hd-cars/).
+The game's own car models, photographed in Blender's Cycles renderer at full HD (1920 × 1080), like the pictures in a car magazine. **130 cars have one:** every car in the garage except the secret AMBOOLA Golden Tora and the year-3000 Enforcer. That includes the challenge special editions, the seven F1 teams, the five classics, the AMBOOLA Helicopter and the AMBOOLA Jet, each in its own garage colour. Every picture is in [`media/hd-cars/`](media/hd-cars/).
 
 ![HD Blender photos of every car in the garage](media/hd-cars.jpg)
 
@@ -694,6 +709,41 @@ In the garage, press **🚀 FUTURE · 3000** (just above the car search). That's
 - **A giant transformer robot on every mountain:** Mt. Amboola, the Shirayuki Snow Pass, Mt. Fuji, the volcano, the Troodos mountains and the five peaks of the Swiss Alps. Each one **moves every second**: it waves, points at you, shows its muscles, punches, looks round, stomps (you feel it if you're close) and cheers. About every half a minute it **folds down into a giant hover-truck**, turns about, and stands up again.
 - The countries' towns are year-3000 towns too, and the air is a violet neon haze at night.
 - Press **⏪ BACK TO 2026** in the garage to come home. The game remembers which year you were in.
+
+## 🛣️ Road racing
+
+Races on real tarmac roads against five rival drivers. Traffic and police are cleared off the course. Stop in a race's ring on the map (or pick it in **RACES · レース**), the grid lines up two by two, and the lights go out.
+
+| Race | Kind | Length | Win |
+|---|---|---|---|
+| 🏙 Shibuya Street Circuit | 3 laps round tight city blocks | 3.7 km | $30,000 |
+| 🌃 Ginza Night Loop | 2 laps of long boulevards and a fast chicane | 6.9 km | $45,000 |
+| ⭕ Tokyo Ring | 1 lap round the whole city on the outer roads | 5.7 km | $60,000 |
+| ⚡ Neon Zigzag Sprint | corner after corner across the city | 2.5 km | $35,000 |
+| 🛣️ Wangan Highway Sprint | flat out down the harbour road and the Wangan to the beach | 2.9 km | $50,000 |
+| 🗻 Fuji Lakes Sprint | out of the west gate, down the narrow lakes road to Mt. Fuji | 5.5 km | $55,000 |
+| 🌊 Undersea Tunnel Sprint | from Amboola Beach under the sea to Volcano Island | 2.8 km | $60,000 |
+
+Second place pays 40 % of the prize and third pays 25 %. Your best winning time is saved for every race. The arrows on the road show the way, and a short cut across a block doesn't count. Win all seven to become **👑 Road Racing Champion** (+$250,000).
+
+## 📖 Stories
+
+Three short stories of three chapters each. In every chapter somebody tells you what to do on a card at the bottom of the screen (tap it, or press Enter, for the next line). They lend you the right car for the scene, and you play it for 1 to 3 stars ($12,000 / $22,000 / $40,000). The next chapter of each story waits in a glowing ring on the map and in the map search. **📖 STORIES** in the pause menu lists every chapter, and PLAY takes you straight there. Finish a story and its car is yours.
+
+**🏁 Grandpa's Classics** (Grandpa Kenji; prize: the Toyota 2000GT)
+1. **The Old Garage:** drive Kenji's 1967 Toyota 2000GT from Kenji Motors to the Classic Car Show. Every bump is a scratch: arrive without one for 3 stars.
+2. **The Classic Cup:** 2 laps round the show in his Jaguar E-Type, against a Ferrari 250 GTO, a Mercedes 300 SL, a Porsche 911 RS and another 2000GT.
+3. **The Mountain Legend:** the race Kenji lost in 1967. Beat Count Rossi's Ferrari 250 GTO down the lakes road to Mt. Fuji in the 2000GT. Rossi gives you a 4-second start, but his GTO has twice the power, so win it in the corners.
+
+**🎬 Lights, Camera, AMBOOLA!** (Director Mika; prize: the Ford Mustang Dark Horse)
+1. **The Camera Car:** stay in the shot, 8 to 35 m behind the camera car, for 70 seconds.
+2. **The Big Jump:** fly the hero car off the stunt ramp over a line of trucks (3 tries; 55 m for 3 stars).
+3. **The Chase Scene:** drive past four film cameras before the bad guys in their black G 63s box you in.
+
+**🌋 Fire Mountain** (Dr. Aiko; prize: the Porsche 911 Dakar)
+1. **Sensor Run:** put six sensors all over Volcano Island, jumping the lava rivers.
+2. **Lava Bombs:** carry four rock samples to the Volcano Lab while lava bombs fall.
+3. **Eruption!:** race the lava wave from the lab, through the undersea tunnel, to the beach.
 
 ## 🎉 Parties
 

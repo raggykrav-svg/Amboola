@@ -71,6 +71,9 @@ WHEEL_STYLE = {
     'm2': 'y', 'm4csl': 'y', 'm5': 'y', 'xm': 'turbine', 'r8': 'y', 'rs6': 'y', 'rsetrongt': 'turbine', 'rsq8': 'y', 'devel16': 'mesh',
     'amggt': 'y', 'amgone': 'disc', 'c63': 'y', 'spectre': 'turbine', 'phantom': 'mesh',
     'corvette': 'y', 'nsx': 'y', 'utopia': 'turbine',
+    # the classics (classics.py): Borrani / Dunlop wire wheels, the 2000GT's magnesium wheels, the 300 SL's hubcaps,
+    # the 911's forged five-leaf wheels
+    'etype': 'wire', 'gto': 'wire', 'tgt': 'mag', 'sl300': 'hubcap', 'rs27': 'leaf',
 }
 
 class Car:
@@ -959,6 +962,37 @@ class Car:
                 bmesh.ops.translate(bm, verts=bm.verts, vec=(RR * .56, ym + out * .003, 0))
                 bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(k * math.pi / 3, 3, 'Y'))
                 objs.append(self.mesh('dialhole', bm, 'Black', smooth=False))
+        elif style == 'wire':       # a wire wheel: three rows of thin laced spokes from a long hub to the rim
+            yo, yc_, yi = out * (h - .005), out * (h - .09), out * (h - .16)   # the hub's outer and inner flanges, the rim's middle
+            n = 24 if lite else 36
+            for k in range(n):
+                a = k * 2 * math.pi / n; t = .30 if k % 2 else -.30
+                objs += self._spoke(out, a, .052, RR - .012, .0032, .0028, yo if k % 3 else yi, yc_ + out * (.03 if k % 2 else -.03),
+                                    a1=a + t, n=1, face=False)
+            objs.append(self.lathe([(.05, yi), (.058, yi + out * .03), (.045, yo - out * .02), (.05, yo)], segs, 'Chrome', 'wirehub'))
+            objs.append(self.lathe([(RR - .016, out * (h - .05)), (RR - .016, out * (h - .13))], segs, 'RimLip', 'wirewell'))
+        elif style == 'mag':        # Toyota 2000GT: a magnesium dish with sixteen radial slots and a knock-off spinner
+            ym = out * (h - .045)
+            objs.append(self.lathe([(.07, out * (h - .02)), (RR * .55, ym), (RR - .012, ym + out * .004)], segs, 'Rim', 'magdish'))
+            for k in range(16):
+                a = k * 2 * math.pi / 16
+                bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
+                bmesh.ops.scale(bm, verts=bm.verts, vec=(RR * .36, .006, .011))
+                bmesh.ops.translate(bm, verts=bm.verts, vec=(RR * .70, ym + out * .004, 0))
+                bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'))
+                objs.append(self.mesh('magslot', bm, 'Black', smooth=False))
+        elif style == 'hubcap':     # Mercedes 300 SL: a painted steel wheel, a chrome trim ring and a big domed chrome hubcap
+            ym = out * (h - .05)
+            objs.append(self.lathe([(.06, ym), (RR - .012, ym + out * .004)], segs, 'Rim', 'steelwheel'))
+            objs.append(self.lathe([(RR * .66, ym + out * .012), (RR * .80, ym + out * .016), (RR - .012, ym + out * .01)], segs, 'Chrome', 'trimring'))
+            objs.append(self.lathe([(.0, out * (h + .045)), (RR * .22, out * (h + .036)), (RR * .40, out * (h + .015)), (RR * .52, ym + out * .006)],
+                                   segs, 'Chrome', 'hubcap'))
+        elif style == 'leaf':       # Porsche Fuchs: five broad forged leaves, wider at the rim, round a flat centre
+            for k in range(5):
+                a = k * 2 * math.pi / 5
+                for d in (-1, 1):
+                    objs += self._spoke(out, a + d * .13, r0, r1, .022, .040, y_in, y_out, a1=a + d * .21, n=4, face=not lite)
+            objs.append(self.lathe([(.0, out * (h - .055)), (.085, out * (h - .062))], segs, 'Rim', 'leafcentre'))
         else:                       # straight spokes, single or in pairs
             for k in range(spokes):
                 a = k * 2 * math.pi / spokes
@@ -967,7 +1001,19 @@ class Car:
         bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=24, radius1=.075, radius2=.06, depth=.05, cap_ends=True)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(-out * math.pi / 2, 3, 'X'))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .07), 0)); objs.append(self.mesh('hub', bm, 'Rim'))
-        if nut == 'centrelock':
+        if nut == 'spinner' or style in ('wire', 'mag'):   # a knock-off spinner: a chrome hub nut with two (wire: three) ears
+            yo_ = out * (h + (.035 if style == 'wire' else .01))
+            bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=12, radius1=.046, radius2=.036, depth=.045, cap_ends=True)
+            bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(-out * math.pi / 2, 3, 'X'))
+            bmesh.ops.translate(bm, verts=bm.verts, vec=(0, yo_, 0)); objs.append(self.mesh('spinner', bm, 'Chrome'))
+            for e in range(3 if style == 'wire' else 2):
+                bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
+                bmesh.ops.scale(bm, verts=bm.verts, vec=(.075, .028, .016))
+                bmesh.ops.translate(bm, verts=bm.verts, vec=(.068, yo_ + out * .004, 0))
+                bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(e * 2 * math.pi / (3 if style == 'wire' else 2) + .3, 3, 'Y'))
+                objs.append(self.mesh('spinear', bm, 'Chrome', smooth=False))
+        elif style == 'hubcap': pass
+        elif nut == 'centrelock':
             bm = bmesh.new(); bmesh.ops.create_cone(bm, segments=6, radius1=.042, radius2=.036, depth=.05, cap_ends=True)
             bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(-out * math.pi / 2, 3, 'X'))
             bmesh.ops.translate(bm, verts=bm.verts, vec=(0, out * (h - .035), 0)); objs.append(self.mesh('nut', bm, 'Chrome', smooth=False))
@@ -990,7 +1036,7 @@ class Car:
                 g = bmesh.ops.create_cone(bm, segments=6, radius1=.0065, radius2=.0065, depth=.04, cap_ends=True)['verts']
                 bmesh.ops.rotate(bm, verts=g, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'X'))
                 bmesh.ops.translate(bm, verts=g, vec=(math.cos(a) * rr_, out * (h - .13), math.sin(a) * rr_))
-        if RR - .115 > .09 and not lite: objs.append(self.mesh('drill', bm, 'Black', smooth=False))
+        if RR - .115 > .09 and not lite and not getattr(self, 'classic', False): objs.append(self.mesh('drill', bm, 'Black', smooth=False))
         else: bm.free()
         self.activate(objs[0])
         for o in objs: o.select_set(True)
@@ -1063,7 +1109,8 @@ class Car:
                 self.slab('handle', 'Chrome', hp + hn * 0.012, (1, 0, 0), hn, 0.075, 0.016, 0.009, bevel=0.006)
                 self.slab('handlecup', 'Gloss', hp + hn * 0.004, (1, 0, 0), hn, 0.085, 0.024, 0.003)
         # a gloss-black sill between the wheel arches
-        if not names & {'skirt', 'sill', 'archtrim'}:
+        old = getattr(self, 'classic', False)   # a classic car (classics.py): none of the modern aero, sill or antenna
+        if not old and not names & {'skirt', 'sill', 'archtrim'}:
             x0, x1 = R['x'] + R['r'] + 0.13, F['x'] - F['r'] - 0.13
             if x1 - x0 > 0.6:
                 for s in (1, -1): self.decal('sill', 'Gloss', side(s), x0, x1, zb + 0.015, zb + 0.085, 24, 2, off=.005)
@@ -1119,7 +1166,7 @@ class Car:
             else: bm.free()
         # a front splitter lip and rear diffuser fins sit the car down on the road
         lowc = lambda x0, x1: [(x, self.hit((x, 0, -3), (0, 0, 1))[0]) for x in [x0 + i * (x1 - x0) / 20 for i in range(21)]]
-        if not names & {'splitter', 'lip'}:
+        if not old and not names & {'splitter', 'lip'}:
             # the lowest point of the nose: scan up from the floor until the ray hits near the front of the car
             prow = [(z, self.hit((8, 0, z), (-1, 0, 0))[0]) for z in [zb + i * 0.01 for i in range(60)]]
             prow = [(z, p_) for z, p_ in prow if p_ is not None]
@@ -1128,7 +1175,7 @@ class Car:
                 wy = self.hit((pl_.x - 0.2, 5, zl + 0.03), (0, -1, 0))[0]
                 hw = (wy.y if wy is not None else 0.8) * 0.85
                 self.box('splitter', 'Carbon', (pl_.x - 0.04, 0, zl - 0.004), (0.14, hw * 2, 0.02), bevel=0.006)
-        if not names & {'difffin'}:
+        if not old and not names & {'difffin'}:
             ps = [self.hit((-8, 0, zb + dz), (1, 0, 0))[0] for dz in (0.04, 0.08)]
             ps = [p_ for p_ in ps if p_ is not None]
             if ps:
@@ -1138,7 +1185,7 @@ class Car:
                 for f_ in (-0.62, -0.22, 0.22, 0.62):
                     self.box('difffin', 'Gloss', (rx + 0.06, f_ * hw, zb + 0.07), (0.24, 0.012, 0.11))
         # shark-fin antenna at the back of the roof (not on open cars or cars with roof racks)
-        if not getattr(self, 'open_top', False) and not names & {'rack', 'fin', 'antenna'}:
+        if not old and not getattr(self, 'open_top', False) and not names & {'rack', 'fin', 'antenna'}:
             xs = [R['x'] - 0.6 + i * 0.05 for i in range(int((F['x'] - R['x'] + 0.6) / 0.05))]
             top = [(x, self.hit((x, 0, 6), (0, 0, -1))[0]) for x in xs]; top = [(x, p.z) for x, p in top if p is not None]
             if top:

@@ -3221,13 +3221,16 @@ function applyCustom(car, id) {
    PHYSICS DERIVATION
    ===================================================================== */
 function torqueCurve(spec, x) {
-  if (['f6na', 'v8na', 'v12na', 'v10na', 'v16na', 'f4na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
+  if (['f6na', 'v8na', 'v12na', 'v10na', 'v16na', 'f4na', 'i6na'].includes(spec.engine)) return x < .82 ? .55 + .45 * Math.sin(Math.PI / 2 * clamp(x / .82, 0, 1)) : 1 - (x - .82) * 1.3;
   return x < .22 ? .45 + 2.5 * x : x < .72 ? 1 : 1 - (x - .72) * 1.5; // turbo: flat plateau
 }
 function derive(spec) {
   const B = BODIES[spec.body]; spec.wr = B.wr; spec.wb = B.fX - B.rX; spec.L = B.L;
   const vmax = spec.vmax / 3.6, P = spec.kw * 1000;
+  // eff (the classics): the share of the rated power that reaches the road (old gearboxes, gross power ratings, thin tyres);
+  // it scales the engine's pull and the drag alike, so the top speed stays the real one and only the sprint slows
   spec.drag = P * .78 / Math.pow(vmax, 3);
+  if (spec.eff) { const ve = vmax * 1.04; spec.drag = Math.max(.05, (.841 * P * spec.eff - .15 * spec.mass * ve) / Math.pow(ve, 3)); }   // (power and drag balance just above the real top speed, rolling resistance included)
   spec.idle = spec.engine === 'ev' ? 0 : spec.engine === 'v8tt' ? 700 : 900;
   const wRed = spec.redline * Math.PI / 30;
   if (spec.engine === 'ev') { spec.ratios = [wRed * spec.wr / (vmax * 1.02)]; }
@@ -3235,7 +3238,7 @@ function derive(spec) {
     const top = wRed * spec.wr / (vmax * 1.04), n = spec.gears, spread = n >= 8 ? 5.6 : n === 7 ? 4.6 : 3.7;
     spec.ratios = []; for (let i = 0; i < n; i++) spec.ratios.push(top * Math.pow(spread, Math.pow((n - 1 - i) / (n - 1), .85)));
     let best = 0; for (let r = 1000; r <= spec.redline; r += 25) best = Math.max(best, torqueCurve(spec, r / spec.redline) * r * Math.PI / 30);
-    spec.tpeak = P / best;
+    spec.tpeak = P / best * (spec.eff ?? 1);
   }
   spec.shiftTime = spec.manual ? .28 : .09;
   return spec;
@@ -3262,6 +3265,7 @@ const ENGINE_TYPES = {
   f4na: { cyl: 4, pattern: [1, .74, .96, .7], res: [[165, .0052, 1], [430, .0029, .85], [1120, .0014, .5], [2650, .0007, .25]], noise: .3, drive: 2.5, lpMin: 1000, lpMax: 7500, vol: .5, crackle: .5, intake: .08 },
   i3t: { cyl: 3, res: [[185, .0048, 1], [470, .0027, .8], [1240, .0013, .45], [2900, .0006, .2]], noise: .3, drive: 2.6, lpMin: 900, lpMax: 6000, vol: .5, crackle: .8, intake: .05, turbo: true },
   i4t: { cyl: 4, res: [[185, .0048, 1], [470, .0027, .8], [1240, .0013, .45], [2900, .0006, .2]], noise: .3, drive: 2.6, lpMin: 900, lpMax: 6000, vol: .5, crackle: .8, intake: .05, turbo: true },
+  i6na: { cyl: 6, res: [[150, .0056, 1], [400, .003, .9], [1060, .0015, .55], [2500, .0007, .28]], noise: .27, drive: 2.3, lpMin: 900, lpMax: 7200, vol: .52, crackle: .55, intake: .11 },   // a classic straight six (2000GT, E-Type, 300 SL)
   v16na: { cyl: 16, res: [[245, .0038, 1], [650, .002, .95], [1720, .001, .72], [3850, .0005, .46]], noise: .25, drive: 2.9, lpMin: 1300, lpMax: 12000, vol: .5, crackle: .7, intake: .12 },
 };
 class AudioSys {
@@ -3544,7 +3548,7 @@ class Player {
     this.throttle = Math.max(0, drive);
     const g = 9.81, down = s.aero * Math.pow(speed / 80, 2) * 4;
     // launch control (Cybercab): extra pull off the line only, the tyres' cornering grip stays the same
-    const traction = Math.max(g * gripK * (s.drive === 'AWD' ? .84 : .68) + down, (s.launchG || 0) * g * gripK / s.grip);
+    const traction = Math.max(g * gripK * (s.drive === 'AWD' ? .84 : .68) * (s.tract ?? 1) + down, (s.launchG || 0) * g * gripK / s.grip);   // (tract: a classic's thin tyres spin up sooner off the line)
     // drivetrain
     let F = 0; const wheelRpm = Math.abs(vf) / s.wr * 30 / Math.PI;
     this.shiftT -= dt; this.limiter = false;
@@ -4381,7 +4385,7 @@ const BRAND_SCREEN = { porsche: ['PORSCHE', '#c89a2a'], tesla: ['TESLA', '#e8212
   bugatti: ['BUGATTI', '#2a5bd7'], koenigsegg: ['KOENIGSEGG', '#ff6a13'], toyota: ['GR', '#eb0a1e'], bmw: ['BMW M', '#1c69d4'], audi: ['AUDI SPORT', '#bb0a30'],
   devel: ['DEVEL', '#c9a033'], amg: ['MERCEDES-AMG', '#cfd4da'], rolls: ['ROLLS-ROYCE', '#d5dae0'], ford: ['MUSTANG', '#3a6bff'], chevy: ['CORVETTE', '#ff3a2a'],
   honda: ['NSX', '#ff2a2a'], pagani: ['PAGANI', '#e9dcc4'], nissan: ['GT-R', '#e0141c'], amboola: ['AMBOOLA', '#2fe0ff'] };
-const interiorOf = spec => spec && !spec.jet ? INTERIORS[spec.brand || 'Porsche'] || null : null;
+const interiorOf = spec => spec && !spec.jet && !spec.classic ? INTERIORS[spec.brand || 'Porsche'] || null : null;
 // a canvas that a Gauge/Screen plane from the model shows; its size follows the plane's shape (from its UVs)
 function planeCanvas(mesh, base = 512) {
   const P = mesh.geometry.attributes.position, U = mesh.geometry.attributes.uv, pick = (fu, fv) => { for (let i = 0; i < U.count; i++) if ((U.getX(i) > .5) === fu && (U.getY(i) > .5) === fv) return new THREE.Vector3().fromBufferAttribute(P, i); return new THREE.Vector3(); };
@@ -4938,7 +4942,7 @@ function buildMenu() {
   let lastCat = '', head = '';
   CARS.forEach((c, i) => {
     if (c.hidden && !owns(c)) return;   // secret prizes only show up once you have won them
-    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', FORD: 'FORD', CHEVROLET: 'CHEVROLET', NISSAN: 'NISSAN · NISMO', HONDA: 'HONDA', F1: 'FORMULA 1 · F1', PAGANI: 'PAGANI', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
+    if (c.cat !== lastCat) { const h = document.createElement('div'); h.className = 'cat'; h.textContent = { GT: 'PORSCHE GT · 911 / 718', HYPER: 'PORSCHE HYPERCAR', ELECTRIC: 'PORSCHE ELECTRIC GT', SUV: 'PORSCHE SUV', TESLA: 'TESLA · ALL ELECTRIC', LAMBO: 'LAMBORGHINI', FERRARI: 'FERRARI', MCLAREN: 'McLAREN', BUGATTI: 'BUGATTI', KOENIGSEGG: 'KOENIGSEGG', TOYOTA: 'TOYOTA GAZOO RACING', BMW: 'BMW M', AUDI: 'AUDI SPORT · RS', DEVEL: 'DEVEL · DUBAI', MERCEDES: 'MERCEDES-AMG', ROLLS: 'ROLLS-ROYCE', FORD: 'FORD', CHEVROLET: 'CHEVROLET', NISSAN: 'NISSAN · NISMO', HONDA: 'HONDA', F1: 'FORMULA 1 · F1', PAGANI: 'PAGANI', FUTURE: 'AMBOOLA · YEAR 3000', CLASSIC: 'CLASSICS · 1954–1973 · クラシックカー', AMBOOLA: 'AMBOOLA · アンブーラ · OUR OWN CARS' }[c.cat]; list.appendChild(h); lastCat = c.cat; }
     const d = document.createElement('div'); d.className = 'caritem'; d.innerHTML = `<i></i><b>${c.name}</b><span>${c.desc}</span>`; d.onclick = () => selectCar(i); d.dataset.i = i;
     if (list.lastElementChild?.className === 'cat') head = list.lastElementChild.textContent;
     d.dataset.q = carText(`${c.name} ${c.brand || 'porsche'} ${c.cat} ${head} ${c.desc} ${c.jp || ''} ${c.id} ${c.engine === 'ev' ? 'electric ev' : ''} ${c.jet ? 'plane fly' : ''}`);
@@ -4978,7 +4982,7 @@ $('carq').addEventListener('keydown', e => {
 });
 $('carqx').onclick = () => { $('carq').value = ''; carFilter(); document.querySelector('.caritem.sel')?.scrollIntoView({ block: 'nearest' }); };
 addEventListener('keydown', e => { if (state === 'garage' && e.key === '/' && document.activeElement !== $('carq') && $('hdView').classList.contains('hidden')) { e.preventDefault(); $('carq').focus(); } });
-const ENGINE_LABEL = { v12tt: 'Twin-turbo V12', i4t: 'Turbo four-cylinder', f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
+const ENGINE_LABEL = { v12tt: 'Twin-turbo V12', i4t: 'Turbo four-cylinder', f6na: 'Flat-six', f6tt: 'Flat-six turbo', v8tt: 'Twin-turbo V8', v8na: 'V8', v8ftt: 'Twin-turbo V8', v12na: 'V12', v10na: 'V10', v6tt: 'Twin-turbo V6', w16: 'Quad-turbo W16', v16na: 'V16', i6tt: 'Turbo straight-six', i6na: 'Straight-six', f4na: 'Flat-four', i3t: 'Turbo three-cylinder', ev: 'Electric' };
 // garage DRIVE button: drive an owned car, buy one you can afford, otherwise explain what's missing
 function garageGo() {
   const c = CARS[carIdx];
@@ -5605,7 +5609,7 @@ class RaceAI {
     }
     const band = clamp(1 + (race.p.prog - this.prog) / 2500, .95, 1.05);
     const target = race.state === 'countdown' ? 0 : allow * this.skill * band * DIFF().ai;
-    const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(this.v, 4))) - sp.drag * this.v * this.v / sp.mass;
+    const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68) * (sp.tract ?? 1), sp.kw * 1000 * (sp.eff ?? 1) / (sp.mass * Math.max(this.v, 4))) - sp.drag * this.v * this.v / sp.mass;
     if (this.v < target) this.v = Math.min(target, this.v + Math.max(acc, .5) * band * dt); else this.v = Math.max(target, this.v - dec * dt);
     // racing line: lean to the inside of the next corner, dodge cars ahead
     const kA = T.k[(i0 + 15) % T.n];
@@ -9595,6 +9599,7 @@ let dentCool = 0;
 // called for every hard hit: (dvx, dvz) is how the hit changed the car's velocity, so the car was hit on the other side
 function carHit(p, dvx, dvz, hit, zone) {
   if (p === player && chal?.S.onHit) chal.S.onHit(hit);   // (the pizza tower)
+  if (p === player && storyRun?.S.onHit) storyRun.S.onHit(hit);   // (a story chapter that counts scratches)
   if (p === player && hit > 2) feelBuzz(clamp(hit / 14, .2, 1), 220);   // FEEL: a crash thumps the gamepad
   if (NO_DAMAGE || !p?.car?.model || hit < 4.5 || p.spec.jet || dentCool > 0) return;
   const G = p.car.G ??= carGeom(p.car); if (!G) return;
@@ -9943,13 +9948,14 @@ class StreetRacer {
   }
   update(dt, hold, band) {
     const T = this.T, sp = this.spec, g = 9.81, i0 = Math.floor(this.s / 2), lat = g * sp.grip * 1.02, dec = g * sp.grip * .95;
-    let allow = sp.vmax / 3.6 * .97;
+    let allow = sp.vmax / 3.6 * .97, corner = Infinity;
     for (let k = 0, m = Math.ceil(Math.min(400, this.v * this.v / (2 * dec) + 40) / 2); k < m; k++) {
       const kk = Math.abs(T.k[Math.min(T.n - 1, i0 + k)]); if (kk < 2e-3) continue;
-      allow = Math.min(allow, Math.sqrt(lat / kk + 2 * dec * k * 2));
+      corner = Math.min(corner, Math.sqrt(lat / kk + 2 * dec * k * 2));
     }
+    allow = Math.min(allow, corner * (this.r.corner ?? 1));   // (a story rival can be careful in the corners and still fast on the straights)
     const target = hold ? 0 : allow * this.r.skill * band * DIFF().ai;
-    const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(this.v, 4))) - sp.drag * this.v * this.v / sp.mass;
+    const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68) * (sp.tract ?? 1), sp.kw * 1000 * (sp.eff ?? 1) / (sp.mass * Math.max(this.v, 4))) - sp.drag * this.v * this.v / sp.mass;
     this.braking = this.v > target + .5;
     this.v = this.v < target ? Math.min(target, this.v + Math.max(acc, .4) * dt) : Math.max(target, this.v - dec * dt);
     this.s = Math.min(T.L, this.s + this.v * dt); if (this.s >= T.L) this.done = true;
@@ -11612,7 +11618,11 @@ async function loanCar(id, paint, tag) {
   LOAN ??= { carIdx, paintIdx };
   carIdx = k; paintIdx = paint ?? CARS[k].paint ?? 0; swapCar(tag);
 }
-function loanBack() { if (!LOAN) return; ({ carIdx, paintIdx } = LOAN); LOAN = null; swapCar(); }
+function loanBack() {
+  if (!LOAN) return; const id = CARS[carIdx]?.id; ({ carIdx, paintIdx } = LOAN); LOAN = null;
+  if (id && !wallet.owned.has(id) && DMG[id]) { delete DMG[id]; saveDmg(); }   // a borrowed car goes back to its owner repaired
+  swapCar();
+}
 function swapCar(tag) {
   const p = player, keep = { x: p.x, z: p.z, h: p.heading, y: p.y || 0 }, spec = CARS[carIdx];
   player.dispose(); player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); attachDog(player.car);
@@ -11626,6 +11636,7 @@ async function storyPlay(St, ch) {
   $('meetPanel').classList.add('hidden'); $('pause').classList.add('hidden'); state = 'drive';
   endActs(); endChase(null, player); clearNav(true);
   if (ch.car && !MODELS[ch.car]) { toast('🚗 YOUR CAR IS ON ITS WAY', 'ONE MOMENT…'); await loadModel(ch.car); }
+  for (const id of ch.preload || []) if (!MODELS[id]) await loadModel(id);   // (the rivals' cars)
   const [x, z, y = 0, h = player.heading] = ch.at();
   startActCommon({ x, z, y, h });
   storySay(ch.say, St.col, async () => {
@@ -11706,7 +11717,7 @@ function buildStorySets() {   // the film set at the movie's ring, Dr. Aiko's la
   }
 }
 function buildStories() {
-  buildStorySets();
+  buildStorySets(); buildKenjiSets();
   for (const St of STORIES) for (const ch of St.chapters) {
     const [x, z, y = 0, h = 0] = ch.at();
     ch.act = addAct({ x, z, y, r: 9, col: St.col, face: h + Math.PI / 2, title: `${St.ico} ${St.n}`, sign: `📖 STORY · ${ch.n.toUpperCase()}`,
@@ -11954,6 +11965,87 @@ STORIES.push({ id: 'volcano', n: 'Fire Mountain', ico: '🌋', col: '#ff6a1a', w
       },
       stop(S) { volcBombsClear(S); } },
   ] });
+
+/* ---------------- 🏁 GRANDPA'S CLASSICS — Grandpa Kenji raced old cars sixty years ago, and wants one more season ----------------
+   Kenji Motors (a sign over the road in the north-east of Tokyo) to the Classic Car Show at the start line of the Classic
+   Cup circuit, then the Cup itself (2 laps against a 250 GTO, a 300 SL, a 911 RS and another 2000GT), then the rematch
+   Kenji lost in 1967: Count Rossi's Ferrari 250 GTO down the lakes road to Mt. Fuji. Win it and the 2000GT is yours. */
+const CLASSIC_CUP = { id: 'classiccup', n: 'Classic Cup', jp: 'クラシックカップ', ico: '🏁', col: '#e8c07a', kind: 'circuit', laps: 2, prize: 0,
+  d: 'Round the Classic Car Show', pts: () => rrGrid([5, 13], [9, 13], [9, 17], [5, 17]) };
+const KENJI = { col: '#e8c07a', garage: () => [rc(15), rc(3) + 40, 0, 0], show: () => { const T = rrPath(CLASSIC_CUP); return [T.x[0], T.z[0]]; },
+  grid: () => { const g = lineUp(rrPath(CLASSIC_CUP), 12, -2.6); return [g.x, g.z, g.y, g.h]; },
+  fuji: () => { const E = ROAD_RACES.find(q => q.id === 'fujilakes'), g = lineUp(rrPath(E), 12, -2.6); return [g.x, g.z, g.y, g.h]; } };
+const storyRaceEnd = S => {   // a story race's result → stars (1st: 3, 2nd: 2, 3rd: 1)
+  if (!S.res) return; const { pos, t } = S.res;
+  if (!pos) return { stars: 0, msg: 'RACE STOPPED' };
+  return { stars: Math.max(0, 4 - pos), msg: pos === 1 ? `1ST PLACE! · ${fmtTime(t)}` : `P${pos} · ${fmtTime(t)}` };
+};
+STORIES.unshift({ id: 'classic', n: "Grandpa's Classics", ico: '🏁', col: KENJI.col, who: 'Grandpa Kenji', prize: 'tgt',
+  blurb: 'Grandpa Kenji raced classic cars sixty years ago. Drive his old cars for him: the show, the Classic Cup, and one last rematch',
+  chapters: [
+    { id: 'classic1', n: 'The Old Garage', goal: "Drive Grandpa Kenji's Toyota 2000GT to the Classic Car Show without a scratch (150 s)", car: 'tgt', at: KENJI.garage,
+      say: [['👴', 'GRANDPA KENJI', 'So YOU are the young driver everybody talks about! I am Kenji. Almost sixty years ago I raced cars like these. Welcome to <b>Kenji Motors</b>.'],
+        ['👴', 'GRANDPA KENJI', 'This is my <b>Toyota 2000GT</b> from 1967. Only 351 were ever made. Today she goes to the <b>Classic Car Show</b>, and you are driving her there.'],
+        ['👴', 'GRANDPA KENJI', 'Gently! Her tyres are thin, her brakes are old, and she is older than your parents. <b>Not one scratch</b>, please!']],
+      win: [['👴', 'GRANDPA KENJI', 'She made it to the show! You drive like a real gentleman. The judges are already looking at her…'],
+        ['👴', 'GRANDPA KENJI', 'And now the best part of the show: the race! Come, come…']],
+      start(S) {
+        const [x, z] = KENJI.show(); storyGoal(S, x, z, KENJI.col, '🏁 CLASSIC CAR SHOW');
+        Object.assign(S, { hits: 0, cool: 0 });
+        S.onHit = hit => { if (hit < 2.5 || S.cool > 0) return; S.hits++; S.cool = 1; audio.beep(240, .25); toast('😱 A SCRATCH!', `GRANDPA SAW THAT · ${S.hits} SCRATCH${S.hits > 1 ? 'ES' : ''}`); };
+        chalNote(`👴 Grandpa's 2000GT is <b>${new Date().getFullYear() - 1967} years old</b>: drive gently to the show and <b>stop</b> in the gold ring. Every bump is a scratch!`);
+      },
+      update(S, dt, p) {
+        S.cool -= dt; const [x, z] = KENJI.show(), d = Math.hypot(p.x - x, p.z - z);
+        actHud([['😱 SCRATCHES', `${S.hits}`], ['🏁 THE SHOW', chalDist(d)], ['TIME', fmtTime(chalLeft(S, 150))]], KENJI.col);
+        if (S.hits > 5) return { stars: 0, msg: 'TOO MANY SCRATCHES · GRANDPA IS SAD 😢' };
+        if (d < 14 && p.speed < 6) return { stars: S.hits === 0 ? 3 : S.hits <= 2 ? 2 : 1, msg: S.hits ? `${S.hits} SCRATCH${S.hits > 1 ? 'ES' : ''} · ${fmtTime(S.t)}` : `NOT ONE SCRATCH! · ${fmtTime(S.t)}` };
+        if (S.t > 150) return { stars: 0, msg: 'TOO LATE FOR THE SHOW' };
+      } },
+    { id: 'classic2', n: 'The Classic Cup', goal: 'Race the Jaguar E-Type against four classics: 2 laps round the show (win for 3 stars)', car: 'etype', at: KENJI.grid,
+      preload: ['gto', 'sl300', 'rs27', 'tgt'],
+      say: [['👴', 'GRANDPA KENJI', 'Every year the show ends with the <b>Classic Cup</b>: two laps round the streets. I am too old to race… but you are not!'],
+        ['👴', 'GRANDPA KENJI', 'Take my <b>Jaguar E-Type</b>. 3.8 litres, 241 km/h, the most beautiful car ever made. The others have a Ferrari 250 GTO, a 300 SL Gullwing, a 911 RS and another 2000GT.'],
+        ['👴', 'GRANDPA KENJI', 'Old cars have no grip and no help: <b>brake early</b>, turn gently, and only then give it gas. Now go and show them!']],
+      win: [['👴', 'GRANDPA KENJI', 'HA HA! Did you see their faces?! An old E-Type and a young driver, right up there with the best!'],
+        ['👴', 'GRANDPA KENJI', 'But now somebody wants to talk to you… an old friend. An old <b>rival</b>.']],
+      start(S) {
+        startRoadRace(CLASSIC_CUP, { quiet: true, onEnd: (pos, t) => { S.res = { pos, t }; }, rivals: [
+          { n: 'Marco', car: 'gto', paint: '#c1111b', glow: 0, skill: .8 }, { n: 'Heinz', car: 'sl300', paint: '#b9bcbe', glow: 0, skill: .9 },
+          { n: 'Yuki', car: 'rs27', paint: '#f2c20f', glow: 0, skill: .86 }, { n: 'Hiro', car: 'tgt', paint: '#b3121e', glow: 0, skill: .92 }] });
+      },
+      update: storyRaceEnd,
+      stop(S) { if (roadRace?.E === CLASSIC_CUP) endRoadRace(0, true); } },
+    { id: 'classic3', n: 'The Mountain Legend', goal: "Beat Count Rossi's Ferrari 250 GTO down the lakes road to Mt. Fuji in Grandpa's 2000GT", car: 'tgt', at: KENJI.fuji, preload: ['gto'],
+      say: [['👴', 'GRANDPA KENJI', 'In 1967 I lost only ONE race: to <b>Count Rossi</b> and his red Ferrari 250 GTO, down the lakes road to Mt. Fuji. I never forgot it.'],
+        ['🎩', 'COUNT ROSSI', 'Kenji-san! Sixty years, and still you want your rematch? Bene! But your driver is so young… I give a gentleman\'s start: <b>4 seconds</b>.'],
+        ['👴', 'GRANDPA KENJI', 'His GTO has twice the power of my 2000GT. But the lakes road is narrow and twisty: you win it in the <b>corners</b>. Go!']],
+      win: [['🎩', 'COUNT ROSSI', 'Incredibile! Beaten by a 2000GT… Kenji-san, your driver is a true legend.'],
+        ['👴', 'GRANDPA KENJI', 'Sixty years I waited for this day. Thank you. And the 2000GT… <b>she is yours now</b>. Take good care of her! 🏁']],
+      start(S) {
+        const E = ROAD_RACES.find(q => q.id === 'fujilakes');
+        startRoadRace(E, { quiet: true, onEnd: (pos, t) => { S.res = { pos, t }; }, rivals: [{ n: 'Count Rossi', car: 'gto', paint: '#c1111b', glow: 0, skill: .76, corner: .62, delay: 4, fair: true }] });
+      },
+      update(S) { const r = storyRaceEnd(S); if (!r || !S.res.pos) return r; if (r.stars < 3) return { stars: 0, msg: 'COUNT ROSSI WINS AGAIN · TRY AGAIN!' }; if (r) r.msg = `YOU BEAT THE LEGEND! · ${fmtTime(S.res.t)}`; return r; },
+      stop() { const E = ROAD_RACES.find(q => q.id === 'fujilakes'); if (roadRace?.E === E) endRoadRace(0, true); } },
+  ] });
+// Kenji Motors (a sign over the road) and the Classic Car Show's start/finish gate with flags
+function buildKenjiSets() {
+  const gate = (x, z, ry, lines, col) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+    const post = new THREE.MeshStandardMaterial({ color: 0x2a2420, roughness: .6, metalness: .3 });
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.5, 7.5, .5), post); p.position.set(s * 8.4, 3.75, 0); p.castShadow = true; g.add(p); }
+    const t = signTex(1024, 256, '#1f1712', lines, col), sm = new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }); dynMats.neon?.push(sm);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(16, 4), sm); b.position.y = 6.2; g.add(b);
+    return g;
+  };
+  { const [x, z, , h] = KENJI.garage(); gate(x, z + 22, h, [['🔧 KENJI MOTORS · 健二モータース', .4, .3, OR, '#e8c07a'], ['CLASSIC CARS · SINCE 1965', .78, .16, OR, '#ffffff']], KENJI.col); }
+  { const T = rrPath(CLASSIC_CUP), g = gate(T.x[0], T.z[0], Math.atan2(T.tx[0], T.tz[0]), [['🏁 AMBOOLA CLASSIC CAR SHOW', .4, .26, OR, '#ffffff'], ['CLASSIC CUP · START / FINISH · クラシックカーショー', .78, .13, OR, '#e8c07a']], KENJI.col);
+    const flagM = [0xc8141b, 0xf2f2f2, 0x1d3b2a, 0xe8c07a].map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+    for (let k = 0; k < 14; k++) { const f = new THREE.Mesh(new THREE.CircleGeometry(.5, 3), flagM[k % 4]); f.position.set(-7.8 + k * 1.2, 8.6, 0); f.rotation.z = -Math.PI / 2; g.add(f); }
+    const line = new THREE.Mesh(new THREE.PlaneGeometry(16, 1.2), new THREE.MeshBasicMaterial({ map: canvasTex(128, 16, (c, w, h) => { for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) { c.fillStyle = (i + j) % 2 ? '#111' : '#f4f4f4'; c.fillRect(i * 8, j * 8, 8, 8); } }), polygonOffset: true, polygonOffsetFactor: -4 }));
+    line.rotation.x = -Math.PI / 2; line.position.y = .06; g.add(line); }
+}
 // lava bombs: a red ring on the ground where one will land, a glowing rock falling in it, a fireball; hit one and you spin
 function volcBombs(S, dt, p, rate) {
   if ((S.bombT -= dt) <= 0 && S.bombs.length < 6) {
@@ -12073,7 +12165,7 @@ function actRivals(n) {
 }
 function lineUp(T, slot, lat) { const i = Math.min(T.n - 1, Math.round(slot / 2)), h = Math.atan2(T.tx[i], T.tz[i]); return { x: T.x[i] + T.tz[i] * lat, z: T.z[i] - T.tx[i] * lat, y: T.y[i], h }; }
 function racersStep(R, dt, p, pS) {
-  for (const ai of R.ais) { const band = clamp(1 + (pS - ai.s) / 900, .9, 1.06); ai.update(dt, R.state !== 'race', band); }
+  for (const ai of R.ais) { const band = clamp(1 + (pS - ai.s) / 900, .9, ai.r?.fair ? 1 : 1.06); ai.update(dt, R.state !== 'race' || (ai.r?.delay && R.t < ai.r.delay), band); }   // (fair: no catching up when you lead)
   for (const ai of R.ais) {   // bump the rivals
     const dx = p.x - ai.x, dz = p.z - ai.z, d = Math.hypot(dx, dz);
     if (d < 2.3 && d > 1e-3 && Math.abs((p.y || 0) - ai.y) < 2.5) { const nx = dx / d, nz = dz / d; p.x += nx * (2.3 - d); p.z += nz * (2.3 - d); const vn = (p.vx - Math.sin(ai.h) * ai.v) * nx + (p.vz - Math.cos(ai.h) * ai.v) * nz; if (vn < 0) { p.vx -= 1.2 * vn * nx; p.vz -= 1.2 * vn * nz; ai.v *= .94; if (-vn > 3) { audio.crash(-vn * .7); carHit(p, nx, nz, -vn); } } }
@@ -15610,7 +15702,7 @@ function lineSpeed(T, sp, s, v, dt) {
     const Rr = 1 / kk; let vc = Math.sqrt(latA(30) * Rr); vc = Math.sqrt(latA(vc) * Rr);
     allow = Math.min(allow, Math.sqrt(vc * vc + 2 * dec * k * T.step));
   }
-  const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68), sp.kw * 1000 / (sp.mass * Math.max(v, 4))) - sp.drag * v * v / sp.mass;
+  const acc = Math.min(g * sp.grip * (sp.drive === 'AWD' ? .84 : .68) * (sp.tract ?? 1), sp.kw * 1000 * (sp.eff ?? 1) / (sp.mass * Math.max(v, 4))) - sp.drag * v * v / sp.mass;
   return v < allow ? Math.min(allow, v + Math.max(acc, .5) * dt) : Math.max(allow, v - dec * dt);
 }
 function lineTime(T, sp, dist) {   // about how long a car needs for `dist` metres of this track on the racing line
@@ -16707,6 +16799,37 @@ CARS.push({ id: 'enforcer', name: 'AMBOOLA Enforcer 3000', brand: 'Amboola', cat
 MODEL_FILES.push('enforcer');
 BODIES.enforcer = { ...BODIES.urus, L: 5.04, W: 2.08, wr: .38, fX: 1.62, rX: -1.55, roofY: 1.52 };
 derive(CARS[CARS.length - 1]);   // (its gearing, drag and grip: CARS.forEach(derive) ran before it was added)
+
+/* =====================================================================
+   THE CLASSICS — five real classic cars (models/blender/classics.py) for the garage and Grandpa Kenji's story: chrome
+   bumpers, round lamps, wire wheels, narrow tall tyres, four- and five-speed manual gearboxes and much less grip than a
+   modern car (1960s tyres), with their real power, weight, top speed and 0-100. Added at the end (with their own
+   paints) so saved car and paint numbers stay valid. The Toyota 2000GT is the story's prize; the others are for sale.
+   ===================================================================== */
+for (const p of [{ n: 'Pegasus White', c: '#efece2', m: .06 }, { n: 'British Racing Green', c: '#1d3b2a', m: .3 }, { n: 'Grand Prix White', c: '#f1efe6', m: .04 }, { n: 'Silver Grey', c: '#b9bcbe', m: .85 }]) PAINTS.push(p);
+const paintNo = n => Math.max(0, PAINTS.findIndex(q => q.n === n));
+Object.assign(BODIES, {
+  cl_tgt: { ...BODIES.fgt, L: 4.175, W: 1.60, cabW: 1.1, wr: .318, tw: [.165, .165], fX: 1.165, rX: -1.165, yb: .15, roofY: 1.16 },
+  cl_etype: { ...BODIES.fgt, L: 4.453, W: 1.657, cabW: 1.14, wr: .33, tw: [.165, .165], fX: 1.219, rX: -1.219, yb: .14, roofY: 1.22 },
+  cl_gto: { ...BODIES.fgt, L: 4.325, W: 1.60, cabW: 1.12, wr: .33, tw: [.16, .185], fX: 1.20, rX: -1.20, yb: .12, roofY: 1.21 },
+  cl_sl300: { ...BODIES.fgt, L: 4.52, W: 1.79, cabW: 1.24, wr: .34, tw: [.17, .17], fX: 1.20, rX: -1.20, yb: .16, roofY: 1.30 },
+  cl_rs27: { ...BODIES['911'], L: 4.147, W: 1.652, cabW: 1.16, wr: .32, tw: [.185, .215], fX: 1.1355, rX: -1.1355, yb: .13, roofY: 1.32 },
+});
+const CLASSIC_CARS = [
+  { id: 'tgt', name: 'Toyota 2000GT', brand: 'Toyota', cat: 'CLASSIC', classic: true, body: 'cl_tgt', wing: 'none', manual: true, eff: .76, kw: 110, redline: 7000, mass: 1120, vmax: 220, drive: 'RWD', engine: 'i6na', gears: 5, zero: 8.6,
+    grip: .98, aero: 0, paint: paintNo('Pegasus White'), rim: '#b8bcc0', caliper: '#3a3a3c', box: '5-speed manual', usd: 1200000, prize: "📖 FINISH GRANDPA KENJI'S STORY", prizeTag: "📖 GRANDPA KENJI'S STORY PRIZE",
+    desc: "1967 · 2.0 L twin-cam straight-six · Japan's first supercar · only 351 were made", jp: 'トヨタ 2000GT' },
+  { id: 'etype', name: 'Jaguar E-Type', brand: 'Jaguar', cat: 'CLASSIC', classic: true, body: 'cl_etype', wing: 'none', manual: true, eff: .66, tract: .82, kw: 198, redline: 5500, mass: 1234, vmax: 241, drive: 'RWD', engine: 'i6na', gears: 4, zero: 7.1,
+    grip: .95, aero: 0, paint: paintNo('British Racing Green'), rim: '#c8ccd0', caliper: '#3a3a3c', box: '4-speed manual', usd: 280000, desc: '1961 · 3.8 L straight-six · 150 mph · that long, long bonnet', jp: 'ジャガー Eタイプ' },
+  { id: 'gto', name: 'Ferrari 250 GTO', brand: 'Ferrari', cat: 'CLASSIC', classic: true, body: 'cl_gto', wing: 'none', manual: true, eff: .72, tract: .74, kw: 221, redline: 7500, mass: 1000, vmax: 280, drive: 'RWD', engine: 'v12na', gears: 5, zero: 6.1,
+    grip: 1.02, aero: .05, paint: paintNo('Rosso Corsa'), rim: '#c8ccd0', caliper: '#3a3a3c', box: '5-speed manual', usd: 48400000, desc: '1962 · 3.0 L V12 · only 36 were made · one of the most valuable cars in the world', jp: 'フェラーリ 250 GTO' },
+  { id: 'sl300', name: 'Mercedes-Benz 300 SL', brand: 'Mercedes-Benz', cat: 'CLASSIC', classic: true, body: 'cl_sl300', wing: 'none', manual: true, eff: .64, kw: 158, redline: 6200, mass: 1295, vmax: 250, drive: 'RWD', engine: 'i6na', gears: 4, zero: 8.8,
+    grip: .96, aero: 0, paint: paintNo('Silver Grey'), rim: '#b9bcbe', caliper: '#3a3a3c', box: '4-speed manual', usd: 1600000, desc: '1954 · 3.0 L fuel-injected straight-six · gullwing doors', jp: 'ガルウィング' },
+  { id: 'rs27', name: 'Porsche 911 Carrera RS 2.7', brand: 'Porsche', cat: 'CLASSIC', classic: true, body: 'cl_rs27', wing: 'duck', manual: true, eff: .8, tract: .92, kw: 154, redline: 7300, mass: 975, vmax: 245, drive: 'RWD', engine: 'f6na', gears: 5, zero: 5.8,
+    grip: 1.0, aero: .05, paint: paintNo('Grand Prix White'), rim: '#c8141b', caliper: '#3a3a3c', box: '5-speed manual', usd: 950000, desc: '1973 · 2.7 L flat-six · 975 kg · the ducktail', jp: 'カレラ RS 2.7' },
+];
+for (const c of CLASSIC_CARS) { CARS.push(c); derive(c); MODEL_FILES.push(c.id); }
+Object.assign(HD_PHOTOS, { tgt: ['studio'], etype: ['sunset'], gto: ['sunset'], sl300: ['studio'], rs27: ['neon'] });   // (media/hd-cars/, photo.py)
 const FUT = { on: localStorage.getItem('amboola.future') === '1', ready: false, job: null, t: 0, travelling: false,
   U: { uT: { value: 0 }, uWin: { value: 1.6 }, uNeon: { value: 2.4 }, uAd: { value: 1.5 }, uShop: { value: 1.5 }, uGlow: { value: 2.4 }, uFlashR: { value: 0 }, uFlashB: { value: 0 }, uAtlas: { value: null } },
   mat: null, kits: {}, tokyo: null, sky: null, holo: null, giants: [], towns: new Map(), cols: [], padCols: [], robot: null, adTexs: null, adOld: null };
@@ -17671,7 +17794,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { STORIES, storyPlay, storyAbort, sayNext, SAY, get storyRun() { return storyRun; }, storyStars, ROAD_RACES, startRoadRace, endRoadRace, rrPath, get roadRace() { return roadRace; }, FPS60, FPS_LEVELS, fpsLevel, fpsWatch, fpsSet, NEAR, nearUpdate, FARCULL, get quality() { return quality; }, FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { HD_PHOTOS, CLASSIC_CUP, KENJI, CLASSIC_CARS, get LOAN() { return LOAN; }, loanCar, loanBack, STORIES, storyPlay, storyAbort, sayNext, SAY, get storyRun() { return storyRun; }, storyStars, ROAD_RACES, startRoadRace, endRoadRace, rrPath, get roadRace() { return roadRace; }, FPS60, FPS_LEVELS, fpsLevel, fpsWatch, fpsSet, NEAR, nearUpdate, FARCULL, get quality() { return quality; }, FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>
