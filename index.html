@@ -389,6 +389,8 @@
   #storyCard { position:fixed; left:50%; bottom:12%; transform:translateX(-50%); z-index:46; width:min(720px, 94vw); display:flex; gap:16px; align-items:center; padding:16px 20px;
     background:rgba(8,10,16,.94); border:2px solid var(--c, #ffd21f); border-radius:16px; box-shadow:0 0 40px color-mix(in srgb, var(--c, #ffd21f) 35%, transparent); pointer-events:auto; cursor:pointer; }
   #storyCard.hidden { display:none; }
+  /* while somebody talks, only their card shows: no ring prompt, message or tip on top of the words */
+  body.talking #actprompt, body.talking #toast, body.talking #chalNote { display:none !important; }
   #scFace { flex:none; width:78px; height:78px; border-radius:50%; display:grid; place-items:center; font-size:46px; background:radial-gradient(circle at 40% 35%, #2a2f3c, #0d0f15); border:2px solid var(--c, #ffd21f); }
   #scWho { display:block; font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.18em; color:var(--c, #ffd21f); }
   #scText { margin:6px 0 6px; font-size:19px; line-height:1.38; color:#f2f3f6; } #scText b { color:var(--c, #ffd21f); }
@@ -11598,11 +11600,12 @@ const SAY = { q: [], done: null, on: false };
 function storySay(lines, col, done) {
   if (!lines?.length) { done?.(); return; }
   SAY.q = lines.slice(); SAY.done = done; SAY.on = true; state = 'overlay';
+  document.body.classList.add('talking'); $('actprompt').classList.add('hidden');
   $('storyCard').style.setProperty('--c', col); sayNext();
 }
 function sayNext() {
   const L = SAY.q.shift();
-  if (!L) { SAY.on = false; $('storyCard').classList.add('hidden'); if (state === 'overlay') state = 'drive'; const d = SAY.done; SAY.done = null; d?.(); return; }
+  if (!L) { SAY.on = false; document.body.classList.remove('talking'); $('toast').style.opacity = 0; $('storyCard').classList.add('hidden'); if (state === 'overlay') state = 'drive'; const d = SAY.done; SAY.done = null; d?.(); return; }
   $('scFace').textContent = L[0]; $('scWho').textContent = L[1]; $('scText').innerHTML = L[2];
   $('scHint').textContent = SAY.q.length ? (isTouch ? 'TAP FOR MORE ▶' : 'ENTER / CLICK FOR MORE ▶') : (isTouch ? "TAP: LET'S GO! ▶" : "ENTER / CLICK: LET'S GO! ▶");
   $('storyCard').classList.remove('hidden'); audio.beep(760, .04);
