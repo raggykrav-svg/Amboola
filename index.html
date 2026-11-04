@@ -15382,7 +15382,7 @@ $('flyExit').onclick = () => { endFlight(); enterGarage(); };
    drop a pin, set a route (road arrows + minimap line) or travel there
    ===================================================================== */
 const DISTRICT_JP = { Ikebukuro: '池袋', Shinjuku: '新宿', Ueno: '上野', Shibuya: '渋谷', 'Tokyo Station': '東京駅', Akihabara: '秋葉原', Meguro: '目黒', Roppongi: '六本木', Ginza: '銀座' };
-let PLACES = [];
+let PLACES = [], placesBuilt = false;   // (built when the map first opens; stories and parties add their own entries)
 function buildPlaces() {
   const P = [], third = HALF * 2 / 3;
   DISTRICTS.forEach((row, r) => row.forEach((n, c) => P.push({ n, jp: DISTRICT_JP[n], type: 'District', kind: 'city', x: -HALF + (c + .5) * third, z: -HALF + (r + .5) * third, col: '#9aa3b2' })));
@@ -15438,7 +15438,8 @@ function buildPlaces() {
   P.push({ n: 'Wangan Gate', jp: '湾岸線入口', type: 'Toll gate · road to the beach', kind: 'city', x: HALF, z: WANGAN_Z, col: '#2fe0ff' });
   P.push({ n: 'Snow Pass Gate', jp: 'スノーパス入口', type: 'Road to the snowy mountain', kind: 'city', x: SNOW.gateX, z: -HALF, col: '#9fd8ff' });
   traps.forEach((t, k) => P.push({ n: `Speed Trap ${k + 1}`, jp: '速度計測', type: 'Speed trap', kind: 'city', x: t.x, z: t.z, col: '#c77dff' }));
-  PLACES = P;
+  PLACES = P; placesBuilt = true;
+  storyPlaces();   // (the stories' next chapters go after all the normal places)
 }
 // snap a city point to the nearest road centreline (so routes and travel land on tarmac)
 function snapToRoad(x, z) {
@@ -15568,7 +15569,7 @@ function travelTo(d) {
 const bm = { cx: 0, cz: 0, s: .4, drag: null, sel: null, moved: 0 };
 function openMap() {
   if (state !== 'drive' && state !== 'pause') return;
-  if (!PLACES.length) buildPlaces();
+  if (!placesBuilt) buildPlaces();
   partyPlaces();
   $('pause').classList.add('hidden'); if (audio.ctx) audio.ctx.suspend();
   state = 'map'; $('bigmap').classList.remove('hidden');
@@ -16406,7 +16407,7 @@ function partyGo(k, opening) {
 const partyGarage = () => $('bGarage').onclick();
 // the map: your parties are places to travel to
 function partyPlaces() {
-  if (!PLACES.some(p => p.party == null)) buildPlaces();
+  if (!placesBuilt) buildPlaces();
   PLACES = PLACES.filter(p => p.party == null);
   PARTIES.forEach((P, k) => { if (pWon(k)) PLACES.push({ n: `🎉 ${P.n}`, jp: P.jp, type: 'Party · festival · your garage', kind: 'party', party: k, x: P.summit ? TRO.cx : P.x, z: P.summit ? TRO.cz : P.z, col: P.col }); });
 }
