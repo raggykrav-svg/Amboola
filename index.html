@@ -7720,6 +7720,9 @@ function prepTroodosRoad() {
   const dd = i => Math.hypot(R.x[i] - R.x[i - 1], R.z[i] - R.z[i - 1]);
   for (let i = 1; i < n; i++) R.y[i] = Math.min(R.y[i], R.y[i - 1] + .2 * dd(i), TRO.top);   // never steeper than 20%, and it ends on the summit
   R.y[n - 1] = TRO.top; for (let i = n - 2; i > 0; i--) R.y[i] = Math.max(R.y[i], R.y[i + 1] - .2 * dd(i + 1));
+  // round every change of steepness over a few dozen metres, like a real road's vertical curves (the clamps above leave
+  // sharp corners that jolt the car at speed); the window shrinks at the ends, so the town and the summit stay put
+  for (let pass = 0; pass < 3; pass++) { const y0 = R.y.slice(); for (let i = 1; i < n - 1; i++) { const K = Math.min(12, i, n - 1 - i); let a = 0; for (let k = -K; k <= K; k++) a += y0[i + k]; R.y[i] = a / (2 * K + 1); } }
   for (let i = 0; i < n; i++) {
     const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1), dx = R.x[b] - R.x[a], dz = R.z[b] - R.z[a], l = Math.hypot(dx, dz) || 1;
     R.tx[i] = dx / l; R.tz[i] = dz / l; R.g[i] = (R.y[b] - R.y[a]) / l; if (i) R.s[i] = R.s[i - 1] + Math.hypot(R.x[i] - R.x[i - 1], R.z[i] - R.z[i - 1]);
@@ -7745,15 +7748,24 @@ function troNearIn(T, x, z, rad) {
   return { i, lat, d: Math.abs(lat), y: lerp(T.y[i], T.y[j], f), s: T.s[i] + u };
 }
 function troLegsIn(T, x, z, rad) {   // like troNearIn, but the nearest point of each stretch of a winding road (round a hairpin, both legs)
-  const cx = Math.floor(x / 20), cz = Math.floor(z / 20), rc2 = Math.ceil(rad / 20), legs = [];
+  const cx = Math.floor(x / 20), cz = Math.floor(z / 20), rc2 = Math.ceil(rad / 20), near = [], legs = [];
   for (let a = -rc2; a <= rc2; a++) for (let b = -rc2; b <= rc2; b++) { const l = T.hash.get(T.key(cx + a, cz + b)); if (!l) continue; for (const i of l) {
-    const d = (T.x[i] - x) ** 2 + (T.z[i] - z) ** 2; if (d > rad * rad) continue;
-    const L = legs.find(q => Math.abs(q.i - i) < 8); if (!L) legs.push({ i, d }); else if (d < L.d) { L.i = i; L.d = d; }
+    const d = (T.x[i] - x) ** 2 + (T.z[i] - z) ** 2; if (d <= rad * rad) near.push([i, d]);
   } }
+  // a stretch is a run of consecutive samples (split where the indices jump: the other leg of a hairpin), whatever order the
+  // hash cells came in, so one stretch is never counted twice (that made the ground wobble a few cm as the car moved)
+  near.sort((p, q) => p[0] - q[0]);
+  for (let k = 0; k < near.length; k++) { const [i, d] = near[k]; if (!k || i - near[k - 1][0] > 8) legs.push({ i, d }); else { const L = legs[legs.length - 1]; if (d < L.d) { L.i = i; L.d = d; } } }
   return legs.map(({ i, d: e2 }) => {
-    const dx = x - T.x[i], dz = z - T.z[i], u = dx * T.tx[i] + dz * T.tz[i], lat = -dx * T.tz[i] + dz * T.tx[i];
-    const j = clamp(i + Math.sign(u), 0, T.n - 1), f = j === i ? 0 : clamp(Math.abs(u) / (Math.hypot(T.x[j] - T.x[i], T.z[j] - T.z[i]) || 1), 0, 1);
-    return { i, lat, d: Math.abs(lat), e: Math.sqrt(e2), y: lerp(T.y[i], T.y[j], f) };
+    const dx = x - T.x[i], dz = z - T.z[i], lat = -dx * T.tz[i] + dz * T.tx[i];
+    // where along the road this point is: the projections on the 7 nearest samples, weighted by distance (the nearest one
+    // alone steps on the inside of a tight bend), then the height there
+    let sw = 0, ss = 0;
+    for (let k = Math.max(0, i - 3); k <= Math.min(T.n - 1, i + 3); k++) { const ex = x - T.x[k], ez = z - T.z[k], w = Math.exp(-(ex * ex + ez * ez) / 8); sw += w; ss += w * (T.s[k] + ex * T.tx[k] + ez * T.tz[k]); }
+    const sE = sw > 1e-30 ? ss / sw : T.s[i] + dx * T.tx[i] + dz * T.tz[i];
+    let j = i; while (j > 0 && T.s[j] > sE) j--; while (j < T.n - 2 && T.s[j + 1] <= sE) j++;
+    const f = clamp((sE - T.s[j]) / ((T.s[j + 1] - T.s[j]) || 1), 0, 1);
+    return { i, lat, d: Math.abs(lat), e: Math.sqrt(e2), y: lerp(T.y[j], T.y[Math.min(j + 1, T.n - 1)], f) };
   });
 }
 const troPlatY = (x, z) => { const P = TRO.plat; return P.y + (x - P.x) * P.gx + (z - P.z) * P.gz; };
@@ -10097,7 +10109,10 @@ function stuntStep(p, dt, px, pz, yPrev, inp) {
     // on the Troodos dirt (the trail and the open mountain) the tyres stay on the ground over the rocks and the ruts:
     // no hopping off every bump, the car shakes over them instead (only a real ledge, over a metre, throws it in the air)
     const earth = p.terrain === 'trail' || p.terrain === 'dirt';
-    if (earth ? yBall > G + 1.2 : yBall > G + .06 || (p.speed > 3 && (vyG - p.vy) / dt < -12.5)) takeoff(p, Math.max(yBall, G), inp);
+    // the Troodos asphalt road (and Platres' square) is smooth and keeps the car on it too: it winds and climbs all the
+    // way up, and the small changes of slope at speed would otherwise throw the car off it again and again
+    const glued = earth || (!p.terrain && TRO.T && troIn(p.x, p.z) && !stuntsNear(p.x, p.z).length);
+    if (glued ? yBall > G + 1.2 : yBall > G + .06 || (p.speed > 3 && (vyG - p.vy) / dt < -12.5)) takeoff(p, Math.max(yBall, G), inp);
     else {
       if (earth) p.rough = Math.min(1, Math.max(p.rough || 0, Math.abs(vyG - p.vy) * .22 + Math.abs(G - yPrev) * 1.2 * clamp(p.speed / 12, 0, 1), clamp(p.speed / 25, 0, 1) * .16));   // the rocks, and the washboard of the dirt itself
       p.y = G; p.vy = vyG;
