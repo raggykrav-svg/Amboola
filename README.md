@@ -728,7 +728,7 @@ Second place pays 40 % of the prize and third pays 25 %. Your best winning time 
 
 ## 📖 Stories
 
-Three short stories of three chapters each. In every chapter somebody tells you what to do on a card at the bottom of the screen (tap it, or press Enter, for the next line). They lend you the right car for the scene, and you play it for 1 to 3 stars ($12,000 / $22,000 / $40,000). The next chapter of each story waits in a glowing ring on the map and in the map search. **📖 STORIES** in the pause menu lists every chapter, and PLAY takes you straight there. Finish a story and its car is yours.
+Five short stories of three chapters each. In every chapter somebody tells you what to do on a card at the bottom of the screen (tap it, or press Enter, for the next line). They lend you the right car for the scene, and you play it for 1 to 3 stars ($12,000 / $22,000 / $40,000). The next chapter of each story waits in a glowing ring on the map and in the map search. **📖 STORIES** in the pause menu lists every chapter, and PLAY takes you straight there. Finish a story and its car is yours.
 
 **🏁 Grandpa's Classics** (Grandpa Kenji; prize: the Toyota 2000GT)
 1. **The Old Garage:** drive Kenji's 1967 Toyota 2000GT from Kenji Motors to the Classic Car Show. Every bump is a scratch: arrive without one for 3 stars.
@@ -744,6 +744,16 @@ Three short stories of three chapters each. In every chapter somebody tells you 
 1. **Sensor Run:** put six sensors all over Volcano Island, jumping the lava rivers.
 2. **Lava Bombs:** carry four rock samples to the Volcano Lab while lava bombs fall.
 3. **Eruption!:** race the lava wave from the lab, through the undersea tunnel, to the beach.
+
+**🕵️ Tokyo Undercover** (Inspector Tanaka; prize: the Lamborghini Revuelto)
+1. **The Tail:** in a black Nissan GT-R, follow a suspect's green Urus 15 to 70 m behind for 75 seconds. Get closer than 15 m and he sees you.
+2. **Ask Around:** in the AMBOOLA taxi (nobody looks twice at a taxi), stop next to four informants all over Tokyo in 150 seconds.
+3. **Catch the Ghost:** in the police Lamborghini Revuelto, catch the gang boss's black Bugatti Chiron on the Wangan. Stay within 10 m of him for 3 seconds before he reaches the beach.
+
+**⚡ Electric Dreams** (Engineer Ren; prize: the Tesla Roadster)
+1. **Battery Saver:** drive a Tesla Model S Plaid across Tokyo to Ren's lab before the battery runs out. The faster you drive, the faster it empties.
+2. **The Electric Mile:** beat Rico's Ferrari SF90 down a 1.4 km straight in the Model S Plaid.
+3. **Crash Test:** smash through 10 crash-test walls around the streets in the Cybertruck Cyberbeast, at 40 km/h or more, in 100 seconds.
 
 ## 🎉 Parties
 
