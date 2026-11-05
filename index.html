@@ -389,6 +389,10 @@
   #storyCard { position:fixed; left:50%; bottom:12%; transform:translateX(-50%); z-index:46; width:min(720px, 94vw); display:flex; gap:16px; align-items:center; padding:16px 20px;
     background:rgba(8,10,16,.94); border:2px solid var(--c, #ffd21f); border-radius:16px; box-shadow:0 0 40px color-mix(in srgb, var(--c, #ffd21f) 35%, transparent); pointer-events:auto; cursor:pointer; }
   #storyCard.hidden { display:none; }
+  #ctxLost { position:fixed; inset:0; z-index:60; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(6,8,12,.86); color:#fff; text-align:center; font-family:'Orbitron',sans-serif; padding:20px; }
+  #ctxLost.hidden { display:none; } #ctxLost b { font-size:22px; letter-spacing:.08em; } #ctxLost span { font-family:'Rajdhani',sans-serif; font-size:15px; letter-spacing:.1em; color:#cfd2d8; }
+  #ctxLost button { font-family:'Orbitron',sans-serif; font-weight:900; font-size:16px; padding:14px 26px; border-radius:12px; border:2px solid #ffd21f; background:#1a1d24; color:#ffd21f; cursor:pointer; }
+  #ctxLost button small { display:block; font-family:'Rajdhani',sans-serif; font-size:12px; color:#cfd2d8; margin-top:4px; } #ctxLost button.hidden { display:none; }
   /* while somebody talks, only their card shows: no ring prompt, message or tip on top of the words */
   body.talking #actprompt, body.talking #toast, body.talking #chalNote { display:none !important; }
   #scFace { flex:none; width:78px; height:78px; border-radius:50%; display:grid; place-items:center; font-size:46px; background:radial-gradient(circle at 40% 35%, #2a2f3c, #0d0f15); border:2px solid var(--c, #ffd21f); }
@@ -626,6 +630,7 @@
   <div id="toast"></div>
   <div id="sleepFx"></div>
   <div id="chalNote" class="hidden"></div>
+  <div id="ctxLost" class="hidden"><b>🔄 THE GRAPHICS ARE RESTARTING…</b><span>YOUR DEVICE RAN OUT OF GRAPHICS MEMORY · ONE MOMENT</span><button class="hidden">TAP TO RELOAD THE GAME<small>YOUR CARS, MONEY AND STARS ARE SAVED</small></button></div>
   <div id="storyCard" class="hidden"><div id="scFace"></div><div id="scBody"><b id="scWho"></b><p id="scText"></p><small id="scHint"></small></div></div>
   <div id="stunt"></div>
   <canvas id="tacho" width="520" height="520"></canvas>
@@ -11646,31 +11651,38 @@ function swapCar(tag) {
   const p = player, keep = { x: p.x, z: p.z, h: p.heading, y: p.y || 0 }, spec = CARS[carIdx];
   player.dispose(); player = new Player(tunedSpec(spec), paintIdx); applyDirt(player.car); attachDog(player.car);
   Object.assign(player, { x: keep.x, z: keep.z, heading: keep.h, y: keep.y }); audio.setCar(spec); loudExhaust(spec);
+  player.sync(0); camPos.set(keep.x - Math.sin(keep.h) * 7, keep.y + 3, keep.z - Math.cos(keep.h) * 7);   // (a new car is built at 0, 0: put it in its place now)
   $('carname').innerHTML = `${spec.name}<small>${tag || PAINTS[paintIdx]?.n.toUpperCase() || ''}</small>`;
 }
 
 // ---- playing a chapter
+let storyStarting = 0;   // (when a chapter began getting ready: while its car loads a second start must wait)
 async function storyPlay(St, ch) {
-  if (storyRun || SAY.on) return;
-  $('meetPanel').classList.add('hidden'); $('pause').classList.add('hidden'); state = 'drive';
-  endActs(); endChase(null, player); clearNav(true);
-  if (ch.car && !MODELS[ch.car]) { toast('🚗 YOUR CAR IS ON ITS WAY', 'ONE MOMENT…'); await loadModel(ch.car); }
-  for (const id of ch.preload || []) if (!MODELS[id]) await loadModel(id);   // (the rivals' cars)
-  const [x, z, y = 0, h = player.heading] = ch.at();
-  startActCommon({ x, z, y, h });
-  storySay(ch.say, St.col, async () => {
+  if (storyRun || SAY.on || (storyStarting && performance.now() - storyStarting < 60000)) return;
+  storyStarting = performance.now();
+  let x, z, y, h;
+  try {
+    $('meetPanel').classList.add('hidden'); $('pause').classList.add('hidden'); state = 'drive';
+    endActs(); endChase(null, player); clearNav(true);
+    if (ch.car && !MODELS[ch.car]) { toast('🚗 YOUR CAR IS ON ITS WAY', 'ONE MOMENT…'); await loadModel(ch.car); }
+    for (const id of ch.preload || []) if (!MODELS[id]) await loadModel(id);   // (the rivals' cars)
+    [x, z, y = 0, h = player.heading] = ch.at();
+    startActCommon({ x, z, y, h });
+  } catch (e) { storyStarting = 0; throw e; }
+  storySay(ch.say, St.col, async () => { try {
     if (ch.car) await loanCar(ch.car, ch.paint, `ON LOAN · ${St.who.toUpperCase()}`);
-    const p = player; Object.assign(p, { x, z, y, heading: h, vx: 0, vz: 0, yawRate: 0 });
+    const p = player; Object.assign(p, { x, z, y, heading: h, vx: 0, vz: 0, yawRate: 0 }); p.sync(0);
     const S = { t: 0, St, ch, objs: [] };
     if (ch.start(S) === false) { loanBack(); return; }
     storyRun = { St, ch, S };
     toast(`${St.ico} CHAPTER ${St.chapters.indexOf(ch) + 1} · ${ch.n.toUpperCase()}`, ch.goal.toUpperCase());
     audio.beep(660, .15); setTimeout(() => audio.beep(990, .3), 160);
-  });
+  } finally { storyStarting = 0; } });
 }
 function updateStoryRun(dt, p) {
   const R = storyRun; if (!R) return; R.S.t += dt;
-  const r = R.ch.update(R.S, dt, p); if (r) storyFinish(r);
+  let r; try { r = R.ch.update(R.S, dt, p); } catch (e) { console.error('Amboola: story chapter failed', R.ch.id, e); storyAbort(true); toast('😵 CHAPTER STOPPED', 'SOMETHING WENT WRONG · PLAY IT AGAIN FROM 📖 STORIES'); return; }
+  if (r) storyFinish(r);
 }
 function storyTidy(R) {   // whatever the chapter built goes, your own car comes back
   R.ch.stop?.(R.S); for (const o of R.S.objs) o.parent?.remove(o);
@@ -12393,7 +12405,7 @@ function volcBombsClear(S) { for (const b of S.bombs || []) { scene.remove(b.rin
    ===================================================================== */
 const ACTS = [];
 let actNear = null, cRace = null, deliv = null, worldRace = null, roadRace = null;
-const busyAct = () => (typeof chal !== 'undefined' && chal) || (typeof storyRun !== 'undefined' && storyRun) || race || drag || taxi || crime || meet || roadRace || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster) || (typeof lantern !== 'undefined' && lantern) || hunt || (typeof pc !== 'undefined' && pc);
+const busyAct = () => (typeof chal !== 'undefined' && chal) || (typeof storyRun !== 'undefined' && storyRun) || (typeof storyStarting !== 'undefined' && storyStarting) || race || drag || taxi || crime || meet || roadRace || cRace || deliv || worldRace || (typeof bus !== 'undefined' && bus) || (typeof job !== 'undefined' && job) || (typeof soccer !== 'undefined' && soccer) || (typeof monster !== 'undefined' && monster) || (typeof lantern !== 'undefined' && lantern) || hunt || (typeof pc !== 'undefined' && pc);
 const cStreets = C => { const xs = [], zs = []; for (let x = C.x0 + 90; x < C.x1 - 60; x += 170) xs.push(x); for (let z = C.z0 + 110; z < C.z1 - 60; z += 150) zs.push(z); return { xs, zs }; };
 // from a point in a country to another: along the town's streets (and over Egypt's causeway when the pyramids are one end)
 function townWay(C, px, pz, end) {
@@ -17872,6 +17884,34 @@ function updateTitle(dt) {
   for (const b of T.beams) { b.o.rotation.z = b.rz + Math.sin(t * .45 + b.ph) * .32; b.o.rotation.x = b.rx + Math.sin(t * .31 + b.ph) * .12; }
   T.flags.forEach((f, i) => { f.o.rotation.y = f.ry + Math.sin(t * 1.8 + i * 1.3) * .09; });
 }
+/* ---- the picture must never freeze. On a phone the graphics memory can run out: the browser then takes the 3D picture
+   away while the game goes on (the speedometer and the map keep moving under a frozen or black picture). Say so, and
+   when it comes back redraw what was lost with it (the sky's reflections) and step the graphics down a level so it
+   doesn't run out again. And a bug in one part of a frame (or in a post-processing pass) never stops the picture. */
+const GFX = { lostAt: 0, losses: 0, plain: false, errSeen: false };
+canvas.addEventListener('webglcontextlost', e => {
+  e.preventDefault(); GFX.lostAt = performance.now(); GFX.losses++;
+  const o = $('ctxLost'), b = o.querySelector('button'); o.classList.remove('hidden'); b.classList.add('hidden');
+  setTimeout(() => { if (GFX.lostAt) b.classList.remove('hidden'); }, 6000);   // (still gone after 6 s: offer a reload)
+});
+canvas.addEventListener('webglcontextrestored', () => {
+  GFX.lostAt = 0; $('ctxLost').classList.add('hidden');
+  try {
+    const down = { hd: 'high', ultra: 'high', high: 'low' }[quality];
+    if (down) setQuality(down); else applyTime(timeName);   // (applyTime rebuilds the sky's reflections)
+    gScene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture; warmUp?.();
+  } catch (e) { console.error('Amboola: restoring the graphics', e); }
+  if (state === 'drive') toast('🔄 GRAPHICS ARE BACK', 'LIGHTER GRAPHICS NOW, SO IT DOES NOT HAPPEN AGAIN');
+});
+$('ctxLost').querySelector('button').onclick = () => location.reload();
+function renderFrame(dt) {   // the picture with its effects, or without them if a post-processing pass ever breaks
+  if (!GFX.plain) { try { composer.render(dt); return; } catch (e) { GFX.plain = true; console.error('Amboola: post-processing failed, drawing without it', e); } }
+  renderer.render(scene, camera);
+}
+function frameError(e, dt) {   // a bug somewhere in a frame: tell the console once, and still draw the picture
+  if (!GFX.errSeen) { GFX.errSeen = true; console.error('Amboola: a frame failed (the game goes on):', e); }
+  if (['drive', 'pause', 'overlay'].includes(state)) { try { renderFrame(dt); } catch (e2) { } }
+}
 function setQuality(v) {
   Object.assign(FPS60, { level: 0, scale: 1, hold: 3, good: 0, probe: null, ep: null, noHelp: 0, sum: 0 }); FPS60.ft.length = 0; FPS60.wait.fill(6);   // (a new setting: the 60 FPS mode starts again from the top)
   quality = v; localStorage.setItem('amboola.q', quality); setupComposer(); applyTime(timeName); updateMenu();
@@ -18016,7 +18056,8 @@ function frame(t) {
   requestAnimationFrame(frame);
   if (window.__manualFrames) { clock.getDelta(); return; }
   fpsWatch(t ?? performance.now());
-  tick(Math.min(clock.getDelta(), 1 / 20));
+  const dt = Math.min(clock.getDelta(), 1 / 20);
+  try { tick(dt); } catch (e) { frameError(e, dt); }
 }
 let simTime = 0;   // game seconds (the wheel blur measures spin against it)
 function tick(dt) {
@@ -18076,7 +18117,7 @@ function tick(dt) {
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   }
   if (state === 'map') { drawBigMap(); return; }
-  if (state === 'drive' || state === 'pause' || state === 'overlay') { composer.render(dt); if (camPhotoReq) takeCamPhoto(); }
+  if (state === 'drive' || state === 'pause' || state === 'overlay') { renderFrame(dt); if (camPhotoReq) takeCamPhoto(); }
   fpsAcc += dt; fpsN++;
   if (fpsAcc > 4 && quality !== 'low' && state === 'drive') { const fps = fpsN / fpsAcc; if (fps < 22 && (!FPS60.on || FPS60.level === FPS_LEVELS.length - 1) && !window.__lowWarned) { window.__lowWarned = true; toast('LOW FPS', 'TRY GRAPHICS: LOW IN GARAGE'); } fpsAcc = 0; fpsN = 0; }
 }

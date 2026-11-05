@@ -759,3 +759,15 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - `stuntStep` keeps the car on the ground (`glued`) on the Troodos dirt and on its asphalt road and Platres' square (`troIn`, `p.terrain` null, no stunt nearby). Only a ledge over 1.2 m throws it up there. Elsewhere on asphalt a sudden change of slope (`(vyG - p.vy) / dt < -12.5`) still launches the car, which the stunt ramps need.
 - The road's heights (`prepTroodosRoad`) are box-smoothed three times (±12 samples, shrinking at the ends) after the 20 % clamps. `troLegsIn` splits stretches by index runs (sorted), and takes the place along the road from the 7 nearest samples.
 - Test: drive `TRO.Rd` with an autopilot through `simStep` and count `p.air` take-offs and the second difference of `p.y` per frame. Before: 127–200 take-offs and jolts up to 18 g. After: 0 take-offs at 15–70 m/s, and at most 0.5 g on the road.
+
+## The picture never freezes (context loss, frame errors)
+
+- On a phone the graphics memory can run out. The browser then takes the WebGL context away while the game goes on: the speedometer and the minimap (2D canvases) keep moving under a frozen or black 3D picture.
+  - `webglcontextlost` shows `#ctxLost`, with a reload button after 6 s.
+  - `webglcontextrestored` steps the quality down a level (`hd`/`ultra` → `high` → `low`), rebuilds the sky's reflections (`applyTime`) and the garage's environment, and calls `warmUp`.
+  - To test it: `renderer.getContext().getExtension('WEBGL_lose_context')`, then `loseContext()` / `restoreContext()` in a real-loop run (`perf/ctxloss.mjs`-style Playwright script: read the canvas back in a `requestAnimationFrame` callback).
+- `frame()` runs `tick` inside a try/catch. When a frame throws, `frameError` logs it once and still draws the picture. `renderFrame` falls back to a plain `renderer.render` if the post-processing ever throws.
+- A story chapter whose `update` throws stops itself (`storyAbort` and a toast).
+- `swapCar` calls `player.sync(0)` and puts the camera behind the car right away. A new car is built at (0, 0), the Scramble Crossing, and was drawn there until the next frame.
+- `storyPlay` sets `storyStarting`, which is part of `busyAct`. A second start is refused while the chapter's car loads and its people talk.
+- The headless tests stub `composer.render` and `renderer.render`, so they never see render errors. Check those in a real-loop run without the stubs.
