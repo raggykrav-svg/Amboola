@@ -11595,9 +11595,9 @@ function openChalBoard() {
   $('meetPanel').classList.remove('hidden');
 }
 /* =====================================================================
-   STORIES — short story chapters, like a festival's story missions: five stories of three chapters each. Grandpa
-   Kenji's classic cars, a stunt driver for an action movie, a scientist on Volcano Island, a police detective and an
-   electric-car engineer. A chapter is a mission
+   STORIES — short story chapters, like a festival's story missions: seven stories of three chapters each. Grandpa
+   Kenji's classic cars, a stunt driver for an action movie, a scientist on Volcano Island, a police detective, an
+   electric-car engineer, the emergency crew and a racing school. A chapter is a mission
    with its own scene: its people say a few lines first (the game waits; tap or Enter for the next line), it lends you
    a car if the scene needs one, you play it (1 to 3 stars), they say a few lines after, and it pays. The next chapter
    of each story waits in a glowing ring on the map, and 📖 STORIES (pause menu) lists them all: PLAY takes you
@@ -12184,6 +12184,166 @@ STORIES.push({ id: 'electric', n: 'Electric Dreams', ico: '⚡', col: VOLT.col, 
         if (S.k >= 10) return { stars: S.t < 65 ? 3 : S.t < 82 ? 2 : 1, msg: `ALL 10 WALLS IN ${S.t.toFixed(1)} S` };
         if (S.t > 100) return { stars: 0, msg: `TIME UP · ${S.k} OF 10 WALLS` };
       } },
+  ] });
+
+/* ---------------- 🚒 HERO DAY — Captain Hana's emergency crew: fires, broken-down cars and a very important passenger ----------------
+   Put out three fires in the AMBOOLA Fire Engine (stop by the fire and spray for 3 s), tow three broken-down cars to the
+   repair shop in the Tow Truck, then drive the Mayor in a Rolls-Royce Phantom without a bump or going over 60 km/h. */
+const HERO = { col: '#ff4d2e', station: [rc(6), rc(1) + 40], shop: [rc(18), rc(12) + 40], hall: [rc(10), rc(2)] };
+STORIES.push({ id: 'hero', n: 'Hero Day', ico: '🚒', col: HERO.col, who: 'Captain Hana', prize: 'firetruck',
+  blurb: 'Captain Hana runs the AMBOOLA emergency crew. Fires, broken-down cars and the Mayor: can you help them all?',
+  chapters: [
+    { id: 'hero1', n: 'Three Fires', goal: 'Put out 3 fires in the Fire Engine: stop next to each fire and spray it for 3 seconds (150 s)', car: 'firetruck', at: () => [...HERO.station, 0, 0],
+      say: [['👩‍🚒', 'CAPTAIN HANA', 'Alarm! Alarm! There are <b>three fires</b> in the city at the same time!'],
+        ['👩‍🚒', 'CAPTAIN HANA', 'Jump in the <b>Fire Engine</b>. Drive to a fire, <b>stop right next to it</b>, and the hose sprays by itself. Three seconds and it is out. Go, go, go!']],
+      win: [['👩‍🚒', 'CAPTAIN HANA', 'All three fires are out and nobody got hurt. You are a real firefighter! 🚒']],
+      start(S) {
+        S.fires = rrGrid([9, 3], [4, 7], [11, 9]).map(([x, z]) => {
+          const g = new THREE.Group(); g.position.set(x, 0, z); storyAdd(S, g);
+          const balls = [0xff7a1a, 0xffb21f, 0xff3d1a].map((c, k) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false })); m.position.set((k - 1) * 1.2, 1.4, (k % 2) * .8); g.add(m); return m; });
+          const lab = storyAdd(S, chalLabel('🔥 FIRE', '', HERO.col, x, 9, z));
+          return { x, z, g, balls, lab, spray: 0, out: false };
+        });
+        S.smokeT = 0; S.k = 0;
+        chalNote('🔥 Drive to the fires (follow the 🔥 signs), <b>stop next to one</b> and hold still while the hose sprays.');
+        HERO.next(S);
+      },
+      update(S, dt, p) {
+        S.smokeT -= dt; const puff = S.smokeT <= 0; if (puff) S.smokeT = .25;
+        let near = null;
+        for (const f of S.fires) {
+          if (f.out) continue;
+          f.balls.forEach((b, k) => b.scale.setScalar((1.4 + .5 * Math.sin(S.t * (7 + k) + k * 2)) * (1 - f.spray / 4)));
+          if (puff) smoke.emit(f.x + rr(-1, 1), f.z + rr(-1, 1), 0, 0, 1.1, 3);
+          const d = Math.hypot(p.x - f.x, p.z - f.z); if (d < 16) near = f;
+        }
+        if (near && p.speed < 3) {
+          near.spray += dt; if (puff) smoke.emit(near.x + rr(-2, 2), near.z + rr(-2, 2), 0, 0, .8, 1.5);   // (the steam)
+          if (near.spray >= 3) { near.out = true; near.g.visible = false; near.lab.visible = false; S.k++; audio.beep(1100, .2); toast(`💦 FIRE ${S.k} OF 3 IS OUT!`, S.k < 3 ? 'ON TO THE NEXT ONE!' : 'ALL DONE!'); if (S.k < 3) HERO.next(S); }
+        } else if (near) near.spray = Math.max(0, near.spray - dt);
+        actHud([['🔥 FIRES OUT', `${S.k}/3`], ['💦 SPRAY', near && !near.out ? `${Math.min(100, Math.round(near.spray / 3 * 100))}%` : near ? '✅' : 'GET CLOSE'], ['TIME', fmtTime(chalLeft(S, 150))]], HERO.col);
+        if (S.k >= 3) return { stars: S.t < 85 ? 3 : S.t < 115 ? 2 : 1, msg: `ALL 3 FIRES OUT IN ${S.t.toFixed(1)} S` };
+        if (S.t > 150) return { stars: 0, msg: `TIME UP · ${S.k} OF 3 FIRES OUT` };
+      } },
+    { id: 'hero2', n: 'Tow Away', goal: 'Tow 3 broken-down cars to the repair shop: stop next to a car to hook it up (240 s)', car: 'towtruck', at: () => [...HERO.shop, 0, 0],
+      say: [['👩‍🚒', 'CAPTAIN HANA', 'Three cars broke down on the streets and now there are traffic jams everywhere!'],
+        ['👩‍🚒', 'CAPTAIN HANA', 'Take the <b>Tow Truck</b>. Stop next to a broken car and it hooks on. Then bring it back <b>here to the repair shop</b>. One at a time!']],
+      win: [['👩‍🚒', 'CAPTAIN HANA', 'The roads are clear again! The mechanics say thank you. 🔧']],
+      start(S) {
+        S.cars = rrGrid([13, 16], [16, 9], [11, 12]).map(([x, z], k) => {
+          const m = buildTrafficCar(TRAFFIC_TYPES[(k * 2 + 1) % TRAFFIC_TYPES.length]); m.position.set(x + 4, 0, z); m.rotation.y = k; storyAdd(S, m);
+          return { x: x + 4, z, m, lab: storyAdd(S, chalLabel('🚗 BROKEN CAR', '', HERO.col, x + 4, 7, z)), done: false };
+        });
+        Object.assign(S, { k: 0, tow: null, smokeT: 0 });
+        storyGoal(S, S.cars[0].x, S.cars[0].z, HERO.col, '🚗 BROKEN CAR 1');
+      },
+      update(S, dt, p) {
+        S.smokeT -= dt; const puff = S.smokeT <= 0; if (puff) S.smokeT = .4;
+        const c = S.cars[S.k];
+        if (!S.tow) {
+          if (puff) smoke.emit(c.x, c.z, 0, 0, .7, 1.2);
+          if (Math.hypot(p.x - c.x, p.z - c.z) < 9 && p.speed < 4) { S.tow = c; c.lab.visible = false; audio.beep(700, .15); toast('🔗 HOOKED ON!', 'NOW TO THE REPAIR SHOP'); storyGoal(S, ...HERO.shop, HERO.col, '🔧 REPAIR SHOP'); }
+        } else {
+          const h = p.heading, m = S.tow.m; m.position.set(p.x - Math.sin(h) * 7, (p.y || 0) + .35, p.z - Math.cos(h) * 7); m.rotation.set(0, h, 0);
+          if (Math.hypot(p.x - HERO.shop[0], p.z - HERO.shop[1]) < 14 && p.speed < 4) {
+            m.visible = false; S.tow.done = true; S.tow = null; S.k++; audio.beep(1100, .2);
+            if (S.k >= 3) return { stars: S.t < 150 ? 3 : S.t < 195 ? 2 : 1, msg: `ALL 3 CARS TOWED IN ${S.t.toFixed(1)} S` };
+            toast(`🔧 CAR ${S.k} OF 3 DELIVERED`, 'GO GET THE NEXT ONE'); storyGoal(S, S.cars[S.k].x, S.cars[S.k].z, HERO.col, `🚗 BROKEN CAR ${S.k + 1}`);
+          }
+        }
+        actHud([['🚗 TOWED', `${S.k}/3`], [S.tow ? '🔧 SHOP' : '🚗 NEXT CAR', chalDist(S.tow ? Math.hypot(p.x - HERO.shop[0], p.z - HERO.shop[1]) : Math.hypot(p.x - c.x, p.z - c.z))], ['TIME', fmtTime(chalLeft(S, 240))]], HERO.col);
+        if (S.t > 240) return { stars: 0, msg: `TIME UP · ${S.k} OF 3 CARS TOWED` };
+      } },
+    { id: 'hero3', n: "The Mayor's Ride", goal: 'Drive the Mayor to City Hall in the Phantom: no bumps and never over 60 km/h (220 s)', car: 'phantom', paint: 7, at: () => [rc(1), rc(17) + 40, 0, Math.PI],
+      say: [['👩‍🚒', 'CAPTAIN HANA', 'Last job, and a very special one: the <b>Mayor of Tokyo</b> needs a ride to City Hall, in a <b>Rolls-Royce Phantom</b>.'],
+        ['🎩', 'THE MAYOR', 'Good day, driver. I am drinking a very hot cup of tea. Please do not go <b>over 60 km/h</b>, and <b>do not bump into anything</b>.'],
+        ['👩‍🚒', 'CAPTAIN HANA', 'Do this well and the Fire Engine is yours. Smooth and gentle!']],
+      win: [['🎩', 'THE MAYOR', 'What a wonderful ride. My tea is still in the cup! Tokyo thanks you.'],
+        ['👩‍🚒', 'CAPTAIN HANA', 'You did it all today: fires, towing and the Mayor. The <b>AMBOOLA Fire Engine</b> is yours, hero! 🚒']],
+      start(S) {
+        storyGoal(S, ...HERO.hall, HERO.col, '🏛️ CITY HALL'); Object.assign(S, { bad: 0, cool: 0, fast: 0 });
+        S.onHit = hit => { if (hit < 2.5 || S.cool > 0) return; S.bad++; S.cool = 1; audio.beep(240, .25); toast('☕ BUMP! THE TEA SPILT', `${S.bad} MISTAKE${S.bad > 1 ? 'S' : ''}`); };
+        chalNote('🎩 Drive gently to City Hall: <b>never over 60 km/h</b> and no bumps. Stop in the red ring.');
+      },
+      update(S, dt, p) {
+        S.cool -= dt; const kmh = p.speed * 3.6;
+        if (kmh > 60) { S.fast += dt; if (S.fast > 1.5) { S.fast = 0; S.bad++; audio.beep(240, .25); toast('☕ TOO FAST! THE TEA SPILT', `SLOW DOWN · ${S.bad} MISTAKE${S.bad > 1 ? 'S' : ''}`); } } else S.fast = Math.max(0, S.fast - dt);
+        const [x, z] = HERO.hall, d = Math.hypot(p.x - x, p.z - z);
+        actHud([['🚗 SPEED', `${Math.round(kmh)} / 60`], ['☕ MISTAKES', `${S.bad}`], ['🏛️ CITY HALL', chalDist(d)]], kmh > 60 ? '#ff4040' : HERO.col);
+        if (S.bad > 5) return { stars: 0, msg: 'TOO MANY MISTAKES · THE MAYOR IS COVERED IN TEA' };
+        if (d < 14 && p.speed < 6) return { stars: S.bad === 0 ? 3 : S.bad <= 2 ? 2 : 1, msg: S.bad ? `${S.bad} MISTAKE${S.bad > 1 ? 'S' : ''} · ${fmtTime(S.t)}` : `A PERFECT RIDE! · ${fmtTime(S.t)}` };
+        if (S.t > 220) return { stars: 0, msg: 'TOO LATE · THE MEETING STARTED WITHOUT THE MAYOR' };
+      } },
+  ] });
+HERO.next = S => {   // the GPS to the nearest fire still burning
+  const p = player, open = S.fires.filter(f => !f.out); if (!open.length) return;
+  const f = open.reduce((a, b) => Math.hypot(p.x - a.x, p.z - a.z) < Math.hypot(p.x - b.x, p.z - b.z) ? a : b); storyGoal(S, f.x, f.z, HERO.col, '🔥 FIRE');
+};
+
+/* ---------------- 🏎️ RACING SCHOOL — Coach Mai turns you into a racing driver: a hot lap, the slalom, then a Grand Prix ----------------
+   A timed lap in a 911 GT3 RS, twelve cone gates in a BMW M4 CSL (missing one costs 3 s), and a 2-lap Grand Prix in the
+   AMBOOLA F1 car against five F1 teams. The McLaren Senna is the graduation present. */
+const SCHOOL = { col: '#ffd21f',
+  lap: { id: 'hotlap', n: 'Hot Lap', ico: '⏱️', col: '#ffd21f', kind: 'circuit', laps: 1, prize: 0, pts: () => rrGrid([12, 12], [16, 12], [16, 16], [12, 16]) },
+  gp: { id: 'schoolgp', n: 'Racing School Grand Prix', ico: '🏆', col: '#ffd21f', kind: 'circuit', laps: 2, prize: 0, pts: () => rrGrid([3, 3], [17, 3], [17, 8], [3, 8]) },
+  slalomZ: rc(6), slalomX0: rc(3) };
+const schoolGrid = E => () => { const g = lineUp(rrPath(E), 12, -2.6); return [g.x, g.z, g.y, g.h]; };
+STORIES.push({ id: 'school', n: 'Racing School', ico: '🏎️', col: SCHOOL.col, who: 'Coach Mai', prize: 'senna',
+  blurb: 'Coach Mai trains racing drivers. Pass her three tests and drive a real Grand Prix',
+  chapters: [
+    { id: 'school1', n: 'Hot Lap', goal: 'One flying lap round 4 city blocks in the 911 GT3 RS. Under 50 s for 3 stars', car: 'gt3rs', at: schoolGrid(SCHOOL.lap),
+      say: [['👩‍🏫', 'COACH MAI', 'Welcome to <b>Racing School</b>! I am Coach Mai. Lesson one: the <b>racing line</b>.'],
+        ['👩‍🏫', 'COACH MAI', 'One lap round four city blocks in the <b>911 GT3 RS</b>. Brake <b>before</b> the corner, turn in, and go full gas on the way out. Under <b>50 seconds</b> is a top score!']],
+      win: [['👩‍🏫', 'COACH MAI', 'Nice lap! You braked early and came out fast. That is the secret of every champion.']],
+      start(S) { startRoadRace(SCHOOL.lap, { quiet: true, rivals: [], onEnd: (pos, t) => { S.res = { pos, t }; } }); },
+      update(S) { if (!S.res) return; const { pos, t } = S.res; if (!pos) return { stars: 0, msg: 'LAP STOPPED' };
+        return { stars: t < 50 ? 3 : t < 60 ? 2 : 1, msg: `LAP TIME ${fmtTime(t)}${t < 50 ? ' · TOP SCORE!' : t < 60 ? ' · UNDER 50 S FOR 3 STARS' : ' · UNDER 60 S FOR 2 STARS'}` }; },
+      stop() { if (roadRace?.E === SCHOOL.lap) endRoadRace(0, true); } },
+    { id: 'school2', n: 'The Slalom', goal: 'Drive through all 12 cone gates in the BMW M4 CSL. A missed gate costs 3 seconds', car: 'm4csl', at: () => [SCHOOL.slalomX0, SCHOOL.slalomZ, 0, Math.PI / 2],
+      say: [['👩‍🏫', 'COACH MAI', 'Lesson two: <b>steering</b>. Down this street there are <b>12 gates</b> of orange cones, left, right, left, right…'],
+        ['👩‍🏫', 'COACH MAI', 'Drive through every gate in the <b>BMW M4 CSL</b>. Too fast and you miss one: <b>+3 seconds</b>. Smooth hands! Go!']],
+      win: [['👩‍🏫', 'COACH MAI', 'Left, right, left, right… you made it look easy! Now the final test. A real race.']],
+      start(S) {
+        const coneM = new THREE.MeshStandardMaterial({ color: 0xff6a1a, roughness: .6 }), stripeM = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: .6 }), cone = new THREE.ConeGeometry(.28, .75, 12), band = new THREE.CylinderGeometry(.19, .23, .12, 12);
+        S.gates = Array.from({ length: 12 }, (_, k) => {
+          const x = SCHOOL.slalomX0 + 60 + k * 42, z = SCHOOL.slalomZ + (k % 2 ? 3.2 : -3.2), g = new THREE.Group(), m = coneM.clone(); g.position.set(x, 0, z); storyAdd(S, g);
+          for (const s of [-1.7, 1.7]) { const c = new THREE.Mesh(cone, m); c.position.set(0, .38, s); c.castShadow = true; g.add(c); const b = new THREE.Mesh(band, stripeM); b.position.set(0, .45, s); g.add(b); }
+          return { x, z, g, m };
+        });
+        Object.assign(S, { k: 0, miss: 0, started: false, t0: 0 });
+        storyGoal(S, S.gates[0].x, S.gates[0].z, SCHOOL.col, '🚧 GATE 1');
+        chalNote('🚧 Drive <b>between the two cones</b> of every gate. The clock starts at gate 1.');
+      },
+      update(S, dt, p) {
+        const G = S.gates[S.k];
+        if (G && p.x >= G.x) {
+          if (!S.started) { S.started = true; S.t0 = S.t; }
+          const ok = Math.abs(p.z - G.z) < 1.6;
+          G.m.color.set(ok ? 0x2fe07a : 0xff2020);   // the gate's cones turn green (through) or red (missed)
+          if (ok) audio.beep(1000 + S.k * 40, .08);
+          else { S.miss++; audio.beep(240, .2); toast('❌ MISSED A GATE', '+3 SECONDS'); }
+          S.k++; if (S.gates[S.k]) storyGoal(S, S.gates[S.k].x, S.gates[S.k].z, SCHOOL.col, `🚧 GATE ${S.k + 1}`);
+        }
+        const run = S.started ? S.t - S.t0 : 0, total = run + S.miss * 3;
+        actHud([['🚧 GATES', `${S.k}/12`], ['❌ MISSED', `${S.miss}`], ['TIME', fmtTime(total)]], SCHOOL.col);
+        if (S.k >= 12) return { stars: total < 30 ? 3 : total < 38 ? 2 : 1, msg: `${fmtTime(total)} WITH ${S.miss} MISSED GATE${S.miss === 1 ? '' : 'S'}` };
+        if (Math.abs(p.z - SCHOOL.slalomZ) > 30 || S.t > 90) return { stars: 0, msg: 'YOU LEFT THE SLALOM · TRY AGAIN!' };
+      } },
+    { id: 'school3', n: 'The Grand Prix', goal: 'Your first Grand Prix: 2 laps in the AMBOOLA F1 car against five F1 teams (win for 3 stars)', car: 'f1_amboola', at: schoolGrid(SCHOOL.gp),
+      preload: ['f1_ferrari', 'f1_redbull', 'f1_mercedes', 'f1_mclaren', 'f1_aston'],
+      say: [['👩‍🏫', 'COACH MAI', 'Final test: a real <b>Grand Prix</b>! Two laps through the city, in the <b>AMBOOLA F1 car</b>.'],
+        ['👩‍🏫', 'COACH MAI', 'Your rivals: Ferrari, Red Bull, Mercedes, McLaren and Aston Martin. An F1 car brakes and turns like nothing else. <b>Trust the grip!</b>'],
+        ['👩‍🏫', 'COACH MAI', 'Lights out and away we go!']],
+      win: [['👩‍🏫', 'COACH MAI', 'What a race! You are not my student any more… you are a <b>racing driver</b>.'],
+        ['👩‍🏫', 'COACH MAI', 'Every graduate gets a present: the <b>McLaren Senna</b>. Named after one of the greatest drivers ever. It is yours! 🏆']],
+      start(S) {
+        startRoadRace(SCHOOL.gp, { quiet: true, onEnd: (pos, t) => { S.res = { pos, t }; }, rivals: [
+          { n: 'Ferrari', car: 'f1_ferrari', paint: '#c8141b', glow: 0, skill: .8 }, { n: 'Red Bull', car: 'f1_redbull', paint: '#1b2140', glow: 0, skill: .82 },
+          { n: 'Mercedes', car: 'f1_mercedes', paint: '#1c1e22', glow: 0, skill: .79 }, { n: 'McLaren', car: 'f1_mclaren', paint: '#ff7a00', glow: 0, skill: .81 },
+          { n: 'Aston Martin', car: 'f1_aston', paint: '#00594f', glow: 0, skill: .77 }] });
+      },
+      update: storyRaceEnd,
+      stop() { if (roadRace?.E === SCHOOL.gp) endRoadRace(0, true); } },
   ] });
 // Kenji Motors (a sign over the road) and the Classic Car Show's start/finish gate with flags
 function buildKenjiSets() {
@@ -17951,7 +18111,7 @@ async function boot() {
   setTimeout(loadAllModels, isTouch ? 4000 : 500);
 }
 // debug handle (handy in the browser console)
-window.amboola = { COP, VOLT, HD_PHOTOS, CLASSIC_CUP, KENJI, CLASSIC_CARS, get LOAN() { return LOAN; }, loanCar, loanBack, STORIES, storyPlay, storyAbort, sayNext, SAY, get storyRun() { return storyRun; }, storyStars, ROAD_RACES, startRoadRace, endRoadRace, rrPath, get roadRace() { return roadRace; }, FPS60, FPS_LEVELS, fpsLevel, fpsWatch, fpsSet, NEAR, nearUpdate, FARCULL, get quality() { return quality; }, FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
+window.amboola = { HERO, SCHOOL, COP, VOLT, HD_PHOTOS, CLASSIC_CUP, KENJI, CLASSIC_CARS, get LOAN() { return LOAN; }, loanCar, loanBack, STORIES, storyPlay, storyAbort, sayNext, SAY, get storyRun() { return storyRun; }, storyStars, ROAD_RACES, startRoadRace, endRoadRace, rrPath, get roadRace() { return roadRace; }, FPS60, FPS_LEVELS, fpsLevel, fpsWatch, fpsSet, NEAR, nearUpdate, FARCULL, get quality() { return quality; }, FUT, futTravel, futApply, futEnsure, futGiantSpots, TRAFFIC_ALL, CROWD, PARTIES, PST, PSITE, partyCheck, partyWin, partyGo, startPC, endPC, get pc() { return pc; }, buildPartySite, partyRaceResult, tourRaces, openParties, get cityWaterY() { return cityWaterY; }, WANTED, wantedHeat, COP_POOL, MASS, massBuild, massUpdate, camera, trackY, townRoute, townWay, footCollide, CHALS, get chal() { return chal; }, chalBest, chalStart, chalEnd, updateChal, openChalBoard, get heliObj() { return heli; }, troNearIn, JAMS, JAM, startJam, endJam, updateJams, jamOn, routeJammed, jamPos, jamTail, CROWD, updateCrowd, crowdPath, HOTELS, PERSON, posePerson, makeWalker, footStart, footEnd, footSit, footStand, hotelSleep, updateFoot, updateHotels, hotelCars, hW, hL, get foot() { return foot; }, TRO, troY, troNear, troPlace, troGo, troOpen, get tro() { return tro; }, troSwap, updateTroodos, troEnd, brkHit, brkFor, crashFx, BRK_KIND, colGrid, SEA, WAVES, get swim() { return swim; }, seaEnter, seaCollide, updateSea, seaFloorAt, seaY, seaExit, seaRescue, endSwim, seaView, shoreDrop, SCORP, SCORP_RACE, SCORP_NEXT, spotSong, TITLE, DIFFS, get diff() { return diff; }, set diff(v) { diff = v; }, DIFF, buildTitle, enterTitle, titlePlay, titleCar, updateTitle, renderChallenges, challengeLists, titleSettings, setQuality, spot, spotUri, spotLoad, spotFail, updateSpotify, setSpotify, SCORPIONS, SONGS, music, musicInit, raceSong, updateMusic, musicStep, prepSong, musicFanfare, TRACK_SONG, COUNTRY_SONG, INTERIORS, interiorOf, drawDials, CAM_INSIDE, cockpitView, buildCockpit, carGeom, nextCam, TOKYO, JG, JA, AN, get hunt() { return hunt; }, startHunt, endHunt, updateAnimals, jungleRoute, animalTemplate, huntAhead, WASHES, get dirtLevel() { return dirt; }, set dirtLevel(v) { dirt = v; }, applyDirt, updateJungle, SHINE, HZ, CAR_ENV, AO, get aoPass() { return aoPass; }, skyUniforms, BRK, smash, smashCheck, updateBreak, wreckTraffic, heliStep: dt => { if (heli) updateHeli(dt); }, startFlyCar, flyLand, canFly, get heliState() { return heli; }, get cab() { return cab; }, isCab, cabStart, cabStop, cabInput, cabDrive, cabChooseSpeed, cabSpeed, cabHud, cabRaceOff, selectPlace, buildPlaces, closeMap, navRoute, buildClick, BLD, get build() { return build; }, openBuilder, buildDrive, closeBuilder, rebuildTrack, startKing, openKing, kingOpen, FEST, startLantern, get lantern() { return lantern; }, fireworkBoom, LVL, addStars, myLevel, openBadges, honk, BADGES, COINS, get coinsGot() { return coinsGot; }, set coinsGot(v) { coinsGot = v; }, updateCoins, buildMenu, keys, get heli() { return heli; }, startHeli, endHeli, heliGetOut, heliJob, heliGround, roofsAt, HELIPAD, BOAT, get boat() { return boat; }, boatExit, PARK, PARK_PAD, COASTER, goPark, useItem, get crazyMode() { return crazyMode; }, set crazyMode(v) { crazyMode = v; }, startMonster, endMonster, get monster() { return monster; }, SOC, startSoccer, endSoccer, openSoccer, updateSoccer, get soccer() { return soccer; }, ghostKey, endRace, RESCUE, startJob, endJob, openJob, jobSpot, get job() { return job; }, get jobNext() { return jobNext; }, MOON, VOLC, TUNNEL, VOLC_PAD, MOON_PAD, moonHome, get gravK() { return gravK; }, HOME, homeAct, JUNK, openCrusher, startCrush, get crush() { return crush; }, attachDog, get pet() { return pet; }, set pet(v) { pet = v; }, tuneParts, get fuel() { return fuel; }, set fuel(v) { fuel = v; }, get dirt() { return dirt; }, set dirt(v) { dirt = v; }, refuel, startWash, GAS, CARWASH, startPhoto, endPhoto, savePhoto, cycleRadio, radio, DAY: () => DAY, dailyToday, dailyAdd, playAllAd, nextAdCar, SECRETS, secretsFound, updateSecrets, STORY, openStory, updateStory, get season() { return season; }, cycleSeason, applySeason, HQ, openTrophies, updateHQ, openBus, startBus, endBus, busStops, get bus() { return bus; }, openFerry, startFerry, endFerry, ferryDock, get ferry() { return ferry; }, get ferryBoat() { return ferryBoat; }, FUJI, FUJI_ROUTE, FUJI_PAD, flyDests, startFlight, ACTS, startCRace, startDeliv, startWorldRace, get cRace() { return cRace; }, get deliv() { return deliv; }, get worldRace() { return worldRace; }, updateActs, endActs, countryCircuit, PATROLS, get chase() { return chase; }, updatePatrols, startChase, endChase, get bridgeTraffic() { return bridgeTraffic; }, get modelsDone() { return modelsDone; }, loadModel, MODEL_FILES, get player() { return player; }, get traffic() { return traffic; }, CARS, gScene, scene, audio, renderer, TRACKS, startRace, simStep, trackNearest, get composer() { return composer; }, applyTime, tick, selectCar, startDrive, cycleTime, get camMode() { return camMode; }, set camMode(v) { camMode = v; }, camPos, openMap, closeMap, get nav() { return nav; }, get PLACES() { return PLACES; }, travelTo, setNav, bm, MTN, mtnHeight, vp, get race() { return race; }, get taxi() { return taxi; }, get crime() { return crime; }, startCrime, endCrime, HIDEOUTS, startTaxi, endTaxi, taxiRoute, MODELS, UPG_FULL, ST, MISSIONS, checkMissions, checkDaily, sellCar, sellValue, bump, get drag() { return drag; }, COUNTRIES, get flight() { return flight; }, landJet, flyStep: dt => { if (flight) updateFlight(dt); }, playAd, endAd, get ad() { return ad; }, AREAS, WANGAN, SNOW_ROUTE, SNOW, BEACH, WX, setWeather, get hwyTraffic() { return hwyTraffic; }, startDrag, endDrag, DRAG, DRAG_EVENTS, wallet, earn, buyCar, garageGo, updateMenu, tunedSpec, buyUpgrade, simSprint, upg, STUNTS, STUNT_PARK, SPEEDCAMS, get camBoard() { return camBoard; }, get DMG() { return DMG; }, dentsOf, dentCar, showGarageCar, get gCar() { return gCar; }, dmgZones, repairCost, repairCar, carHit, updateSpeedCams, takeCamPhoto, openCamPanel, DESERT, duneH, RALLY_PTS, get rally() { return rally; }, updateRally, MEETS, NEON_CREW, openMeet, closeMeet, startMeetRace, get meet() { return meet; }, endMeetRace, updateMeets, applyCustom, addUnderglow };
 boot().catch(e => { console.error(e); $('loadmsg').textContent = 'Error: ' + e.message; });
 </script>
 </body>

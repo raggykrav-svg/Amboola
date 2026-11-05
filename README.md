@@ -728,7 +728,7 @@ Second place pays 40 % of the prize and third pays 25 %. Your best winning time 
 
 ## 📖 Stories
 
-Five short stories of three chapters each. In every chapter somebody tells you what to do on a card at the bottom of the screen (tap it, or press Enter, for the next line). They lend you the right car for the scene, and you play it for 1 to 3 stars ($12,000 / $22,000 / $40,000). The next chapter of each story waits in a glowing ring on the map and in the map search. **📖 STORIES** in the pause menu lists every chapter, and PLAY takes you straight there. Finish a story and its car is yours.
+Seven short stories of three chapters each. In every chapter somebody tells you what to do on a card at the bottom of the screen (tap it, or press Enter, for the next line). They lend you the right car for the scene, and you play it for 1 to 3 stars ($12,000 / $22,000 / $40,000). The next chapter of each story waits in a glowing ring on the map and in the map search. **📖 STORIES** in the pause menu lists every chapter, and PLAY takes you straight there. Finish a story and its car is yours.
 
 **🏁 Grandpa's Classics** (Grandpa Kenji; prize: the Toyota 2000GT)
 1. **The Old Garage:** drive Kenji's 1967 Toyota 2000GT from Kenji Motors to the Classic Car Show. Every bump is a scratch: arrive without one for 3 stars.
@@ -754,6 +754,16 @@ Five short stories of three chapters each. In every chapter somebody tells you w
 1. **Battery Saver:** drive a Tesla Model S Plaid across Tokyo to Ren's lab before the battery runs out. The faster you drive, the faster it empties.
 2. **The Electric Mile:** beat Rico's Ferrari SF90 down a 1.4 km straight in the Model S Plaid.
 3. **Crash Test:** smash through 10 crash-test walls around the streets in the Cybertruck Cyberbeast, at 40 km/h or more, in 100 seconds.
+
+**🚒 Hero Day** (Captain Hana; prize: the AMBOOLA Fire Engine)
+1. **Three Fires:** in the Fire Engine, stop next to each of three fires around Tokyo and hold still while the hose sprays for 3 seconds.
+2. **Tow Away:** in the Tow Truck, hook up three broken-down cars, one at a time, and bring each back to the repair shop.
+3. **The Mayor's Ride:** drive the Mayor (and his hot cup of tea) to City Hall in a Rolls-Royce Phantom. Every bump, and every spell over 60 km/h, is a mistake.
+
+**🏎️ Racing School** (Coach Mai; prize: the McLaren Senna)
+1. **Hot Lap:** one flying lap round four city blocks in a 911 GT3 RS; under 50 seconds for 3 stars.
+2. **The Slalom:** drive through 12 gates of orange cones in a BMW M4 CSL. Each missed gate adds 3 seconds.
+3. **The Grand Prix:** two laps through the city in the AMBOOLA F1 car against Ferrari, Red Bull, Mercedes, McLaren and Aston Martin.
 
 ## 🎉 Parties
 
