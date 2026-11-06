@@ -663,6 +663,7 @@ Crash into almost anything except a building and it breaks!
 ### Faster loading on phones
 - Only your own car's model loads at the start; the others load quietly in the background while you drive.
 - If a phone runs out of graphics memory, the 3D picture can stop while the game goes on (the speedometer and the map still move). Then a **🔄 THE GRAPHICS ARE RESTARTING…** card shows. When the picture comes back the game switches to lighter graphics so it doesn't happen again. If it hasn't come back after 6 seconds, tap **RELOAD**: your cars, money and stars are saved.
+- **Fixed:** the car on screen froze at the start of story chapters, while the speedometer, the map and the race went on. It happened with any car that has stripes, a number or stickers (the Mega Taxi, or a car you decorated in the shop). Those cars draw normally again. If one thing in the world can't be drawn, the game now leaves just that thing out instead of freezing the picture. If the picture still can't be drawn for a few seconds, a **😵 THE PICTURE GOT STUCK** card offers a reload.
 
 ## The world
 

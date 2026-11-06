@@ -1172,9 +1172,9 @@ function carReflect() {
   const vis = hide.map(o => o.visible);
   hide.forEach(o => o.visible = false);
   const prev = renderer.getRenderTarget(), au = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
-  renderer.setRenderTarget(CAR_ENV.rt, CAR_ENV.face); renderer.render(scene, C.children[CAR_ENV.face]);
-  renderer.setRenderTarget(prev); renderer.shadowMap.autoUpdate = au;
-  hide.forEach((o, i) => o.visible = vis[i]); if (diet) reflDiet(diet);
+  try { renderer.setRenderTarget(CAR_ENV.rt, CAR_ENV.face); renderer.render(scene, C.children[CAR_ENV.face]); }
+  catch (e) { if (!gfxHeal(e) && !GFX.reflErr) { GFX.reflErr = true; console.error('Amboola: the car reflection failed (the game goes on)', e); } }
+  finally { renderer.setRenderTarget(prev); renderer.shadowMap.autoUpdate = au; hide.forEach((o, i) => o.visible = vis[i]); if (diet) reflDiet(diet); }   // (whatever happened: your car never stays hidden)
   CAR_ENV.face = (CAR_ENV.face + 1) % 6;
   if (CAR_ENV.face === 0) { CAR_ENV.rt.texture.needsPMREMUpdate = true; CAR_ENV.ready = true; }   // a full turn done: blur it for the rough parts
   if (CAR_ENV.ready && CAR_ENV.car !== p.car) carEnvApply(p.car);
@@ -1804,7 +1804,12 @@ function buildWetFilm() {
     const draw = film.onBeforeRender; let n = 0;
     film.onBeforeRender = function (...a) {
       if (n++ % (qUltra() ? 1 : FPS_L().refl < 0 ? 3 : 2)) return;
-      const diet = reflDiet(); try { draw.apply(this, a); } finally { reflDiet(diet); }
+      const diet = reflDiet(), r = a[0], rt = r.getRenderTarget(), au = r.shadowMap.autoUpdate;
+      try { draw.apply(this, a); }
+      catch (e) {   // something in the mirror can't be drawn: put the renderer back (the mirror hid itself and switched the shadows off for it) and leave that thing out
+        r.setRenderTarget(rt); r.shadowMap.autoUpdate = au; this.visible = true;
+        if (!gfxHeal(e) && !GFX.reflErr) { GFX.reflErr = true; console.error('Amboola: the wet road mirror failed (the game goes on)', e); }
+      } finally { reflDiet(diet); }
     };
   }
   Object.assign(film.material, { transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -3187,7 +3192,7 @@ function decalPaint(car, G, tex) {
   const U = { uCarInv: { value: new THREE.Matrix4() }, uBox: { value: new THREE.Vector4(G.z0, G.z1 - G.z0, G.y0, G.y1 - G.y0) }, uXh: { value: G.xh }, uSide: { value: tex.side }, uTop: { value: tex.top } };
   const m = car.paint;
   m.onBeforeCompile = sh => {
-    paintShine(sh); Object.assign(sh.uniforms, U);
+    paintShine.call(m, sh); Object.assign(sh.uniforms, U);   // (paintShine reads the paint from `this`: called bare it threw, and a car with stripes, a number or stickers stopped every picture)
     sh.vertexShader = 'uniform mat4 uCarInv;\nvarying vec3 vCarP;\nvarying vec3 vCarN;\n' + sh.vertexShader.replace('#include <project_vertex>',
       '#include <project_vertex>\n  mat4 carM = uCarInv * modelMatrix; vCarP = (carM * vec4(transformed, 1.0)).xyz; vCarN = mat3(carM) * objectNormal;');
     sh.fragmentShader = 'uniform vec4 uBox;\nuniform float uXh;\nuniform sampler2D uSide;\nuniform sampler2D uTop;\nvarying vec3 vCarP;\nvarying vec3 vCarN;\n' + sh.fragmentShader.replace('#include <color_fragment>',
@@ -3511,6 +3516,7 @@ class Player {
     // stunts: vertical speed, flying, the orientation in the air (pitch/roll), a loop ride, a crash-landing timer
     this.vy = 0; this.air = false; this.ap = 0; this.ar = 0; this.rollG = 0; this.loop = null; this.wreckT = 0; this.airS = null;
     this.surf = 'city'; this.gx = 0; this.gz = 0; this.terrain = null;
+    this.vf = 0; this.vr = 0; this.sa = 0; this.brake = 0; this.hb = false; this.spin = 0; this.pv = 0; this.gLong = 0; this.kick = 0;   // (sync can come before the first physics step: a swapped-in car)
     this.head = new THREE.SpotLight(0xfff1dc, 0, 110, .5, .45, 1.4);
     scene.add(this.head, this.head.target);   // not in the car's group: hiding the car (heli, jet) must not change the light count (that recompiles every shader)
     this.headSync(); setTimeout(() => preCockpit(this), 2500);
@@ -3598,7 +3604,7 @@ class Player {
     if (brake > 0) { const dv = brakeDecel * dt; nvf = Math.abs(nvf) <= dv ? 0 : nvf - Math.sign(nvf) * dv; }
     if (inp.handbrake) { const dv = 4.5 * dt; nvf = Math.abs(nvf) <= dv ? 0 : nvf - Math.sign(nvf) * dv; }
     if (!drive && !brake && Math.abs(nvf) < .15 && !this.loop) nvf = 0;   // (in a loop gravity must be free to roll it back)
-    this.accel = (nvf - vf) / dt; vf = nvf;
+    this.accel = dt > 0 ? (nvf - vf) / dt : 0; vf = nvf;   // (a step of 0 s must not make a NaN)
     // lateral grip
     const sliding = Math.abs(vr) > 3.2 && speed > 7, ice = this.terrain === 'ice';
     let lat = 11 * gripK * (ice ? .5 : 1);   // on ice the car still turns but its speed lags behind the nose: a slide
@@ -3606,7 +3612,7 @@ class Player {
     else if (sliding) lat = 2.6 * gripK * (Math.sign(this.steer) === Math.sign(vr) || Math.abs(this.steer) < .2 ? 1.25 : .85);
     if (s.drive === 'RWD' && spin > .15 && Math.abs(this.steer) > .2) lat *= .45;
     const vrBefore = vr; vr = damp(vr, 0, lat, dt);
-    this.latAcc = (vrBefore - vr) / dt;
+    this.latAcc = dt > 0 ? (vrBefore - vr) / dt : 0;
     // yaw
     const maxSteer = .6 / (1 + speed * .042);
     const sa = this.steer * maxSteer;
@@ -3661,6 +3667,7 @@ class Player {
   }
   sync(dt) {
     const c = this.car;
+    for (const k of ['pitchG', 'rollG', 'comK', 'rough', 'pitch', 'roll', 'pv']) if (!isFinite(this[k] ?? 0)) this[k] = 0;   // (a broken number would hide the car for good)
     if (this.air) { this.pitchG = this.ap; this.rollG = this.ar; }
     else if (this.loop) { this.pitchG = -this.loop.th; this.rollG = 0; }
     else if (this.wreckT > .7) { }   // lying where it crashed for a moment, then it rolls back onto its wheels
@@ -3686,12 +3693,13 @@ class Player {
     const pT = clamp(ga * .0042 * fe.soft, -.055 * fe.soft, .04 * fe.soft) + this.kick * .012 * fe.soft;
     const pv0 = this.pv || 0, sdt = Math.min(dt, .05); this.pv = pv0 + (fe.w * fe.w * (pT - (this.pitch || 0)) - 2 * .42 * fe.w * pv0) * sdt; this.pitch = (this.pitch || 0) + this.pv * sdt;
     this.roll = damp(this.roll, clamp(this.vf * this.yawRate * .0055, -.06, .06), 7, dt);
+    if (!isFinite(this.roll) || !isFinite(this.pitch) || !isFinite(this.pv) || !isFinite(this.gLong) || !isFinite(this.kick)) { this.roll = this.pitch = this.pv = this.gLong = this.kick = 0; }   // (never keep a broken number: it made the body undrawable for good)
     c.body.rotation.z = this.pitch; c.body.rotation.x = this.roll;
     c.body.position.y = Math.abs(this.roll) * .2;
     for (const w of c.wheels) {
       let rate = this.vf / w.R; if (!w.front && this.spin > 0) rate += this.spin * 25; if (this.hb && !w.front) rate = 0;
-      w.spin.rotation.z -= rate * dt;
-      if (w.front) w.pivot.rotation.y = -this.sa * 1.1;
+      w.spin.rotation.z -= rate * dt; if (!isFinite(w.spin.rotation.z)) w.spin.rotation.z = 0;
+      if (w.front) w.pivot.rotation.y = -(this.sa || 0) * 1.1;
     }
     if (c.paint?.userData.carY) c.paint.userData.carY.value = this.y || 0;   // (the paint's ground shade follows the road height)
     c.tailMat.emissiveIntensity = this.brake > 0 || this.hb ? 9 : this.baseTail;
@@ -5079,7 +5087,7 @@ function updateAd(dt) {
     if (k === 2) { const n = $('adTxt').querySelectorAll('.adN'), e2 = clamp(u * 1.4, 0, 1); n[0].textContent = Math.round(A.stats[0] * e2).toLocaleString(); n[1].textContent = (A.stats[1] * (2 - e2)).toFixed(1); n[2].textContent = Math.round(A.stats[2] * e2); }
   }
   $('adFade').style.opacity = t > AD_T[4] - .5 ? (t - AD_T[4] + .5) / .5 : t < .4 ? 1 - t / .4 : 0;
-  composer.render(dt);
+  renderFrame(dt);
 }
 function endAd() {
   const A = ad; if (!A) return; ad = null;
@@ -5155,7 +5163,7 @@ function updateAllAd(dt) {
   if (A.soundOn && A.i >= 0 && A.i < n) { const c = A.list[A.i]; audio.update(dt, { speed: v, rpm: c.engine === 'ev' ? v * 60 : c.redline * (.6 + .35 * (A.ct / ALL_AD_D)), throttle: 1, slip: 0, limiter: false, shifting: 0, interior: false }); }
   $('adFade').style.opacity = A.t < .4 ? 1 - A.t / .4 : A.outT && A.t - A.outT > ALL_AD_OUT - .5 ? (A.t - A.outT - ALL_AD_OUT + .5) / .5 : 0;
   if (A.outT && A.t - A.outT > ALL_AD_OUT) return endAd();
-  composer.render(dt);
+  renderFrame(dt);
 }
 function bootAd(done) {
   if (adSeen()) return done();
@@ -13652,10 +13660,10 @@ function updatePhoto(dt) {
   const y0 = (p.y || 0) + .8 + P.lift;
   camera.position.set(p.x + Math.sin(P.yaw) * Math.cos(P.pitch) * P.dist, y0 + Math.sin(P.pitch) * P.dist, p.z + Math.cos(P.yaw) * Math.cos(P.pitch) * P.dist);
   camera.lookAt(p.x, y0, p.z); sky.position.copy(camera.position);
-  composer.render(dt);
+  renderFrame(dt);
 }
 function savePhoto() {
-  composer.render(0);
+  renderFrame(0);
   const src = renderer.domElement, c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
   const g = c.getContext('2d'); g.filter = PHOTO_FILTERS[photo.f][1]; g.drawImage(src, 0, 0);
   g.filter = 'none'; g.font = `900 ${Math.round(c.height * .03)}px ${OR}`; g.fillStyle = 'rgba(255,255,255,.85)'; g.textAlign = 'right';
@@ -17887,15 +17895,28 @@ function updateTitle(dt) {
 /* ---- the picture must never freeze. On a phone the graphics memory can run out: the browser then takes the 3D picture
    away while the game goes on (the speedometer and the map keep moving under a frozen or black picture). Say so, and
    when it comes back redraw what was lost with it (the sky's reflections) and step the graphics down a level so it
-   doesn't run out again. And a bug in one part of a frame (or in a post-processing pass) never stops the picture. */
-const GFX = { lostAt: 0, losses: 0, plain: false, errSeen: false };
+   doesn't run out again. And a bug in one part of a frame never stops the picture: a thing that can't be drawn (a car's
+   paint whose shader threw once froze the picture at every story chapter while the game went on underneath) is left
+   out, its special shader first and the whole thing if that wasn't it, and the picture is drawn again at once; if a
+   post-processing pass breaks, the picture is drawn without the effects for a while, then they are tried again. */
+const GFX = { lostAt: 0, losses: 0, plain: 0, plainN: 0, errSeen: false, obj: null, mat: null, healed: 0 };
+{ const rbd = renderer.renderBufferDirect;   // what is being drawn right now: if drawing it throws, that's what broke
+  renderer.renderBufferDirect = function (cam, sc, geo, mat, obj, grp) { GFX.obj = obj; GFX.mat = mat; rbd.call(this, cam, sc, geo, mat, obj, grp); GFX.obj = GFX.mat = null; }; }
+function gfxHeal(e) {
+  const o = GFX.obj, m = GFX.mat; GFX.obj = GFX.mat = null;
+  if (!o?.parent || GFX.healed >= 40) return false;   // (no parent: a post-processing pass's own quad, not a thing in the world)
+  GFX.healed++; console.error(`Amboola: "${o.name || o.type}" could not be drawn, so it is left out (the game goes on):`, e);
+  if (m && Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile')) { delete m.onBeforeCompile; delete m.customProgramCacheKey; m.needsUpdate = true; }   // the plain look
+  else o.visible = false;
+  return true;
+}
 canvas.addEventListener('webglcontextlost', e => {
   e.preventDefault(); GFX.lostAt = performance.now(); GFX.losses++;
-  const o = $('ctxLost'), b = o.querySelector('button'); o.classList.remove('hidden'); b.classList.add('hidden');
+  const o = $('ctxLost'), b = o.querySelector('button'); o.querySelector('b').textContent = '🔄 THE GRAPHICS ARE RESTARTING…'; o.querySelector('span').textContent = 'YOUR DEVICE RAN OUT OF GRAPHICS MEMORY · ONE MOMENT'; o.classList.remove('hidden'); b.classList.add('hidden');
   setTimeout(() => { if (GFX.lostAt) b.classList.remove('hidden'); }, 6000);   // (still gone after 6 s: offer a reload)
 });
 canvas.addEventListener('webglcontextrestored', () => {
-  GFX.lostAt = 0; $('ctxLost').classList.add('hidden');
+  GFX.lostAt = 0; if (!GFX.stuck) $('ctxLost').classList.add('hidden');
   try {
     const down = { hd: 'high', ultra: 'high', high: 'low' }[quality];
     if (down) setQuality(down); else applyTime(timeName);   // (applyTime rebuilds the sky's reflections)
@@ -17904,9 +17925,36 @@ canvas.addEventListener('webglcontextrestored', () => {
   if (state === 'drive') toast('🔄 GRAPHICS ARE BACK', 'LIGHTER GRAPHICS NOW, SO IT DOES NOT HAPPEN AGAIN');
 });
 $('ctxLost').querySelector('button').onclick = () => location.reload();
-function renderFrame(dt) {   // the picture with its effects, or without them if a post-processing pass ever breaks
-  if (!GFX.plain) { try { composer.render(dt); return; } catch (e) { GFX.plain = true; console.error('Amboola: post-processing failed, drawing without it', e); } }
-  renderer.render(scene, camera);
+function gfxSweep(sc) {   // it broke before anything was drawn: hide whatever can't be drawn at all (no shape, a lost material)
+  let n = 0;
+  sc.traverseVisible(o => {
+    if (!(o.isMesh || o.isLine || o.isPoints)) return;
+    const g = o.geometry, mOk = Array.isArray(o.material) ? o.material.some(m => m?.isMaterial) : o.material?.isMaterial;   // (a list of materials may have gaps: three skips those)
+    if (!g?.isBufferGeometry || Object.values(g.attributes || {}).some(a => !a) || !mOk || (o.isInstancedMesh && !o.instanceMatrix)) { o.visible = false; n++; }
+  });
+  if (n) console.error(`Amboola: ${n} thing(s) in the world could not be drawn, so they are left out (the game goes on)`);
+  return n;
+}
+function gfxStuck(on) {   // the last resort: say so (and offer a reload) instead of a silently frozen picture
+  GFX.stuck = on; const o = $('ctxLost');
+  if (on) { o.querySelector('b').textContent = '😵 THE PICTURE GOT STUCK'; o.querySelector('span').textContent = 'SORRY! RELOADING THE GAME FIXES IT'; o.querySelector('button').classList.remove('hidden'); }
+  o.classList.toggle('hidden', !on && !GFX.lostAt);
+}
+function renderFrame(dt) {   // the picture, whatever breaks (see GFX above)
+  if (GFX.plain && performance.now() > GFX.plain) GFX.plain = 0;   // (time to try the effects again)
+  let swept = false;
+  for (let k = 0; k < 4; k++) {
+    try {
+      if (GFX.plain) { renderer.setRenderTarget(null); renderer.render(renderPass.scene, renderPass.camera); } else composer.render(dt);
+      GFX.failT = 0; if (GFX.stuck) gfxStuck(false); return;
+    } catch (e) {
+      renderer.setRenderTarget(null); renderer.shadowMap.autoUpdate = true;   // (a pass that broke half-way left the renderer drawing into its own buffer: the screen never changed again)
+      if (gfxHeal(e) || (!swept && (swept = true) && gfxSweep(renderPass.scene))) continue;
+      if (!GFX.plain) { GFX.plain = performance.now() + 8000; if (GFX.plainN++ < 3) console.error('Amboola: post-processing failed, drawing without it for a while', e); continue; }
+      if ((GFX.failT = (GFX.failT || 0) + dt) > 2.5 && !GFX.stuck) gfxStuck(true);
+      throw e;
+    }
+  }
 }
 function frameError(e, dt) {   // a bug somewhere in a frame: tell the console once, and still draw the picture
   if (!GFX.errSeen) { GFX.errSeen = true; console.error('Amboola: a frame failed (the game goes on):', e); }
@@ -18068,16 +18116,16 @@ function tick(dt) {
   updateSpotify();
   if (state === 'ad') { updateAd(dt); return; }
   if (state === 'photo') { updatePhoto(dt); return; }
-  if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') composer.render(dt); return; }
-  if (state === 'build') { buildCam(dt); composer.render(dt); return; }
-  if (state === 'heli') { updateHeli(dt); updateChal(dt); if (state === 'heli') { updateCountryCulling(dt); composer.render(dt); } return; }   // (the flying Roadster can reach the countries)
-  if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') composer.render(dt); return; }
-  if (state === 'title') { updateTitle(dt); composer.render(dt); return; }
+  if (state === 'ferry') { updateFerry(dt); if (state === 'ferry') renderFrame(dt); return; }
+  if (state === 'build') { buildCam(dt); renderFrame(dt); return; }
+  if (state === 'heli') { updateHeli(dt); updateChal(dt); if (state === 'heli') { updateCountryCulling(dt); renderFrame(dt); } return; }   // (the flying Roadster can reach the countries)
+  if (state === 'fly') { updateMoon(flight?.x ?? 0, flight?.z ?? 0); updateFlight(dt); updateWeather(dt, { x: flight?.x ?? 0, z: flight?.z ?? 0, vx: 0, vz: 0 }); updateCountryCulling(dt); if (state === 'fly' || state === 'drive') renderFrame(dt); return; }
+  if (state === 'title') { updateTitle(dt); renderFrame(dt); return; }
   if (state === 'garage') {
     if (gDrag === null) gAngle += dt * .18;
     const gc = CARS[carIdx], gk = gc?.jet ? 1 : Math.max(1, (BODIES[gc?.body]?.L || 4.6) / 5.4);   // step back for the bus and the trucks
     gCamera.position.set(Math.sin(gAngle) * gDist * gk, 1.9 * Math.sqrt(gk), Math.cos(gAngle) * gDist * gk); gCamera.lookAt(0, .7 * gk, 0);
-    composer.render(dt);
+    renderFrame(dt);
     return;
   }
   if (state === 'drive') {
