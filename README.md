@@ -1077,6 +1077,10 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 
 ![A car in the street, and its printed tyre and darker sills up close at speed](media/cars-real.jpg)
 
+![Before and after the shading baked in Blender](media/cars-baked-shade.jpg)
+
+- **Shading baked in Blender:** every car model now carries its own shading, worked out in Blender with Cycles ray tracing. Places that see less of the sky are darker, like on a real car: the wheel arches over the tyres, the vents and grilles, the shut lines, the sills over the road, the rim behind the spokes and the cabin behind the glass. It darkens the sky light and the reflections, and the sunlight a little in small hollows.
+- **Sharper reflections on High:** your car's live street reflection is twice as sharp as before (256 px a side instead of 128), so the street no longer shows in the paint as blocky smudges.
 - **Grounded:** the lower body (sills, the bottom of the bumpers) catches less sky light and fewer reflections, just as a real car does next to the road, so cars sit on the road instead of floating over it.
 - **Real tyres:** the brand name is printed round the sidewall (AMBOOLA · P ZERO · 275/35 ZR20), the sidewall rubber has a satin sheen, and the tread is matt.
 - **Spinning wheels blur:** as the wheels spin faster the spokes melt into a smooth spinning disc, like in a photo of a fast car.

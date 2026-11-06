@@ -1159,7 +1159,7 @@ function hzSet(G, rain) {   // a time of day's grade (rain: greyer, no sun)
 const CAR_ENV = { rt: null, cam: null, face: 0, ready: false, mats: [], car: null, frame: 0, size: 0 };
 function carReflect() {
   if (quality === 'low' || !player?.car) { carEnvRelease(); return; }
-  const size = quality === 'hd' ? 512 : quality === 'ultra' ? 256 : 128;
+  const size = quality === 'hd' ? 512 : 256;   // (High was 128: the street showed in the paint as blocky smudges; a face costs the same draw calls at 256)
   if (CAR_ENV.size !== size) { CAR_ENV.rt?.dispose(); CAR_ENV.rt = new THREE.WebGLCubeRenderTarget(size, { type: THREE.HalfFloatType }); CAR_ENV.cam = new THREE.CubeCamera(1, 700, CAR_ENV.rt); CAR_ENV.size = size; CAR_ENV.ready = false; CAR_ENV.face = 0; carEnvRelease(); }
   const every = FPS_L().refl || (qUltra() ? 1 : quality === 'high' ? 3 : 2);   // (High: one side every 3rd frame; the 60 FPS mode can slow it or freeze it)
   if (every < 0 && CAR_ENV.ready) { if (CAR_ENV.car !== player.car) carEnvApply(player.car); return; }   // (frozen: a new car still gets the last picture)
@@ -2819,6 +2819,56 @@ function wheelBlur(pivot, spin, w, rimCol) {   // a see-through disc over the sp
   d.onBeforeRender = () => { const t = simTime, dt = t - t0; if (dt > .004) { const om = Math.abs(spin.rotation.z - last) / dt; last = spin.rotation.z; t0 = t; m.opacity = damp(m.opacity, clamp((om - 14) / 40, 0, .8), 8, Math.min(dt, .1)); } };
   d.renderOrder = 2; pivot.add(d);
 }
+/* ---- baked shade (Blender): every car model carries '_ao', ambient occlusion baked in Cycles by carkit's bake_ao (1 =
+   open sky, 0 = tucked away: wheel wells, vents, shut lines, the cabin behind the glass, the sills over the road, the
+   rim's barrel behind the spokes). A material with the CAR_AO define multiplies its sky light and its reflections by
+   it, never below the define's value (so a caliper behind the spokes keeps its colour), and its sunlight a little
+   (40 %: the hollows the sun's shadow map is too coarse to see). carShadeCar(car) switches it
+   on: the car's own paint in place, every shared material through one copy of it (cached, so all the cars share it);
+   matBase(m) gives back the original for the code that recognises a material. A part without the bake on the car's
+   paint (a body kit) gets an all-open '_ao' before it is ever drawn. */
+THREE.ShaderChunk.uv_pars_vertex += '\n#ifdef CAR_AO\n\tattribute float _ao;\n\tvarying float vCarAO;\n#endif';
+THREE.ShaderChunk.uv_vertex += '\n#ifdef CAR_AO\n\tvCarAO = _ao;\n#endif';
+THREE.ShaderChunk.uv_pars_fragment += '\n#ifdef CAR_AO\n\tvarying float vCarAO;\n#endif';
+THREE.ShaderChunk.aomap_fragment += `
+#ifdef CAR_AO
+	{ float carOcc = mix( float( CAR_AO ), 1.0, clamp( vCarAO, 0.0, 1.0 ) );
+	reflectedLight.indirectDiffuse *= carOcc;
+	reflectedLight.directDiffuse *= mix( 1.0, carOcc, 0.4 ); reflectedLight.directSpecular *= mix( 1.0, carOcc, 0.4 );   // (small hollows the sun's shadow map is too coarse for: a vent, a shut line, the arch over the tyre)
+	#if defined( USE_CLEARCOAT )
+		clearcoatSpecularIndirect *= carOcc;
+	#endif
+	#if defined( USE_ENVMAP ) && defined( STANDARD )
+		reflectedLight.indirectSpecular *= computeSpecularOcclusion( saturate( dot( geometryNormal, geometryViewDir ) ), carOcc, material.roughness );
+	#else
+		reflectedLight.indirectSpecular *= carOcc;
+	#endif
+	}
+#endif`;
+const AO_FLOOR = { Caliper: .4, Rim: .25, RimLip: .3, Disc: .2, Glass: .3, GlassClear: .3, LensClear: .45, LensRed: .4, LensGlass: .3, Plate: .35, Chrome: .18 };
+const AO_SKIP = new Set(['DRL', 'Headlight', 'Taillight']);
+const AO_COPY = new WeakMap(), AO_BASE = new WeakMap();
+const matBase = m => AO_BASE.get(m) || m;
+function aoOn(m, floor) { m.defines = { ...(m.defines || {}), CAR_AO: floor.toFixed(2) }; m.needsUpdate = true; return m; }
+function carShadeCar(car) {
+  car.group.traverse(o => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+    const m = o.material, g = o.geometry, baked = !!g.attributes._ao, on = m.defines?.CAR_AO !== undefined;
+    if (baked && !on) {
+      const name = o.userData.glb || m.name;
+      if (m === car.headMat || m === car.tailMat || AO_SKIP.has(name)) return;
+      if (m === car.paint) { aoOn(m, .12); return; }
+      let c = AO_COPY.get(m);
+      if (!c) {
+        c = m.clone();   // (clone() leaves the shader hooks behind: the grille's honeycomb, the tyre's printed sidewall)
+        for (const k of ['onBeforeCompile', 'customProgramCacheKey']) if (Object.prototype.hasOwnProperty.call(m, k)) c[k] = m[k];
+        aoOn(c, AO_FLOOR[name] ?? .12); AO_COPY.set(m, c); AO_BASE.set(c, m);
+      }
+      o.material = c;
+    } else if (!baked && on) g.setAttribute('_ao', new THREE.BufferAttribute(new Uint8Array(g.attributes.position?.count || 0).fill(255), 1, true));
+  });
+  return car;
+}
 function buildModelCar(spec, src, paint) {
   const B = BODIES[spec.body];
   const group = new THREE.Group(); const orient = new THREE.Group(); orient.rotation.y = -Math.PI / 2; group.add(orient);
@@ -2833,7 +2883,7 @@ function buildModelCar(spec, src, paint) {
   };
   MAT.Rim.userData.kind = 'rim'; MAT.Caliper.userData.kind = 'cal';
   if (spec.livery) { MAT.Livery = new THREE.MeshStandardMaterial({ color: spec.livery, roughness: .3, metalness: .2 }); MAT.Helmet = new THREE.MeshStandardMaterial({ color: spec.helmet || spec.livery, roughness: .2, metalness: .1 }); }   // (F1 teams)
-  const dress = node => { const o = node.clone(); o.traverse(m => { if (m.isMesh) { m.material = MAT[m.material.name] || m.material; m.castShadow = true; m.receiveShadow = true; } }); return o; };
+  const dress = node => { const o = node.clone(); o.traverse(m => { if (m.isMesh) { m.userData.glb = m.material.name; m.material = MAT[m.material.name] || m.material; m.castShadow = true; m.receiveShadow = true; } }); return o; };
   // glTF space is +Z front, +X left; car parts live in profile space (x front, y up, z right): turn by +90 deg
   const toProfile = o => { const f = new THREE.Group(); f.rotation.y = Math.PI / 2; f.add(o); return f; };
   const wheels = [];
@@ -2855,7 +2905,7 @@ function buildModelCar(spec, src, paint) {
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(B.L * 1.15, B.W * 1.25), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false, opacity: .8, polygonOffset: true, polygonOffsetFactor: -6 }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = .1; orient.add(shadow);
   paintPlates(body, spec.id);
-  return { group, body, wheels, headMat, tailMat, paint, B, model: true };
+  return carShadeCar({ group, body, wheels, headMat, tailMat, paint, B, model: true });
 }
 // ---- showroom shine for every car's paint: a mirror-smooth clear coat whose sky and sun reflections are boosted (the
 // deep "wet" gloss of the big racing games), plus tiny metal flakes under it that sparkle in the sun on metallic paints
@@ -2867,8 +2917,12 @@ function paintShine(sh) {
     .replace('#include <project_vertex>', '#include <project_vertex>\n  vCarH = (modelMatrix * vec4(transformed, 1.)).y;');
   sh.fragmentShader = 'uniform float uShineInd, uShineDir, uFlake, uCarY;\nvarying vec3 vFlakeP; varying float vCarH;\n' + sh.fragmentShader
     .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+  #ifdef CAR_AO
+    float carAO = 1.;   // (the baked shade above already did it, from the real shape)
+  #else
   float carAO = mix(.42, 1., smoothstep(.04, .7, vCarH - uCarY));   // near the road the body sees less sky: the sills and the lower bumper sit in shade
-  reflectedLight.indirectDiffuse *= carAO; reflectedLight.indirectSpecular *= mix(.55, 1., carAO);`)
+  reflectedLight.indirectDiffuse *= carAO; reflectedLight.indirectSpecular *= mix(.55, 1., carAO);
+  #endif`)
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
   { vec3 fq = vFlakeP * 70., fp = floor(fq);
     vec3 fr = fract(sin(vec3(dot(fp, vec3(127.1, 311.7, 74.7)), dot(fp, vec3(269.5, 183.3, 246.1)), dot(fp, vec3(113.5, 271.9, 124.6)))) * 43758.5453) - .5;
@@ -3219,14 +3273,14 @@ function applyCustom(car, id) {
     const k = o.material.userData.kind;
     if (k === 'rim' && R.c) { o.material.color.set(R.c); o.material.metalness = R.m; o.material.roughness = R.r; }
     else if (k === 'cal' && K.c) o.material.color.set(K.c);
-    else if (o.material === glassMat) o.material = tintMat(c.tint);
-    else if (c.seat && (o.material === cabinMats.Leather || o.material === cabinMats.Alcantara)) { o.material = o.material.clone(); o.material.color.set(SEATS[c.seat].c); }
-    else if (o.material === clearMat) o.material = tintClear(c.tint);
+    else if (matBase(o.material) === glassMat) o.material = tintMat(c.tint);
+    else if (c.seat && (matBase(o.material) === cabinMats.Leather || matBase(o.material) === cabinMats.Alcantara)) { o.material = matBase(o.material).clone(); o.material.color.set(SEATS[c.seat].c); }
+    else if (matBase(o.material) === clearMat) o.material = tintClear(c.tint);
   });
   if (c.decal) { const G = carGeom(car); if (G) decalPaint(car, G, decalTex(id, G, c.decal, DCOLS[c.dcol].c)); }
   if (c.glow) addUnderglow(car, GLOWS[c.glow].c);
   tuneParts(car, c);
-  car.cust = c; return car;
+  car.cust = c; return car.model ? carShadeCar(car) : car;   // (the tinted glass, new seats and body kit get the baked shade too)
 }
 
 /* =====================================================================
@@ -4657,7 +4711,7 @@ function buildCockpit(car, spec) {
   });
   const zr = n ? zs / n : G.mid, W = G.xh * 2, ey = Math.max(G.y0 + .72, G.y1 - .3), ez = zr - .1, ex = -Math.min(.4, G.xh * .4), top = G.y1 - .04, belt = ey - .3;
   // from in here only the faces that point inwards show: the model's own cabin (seats, dash, lining), the glass and every two-sided part (stripes, trim, wheels)
-  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (o.material === modelMats.black || o.material.userData.cabin || o.material.side !== THREE.FrontSide || o.material === plateMat || o.material.userData.plate)) hide.push(o); });
+  const hide = []; car.group.traverse(o => { if (o.isMesh && o.material !== car.paint && (matBase(o.material) === modelMats.black || o.material.userData.cabin || o.material.side !== THREE.FrontSide || matBase(o.material) === plateMat || o.material.userData.plate)) hide.push(o); });
   for (const w of car.wheels || []) hide.push(w.pivot);   // from the driver's seat the wheels and the number plates don't show through the bonnet
   hide.push(...frontTrim(car, ez, ey, hide));
   const key = interiorOf(spec), IM = key && MODELS['int_' + key];
