@@ -50,9 +50,21 @@ T911 = [
     (-2.22, .31, .78, .67, .76, .82, .60, .83, .36, .82, .82),
     (-2.29, .38, .60, .62, .56, .72, .44, .74, .26, .73, .73),
 ]
+# the GT3 RS's nose, from photos: wider and squarer at the corners than the drawing's round tip (the big corner
+# intakes need the room), with the fender tops standing up a little more around the headlights
+NOSE_RS = {2.275: .33, 2.245: .49, 2.19: .62, 2.12: .72, 2.05: .79, 1.97: .85, 1.88: .895}
+def t911rs():
+    out = []
+    for r in T911:
+        r = list(r); w = NOSE_RS.get(r[0])
+        if w:
+            k = w / r[2]; r[2] = w; r[4] *= k; r[6] *= k; r[8] *= k
+            if r[0] < 2.2: r[7] += 0.012   # (the fender crowns, just a touch higher)
+        out.append(tuple(r))
+    return out
 W911 = dict(F=dict(x=1.22, r=0.350, w=0.275, y=0.775, rim=0.254), R=dict(x=-1.24, r=0.367, w=0.335, y=0.785, rim=0.267))
 
-def body_911(k, ys=1.0, rows=T911, wheels=W911, rear_intakes=True, roof='Carbon', hood=None):
+def body_911(k, ys=1.0, rows=T911, wheels=W911, rear_intakes=True, roof='Carbon', hood=None, lamp_bowl='Chrome', lamp=((1.85, 0.675, 0.745), 0.125, 0.125, 0.04), lamp_f=(0.80, 0.10, 0.59)):
     """the shared 992 shell: body, wheel wells, glasshouse, door lines, round headlights, mirrors, light bar, cabin"""
     k.loft(stations(rows, ys)); k.arches(wheels); k.surface()
     k.windscreen(0.82, 0.22, 0.885, 0.585, 0.57 * ys, 0.48 * ys, sweep=0.22)
@@ -67,7 +79,8 @@ def body_911(k, ys=1.0, rows=T911, wheels=W911, rear_intakes=True, roof='Carbon'
         k.decal('handle', 'Black', side(s), -0.48, -0.30, 0.705, 0.725, 4, 1, off=.003)
         if rear_intakes: k.slanted('sideintake', 'Gloss', s, -0.70, -0.86, 0.56, 0.74, lean=0.08, nu=6)
     # the round 992 headlights sit in the noses of the front fenders, looking forward and a little up
-    k.headlight_911((1.85, 0.675 * ys, 0.745), (0.80, 0.10, 0.59), rx=0.125, ry=0.125, bowl='Chrome', drl=(0.2, 0.11, 0.65), dome=0.04)
+    (lx, ly, lz), lrx, lry, ldome = lamp
+    k.headlight_911((lx, ly * ys, lz), lamp_f, rx=lrx, ry=lry, bowl=lamp_bowl, drl=(0.2, 0.11, 0.65), dome=ldome)
     k.mirrors(0.34, 0.90 * ys, 0.945, size=(0.15, 0.21, 0.105))
     k.light_bar(-1.55, 0.712, 0.758, 0.86, bg=0.02, frac=0.55)
     k.interior(-0.25, 1.3 * ys, 0.72)
@@ -79,17 +92,32 @@ def engine_grille(k, x0=-2.12, x1=-1.68, hw=0.50, slats=9, mat='Carbon'):
         k.decal('engineslat', mat, 'top', x0 + .02 + i * step, x0 + .036 + i * step, -hw + .02, hw - .02, 1, 12, off=.010)
 
 def gt3rs(k):
-    body_911(k)
-    # front: big RS intakes, carbon splitter, hood nostrils with slats, fender-top louvres, arch exit vents
-    k.decal('intakeC', 'Gloss', 'front', -0.40, 0.40, 0.235, 0.40, 16, 5)
-    both(lambda s: k.decal('intakeS', 'Gloss', 'front', s * 0.48, s * 0.74, 0.235, 0.44, 8, 6))
-    k.decal('splitter', 'Carbon', 'front', -0.82, 0.82, 0.19, 0.228, 30, 2)
-    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.62, 2.00, s * 0.08, s * 0.34, 8, 6))
+    # checked against photos of the real 992 GT3 RS: the headlights are dark inside (black housing, the 4-point LED
+    # signature and a projector), not chrome bowls
+    body_911(k, rows=t911rs(), lamp_bowl='Gloss', lamp=((1.86, 0.672, 0.745), 0.12, 0.172, 0.05), lamp_f=(0.88, 0.13, 0.46))   # (the big upright ovals of the real car)
+    # front: a body-coloured nose over a black apron - the wide radiator mouth in the middle, big corner intakes that
+    # wrap round to the wheels with two upright blades each, thin body-coloured dividers between them, a carbon splitter
+    k.decal('intakeC', 'Gloss', 'front', -0.47, 0.47, 0.212, 0.425, 20, 6)
+    for s in (1, -1):
+        k.rect('intakeS', 'Gloss', (2.04, s * 0.70, 0.36), (0.86, s * 0.50, 0), 0.34, 0.31, .004, 10, 7, slant=s * -0.03, taper=0.12)
+        for f in (-0.09, 0.03):
+            k.rect('intakeblade', 'Carbon', (2.05 + f * -0.5, s * (0.70 + f), 0.355), (0.86, s * 0.50, 0), 0.016, 0.28, .012, 1, 7)
+    k.decal('splitter', 'Carbon', 'front', -0.90, 0.90, 0.168, 0.212, 30, 2)
+    # bonnet: the two big vents in the middle (the radiator breathes out through them), carbon slats inside and a
+    # carbon fin standing up along each outer edge
+    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.36, 1.96, s * 0.075, s * 0.355, 10, 7))
     for i in range(4):
-        both(lambda s, i=i: k.decal('hoodslat', 'Carbon', 'top', 1.62, 2.00, s * (0.11 + i * .065), s * (0.125 + i * .065), 8, 1, off=.010))
-    for i in range(7):
-        both(lambda s, i=i: k.decal('louvre', 'Gloss', 'top', 0.98 + i * .062, 1.012 + i * .062, s * 0.62, s * 0.84, 1, 5))
-    both(lambda s: k.slanted('archvent', 'Gloss', s, 0.70, 0.79, 0.42, 0.70, lean=0.05, nu=3, nv=8))
+        both(lambda s, i=i: k.decal('hoodslat', 'Carbon', 'top', 1.38, 1.94, s * (0.105 + i * .07), s * (0.12 + i * .07), 10, 1, off=.010))
+    for s in (1, -1):
+        y = s * 0.372; pts = []
+        for x, h in ((1.33, 0.0), (1.44, 0.034), (1.66, 0.048), (1.92, 0.044), (1.99, 0.0)):
+            pts.append((x, k.deck_z(x, y) + h))
+        k.plate('hoodfin', 'Carbon', pts + [(x, k.deck_z(x, y) - 0.02) for x, _ in reversed(pts)], y, t=0.012)
+    for i in range(9):   # nine louvres on each front wing, over the wheel
+        both(lambda s, i=i: k.decal('louvre', 'Gloss', 'top', 0.96 + i * .052, 0.986 + i * .052, s * 0.63, s * 0.84, 1, 5))
+    # the big vent behind each front wheel (air out of the wheel well), with an upright blade
+    both(lambda s: k.slanted('archvent', 'Gloss', s, 0.66, 0.84, 0.34, 0.74, lean=0.06, nu=4, nv=8))
+    both(lambda s: k.slanted('archblade', 'Carbon', s, 0.745, 0.765, 0.36, 0.72, lean=0.06, nu=1, nv=8, off=.012))
     # rear: engine-lid grille, black bumper, carbon diffuser, twin centre pipes, side skirts
     engine_grille(k)
     k.fan('rearpanel', 'Gloss', -1.55, 0.36, 0.56, -0.62, 0.62, 30, 4)

@@ -55,7 +55,8 @@ def edit(rows, x, **kw):
     return out
 
 VIEWS = {'front34': (5.4, -4.3, 1.45), 'rear34': (-5.2, -4.5, 2.0), 'side': (0.05, -8.4, 0.95), 'nose': (3.6, -2.3, 1.05), 'tail': (-3.5, -2.4, 1.25),
-         'top': (0.3, -3.2, 7.6), 'front': (8.2, 0.0, 1.15), 'rear': (-8.2, 0.0, 1.5)}
+         'top': (0.3, -3.2, 7.6), 'front': (8.2, 0.0, 1.15), 'rear': (-8.2, 0.0, 1.5),
+         'frontc': (4.6, 0.0, 1.75), 'front34c': (4.1, -3.2, 1.45), 'rear34c': (-4.2, -3.3, 1.6)}   # (close, like a photo taken standing by the car)
 
 # every real car's wheel design, as near as the kit's styles get (see Car.wheels); anything not listed: straight spokes
 WHEEL_STYLE = {

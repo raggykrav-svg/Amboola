@@ -11,6 +11,7 @@ import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from carkit import Car, V, lerp, pl, stations, edit, both, side, main, srgb
 from supercars import TFER, TLAM, TFGT, remap, SOFT, SHARP, hex_exhaust
+from carshape import build
 
 BASES = {   # station table, base axle x (front, rear), base end x (front, rear), glass
     'mid': (TFER, (1.36, -1.30), (2.31, -2.33), SOFT),
@@ -137,6 +138,59 @@ C = [
     dict(id='torazero', base='wedge', L=5.0, wb=2.85, w=1.05, h=0.9, stripe='#c8141b', aero='swan', fins=True, crest=True, horns=True, paint='#f4f4f2', rim='#c8141b', cal='#c8141b', ev=True, stripes=6),
 ]
 CARS = {d['id']: (concept(d), d['paint'], d['rim'], d['cal']) for d in C}
+
+# ======================================================================= AMBOOLA Taiyo
+# The Taiyo ("sun") is AMBOOLA's electric hypercar, the prize of the Taiyo Hunt, so it is built like the real ones
+# (carshape, from measurements) instead of from the concept recipe: 4.70 x 1.98 x 1.15 m on a 2.75 m wheelbase (the
+# game's amb_taiyo body), a low cab-forward canopy, front wings standing up over the wheels, wide rear haunches. Its
+# own face: slim LED headlights joined by a thin light line across the nose (the sun's horizon), a big lower mouth
+# and corner intakes with blades, an air outlet on the bonnet. Carbon roof, splitter, skirts and diffuser, deep
+# intakes behind the doors, a thin red line along each sill, a full-width light bar, Y-spoke centre-lock wheels and a
+# swan-neck wing. No exhaust: it is electric.
+P_TAIYO = dict(L=4.70, W=1.98, H=1.15, WB=2.75, fo=0.98, clear=0.11, nose_zb=0.17, tail_zb=0.36,
+               top=[(2.355, 0.44), (2.25, 0.52), (2.0, 0.59), (1.6, 0.665), (1.2, 0.735), (0.95, 0.785), (0.55, 0.955),
+                    (0.15, 1.10), (-0.25, 1.15), (-0.60, 1.12), (-0.95, 1.045), (-1.40, 0.955), (-1.90, 0.925),
+                    (-2.25, 0.905), (-2.345, 0.845)],
+               belt=[(2.355, 0.42), (2.10, 0.585), (1.70, 0.695), (1.375, 0.735), (1.0, 0.755), (0.5, 0.785),
+                     (0.0, 0.815), (-0.6, 0.86), (-1.0, 0.905), (-1.375, 0.92), (-1.9, 0.90), (-2.345, 0.82)],
+               plan=[(2.355, 0.50), (2.30, 0.70), (2.15, 0.86), (1.80, 0.955), (1.375, 0.99), (0.80, 0.955),
+                     (0.20, 0.945), (-0.50, 0.965), (-1.375, 0.99), (-1.95, 0.96), (-2.25, 0.88), (-2.345, 0.80)],
+               roof=[(0.95, 0.66), (0.55, 0.585), (0.10, 0.535), (-0.30, 0.51), (-0.75, 0.445), (-1.20, 0.345)],
+               cab=(0.95, 0.10, -0.75, -1.20), bulge=[(0.0, 0.02), (1.0, 0.07), (1.8, 0.08), (2.2, 0.05)], hip=0.08,
+               side=(0.90, -0.95), doors=(0.92, -0.62), mirror_x=0.80, mirror_size=(0.13, 0.17, 0.08), rw_w=0.9, rw_bulge=0.02)
+
+def taiyo(k):
+    S = build(k, P_TAIYO, dict(r=0.35, w=0.265, rim=0.254), dict(r=0.35, w=0.325, rim=0.267),
+              crease=dict(crease_lines=0.55, crisp_front=-9, crisp=0.4, crease_front=0.55, crease_rear=0.8))
+    k.M['Stripe'] = k.material('Stripe', srgb('#c8141b'), rough=0.3, coat=1.0)
+    nose, tail = S.nose, S.tail
+    k.decal('roof', 'Carbon', 'top', -0.70, 0.30, -0.44, 0.44, 12, 10, off=.003)
+    # face: slim LED headlights in the wing tips, the light line across the nose, the mouth, corner intakes, splitter
+    k.headlight_quad((nose - 0.31, 0.715, 0.56), (0.68, 0.34, 0.48), 0.40, 0.092, slant=0.06, taper=0.32, dots='row')
+    k.decal('drlline', 'DRL', 'front', -0.50, 0.50, 0.466, 0.478, 24, 1, off=.006)
+    k.decal('mouth', 'Gloss', 'front', -0.52, 0.52, 0.19, 0.37, 20, 5)
+    for s in (1, -1):
+        k.rect('intakeS', 'Gloss', (nose - 0.24, s * 0.80, 0.33), (0.80, s * 0.60, 0), 0.30, 0.25, .004, 10, 7, slant=s * -0.04, taper=0.15)
+        for f in (-0.08, 0.04):
+            k.rect('intakeblade', 'Carbon', (nose - 0.24 - f * 0.6, s * (0.80 + f), 0.33), (0.80, s * 0.60, 0), 0.016, 0.24, .012, 1, 7)
+    k.decal('splitter', 'Carbon', 'front', -0.95, 0.95, 0.12, 0.19, 30, 2)
+    both(lambda s: k.decal('hoodvent', 'Gloss', 'top', 1.78, 2.08, s * 0.06, s * 0.30, 8, 6))   # the bonnet's air outlet
+    # sides: carbon skirts with a thin red line over them, deep intakes behind the doors, flush handles
+    for s in (1, -1):
+        k.decal('skirt', 'Carbon', side(s), -1.00, 1.02, 0.11, 0.21, 30, 2)
+        k.decal('pinstripe', 'Stripe', side(s), -0.98, 1.00, 0.218, 0.232, 30, 1, off=.005)
+        k.slanted('sideintake', 'Gloss', s, -0.66, -1.12, 0.44, 0.83, lean=0.22, nu=8, nv=8, off=.006)
+        k.decal('handle', 'Black', side(s), -0.40, -0.24, 0.76, 0.78, 4, 1, off=.003)
+    # tail: full-width light bar, black band, carbon diffuser
+    k.light_bar(-1.75, 0.80, 0.84, 0.86, bg=0.015, frac=0.7)
+    k.fan('rearbg', 'Gloss', -1.75, 0.42, 0.62, -0.70, 0.70, 30, 4, off=.003)
+    k.fan('diffuser', 'Carbon', -1.75, 0.22, 0.42, -0.74, 0.74, 30, 3)
+    # swan-neck wing over the deck
+    k.swan_wing(tail + 0.42, 1.20, 0.36, 1.74, tail + 0.52, 0.34, aoa=-8,
+                endplate=[(tail + 0.46, 1.14), (tail + 0.44, 1.28), (tail + 0.02, 1.31), (tail - 0.01, 1.16), (tail + 0.18, 1.11)])
+    k.join(); k.wheels(spokes=10, nut='centrelock', style='y')
+
+CARS['taiyo'] = (taiyo, '#f0a020', '#c8141b', '#c8141b')
 
 if __name__ == '__main__':
     main(CARS, 'amboola_concepts.py')

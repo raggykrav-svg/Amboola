@@ -497,6 +497,29 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
   - Holograms: `FUT.holo` (additive `FUT.holoMats` with scan lines) over the megatowers.
 - **Test:** `window.amboola.futEnsure()` then `futApply(true)`; check `FUT.tokyo.slots`, `FUT.giants`, `FUT.sky.zone === 'tokyo'`, `crime.police` specs all `enforcer` after `wantedHeat`. `futApply(false)` must leave no hover body visible and `CROWD.ims.torso.material` the human one. The UI: click `#futBtn` (owned car) and wait for `FUT.on && !FUT.travelling`. It builds in about 1 s. Same spot and view at night, every pass of one frame counted (`renderer.info.autoReset = false`): today 7.1 M triangles and 2,850 draw calls, the year 3000 8.5 M and 2,659; a CPU tick (render stubbed) about 6 ms median.
 
+## GT3 RS and Taiyō made to look real (Nov 2026)
+
+- **Close camera views** for comparing with photos taken standing by a car: `frontc` (4.6, 0, 1.75), `front34c` (4.1, -3.2, 1.45), `rear34c` (-4.2, -3.3, 1.6). The old `front` view is 8.2 m away with a 50 mm lens, which makes every lamp look tiny next to a photo.
+- **GT3 RS** (`porsches.gt3rs`), checked against Wikimedia photos of the 992 GT3 RS (kept in the scratchpad only):
+  - `body_911` takes `lamp_bowl`, `lamp=((x, y, z), rx, ry, dome)` and `lamp_f`. The defaults keep the other 911s as they were.
+  - The RS uses `bowl='Gloss'`: the real 992 lamps are dark inside, with the 4-point LED and a projector, not chrome bowls.
+  - It has big upright ovals (rx .12, ry .172, dome .05) at (1.86, .672, .745), facing (0.88, 0.13, 0.46): more forward than the others, so from the front they read as tall ovals.
+  - `t911rs()` widens the nose rows of `T911` (`NOSE_RS`: the tip goes from .26 to .33 half-width, x 1.88 from .865 to .895). It scales `wb`, `wg` and `wr` with them and lifts the wing crowns 12 mm. The drawing's round tip looked bulbous from the front.
+  - The front, as on the real car:
+    - a tall black radiator mouth (z .212–.425);
+    - corner intakes as `rect`s facing out diagonally, with two carbon `intakeblade`s each;
+    - a carbon splitter;
+    - two big bonnet vents (x 1.36–1.96, y .075–.355) with carbon slats and a carbon `hoodfin` plate along each outer edge (heights from `deck_z`);
+    - nine louvres on each wing;
+    - a big `archvent` behind each front wheel with a carbon blade.
+- **Taiyō** (`amboola_concepts.taiyo`, `CARS['taiyo']` overrides the concept recipe):
+  - The body is a `carshape.build` from `P_TAIYO`: 4.70 × 1.98 × 1.15 m on a 2.75 m wheelbase, the same as the game's `amb_taiyo` body (`fX`/`rX` ±1.375, `wr` .35), with a low cab-forward canopy, wing crowns (`bulge` up to .08) and haunches (`hip` .08).
+  - The front: slim `headlight_quad(dots='row')` lamps, a thin `DRL` line across the nose (`drlline`), a black mouth, corner intakes with blades, a carbon splitter and a bonnet air outlet.
+  - Carbon roof and skirts, a red `Stripe` pinstripe over each skirt, deep `sideintake`s behind the doors, flush handles.
+  - The rear: light bar, black band, diffuser, a swan-neck wing, `style='y'` centre-lock wheels, no exhaust (EV).
+  - The old toy recipe (tiger slashes, "A" grille, fang lamps) still builds the other 19 concepts.
+- Both were exported from their scripts (the AO bake runs in `carkit.main`), and their HD photos were rendered again with the game's default paints (`--paint '#f2c20f'` / `'#f0a020'`).
+
 ## Car realism pass (real photos)
 
 - **Reference photos:** Wikimedia Commons category pages (the API rate-limits) → `upload.wikimedia.org/.../thumb/<md5 path>/960px-<file>` URLs. Keep the photos in the scratchpad only; never commit them. A side-by-side sheet (photo | `--views front34 --sheet --samples 10` render) per 3 cars is the quickest check.
