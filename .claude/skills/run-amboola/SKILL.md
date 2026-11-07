@@ -294,6 +294,8 @@ Model gotchas:
 
 ## Troubleshooting
 
+- **GitHub Pages didn't update after a push** (the live `index.html` still has the old code): the "pages build and deployment" run's `deploy` job sometimes fails after a 10-minute timeout, or a re-run sits in `queued`. `actions_list` → `list_workflow_jobs` shows which. Re-run the failed jobs (`actions_run_trigger` `rerun_failed_jobs`). If that stays queued, cancel it and push the next real commit, which starts a fresh run. Check what is live with `curl -s "https://raggykrav-svg.github.io/Amboola/index.html?nc=$(date +%s)" | grep -c "<new code>"`. The CDN can take a minute after a green run.
+
 - **`game never finished loading` printed by the driver**: a syntax error stops the whole module from running, and the page shows no error. Find it with `node --check` on the extracted module script. One real cause: an inline `//` comment in a one-line statement that swallowed a closing `}`.
 - **Garage or scene renders completely black for one car**: a degenerate triangle in an extruded body gave a zero-length normal, which becomes NaN in the shader, and bloom smears NaN over the whole frame. `extrude()` now replaces zero normals. To check a car, scan `normal` attributes for length 0 via `eval`.
 - **Loading stuck on "Starting engine…"**: the three.js modules failed to load. Check that `/tmp/amboola-three/package/build/three.module.js` exists, and that the three version in the `index.html` import map matches the cache (delete the cache dir to refetch).
