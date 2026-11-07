@@ -669,10 +669,25 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - `window.amboola.HZ`, `skyUniforms` and `CAR_ENV` are exposed for tests.
 - **HD graphics** (`quality === 'hd'`, the top setting; `qUltra()` is true for Ultra and HD, so HD gets everything Ultra has):
   - `qualityPR()` renders at `clamp(max(devicePixelRatio, 1.5), …, 2)`, so a 1× screen is supersampled 1.5×; 4× MSAA + SMAA like Ultra.
-  - The composer's targets get a `DepthTexture`, and `AOPass` (after the render pass, before bloom) does ambient occlusion from that depth: a half-size pass (position from `invProj`, normal from the nearer of the left/right and up/down depth neighbours, 12 golden-angle spiral taps, radius `AO.radius` m, scaled by `AO.power`, fades out by `AO.fade` m) writes `(ao, viewZ)`, then a full-size 4×4 depth-weighted blur multiplies the colour by it (`AO.strength`), skipping the sky and bright (lum > 1) pixels. It uses `renderPass.camera`, so it works in the garage and on the title too.
+  - (Since Nov 2026 the AO runs on High and Ultra too, see "Better graphics" below.) The composer's targets get a `DepthTexture`, and `AOPass` (after the render pass, before bloom) does ambient occlusion from that depth: a half-size pass (position from `invProj`, normal from the nearer of the left/right and up/down depth neighbours, 12 golden-angle spiral taps, radius `AO.radius` m, scaled by `AO.power`, fades out by `AO.fade` m) writes `(ao, viewZ)`, then a full-size 4×4 depth-weighted blur multiplies the colour by it (`AO.strength`), skipping the sky and bright (lum > 1) pixels. It uses `renderPass.camera`, so it works in the garage and on the title too.
   - The car reflection is 512 px every frame, the wet film 0.7× the screen, `TOKYO_NEAR` ×1.6 and `CITY_NEAR` ×1.5.
   - Test: `window.amboola.setQuality('hd')`, then `AO` and `aoPass` (`aoPass.mixMat`: swap its last line for `gl_FragColor = vec4(vec3(ao), 1.)` to see the AO alone). A 1280×720 viewport renders 1920×1080, about 20 s a frame in SwiftShader.
 - **Paint shine:** `buildCar`'s clear-coated paint gets `shinyPaint()` (`paintShine` in `onBeforeCompile`, key `paint-shine`; the decal shader calls `paintShine` too, key `amboola-decal-shine`). It boosts the clear coat's indirect and direct light (`SHINE.ind` 1.75, `SHINE.dir` 1.6) and tilts the base-coat normal by object-space flakes (`SHINE.flake` × metalness, faded by `fwidth` so far-away flakes don't turn into noise). Traffic paint stays `MeshStandardMaterial` (roughness .22) for speed. In a slow headless run, grab frames with `canvas.toDataURL` straight after `tick()`, because `page.screenshot` can hit its 30 s timeout.
+
+## Better graphics (Nov 2026)
+
+- **Ambient occlusion on High, Ultra and HD** (not Low): `setupComposer` gives the targets a `DepthTexture` whenever `quality !== 'low'` and adds `AOPass`.
+  - `FPS_LEVELS[].ao` is true for the first three levels, so the 60 FPS mode switches the AO off before it lowers the resolution further (`fpsLevel` sets `aoPass.enabled`).
+  - **Gotcha:** `composer.renderTarget2` is a clone of target 1, and `DepthTexture.clone()` shares the image `Source`, so both targets got one GPU depth texture. Without MSAA (High), the AO's mix pass then sampled the depth texture of the target it was drawing into. That is a feedback loop: WebGL drops the draw and the picture went black (HD only worked because its 4× MSAA draws into renderbuffers). `setupComposer` now gives `renderTarget2` its own `new THREE.DepthTexture()`.
+- **Midday light** (`TIMES.day`): the sun at 40° (was 52°) and 4.2 (was 3.7), the hemisphere light .5 (was 1.1), exposure .9, and a new `T.env` of .55 for `scene.environmentIntensity` (`applyTime` reads `T.env ?? (night ? .8 : 1)`). Lit and shaded sides now read apart, buildings throw shadows across the streets, and the glass towers are a deep blue instead of washed out. Tried and rejected: AgX tone mapping (washed out against the Horizon grade).
+- **Skyline in the reflections:** `ENV_CITY` is 72 boxes on a 64–88 m ring round `envScene`'s origin, with a 128×256 canvas facade.
+  - By day: light walls, dark windows, tinted toward the horizon colour (haze). At sunset: dark warm. At night: black with lit windows.
+  - `envCityLook(name, T)` (called from `applyTime`) swaps the material and tints it. The skyline goes into `scene.environment` (the PMREM of `envScene`), so the glass towers, the city windows and every car without its own cube camera reflect a city instead of an empty sky.
+- **Falling leaves and petals** (`WX.snow`, the season's fall in Tokyo): `uKind` is 0 for snow (round points), 1 for spring petals and 2 for autumn leaves.
+  - Petals and leaves have their own shape in the fragment shader, a random spin (`vRot`), a tumble (`vTurn` narrows them edge-on), and a per-particle colour: leaves red, orange, gold or brown with a darker vein; petals pink to white.
+  - They fall at 1.1 m/s and are 1.5–1.9× bigger. `uLight` = `Smoke.light` dims them at sunset and night.
+  - (Before, autumn showed as round orange dots that looked like specks on the screen; the season follows the real month, so in November everyone saw them.)
+- `window.amboola` also has `TIMES`, `sunDir`, `sun`, `hemi` and `timeName` (to try light settings: change `TIMES.day`, then `applyTime('day')`).
 
 ## South Africa jungle
 

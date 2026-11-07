@@ -1086,6 +1086,15 @@ Every Porsche is a Blender-made 3D model (see [Cars](#the-blender-porsches)). Th
 - **Real tyres:** the brand name is printed round the sidewall (AMBOOLA · P ZERO · 275/35 ZR20), the sidewall rubber has a satin sheen, and the tread is matt.
 - **Spinning wheels blur:** as the wheels spin faster the spokes melt into a smooth spinning disc, like in a photo of a fast car.
 
+**Better graphics 🌇** (November 2026):
+
+![Before and now: midday street, the city from above, sunset](media/better-graphics.jpg)
+
+- **Soft shadows in every corner on High and Ultra:** ambient occlusion (it was only on HD before) darkens the places light can't reach well: under the cars, where buildings meet the street, along kerbs, in doorways and between buildings. On slower computers the 60 FPS mode turns it off before it makes the picture softer.
+- **Richer midday light:** a stronger sun a little lower in the sky and a softer sky light. Sunlit and shaded sides of buildings look different, buildings throw shadows across the streets, and the colours are deeper instead of washed out.
+- **A city in the reflections:** glass towers, windows and car paint reflect a city skyline instead of an empty sky. It has hazy towers by day, dark ones at sunset and lit windows at night.
+- **Real autumn leaves and spring petals:** the leaves blowing through Tokyo in autumn are leaf-shaped, in red, orange, gold and brown, and they spin and tumble as they fall. Before, they were round orange dots. Spring's cherry petals are petal-shaped too.
+
 **The Horizon look ☀️** (made to feel like the big open-world racing games):
 
 ![Before and after the Horizon look](media/horizon-look.jpg)
