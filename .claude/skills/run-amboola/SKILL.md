@@ -104,12 +104,27 @@ PREVIEW=/tmp/tprev node .claude/skills/run-amboola/trailer.mjs     # ~1.5 min: r
   - The rival is a headless Player (`drag.r.ghost`).
   - To simulate a run, call `simStep(1/60, …)` with `throttle: 0` until `drag.t >= 0`, then full throttle and steer to `DRAG.z - DRAG.lane`. Set `player.manual = false` first, because the GR86 is a manual.
 - **Upgrade kinds:** `UPG_KINDS` lists them, each with its own max: e 5, t 5, b 3, w 3, s 3, n 3. `UPG_FULL` maxes them all.
-- **Tuned cars:** `tunedSpec(car, u?)` builds the tuned spec, and drag bosses pass `UPG_FULL`.
+- **Tuned cars:** `tunedSpec(car, u?, sw?)` builds the tuned spec: the ⚡ SUPER UPGRADE engine (`sw`, default `swapOf(car)`) first, then the 🔧 levels on top. Drag bosses pass `UPG_FULL, null`, so they keep their stock engine.
+- **SUPER UPGRADE (engine swaps, Nov 2026):**
+  - **Data:** `ENGINES` has V4 … V24: `ps` (the engine's own rating), `mult` (× the car's own power), `redline`, `tract`, `snd` (an `ENGINE_TYPES` key, `sv4` … `sv24`) and `usd`.
+  - **Saved:** `engs` (`amboola.engines`) = `{carId: {has: ['v8', …], on: 'v8' | null}}`.
+  - **Calls:** `buyEngine(car, id)` buys the engine if it isn't owned yet and installs it. `stockEngine(car)` puts the stock engine back. `swapOf(car)` gives the installed id or null (always null for jets).
+  - **`swapSpec(car, id)`, cached in `swapCache`:**
+    - power `max(kw × mult, ps / 1.36)` (× `EV_SWAP` 1.45 for an EV);
+    - vmax × cbrt of the power ratio, capped at `SWAP_VMAX` 700 (but never below the stock vmax);
+    - `derive()` again with the new redline, the engine type and `SWAP_GEARS` 8 (`manual: false`);
+    - the car's own `drag`, `tract × E.tract`, `shiftTime` .02, and `launchG × (tract + .05)` for the Cybercab.
+  - **Why it is always faster:** every engine gets the same 8-speed box, so a bigger engine has longer gears and never an extra shift before 100 km/h, and `tract` grows with size, so traction-limited cars gain too. Re-check after touching it: for every car, `simSprint(swapSpec(c, E.id))` must get strictly quicker (0–100 and ¼ mile) from stock through V4 to V24. In Nov 2026 that held for 130 cars × 8 engines (about 0.7 s headless). A fully loaded V24 Devel reaches 807 km/h with no NaN.
+  - **Cache keys:** `tunedCache` and `simSprint` include the swap: `${id}:${swap}:${levels}`.
+  - **UI:** `#superBtn` is under `#upgBtn`. `updateMenu` hides it for unowned cars and jets and shows the installed engine in `#superOn`. `renderSuper()` draws `#superPanel`: `#supStock`, the `#supGrid` cards (`engSvg(cyl, on)` draws the engine from above) and `#supStats`.
+  - **Install:** installing calls `revShow(spec)`. It plays the swapped spec's own synth through `audio.update` for about 2.5 s in the garage: two blips, the limiter, then crackle. It stops as soon as `audio.eng` changes or the state leaves `garage`. Then a `banner()` appears (a toast sits in the HUD, which is hidden in the garage).
+  - **Sound while driving:** the Player sites (`startDrive`, `swapCar`, `troSwap`) call `audio.setCar(player.spec)`, the driven spec. The base `CARS[i]` would give a swapped car the stock engine's sound and redline.
+  - **Selling:** `sellCar` deletes `engs[id]`, and `sellValue` adds half of `engSpent`.
 - **Nitro:** `inp.nitro` adds 2.6 m/s² after the traction cap while `player.nitro` (seconds) lasts. It is in readInput (Shift/X, the touch `tn` button, gamepad button 1) and shows in the `#nitroBar` HUD.
 - **Stats and missions:** `ST` (`amboola.stats`) counts `dragWins`, `raceWins`, `fares`, `arrests`, `stashed`, `driftBest`, `bosses`, and `done` (finished mission ids). `bump()` and `best()` update it and call `checkMissions()`, which pays each of the 16 `MISSIONS` once (`ST.visited` holds the new areas reached) and queues the `#achv` banner.
 - **Daily bonus:** `checkDaily()` runs at boot (`amboola.daily` = {last, streak}). The first visit only records the day, so fresh driver contexts never see the popup.
 - **Drag bosses:** they are the `DRAG_EVENTS` entries with `boss`, unlocked in order via `ST.bosses`.
-- **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade spend.
+- **Selling:** `sellCar()` pays `sellValue()` = 60% of the price + 50% of upgrade and engine spend.
 - **Testing:** the driver always starts from a fresh context, so pick `{"car":54}` (the GR86) or call `window.amboola.earn(n)` and then `updateMenu()` before `garageGo()`. Otherwise DRIVE/RACES/TAXI do nothing on locked cars.
 
 ## Feel (gas and brake)
@@ -296,6 +311,7 @@ Model gotchas:
 
 - **GitHub Pages didn't update after a push** (the live `index.html` still has the old code): the "pages build and deployment" run's `deploy` job sometimes fails after a 10-minute timeout, or a re-run sits in `queued`. `actions_list` → `list_workflow_jobs` shows which. Re-run the failed jobs (`actions_run_trigger` `rerun_failed_jobs`). If that stays queued, cancel it and push the next real commit, which starts a fresh run. Check what is live with `curl -s "https://raggykrav-svg.github.io/Amboola/index.html?nc=$(date +%s)" | grep -c "<new code>"`. The CDN can take a minute after a green run.
 
+- **`page.screenshot: Timeout 30000ms exceeded`** (seen Nov 2026, even on the plain garage): in some containers Playwright's screenshot waits for a compositor frame that SwiftShader never delivers. `driver.mjs` now falls back to Chrome's own `Page.captureScreenshot` over CDP after 20 s. Each shot then takes about 15–40 s at 1280×800, which is normal there. Canvas-only captures (`renderer.domElement.toDataURL()` after `tick()`) are unaffected.
 - **`game never finished loading` printed by the driver**: a syntax error stops the whole module from running, and the page shows no error. Find it with `node --check` on the extracted module script. One real cause: an inline `//` comment in a one-line statement that swallowed a closing `}`.
 - **Garage or scene renders completely black for one car**: a degenerate triangle in an extruded body gave a zero-length normal, which becomes NaN in the shader, and bloom smears NaN over the whole frame. `extrude()` now replaces zero normals. To check a car, scan `normal` attributes for length 0 via `eval`.
 - **Loading stuck on "Starting engine…"**: the three.js modules failed to load. Check that `/tmp/amboola-three/package/build/three.module.js` exists, and that the three version in the `index.html` import map matches the cache (delete the cache dir to refetch).

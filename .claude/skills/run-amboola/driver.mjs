@@ -64,6 +64,17 @@ async function open(viewport = { width: 1280, height: 720 }) {
   return { browser, page, errors };
 }
 
+// a screenshot of the page. In some containers Playwright's page.screenshot() never returns (it waits for a compositor
+// frame that SwiftShader doesn't deliver), while Chrome's own Page.captureScreenshot still works: try one, then the other.
+async function snap(page, f) {
+  try { await page.screenshot({ path: f, timeout: 20000 }); }
+  catch (e) {
+    const cdp = await page.context().newCDPSession(page);
+    const r = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
+    fs.writeFileSync(f, Buffer.from(r.data, 'base64')); await cdp.detach();
+  }
+}
+
 const mode = process.argv[2] || 'shots';
 if (mode === 'shots') {
   const out = path.resolve(process.argv[3] || '/tmp/amboola-shots');
@@ -83,7 +94,7 @@ if (mode === 'shots') {
     if (st.press) await page.keyboard.press(st.press);
     if (st.eval) console.log('eval', JSON.stringify(await page.evaluate(src => (0, eval)(src), st.eval.startsWith('@') ? fs.readFileSync(st.eval.slice(1), 'utf8') : st.eval)));
     await page.waitForTimeout(st.wait ?? 400);
-    if (st.shot) { const f = path.join(out, st.shot + '.png'); await page.screenshot({ path: f }); console.log('shot', f); }
+    if (st.shot) { const f = path.join(out, st.shot + '.png'); await snap(page, f); console.log('shot', f); }
   }
   const p = await page.evaluate(() => { const p = window.amboola.player; return p ? { kmh: +(p.speed * 3.6).toFixed(1), gear: p.gear, rpm: Math.round(p.rpm), x: +p.x.toFixed(1), z: +p.z.toFixed(1) } : null; });
   console.log('player', JSON.stringify(p));

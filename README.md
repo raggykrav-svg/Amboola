@@ -74,6 +74,47 @@ A fully tuned car with nitro is about 1–2 s quicker over the quarter mile.
 
 Each level costs a bit more than the last, and the price scales with the car. The panel shows your power, top speed, 0–100, quarter-mile time and grip before and after, measured with the game's real physics. For example, a fully tuned GR86 (Engine 5, Tires 3) drops from 14.1 s to 12.8 s over the quarter mile.
 
+## ⚡ Super Upgrade: engine swaps
+
+Press **⚡ SUPER UPGRADE · エンジン**, right under 🔧 UPGRADE in the garage, on any car you own. It opens an engine shop. Buy a **V4, V6, V8, V10, V12, V16, V20 or V24** and it goes straight into the car. The V4 costs $15,000, so a brand-new game can afford it straight away. Then the car revs it for you: two blips, a pull to the limiter, and a crackle back to idle.
+
+- **Every engine fits every car:** the GR86, the Bugattis, the Teslas, the taxis, the 1950s classics.
+- **A bigger engine is always faster.** Each engine makes its own power, or multiplies the car's own power, whichever is more:
+  - **V4:** 450 PS or ×1.15
+  - **V24:** 5,000 PS or ×2.7
+  - So a small car gets the engine's full power, and a hypercar still gets the multiplier.
+  - Top speed grows with the power, up to 700 km/h before the 🔧 upgrades.
+- **The game checks it with its real physics:** in all 130 cars, every engine beats the one below it, and the stock engine, over 0–100 km/h and the quarter mile.
+- **Every engine comes with:**
+  - its own 8-speed seamless-shift gearbox, geared for the new top speed;
+  - wider tyres, for more pull off the line. A car that already spins its wheels still gets quicker with every size up.
+- **Electric cars** get a gearbox, an exhaust and a fuel tank (⛽ instead of ⚡). They also get 1.45× the power, because a motor's instant pull with no gear changes is worth that much.
+- **Every engine sounds different:**
+  - a raspy 11,000 rpm race V4 and a twin-turbo V6;
+  - a deep cross-plane V8 burble;
+  - screaming race V10 and V12;
+  - a quad-turbo V16 whoosh and a twenty-cylinder wail;
+  - the quad-turbo V24's thunder.
+- **A bought engine stays with that car.** Swap between the engines you bought, or put the stock engine back, for free.
+- **The 🔧 upgrades stack on top.** A fully loaded V24 tops out at about 800 km/h.
+- The garage, the panel and the driving HUD all show the engine in the car (**⚡ V24**).
+- **Selling a car** pays back half of what its engines cost. The engines go with the car.
+- **Drag bosses** always race on their stock engines.
+
+| Engine | Price | Makes | Toyota GR86 (power · top speed · ¼ mile) | Bugatti Chiron Super Sport |
+|---|---|---|---|---|
+| **Stock** | — | — | 234 PS · 226 km/h · 14.12 s | 1,601 PS · 440 km/h · 8.89 s |
+| **V4** | $15,000 | 450 PS or ×1.15 | 450 PS · 281 km/h · 12.13 s | 1,841 PS · 461 km/h · 8.43 s |
+| **V6** | $50,000 | 700 PS or ×1.25 | 700 PS · 326 km/h · 11.57 s | 2,001 PS · 474 km/h · 8.27 s |
+| **V8** | $100,000 | 1,000 PS or ×1.4 | 1,000 PS · 367 km/h · 11.22 s | 2,241 PS · 492 km/h · 8.01 s |
+| **V10** | $200,000 | 1,350 PS or ×1.55 | 1,350 PS · 405 km/h · 10.93 s | 2,481 PS · 509 km/h · 7.75 s |
+| **V12** | $400,000 | 1,800 PS or ×1.75 | 1,800 PS · 446 km/h · 10.62 s | 2,801 PS · 530 km/h · 7.51 s |
+| **V16** | $800,000 | 2,600 PS or ×2 | 2,600 PS · 504 km/h · 10.29 s | 3,201 PS · 554 km/h · 7.28 s |
+| **V20** | $1,500,000 | 3,600 PS or ×2.3 | 3,600 PS · 562 km/h · 9.96 s | 3,682 PS · 581 km/h · 6.99 s |
+| **V24** | $2,500,000 | 5,000 PS or ×2.7 | 5,000 PS · 627 km/h · 9.63 s | 5,000 PS · 643 km/h · 6.67 s |
+
+The quarter-mile times come from the game's own physics (the same test the panel runs), with no 🔧 upgrades.
+
 ## Drag races
 
 **💀 Drag bosses:** three quarter-mile boss races against **fully upgraded** cars that react fast at the green. Each one unlocks after you beat the one before. A boss pays its big prize the first time you win, and 10% on rematches:
@@ -98,7 +139,7 @@ The **🚦 DRAG RACE** button in the garage (or **RACES → 🚦 DRAG**) takes y
   - **Driving fun:** land a flip ($5,000), land 10 flips ($25,000), ride a loop ($8,000), get photographed at 300 km/h ($15,000), win a night street race ($10,000), finish the desert rally ($20,000).
   - **Final goal:** beat all 3 drag bosses ($500,000).
 - **📅 Daily bonus:** come back on a new day and collect free money. It grows every day you keep your streak: $5,000 on day 1, up to $20,000 on day 7 and after. Miss a day and the streak starts again.
-- **💸 Sell cars:** the red **SELL** button under UPGRADE sells the car for 60% of its price plus half of what you spent upgrading it. Tap twice to confirm. You always keep at least one car.
+- **💸 Sell cars:** the red **SELL** button under UPGRADE sells the car for 60% of its price plus half of what you spent upgrading it and on its ⚡ Super Upgrade engines. Tap twice to confirm. You always keep at least one car.
 
 ## Customizing · カスタム
 
