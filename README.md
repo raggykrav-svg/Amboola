@@ -78,6 +78,8 @@ Each level costs a bit more than the last, and the price scales with the car. Th
 
 Press **⚡ SUPER UPGRADE · エンジン**, right under 🔧 UPGRADE in the garage, on any car you own. It opens an engine shop. Buy a **V4, V6, V8, V10, V12, V16, V20 or V24** and it goes straight into the car. The V4 costs $15,000, so a brand-new game can afford it straight away. Then the car revs it for you: two blips, a pull to the limiter, and a crackle back to idle.
 
+![The SUPER UPGRADE engine shop: a GT3 RS with a race V12 in it](media/super-upgrade.jpg)
+
 - **Every engine fits every car:** the GR86, the Bugattis, the Teslas, the taxis, the 1950s classics.
 - **A bigger engine is always faster.** Each engine makes its own power, or multiplies the car's own power, whichever is more:
   - **V4:** 450 PS or ×1.15
