@@ -98,7 +98,7 @@ Press **⚡ SUPER UPGRADE · エンジン**, right under 🔧 UPGRADE in the gar
   - a quad-turbo V16 whoosh and a twenty-cylinder wail;
   - the quad-turbo V24's thunder.
 - **A bought engine stays with that car.** Swap between the engines you bought, or put the stock engine back, for free.
-- **The 🔧 upgrades stack on top.** A fully loaded V24 tops out at about 800 km/h.
+- **The 🔧 upgrades stack on top.** With every upgrade too, a V24 car reaches 700–800 km/h (a GR86 722, the Devel Sixteen 807).
 - The garage, the panel and the driving HUD all show the engine in the car (**⚡ V24**).
 - **Selling a car** pays back half of what its engines cost. The engines go with the car.
 - **Drag bosses** always race on their stock engines.
