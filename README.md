@@ -12,6 +12,22 @@ Free, in your browser: no download, no install, no account. It works on computer
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
+## Also in this repo: AMBERWILD 🦖
+
+A second, separate game lives in [`amberwild/`](amberwild/): a dinosaur survival game on a lost island. Open [`amberwild/index.html`](amberwild/index.html) (or `/Amboola/amberwild/` on the site once it is on the main branch).
+
+- **Make your survivor:** body, skin, hair, beard, war paint and outfit.
+- **Survive:** health, water and food; pick up sticks, stones and fibre; craft an axe, a spear, a bow, arrows, bandages, armour and a saddle.
+- **Hunt:** hold the click to draw the bow and let go inside the bright band for a **PERFECT** shot.
+- **Tame and ride:** wear a raptor or a triceratops down until it is dazed, feed it, pet it, saddle it and ride it.
+- **Build:** floors, walls, doorways, roofs, a campfire to cook on, a bed to set your camp, torches and spikes.
+- **Tribe rivalry:** break the Red Hand's gate, clear the outpost and claim the totem. Then find the Tyrant.
+- **Shop:** outfits, pack skins, hats, bows and emotes, all paid with amber you find and earn in the game. No real money.
+
+Seven kinds of dinosaur, a day and night cycle, a minimap, an 11-step trail of quests, saves in the browser, and touch controls on phones. Everything is drawn from code (no model or texture files).
+
+To change it: edit the files in `amberwild/src/`, then run `node amberwild/build.mjs` to rebuild `amberwild/index.html`. `node amberwild/driver.mjs /tmp/shots` boots the game in a headless browser and takes a screenshot.
+
 ## The title screen 🏁
 
 ![The title screen, Settings and Challenges](media/title-screen.jpg)
