@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101016">
+  <title>Rolka — AMBOOLA Guide</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101016;--panel:#191922;--panel2:#20202b;--line:#343440;--text:#f4f3f7;--muted:#a6a4b2;--red:#ff4d5e;--cyan:#6ce4f2;--gold:#ffcf70}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#39202b 0,transparent 55%),var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;padding:20px}
+    .app{width:min(900px,100%);height:min(820px,calc(100vh - 40px));min-height:540px;display:flex;flex-direction:column;background:#14141bdc;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 24px 90px #0009}
+    header{display:flex;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid var(--line);background:#191920}
+    .avatar{width:48px;height:48px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(145deg,#ff6472,#991d3e);font-size:25px;box-shadow:0 5px 22px #ff405333}
+    h1{font-size:19px;margin:0;letter-spacing:.02em}header p{margin:2px 0 0;color:var(--muted);font-size:13px}.status{margin-left:auto;color:#95e4b7;font-size:12px;white-space:nowrap}.status:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#79e2a2;margin-right:7px}
+    .notice{padding:9px 22px;background:#282127;color:#d9cbd0;font-size:12px;border-bottom:1px solid #493039}.notice b{color:var(--gold)}
+    .messages{flex:1;overflow-y:auto;padding:24px clamp(14px,5vw,42px);scroll-behavior:smooth}.msg{display:flex;gap:10px;margin:0 0 18px;align-items:flex-start}.msg.user{justify-content:flex-end}.bubble{max-width:min(680px,88%);padding:13px 16px;border:1px solid var(--line);border-radius:4px 17px 17px 17px;background:var(--panel);white-space:pre-wrap;overflow-wrap:anywhere}.user .bubble{border-color:#71313d;background:#49212d;border-radius:17px 4px 17px 17px}.boticon{flex:none;width:29px;height:29px;border-radius:10px;background:#3a202b;display:grid;place-items:center;font-size:15px}.bubble strong{color:var(--cyan)}.bubble .gold{color:var(--gold)}
+    .welcome{margin:8px auto 22px;text-align:center;max-width:560px}.welcome .big{font-size:39px}.welcome h2{margin:5px 0;font-size:24px}.welcome p{color:var(--muted);margin:5px 0 14px}
+    .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 15px}.chips button{font:inherit;font-size:13px;color:#ddd;background:#20202a;border:1px solid var(--line);border-radius:999px;padding:8px 12px;cursor:pointer}.chips button:hover{border-color:var(--red);color:white}
+    form{display:flex;gap:10px;padding:14px 18px max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#191920}.inputwrap{display:flex;flex:1;align-items:center;background:#101016;border:1px solid #42424f;border-radius:14px;padding:0 13px}input{width:100%;padding:13px 0;background:transparent;color:var(--text);border:0;outline:0;font:inherit}input::placeholder{color:#858391}form button{border:0;border-radius:13px;padding:0 20px;color:#fff;background:linear-gradient(135deg,#ff5867,#ce284e);font:700 15px inherit;cursor:pointer}form button:hover{filter:brightness(1.1)}form button:disabled{opacity:.55;cursor:default}.foot{padding:0 20px 11px;text-align:center;color:#777681;font-size:11px;background:#191920}
+    @media(max-width:560px){body{padding:0}.app{height:100vh;min-height:450px;border-radius:0;border:0}.status{font-size:0}.status:before{margin:0}.bubble{max-width:92%}.welcome{margin-top:0}header{padding:13px 15px}form{padding-left:12px;padding-right:12px}form button{padding:0 15px}}
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Rolka AMBOOLA game guide">
+    <header>
+      <div class="avatar" aria-hidden="true">🤖</div>
+      <div><h1>ROLKA</h1><p>Your AMBOOLA world guide</p></div>
+      <div class="status">READY TO HELP</div>
+    </header>
+    <div class="notice"><b>Guide mode:</b> I answer from the knowledge built into this page. I’m not a self-learning or live internet AI, so I may not know every detail.</div>
+    <section class="messages" id="messages" aria-live="polite">
+      <div class="welcome" id="welcome"><div class="big">🏁</div><h2>Hey! I’m Rolka.</h2><p>Ask me how to play AMBOOLA, find places, earn money, race, or use your car. Pick a question to start:</p>
+        <div class="chips">
+          <button type="button" data-q="How do I start playing?">How do I start?</button>
+          <button type="button" data-q="What are the controls?">Show controls</button>
+          <button type="button" data-q="How can I earn money?">Earn money</button>
+          <button type="button" data-q="How does the Cybercab drive itself?">Cybercab</button>
+          <button type="button" data-q="How do I find places and use the map?">Map and GPS</button>
+          <button type="button" data-q="Tell me about the cars and upgrades">Cars and upgrades</button>
+        </div>
+      </div>
+    </section>
+    <form id="chatForm" autocomplete="off">
+      <div class="inputwrap"><input id="question" maxlength="300" aria-label="Ask Rolka a question" placeholder="Ask Rolka about AMBOOLA…"></div>
+      <button id="send" type="submit">Ask&nbsp; ↗</button>
+    </form>
+    <div class="foot">Rolka’s built-in guide · No account, API key, or data sent anywhere</div>
+  </main>
+<script>
+  // Rolka uses a small local knowledge base and keyword matching: private and offline,
+  // but not a language model. Add or edit entries here to teach him more about the game.
+  const knowledge = [
+    {title:'Getting started',tags:'start play beginner begin garage first game',text:'Open the game and press PLAY (or Enter) to go to your garage. You begin with $20,000 and a free Toyota GR86. Choose a car you own and press DRIVE. The game is a browser game: no install or account is needed. An internet connection is needed the first time for Three.js and fonts.'},
+    {title:'Driving controls',tags:'controls keys keyboard drive steer throttle brake reverse handbrake drift nitro',text:'Driving keys:\n• W / ↑: throttle; S / ↓: brake, then hold to reverse.\n• A / D or ← / →: steer; Space: handbrake/drift; Shift: nitro (if fitted).\n• C: change camera; M: automatic/manual gearbox; Q / E: shift down/up in manual.\n• R: put the car back on the road; P / Esc: pause; H: show controls.\n• T changes time of day, Y weather, U season. Enter interacts with race markers and other rings. Gamepads and touch controls work too.'},
+    {title:'Map and GPS',tags:'map gps navigation places route search pin travel',text:'Click the minimap or press N to open the full map. Search for a place, click the map to drop a pin, then choose SET ROUTE for road-following GPS or TRAVEL HERE for fast travel. The map can show distance by road. For tracks, choose RACE. Drag to pan, use the wheel or +/− to zoom, and ◎ to centre on your car.'},
+    {title:'Making money',tags:'money cash earn wallet pay job rewards',text:'You start with $20,000. Earn money from circuit and drag races, taxi fares, outlaw safes, police arrests, drifting and stunts, speed cameras, night meets, rallies, deliveries, bus passengers, missions and challenges. Racing usually pays more for a better finish. Your wallet and progress are saved in the browser; use SAVE & QUIT in the garage to save.'},
+    {title:'Cars and garage',tags:'cars garage buy own price vehicle brands',text:'The garage has a large collection of cars, from Toyota GR cars and Teslas to Porsches, Ferraris, Lamborghinis, McLarens, Bugattis and AMBOOLA cars. Use the search box to find a car by model, brand, or type. Cars you do not own show a price; buy one you can afford, or win special cars in events and challenges.'},
+    {title:'Upgrades and customization',tags:'upgrade tune engine tires turbo weight spoiler nitro customize paint',text:'In the garage, select a car you own and choose UPGRADE to improve its engine, tires, turbo, weight, spoiler or nitro. SUPER UPGRADE lets you buy engine swaps from V4 through V24. CUSTOMIZE changes paint and appearance, including rims, decals, neon, interior and other parts. Check the garage panel for the cost and performance changes.'},
+    {title:'Circuit races',tags:'race racing circuit track rivals win',text:'Start a road race from a race marker or the map’s RACE option. Follow the route arrows and pass through the race gates in order; shortcuts across blocks do not count. The game has several Tokyo circuits and races in other places. You can also find races under RACES in the garage.'},
+    {title:'Drag races',tags:'drag race quarter mile half mile launch reaction lights',text:'Choose DRAG RACE in the garage or RACES → DRAG. At the start, stage at the line and wait through the amber lights. Accelerate on green—throttle during amber is a red-light start and loses the race. Results include reaction time, elapsed time and trap speed. Manual cars need shifting with Q/E; press M for automatic.'},
+    {title:'Cybercab self-driving',tags:'cybercab self driving autopilot taxi drive me there destination',text:'Buy and select the Tesla Cybercab, then press DRIVE. On the map, choose a destination and press DRIVE ME THERE. Set its allowed speed with − / +. It follows GPS, handles corners, traffic and rerouting, and you can take control with STOP, braking or steering. It can also drive its own race line if you have no saved best run for that track.'},
+    {title:'Tesla Roadster flight',tags:'fly flying rocket roadster thrusters v',text:'The flying Tesla Roadster can lift off with V (or the FLY button). In flight, W/S move forward/back, A/D turn, Space/↑ climb, Shift/↓ descend. Its stated air top speed is 500 km/h. Land on a street or roof to continue.'},
+    {title:'AMBOOLA Jet',tags:'jet plane aircraft fly airport autopilot landing',text:'Buy the AMBOOLA Jet and choose FLY. W/S control throttle, A/D turn and ↑/↓ climb or dive. The destination list can autopilot to Tokyo, Mt. Fuji and other places. Near an airport, press L or LAND to land on the runway and return to driving.'},
+    {title:'Drifting and stunts',tags:'drift stunt ramp loop flip spin barrel roll air points',text:'Use Space as the handbrake to drift. On a jump, S backflips, W frontflips, A/D spins, and Space + A/D barrel rolls. Land successfully to bank stunt points; combos and clean landings score more. For loops, build enough speed before entering.'},
+    {title:'Time, weather and seasons',tags:'time weather rain season day night snow change',text:'While driving, T cycles day/sunset/night, Y changes rain/clear weather, and U changes the season. These settings are also available in menus. Rain and snowy roads reduce grip, so brake earlier and use smoother steering.'},
+    {title:'Police and Outlaw',tags:'police outlaw wanted chase escape arrest safes hideout',text:'OUTLAW mode lets you collect green money safes, but police pursuit gets tougher as wanted stars rise. Escape by getting out of sight, or reach a hideout and stash your money before you are caught. In POLICE mode, follow the outlaw indicators and touch the outlaw’s car to arrest him; he can stash cash at a hideout.'},
+    {title:'Story, missions and challenges',tags:'story chapter mission challenge trophy badge goals',text:'Story mode has chapters with goals shown on screen. Missions and challenges are listed from the title screen or pause menu; some award cash, stars, trophies or special cars. The trophy room and challenges board help you track what you have completed. Read the goal text before starting an event for its rules.'},
+    {title:'World and places',tags:'countries world tokyo fuji cyprus italy dubai paris new york alps london egypt africa',text:'The world includes Tokyo, Mt. Fuji, Amboola Beach, the Shirayuki Snow Pass and destinations such as Cyprus, Italy, Dubai, Paris, New York, the Swiss Alps, London, Egypt and South Africa. Use the map search or ferry/jet options to find and reach destinations.'},
+    {title:'Graphics and settings',tags:'graphics settings low high ultra hd performance phone sound',text:'The title screen’s SETTINGS menu lets you choose graphics quality (Low, High, Ultra or HD), game difficulty and sound. Lower graphics settings can help on slower phones or computers. Touch controls appear on phones and tablets.'},
+    {title:'Saving progress',tags:'save saved progress browser storage quit',text:'The game saves progress in your browser. In the garage, use SAVE & QUIT to save and return to the title screen. Browser storage is local to that browser/device, so clearing site data or switching devices may remove or not carry over a save.'},
+    {title:'Finding help',tags:'help how play guide instructions',text:'Press H while driving to show the game controls. For a full feature list, check the AMBOOLA README in the repository: https://github.com/raggykrav-svg/Amboola/blob/HEAD/README.md. Ask me a specific question—like “how do drag races work?”—and I’ll try to guide you.'}
+  ];
+  const messages = document.getElementById('messages');
+  const form = document.getElementById('chatForm');
+  const input = document.getElementById('question');
+  const send = document.getElementById('send');
+  const stopWords = new Set('a an and are as at be can do for from how i in is it me of on or the there to what where which who with you your'.split(' '));
+  function tokens(s){return s.toLowerCase().replace(/[^a-z0-9\s-]/g,' ').split(/\s+/).filter(w=>w.length>1&&!stopWords.has(w));}
+  function answerFor(query){
+    const q=tokens(query); let best=null, bestScore=0;
+    for(const item of knowledge){
+      const words=new Set(tokens(item.title+' '+item.tags+' '+item.text)); let score=0;
+      for(const word of q){if(words.has(word))score+=item.tags.toLowerCase().includes(word)?3:1;}
+      if(score>bestScore){bestScore=score;best=item;}
+    }
+    if(!best||bestScore<2) return 'I’m still learning that part of AMBOOLA. Try asking about controls, the map, cars, upgrades, races, money, the Cybercab, the jet, stunts, missions, or saving. You can help teach me by adding a new entry to the knowledge list in rolka.html.';
+    return best.text;
+  }
+  function addMessage(text,from){
+    const row=document.createElement('div'); row.className='msg '+from;
+    if(from==='bot'){const icon=document.createElement('div');icon.className='boticon';icon.textContent='🤖';row.appendChild(icon);}
+    const bubble=document.createElement('div');bubble.className='bubble';bubble.textContent=text;row.appendChild(bubble);messages.appendChild(row);messages.scrollTop=messages.scrollHeight;
+  }
+  function ask(question){const q=question.trim();if(!q)return;document.getElementById('welcome')?.remove();addMessage(q,'user');addMessage(answerFor(q),'bot');input.value='';input.focus();}
+  form.addEventListener('submit',e=>{e.preventDefault();ask(input.value);});
+  document.querySelectorAll('[data-q]').forEach(button=>button.addEventListener('click',()=>ask(button.dataset.q)));
+</script>
+</body>
+</html>
