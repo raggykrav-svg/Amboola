@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NYC 3000: Last Stand</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23ff1e3c' font-family='Arial Black'%3E3K%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <!-- LOADING -->
+    <div id="loading" class="screen show">
+      <div class="load-box">
+        <div class="load-title">NYC 3000</div>
+        <div class="load-bar"><i id="loadFill"></i></div>
+        <div id="loadText">Building the city…</div>
+      </div>
+    </div>
+
+    <!-- TITLE (concept4) -->
+    <div id="title" class="screen">
+      <div class="title-scan"></div>
+      <div class="title-wrap">
+        <div class="title-main">NYC 3000</div>
+        <div class="title-sub"><span>LAST STAND</span></div>
+      </div>
+      <button id="pressStart" class="press-start">PRESS START</button>
+      <div class="title-foot">Press <b>ENTER</b> or click · © 3000 Liberty Uprising</div>
+    </div>
+
+    <!-- MAIN MENU (concept5) -->
+    <div id="menu" class="screen">
+      <div class="menu-head">
+        <div class="menu-kicker">SKYLINE WARS</div>
+        <div class="menu-title">NYC 3000<span>LAST STAND</span></div>
+        <div class="menu-tag">New York, Year 3000</div>
+      </div>
+      <div class="menu-buttons">
+        <button class="mbtn" id="bNew">NEW GAME</button>
+        <button class="mbtn" id="bContinue">CONTINUE</button>
+        <div id="saveInfo" class="save-info"></div>
+        <button class="mbtn" id="bOptions">OPTIONS</button>
+        <button class="mbtn small" id="bControls">CONTROLS</button>
+      </div>
+      <div class="menu-foot">WASD move · Mouse aim · Click shoot · F jack a car · Esc pause</div>
+    </div>
+
+    <!-- OPTIONS -->
+    <div id="options" class="screen panel-screen">
+      <div class="panel">
+        <h2>OPTIONS</h2>
+        <div class="opt-grid" id="optGrid"></div>
+        <div class="panel-buttons">
+          <button class="mbtn small" id="bOptBack">BACK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div id="controls" class="screen panel-screen">
+      <div class="panel">
+        <h2>CONTROLS</h2>
+        <div class="ctrl-cols">
+          <div>
+            <h3>On foot</h3>
+            <p><kbd>W A S D</kbd> move</p>
+            <p><kbd>Mouse</kbd> look / aim</p>
+            <p><kbd>Left click</kbd> shoot</p>
+            <p><kbd>Right click</kbd> zoom aim</p>
+            <p><kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump</p>
+            <p><kbd>R</kbd> reload</p>
+            <p><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> / <kbd>Wheel</kbd> switch gun</p>
+            <p><kbd>F</kbd> jack the nearest car</p>
+          </div>
+          <div>
+            <h3>Driving</h3>
+            <p><kbd>W</kbd> gas · <kbd>S</kbd> brake / reverse</p>
+            <p><kbd>A</kbd> <kbd>D</kbd> steer</p>
+            <p><kbd>Space</kbd> handbrake (ground car)</p>
+            <p><kbd>Space</kbd> up · <kbd>Shift</kbd> down (flying car)</p>
+            <p><kbd>Left click</kbd> plasma cannon (hover cars)</p>
+            <p><kbd>Mouse</kbd> look around</p>
+            <p><kbd>F</kbd> get out</p>
+            <p><kbd>Esc</kbd> pause · <kbd>M</kbd> mute</p>
+          </div>
+        </div>
+        <div class="panel-buttons"><button class="mbtn small" id="bCtrlBack">BACK</button></div>
+      </div>
+    </div>
+
+    <!-- PAUSE -->
+    <div id="pause" class="screen panel-screen">
+      <div class="panel narrow">
+        <h2>PAUSED</h2>
+        <button class="mbtn" id="bResume">RESUME</button>
+        <button class="mbtn" id="bPOptions">OPTIONS</button>
+        <button class="mbtn" id="bSave">SAVE GAME</button>
+        <button class="mbtn" id="bPControls">CONTROLS</button>
+        <button class="mbtn" id="bQuit">QUIT TO MENU</button>
+        <div id="pauseMsg" class="save-info"></div>
+      </div>
+    </div>
+
+    <!-- DEATH -->
+    <div id="dead" class="screen">
+      <div class="dead-text">FLATLINED</div>
+      <div class="dead-sub">Respawning at Liberty Med Center…</div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="vignette"></div>
+      <div id="compass"><div id="compassStrip"></div><i class="compass-mark"></i></div>
+      <div id="objective"><small>OBJECTIVE</small><div id="objText">-</div><div id="objDist"></div></div>
+      <div id="wanted"><div id="stars"></div><div id="wantedLabel"></div></div>
+      <div id="fps"></div>
+      <div id="toast"></div>
+
+      <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+      <div id="hitmark"></div>
+      <div id="prompt"></div>
+
+      <div id="bl">
+        <canvas id="minimap" width="200" height="200"></canvas>
+        <div class="bars">
+          <div class="bar-row"><span>HEALTH</span><div class="bar hp"><i id="hpFill"></i></div><b id="hpNum">100</b></div>
+          <div class="bar-row"><span>SHIELD</span><div class="bar sh"><i id="shFill"></i></div><b id="shNum">100</b></div>
+        </div>
+      </div>
+
+      <div id="weaponPanel">
+        <div id="wName">PLASMA RIFLE</div>
+        <div id="ammo"><b id="ammoMag">28</b><span>/</span><em id="ammoRes">120</em></div>
+        <div id="wSlots"></div>
+        <div id="reloadBar"><i id="reloadFill"></i></div>
+      </div>
+
+      <div id="vehPanel">
+        <div id="vName">HOVER CAR</div>
+        <div class="speedo"><b id="speed">0</b><span>KM/H</span></div>
+        <div id="altRow">ALT <b id="alt">0</b> m</div>
+        <div class="bar-row"><span>INTEGRITY</span><div class="bar vi"><i id="viFill"></i></div></div>
+        <div class="bar-row" id="cannonRow"><span>PLASMA CANNON</span><div class="bar en"><i id="enFill"></i></div></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
