@@ -17,6 +17,7 @@ import { Game } from './game.js';
 import { HUD } from './hud.js';
 import { buildTitleScene } from './title.js';
 import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
+import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
 const SAVE_KEY = 'nyc3000.save';
@@ -42,7 +43,34 @@ moon.shadow.camera.left = -55; moon.shadow.camera.right = 55; moon.shadow.camera
 moon.shadow.camera.near = 1; moon.shadow.camera.far = 400;
 moon.shadow.bias = -0.0006; moon.shadow.normalBias = 0.06;
 scene.add(moon); scene.add(moon.target);
-const playerLight = new THREE.PointLight(0x9fe9ff, 40, 14, 1.6); scene.add(playerLight);
+const playerLight = new THREE.PointLight(0x9fe9ff, 18, 12, 1.6); scene.add(playerLight);
+
+// Neon reflection environment (makes car paint, armor and wet ground pick up colored light)
+function makeEnvironment() {
+  const env = new THREE.Scene();
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false,
+    vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `varying vec3 vP; void main(){ float h = normalize(vP).y;
+      vec3 c = mix(vec3(0.16,0.07,0.28), vec3(0.02,0.02,0.06), smoothstep(0.0, 0.6, h));
+      c = mix(c, vec3(0.05,0.03,0.06), smoothstep(0.0, -0.4, h));
+      gl_FragColor = vec4(c, 1.0); }`,
+  }));
+  env.add(sky);
+  const cols = [0x29f3ff, 0xff2bd6, 0xffa43a, 0x8a4dff, 0x29f3ff, 0xff2bd6, 0x3aff9a, 0xff1e3c];
+  cols.forEach((c, i) => {
+    const a = i / cols.length * Math.PI * 2;
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(6 + (i % 3) * 4, 3 + (i % 2) * 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(2.5), side: THREE.DoubleSide }));
+    p.position.set(Math.cos(a) * 30, 4 + (i % 4) * 5, Math.sin(a) * 30); p.lookAt(0, 6, 0); env.add(p);
+  });
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x3a2a6a).multiplyScalar(0.8), side: THREE.DoubleSide }));
+  top.position.y = 40; top.rotation.x = Math.PI / 2; env.add(top);
+  const pm = new THREE.PMREMGenerator(renderer);
+  const tex = pm.fromScene(env, 0.03).texture;
+  pm.dispose();
+  return tex;
+}
+scene.environment = makeEnvironment();
 
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
@@ -361,7 +389,8 @@ function frame(now) {
   const focus = state === 'play' || state === 'pause' ? (game.player.vehicle ? game.player.vehicle.pos : game.player.pos) : camera.position;
   placeMoon(focus);
   playerLight.position.set(focus.x, focus.y + 3, focus.z);
-  playerLight.intensity = state === 'play' || state === 'pause' ? (game.player.vehicle ? 12 : 40) : 0;
+  playerLight.intensity = state === 'play' || state === 'pause' ? (game.player.vehicle ? 6 : 18) : 0;
+  city.sky.position.copy(camera.position);
   if (state !== 'pause') {
     city.update(dt, camera.position, settings.viewDist, performance.now() / 1000);
     rain.update(dt, camera.position);
@@ -404,4 +433,4 @@ function sim(seconds, step = 1 / 30) {
   for (let t = 0; t < seconds; t += step) { game.update(step); input.pressedSet.clear(); input.mouseClicked = false; input.dx = input.dy = 0; }
   hud.update(game, 0.016, settings.showFps, fpsSm);
 }
-window.nyc = { sim, get game() { return game; }, get city() { return city; }, settings, setOption, startGame, goMenu, openPause, resume, renderer, camera, scene, input, get state() { return state; } };
+window.nyc = { sim, models: MODELS, THREE, get game() { return game; }, get city() { return city; }, settings, setOption, startGame, goMenu, openPause, resume, renderer, camera, scene, input, get state() { return state; } };

@@ -38,6 +38,39 @@ export function windowTexture(palette, seed = 0) {
   return t;
 }
 
+// Brick walk-up facade (classic NYC low-rise): colour map + an emissive map where only lit windows glow.
+export function brickTextures() {
+  const c = canvas(256, 512), g = c.getContext('2d');
+  const e = canvas(256, 512), ge = e.getContext('2d');
+  g.fillStyle = '#3e2a26'; g.fillRect(0, 0, 256, 512);
+  for (let y = 0; y < 512; y += 6) {
+    for (let x = ((y / 6) % 2) * 6 - 6; x < 256; x += 12) {
+      g.fillStyle = `hsl(${6 + Math.random() * 12}, ${38 + Math.random() * 15}%, ${26 + Math.random() * 12}%)`;
+      g.fillRect(x, y, 11, 5);
+    }
+  }
+  ge.fillStyle = '#000'; ge.fillRect(0, 0, 256, 512);
+  const warm = ['#ffd9a0', '#ffc070', '#fff0d0', '#ff9a6a', '#bfe8ff', '#ff8ad8'];
+  for (let r = 0; r < 16; r++) for (let col = 0; col < 8; col++) {
+    const x = col * 32 + 9, y = r * 32 + 7, w = 14, h = 19;
+    g.fillStyle = '#9c9081'; g.fillRect(x - 2, y - 3, w + 4, 3);
+    g.fillStyle = '#857a6d'; g.fillRect(x - 1, y + h, w + 2, 2);
+    const lit = Math.random() < 0.45;
+    const wc = lit ? warm[Math.floor(Math.random() * warm.length)] : '#141012';
+    g.fillStyle = wc; g.fillRect(x, y, w, h);
+    g.fillStyle = '#241a17'; g.fillRect(x + w / 2 - 0.5, y, 1, h); g.fillRect(x, y + h / 2, w, 1);
+    if (lit) {
+      ge.globalAlpha = 0.6 + Math.random() * 0.4; ge.fillStyle = wc; ge.fillRect(x, y, w, h); ge.globalAlpha = 1;
+      ge.fillStyle = '#000'; ge.fillRect(x + w / 2 - 0.5, y, 1, h); ge.fillRect(x, y + h / 2, w, 1);
+      if (Math.random() < 0.35) { g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x, y, w, h * 0.45); ge.fillStyle = 'rgba(0,0,0,.6)'; ge.fillRect(x, y, w, h * 0.45); }
+    }
+  }
+  // dark roof patches in both bottom-left and top-left corners (roofs sample uv 0.004)
+  for (const yy of [0, 508]) { g.fillStyle = '#2c2a2e'; g.fillRect(0, yy, 4, 4); ge.fillStyle = '#000'; ge.fillRect(0, yy, 4, 4); }
+  const mk = cv => { const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+  return [mk(c), mk(e)];
+}
+
 export function groundTexture() {
   const S = 1024, c = canvas(S, S), g = c.getContext('2d');
   const { CELL, ROAD, SIDEWALK } = CITY, px = S / CELL;

@@ -9,6 +9,8 @@ A neon open-world shooter set in New York City in the year 3000. It runs in a de
 | ![Main menu](screenshots/02-menu.jpg) | ![Shooting on foot](screenshots/03-onfoot-shooting.jpg) |
 | **Driving a stolen car** | **Flying a hover car** |
 | ![Driving](screenshots/05-driving.jpg) | ![Flying](screenshots/04-flying.jpg) |
+| **People and cars** | **The skyline** |
+| ![People and cars](screenshots/06-new-models.jpg) | ![Buildings](screenshots/07-buildings.jpg) |
 
 ## Run it
 
@@ -110,7 +112,10 @@ Rebuild or reload, and the game uses them automatically.
 - [three.js](https://threejs.org) and [Vite](https://vitejs.dev). Every model, texture and sound is generated in code: low-poly boxes, canvas-drawn neon signs and windows, and Web Audio synths. There are no downloaded art or sound files. The fonts (Orbitron, Rajdhani) are SIL Open Font License, bundled through Fontsource.
 - `src/city.js`: a 10×10-block Manhattan grid built from a fixed seed, so saves always load into the same city. Buildings are merged into 2×2-block chunks to keep draw calls low, with collision boxes in a spatial hash.
 - `src/game.js`: player, weapons, plasma bolts, pedestrians, traffic on a road graph, sky-lane flying traffic, police AI, missions, save data.
-- `src/models.js`: soldier, cyber-cop and pedestrian rigs, guns, cars, hover cars, drones.
+- `src/people.js`: people. Each one is a single skinned mesh with a 17-bone skeleton: knees, elbows and hands, a walk and run cycle, and two-bone arm IK so the hands really grip the gun. There are 14 pedestrian looks (hair, hoods, caps, coats, neon trims, visors, glowing umbrellas), plus the armored soldier and the NYPD cyber-cop.
+- `src/cars.js`: cars. Bodies are extruded from side profiles with bevelled edges and wheel arches, with glass cabins, rims with neon rings, light bars, and NYPD and TAXI markings. Hover cars have a canopy, thruster pods, fins and hover pads.
+- `src/city.js` buildings: glass towers, octagonal towers, stepped art-deco crowns with spires, and brick walk-ups with fire escapes and wooden water towers. Streets have lit shop fronts with awnings and neon sign strips, and tall roofs get helipads, antennas and glowing skybridges.
+- `src/models.js`: guns, drones, pickups. `src/parts.js`: the shared part builder and a material where neon parts glow in the same draw call as the body.
 - `src/title.js`: the title-screen statue scene. `src/hud.js`: HUD, minimap and compass. `src/settings.js`: options and presets.
 - Anti-glitch measures:
   - signs and billboards float 0.35–0.75 m off walls, and floor glow decals use polygon offset, so there's no z-fighting;

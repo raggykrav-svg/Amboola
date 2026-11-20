@@ -1,7 +1,7 @@
 // Procedural neon city: buildings, ground, signs, billboards, lamps, sky lanes + collision.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture } from './textures.js';
+import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture, brickTextures } from './textures.js';
 import { Parts } from './models.js';
 
 export function mulberry32(a) {
@@ -45,7 +45,11 @@ export class City {
       const t = windowTexture(p);
       return new THREE.MeshLambertMaterial({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 0.95, vertexColors: true });
     });
+    const [brick, brickE] = brickTextures();
+    this.windowMats.push(new THREE.MeshLambertMaterial({ map: brick, emissiveMap: brickE, emissive: 0xffffff, emissiveIntensity: 1.0, vertexColors: true }));
     this.trimMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+    this.detailMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    this.lots = [];
     this.signGeos = new Map(); // key -> {tex, geos[]}
     this.decals = [];
   }
@@ -86,11 +90,10 @@ export class City {
     // chunks of 2x2 blocks
     const CH = 2, nCh = Math.ceil(N / CH);
     const chunkData = [];
-    for (let i = 0; i < nCh * nCh; i++) chunkData.push({ bodies: [[], [], []], trims: new Parts(), cx: 0, cz: 0 });
-    for (let bi = 0; bi < N; bi++) for (let bj = 0; bj < N; bj++) {
-      const ch = chunkData[Math.floor(bi / CH) * nCh + Math.floor(bj / CH)];
-      this._block(bi, bj, ch, r);
-    }
+    for (let i = 0; i < nCh * nCh; i++) chunkData.push({ bodies: [[], [], [], []], trims: new Parts(), details: new Parts(), cx: 0, cz: 0 });
+    const chunkOf = (bi, bj) => chunkData[Math.floor(Math.min(N - 1, Math.max(0, bi)) / CH) * nCh + Math.floor(Math.min(N - 1, Math.max(0, bj)) / CH)];
+    for (let bi = 0; bi < N; bi++) for (let bj = 0; bj < N; bj++) this._block(bi, bj, chunkOf(bi, bj), r);
+    this._skybridges(chunkOf, r);
     onProgress && onProgress(0.5);
     chunkData.forEach((ch, idx) => {
       const g = new THREE.Group();
@@ -102,6 +105,7 @@ export class City {
         mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh);
       });
       if (ch.trims.list.length) { const t = new THREE.Mesh(ch.trims.build(), this.trimMat); g.add(t); }
+      if (ch.details.list.length) { const d = new THREE.Mesh(ch.details.build(), this.detailMat); d.castShadow = true; d.receiveShadow = true; g.add(d); }
       this.root.add(g);
       this.chunks.push({ group: g, x: ch.cx, z: ch.cz, r: CELL * CH * 0.75 });
     });
@@ -125,7 +129,7 @@ export class City {
     g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
     g.setIndex([0, 2, 1, 0, 3, 2]);
-    const m = new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.35, metalness: 0.25 });
+    const m = new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.35, metalness: 0.25, envMapIntensity: 0.12 });
     const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = true;
     this.ground = mesh; this.root.add(mesh);
   }
@@ -204,42 +208,268 @@ export class City {
       if (ts) h = 120 + r() * 60;
       if (r() < 0.06) h = 220 + r() * 60;
       h = Math.max(18, Math.min(290, Math.round(h / 4) * 4));
-      const m = Math.floor(r() * 3);
-      const tint = new THREE.Color().setHSL(0.6 + r() * 0.3, 0.2, 0.55 + r() * 0.35);
       const bx = x0 + lx + lw / 2, bz = z0 + lz + ld / 2;
+      // which sides face a street (the lot reaches the block edge)
+      const faces = [];
+      if (bx - lw / 2 < bx0 + 8) faces.push([-1, 0]);
+      if (bx + lw / 2 > bx0 + BS - 8) faces.push([1, 0]);
+      if (bz - ld / 2 < bz0 + 8) faces.push([0, -1]);
+      if (bz + ld / 2 > bz0 + BS - 8) faces.push([0, 1]);
+      this._building(ch, r, { bi, bj, bx, bz, lw, ld, h, ts, faces, bx0, bz0, BS });
+    }
+  }
+
+  // ---------- one building on one lot ----------
+  _building(ch, r, o) {
+    const { bx, bz, lw, ld, h, ts, faces } = o;
+    const square = Math.abs(lw - ld) < 2;
+    let style = 'box';
+    if (h <= 44 && !ts) style = 'low';
+    else if (!ts && square && lw >= 24 && h >= 90 && r() < 0.4) style = 'oct';
+    else if (!ts && h >= 110 && r() < 0.4) style = 'deco';
+    const m = style === 'low' ? 3 : Math.floor(r() * 3);
+    const tint = style === 'low' ? new THREE.Color().setHSL(0.05 + r() * 0.05, 0.3, 0.8 + r() * 0.2) : new THREE.Color().setHSL(0.6 + r() * 0.3, 0.2, 0.55 + r() * 0.35);
+    const tc = ['#29f3ff', '#ff2bd6', '#8a4dff', '#ffa43a', '#ff1e3c'][Math.floor(r() * 5)];
+    const T = ch.trims, D = ch.details;
+    let topH = h, tw = lw, td = ld, flatRoof = true;
+    if (style === 'oct') {
+      this._octagon(ch, m, bx, bz, lw / 2, h, tint, tc, r);
+      flatRoof = false;
+    } else {
       ch.bodies[m].push(this._uvBox(lw, h, ld, bx, h / 2, bz, tint));
       this.addBox({ x0: bx - lw / 2, x1: bx + lw / 2, z0: bz - ld / 2, z1: bz + ld / 2, y0: 0, y1: h });
-      let topH = h, tw = lw, td = ld;
-      // setback tiers
-      if (h > 60 && r() < 0.6) {
+      if (style !== 'low' && h > 60 && r() < 0.6) {
         tw = lw * (0.55 + r() * 0.25); td = ld * (0.55 + r() * 0.25);
         const h2 = Math.round(h * (0.2 + r() * 0.35) / 4) * 4;
         ch.bodies[(m + 1) % 3].push(this._uvBox(tw, h2, td, bx, h + h2 / 2, bz, tint));
         this.addBox({ x0: bx - tw / 2, x1: bx + tw / 2, z0: bz - td / 2, z1: bz + td / 2, y0: h, y1: h + h2 });
         topH = h + h2;
       }
-      // neon trims on corners
-      const tc = ['#29f3ff', '#ff2bd6', '#8a4dff', '#ffa43a', '#ff1e3c'][Math.floor(r() * 5)];
-      if (r() < 0.55) {
-        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) ch.trims.box(0.35, h, 0.35, tc, bx + sx * (lw / 2 + 0.1), h / 2, bz + sz * (ld / 2 + 0.1));
-      }
-      // roof outline
-      if (r() < 0.6) {
-        ch.trims.box(tw + 0.4, 0.4, 0.3, tc, bx, topH + 0.2, bz - td / 2); ch.trims.box(tw + 0.4, 0.4, 0.3, tc, bx, topH + 0.2, bz + td / 2);
-        ch.trims.box(0.3, 0.4, td + 0.4, tc, bx - tw / 2, topH + 0.2, bz); ch.trims.box(0.3, 0.4, td + 0.4, tc, bx + tw / 2, topH + 0.2, bz);
-      }
-      // horizontal light bands
+      if (style === 'deco') { topH = this._decoCrown(ch, m, bx, bz, tw, td, topH, tint, r); flatRoof = false; }
+    }
+    if (style !== 'low' && style !== 'oct') {
+      if (r() < 0.55) for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) T.box(0.35, h, 0.35, tc, bx + sx * (lw / 2 + 0.1), h / 2, bz + sz * (ld / 2 + 0.1));
       if (r() < 0.3) for (let y = 20; y < h - 10; y += 24 + Math.floor(r() * 3) * 8) {
-        ch.trims.box(lw + 0.3, 0.3, 0.3, tc, bx, y, bz - ld / 2 - 0.1); ch.trims.box(lw + 0.3, 0.3, 0.3, tc, bx, y, bz + ld / 2 + 0.1);
+        T.box(lw + 0.3, 0.3, 0.3, tc, bx, y, bz - ld / 2 - 0.1); T.box(lw + 0.3, 0.3, 0.3, tc, bx, y, bz + ld / 2 + 0.1);
       }
-      // antenna
-      if (topH > 100 && r() < 0.5) {
-        const ah = 10 + r() * 25;
-        ch.trims.box(0.4, ah, 0.4, '#30364a', bx, topH + ah / 2, bz);
-        ch.trims.box(1.0, 1.0, 1.0, '#ff1030', bx, topH + ah, bz);
+    }
+    if (flatRoof && style !== 'low' && r() < 0.6) {
+      T.box(tw + 0.4, 0.4, 0.3, tc, bx, topH + 0.2, bz - td / 2); T.box(tw + 0.4, 0.4, 0.3, tc, bx, topH + 0.2, bz + td / 2);
+      T.box(0.3, 0.4, td + 0.4, tc, bx - tw / 2, topH + 0.2, bz); T.box(0.3, 0.4, td + 0.4, tc, bx + tw / 2, topH + 0.2, bz);
+    }
+    let roofUsed = false;
+    if (flatRoof && topH >= 140 && tw >= 18 && td >= 18 && r() < 0.55) { this._helipad(D, T, bx, topH, bz, Math.min(tw, td)); roofUsed = true; }
+    else if (flatRoof && topH > 100 && r() < 0.5) {
+      const ah = 10 + r() * 25;
+      D.box(0.5, ah, 0.5, '#30364a', bx, topH + ah / 2, bz);
+      D.box(0.2, ah * 0.6, 0.2, '#30364a', bx + 1.2, topH + ah * 0.3, bz + 0.8);
+      T.box(1.0, 1.0, 1.0, '#ff1030', bx, topH + ah, bz);
+      roofUsed = true;
+    }
+    if (style === 'low') {
+      // cornice ledge, fire escapes, rooftop water tower
+      const c = '#2a201c';
+      D.box(lw + 1.0, 0.7, 0.6, c, bx, h + 0.15, bz - ld / 2 - 0.2); D.box(lw + 1.0, 0.7, 0.6, c, bx, h + 0.15, bz + ld / 2 + 0.2);
+      D.box(0.6, 0.7, ld + 1.0, c, bx - lw / 2 - 0.2, h + 0.15, bz); D.box(0.6, 0.7, ld + 1.0, c, bx + lw / 2 + 0.2, h + 0.15, bz);
+      o.fe = [];
+      for (const [fx, fz] of faces) if (r() < 0.75) {
+        o.fe.push([fx, fz]);
+        const along = fx ? ld : lw, n = along > 30 ? 2 : 1;
+        for (let k = 0; k < n; k++) {
+          const off = (n === 1 ? 0 : (k ? 1 : -1) * along * 0.25) + (r() - 0.5) * 3;
+          this._fireEscape(D, fx, fz, fx ? bx + fx * lw / 2 : bx + off, fz ? bz + fz * ld / 2 : bz + off, h);
+        }
       }
-      // street-facing signs
-      this._lotSigns(bx, bz, lw, ld, h, bx0, bz0, BS, r);
+    }
+    if (flatRoof && !roofUsed && topH <= 90 && r() < (style === 'low' ? 0.7 : 0.35)) {
+      const mx = Math.max(0, tw / 2 - 3), mz = Math.max(0, td / 2 - 3);
+      this._waterTower(D, bx + (r() - 0.5) * 2 * mx, topH, bz + (r() - 0.5) * 2 * mz);
+    }
+    if (flatRoof && !roofUsed && tw > 10) {
+      const n = 1 + Math.floor(r() * 3);
+      for (let k = 0; k < n; k++) {
+        const ux = bx + (r() - 0.5) * (tw - 5), uz = bz + (r() - 0.5) * (td - 5);
+        D.box(2.4, 1.3, 1.8, '#3a3f4a', ux, topH + 0.65, uz);
+        D.cyl(0.55, 0.55, 0.06, 10, '#15171c', ux, topH + 1.33, uz);
+      }
+    }
+    if (style !== 'oct') this._storefronts(ch, r, o, style);
+    this.lots.push({ ...o, style, topH });
+    if (style !== 'oct') this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
+  }
+
+  _octagon(ch, m, x, z, a, h, tint, tc, r) {
+    const R = a / Math.cos(Math.PI / 8), side = 2 * R * Math.sin(Math.PI / 8);
+    const g = new THREE.CylinderGeometry(R, R, h, 8, 1, false, Math.PI / 8);
+    const uv = g.attributes.uv, ou = Math.floor(r() * 8), ov = Math.floor(r() * 16);
+    const cols = Math.max(1, Math.round(side * 8 / 4)), rows = Math.max(1, Math.round(h / 4));
+    for (let i = 0; i < uv.count; i++) {
+      if (i < 18) uv.setXY(i, uv.getX(i) * cols / 8 + ou / 8, uv.getY(i) * rows / 16 + ov / 16);
+      else uv.setXY(i, 0.004, 0.004);
+    }
+    g.translate(x, h / 2, z);
+    const n = g.attributes.position.count, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { col[i * 3] = tint.r; col[i * 3 + 1] = tint.g; col[i * 3 + 2] = tint.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    ch.bodies[m].push(g);
+    const s2 = side / 2, k = (a + s2) / 2;
+    this.addBox({ x0: x - a, x1: x + a, z0: z - s2, z1: z + s2, y0: 0, y1: h });
+    this.addBox({ x0: x - s2, x1: x + s2, z0: z - a, z1: z + a, y0: 0, y1: h });
+    this.addBox({ x0: x - k, x1: x + k, z0: z - k, z1: z + k, y0: 0, y1: h });
+    // neon on every other corner, glowing crown ring and a mast
+    for (let i = 0; i < 8; i++) {
+      const t = Math.PI / 8 + i * Math.PI / 4, cx = x + Math.sin(t) * (R + 0.15), cz = z + Math.cos(t) * (R + 0.15);
+      if (i % 2 === 0) ch.trims.box(0.35, h, 0.35, tc, cx, h / 2, cz);
+      const t2 = t + Math.PI / 4, mx = x + Math.sin(t + Math.PI / 8) * (a + 0.2), mz = z + Math.cos(t + Math.PI / 8) * (a + 0.2);
+      void t2;
+      ch.trims.box(side + 0.3, 0.5, 0.3, tc, mx, h + 0.25, mz, 0, t + Math.PI / 8, 0);
+      ch.trims.box(side + 0.3, 0.3, 0.3, tc, mx, h * 0.66, mz, 0, t + Math.PI / 8, 0);
+    }
+    const mh = 14 + r() * 20;
+    ch.details.cyl(0.35, 0.6, mh, 6, '#30364a', x, h + mh / 2, z);
+    ch.trims.box(0.9, 0.9, 0.9, '#ff1030', x, h + mh, z);
+    ch.details.cyl(a * 0.55, a * 0.62, 3, 8, '#1c1f2a', x, h + 1.5, z);
+    this.addBox({ x0: x - a * 0.6, x1: x + a * 0.6, z0: z - a * 0.6, z1: z + a * 0.6, y0: h, y1: h + 3 });
+  }
+
+  // stepped art-deco crown with golden neon edges and a spire
+  _decoCrown(ch, m, bx, bz, w, d, y, tint, r) {
+    const gold = r() < 0.5 ? '#ffd27a' : '#ffa43a';
+    for (let k = 0; k < 3; k++) {
+      w *= 0.76; d *= 0.76;
+      const th = 6 + Math.floor(r() * 3) * 2;
+      ch.bodies[m].push(this._uvBox(w, th, d, bx, y + th / 2, bz, tint));
+      this.addBox({ x0: bx - w / 2, x1: bx + w / 2, z0: bz - d / 2, z1: bz + d / 2, y0: y, y1: y + th });
+      const T = ch.trims;
+      T.box(w + 0.6, 0.35, 0.35, gold, bx, y + 0.2, bz - d / 2 - 0.15); T.box(w + 0.6, 0.35, 0.35, gold, bx, y + 0.2, bz + d / 2 + 0.15);
+      T.box(0.35, 0.35, d + 0.6, gold, bx - w / 2 - 0.15, y + 0.2, bz); T.box(0.35, 0.35, d + 0.6, gold, bx + w / 2 + 0.15, y + 0.2, bz);
+      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) T.box(0.25, th, 0.25, gold, bx + sx * (w / 2 + 0.08), y + th / 2, bz + sz * (d / 2 + 0.08));
+      y += th;
+    }
+    const sh = 22 + r() * 22, sr = Math.min(w, d) * 0.22;
+    ch.details.add(new THREE.ConeGeometry(sr, sh, 8), '#3a4152', bx, y + sh / 2, bz);
+    for (const f of [0.3, 0.55, 0.75]) ch.trims.cyl(sr * (1 - f) + 0.15, sr * (1 - f) + 0.15, 0.4, 8, gold, bx, y + sh * f, bz);
+    ch.trims.sphere(0.7, '#ff1030', bx, y + sh, bz);
+    this.addBox({ x0: bx - sr, x1: bx + sr, z0: bz - sr, z1: bz + sr, y0: y, y1: y + sh * 0.6 });
+    return y;
+  }
+
+  _helipad(D, T, x, y, z, size) {
+    const rad = Math.min(8, size * 0.38);
+    D.cyl(rad, rad, 0.3, 24, '#1a1d28', x, y + 0.17, z);
+    this.addBox({ x0: x - rad, x1: x + rad, z0: z - rad, z1: z + rad, y0: y, y1: y + 0.32, low: true });
+    T.add(new THREE.TorusGeometry(rad * 0.85, 0.12, 4, 32), '#3aff9a', x, y + 0.36, z, Math.PI / 2);
+    T.box(0.5, 0.06, rad * 0.9, '#e8f6ff', x - rad * 0.28, y + 0.35, z);
+    T.box(0.5, 0.06, rad * 0.9, '#e8f6ff', x + rad * 0.28, y + 0.35, z);
+    T.box(rad * 0.56, 0.06, 0.5, '#e8f6ff', x, y + 0.35, z);
+    for (let k = 0; k < 8; k++) { const t = k * Math.PI / 4; T.box(0.35, 0.35, 0.35, '#ffa43a', x + Math.cos(t) * (rad - 0.4), y + 0.45, z + Math.sin(t) * (rad - 0.4)); }
+  }
+
+  _waterTower(D, x, y, z) {
+    const wood = '#5a4434', iron = '#1e1a18';
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) D.box(0.2, 3.4, 0.2, iron, x + sx * 1.15, y + 1.7, z + sz * 1.15);
+    D.box(2.6, 0.12, 0.12, iron, x, y + 1.6, z - 1.15); D.box(2.6, 0.12, 0.12, iron, x, y + 1.6, z + 1.15);
+    D.box(0.12, 0.12, 2.6, iron, x - 1.15, y + 1.6, z); D.box(0.12, 0.12, 2.6, iron, x + 1.15, y + 1.6, z);
+    D.cyl(1.75, 1.75, 0.15, 12, iron, x, y + 3.45, z);
+    D.cyl(1.6, 1.6, 2.9, 14, wood, x, y + 4.95, z);
+    for (const yy of [3.9, 4.95, 6.0]) D.cyl(1.63, 1.63, 0.1, 14, iron, x, y + yy, z);
+    D.add(new THREE.ConeGeometry(1.78, 1.2, 14), '#3a2c22', x, y + 7.0, z);
+    D.cyl(0.08, 0.08, 0.5, 4, iron, x, y + 7.8, z);
+    this.addBox({ x0: x - 1.7, x1: x + 1.7, z0: z - 1.7, z1: z + 1.7, y0: y, y1: y + 7.5 });
+  }
+
+  // zig-zag iron fire escape on a facade: face normal (fx, fz), (wx, wz) = point on the wall
+  _fireEscape(D, fx, fz, wx, wz, h) {
+    const iron = '#2c2e38', out = 0.65, len = 3.2;
+    const ry = fx ? Math.PI / 2 : 0; // platform long axis along the wall
+    const px = wx + fx * out, pz = wz + fz * out;
+    const ax = fz ? 1 : 0, az = fx ? 1 : 0; // along-wall unit vector
+    let dir = 1;
+    for (let y = 7; y < h - 3.5; y += 4) {
+      D.add(new THREE.BoxGeometry(len, 0.08, 1.2), iron, px, y, pz, 0, ry, 0);
+      D.add(new THREE.BoxGeometry(len, 0.05, 0.05), iron, px + fx * 0.58, y + 0.95, pz + fz * 0.58, 0, ry, 0);
+      D.add(new THREE.BoxGeometry(len, 0.04, 0.04), iron, px + fx * 0.58, y + 0.5, pz + fz * 0.58, 0, ry, 0);
+      for (const e of [-1, 1]) D.box(0.05, 1.0, 0.05, iron, px + fx * 0.58 + ax * e * len / 2, y + 0.5, pz + fz * 0.58 + az * e * len / 2);
+      if (y + 4 < h - 3.5) {
+        const ang = Math.atan2(4, len - 0.6) * dir;
+        D.add(new THREE.BoxGeometry(Math.hypot(4, len - 0.6), 0.07, 0.55), iron, px - fx * 0.2, y + 2, pz - fz * 0.2, 0, ry, ang);
+        dir = -dir;
+      }
+    }
+  }
+
+  // lit shop windows and awnings along the street sides at ground level
+  _storefronts(ch, r, o, style) {
+    const { bx, bz, lw, ld, faces } = o;
+    const shop = ['#ffd9a0', '#9fe9ff', '#ff9ae6', '#fff0d0', '#ffb070', '#b9ffd9', '#c8b0ff'];
+    const neon = ['#ff2bd6', '#29f3ff', '#ffa43a', '#3aff9a', '#8a4dff', '#ff1e3c'];
+    const awn = ['#b02238', '#2a5aa8', '#228a70', '#7a3ab0', '#b0701a', '#3a3f4a'];
+    const col = new THREE.Color();
+    for (const [fx, fz] of faces) {
+      const along = fx ? ld : lw, n = Math.max(1, Math.floor(along / 6.5));
+      const seg = along / n;
+      const wx = bx + fx * lw / 2, wz = bz + fz * ld / 2;
+      const ax = fz ? 1 : 0, az = fx ? 1 : 0, ry = fx ? Math.PI / 2 : 0;
+      for (let k = 0; k < n; k++) {
+        if (style !== 'low' && r() < 0.25) continue; // some blank lobby walls
+        const t = -along / 2 + seg * (k + 0.5);
+        const cx = wx + ax * t, cz = wz + az * t;
+        // window panes: dim interior light split by dark mullions (the wall shows through the gaps)
+        col.set(shop[Math.floor(r() * shop.length)]).multiplyScalar(0.32 + r() * 0.18);
+        const panes = seg > 6 ? 3 : 2, pw = (seg - 1.0) / panes;
+        for (let q = 0; q < panes; q++) {
+          const pt = -((seg - 1.0) / 2) + pw * (q + 0.5);
+          ch.trims.add(new THREE.BoxGeometry(pw - 0.16, 2.5, 0.1), col, cx + ax * pt + fx * 0.08, 1.85, cz + az * pt + fz * 0.08, 0, ry, 0);
+        }
+        // shop sign strip and dark header
+        ch.details.add(new THREE.BoxGeometry(seg - 0.3, 0.55, 0.24), '#101116', cx + fx * 0.12, 3.45, cz + fz * 0.12, 0, ry, 0);
+        if (r() < 0.8) ch.trims.add(new THREE.BoxGeometry((seg - 1.2) * (0.5 + r() * 0.5), 0.14, 0.06), neon[Math.floor(r() * neon.length)], cx + fx * 0.26, 3.45, cz + fz * 0.26, 0, ry, 0);
+        if (r() < 0.75) {
+          // slanted awning: its depth axis points out from the wall
+          const tilt = 0.32, g = fx ? new THREE.BoxGeometry(1.6, 0.1, seg - 0.5) : new THREE.BoxGeometry(seg - 0.5, 0.1, 1.6);
+          ch.details.add(g, awn[Math.floor(r() * awn.length)], cx + fx * 0.85, 4.05, cz + fz * 0.85, fz ? fz * tilt : 0, 0, fx ? -fx * tilt : 0);
+          if (r() < 0.5) {
+            const e = fx ? new THREE.BoxGeometry(0.06, 0.06, seg - 0.5) : new THREE.BoxGeometry(seg - 0.5, 0.06, 0.06);
+            ch.trims.add(e, neon[Math.floor(r() * neon.length)], cx + fx * 1.6, 3.78, cz + fz * 1.6);
+          }
+        }
+      }
+    }
+  }
+
+  // glowing glass skybridges between towers across a street
+  _skybridges(chunkOf, r) {
+    let made = 0;
+    for (let tries = 0; tries < 400 && made < 14; tries++) {
+      const alongX = r() < 0.5; // bridge spans along x (crossing a north-south road)
+      const i = 1 + Math.floor(r() * (N - 1)), j = Math.floor(r() * N);
+      if (i === 5 || j === 4 || j === 5) continue;
+      const road = roadC(i), e0 = road - ROAD / 2 - 5, e1 = road + ROAD / 2 + 5;
+      const A = this.lots.filter(L => L.style !== 'oct' && (alongX ? (L.bi === i - 1 && L.bj === j && L.bx + L.lw / 2 > e0 - 0.5) : (L.bj === i - 1 && L.bi === j && L.bz + L.ld / 2 > e0 - 0.5)));
+      const B = this.lots.filter(L => L.style !== 'oct' && (alongX ? (L.bi === i && L.bj === j && L.bx - L.lw / 2 < e1 + 0.5) : (L.bj === i && L.bi === j && L.bz - L.ld / 2 < e1 + 0.5)));
+      if (!A.length || !B.length) continue;
+      const a = A[Math.floor(r() * A.length)], b = B[Math.floor(r() * B.length)];
+      const lo = Math.max(alongX ? a.bz - a.ld / 2 : a.bx - a.lw / 2, alongX ? b.bz - b.ld / 2 : b.bx - b.lw / 2) + 3;
+      const hi = Math.min(alongX ? a.bz + a.ld / 2 : a.bx + a.lw / 2, alongX ? b.bz + b.ld / 2 : b.bx + b.lw / 2) - 3;
+      const top = Math.min(a.h, b.h) - 6;
+      if (hi - lo < 4 || top < 34) continue;
+      const y = 30 + r() * Math.min(40, top - 30), c = lo + r() * (hi - lo);
+      const len = e1 - e0 + 1, mid = road, W = 4.2, H = 3.6;
+      const ch = chunkOf(alongX ? i : j, alongX ? j : i);
+      const x = alongX ? mid : c, z = alongX ? c : mid, ry = alongX ? 0 : Math.PI / 2;
+      ch.details.add(new THREE.BoxGeometry(len, H, W), '#0d1830', x, y, z, 0, ry, 0);
+      const col = ['#29f3ff', '#ff2bd6', '#ffa43a', '#8a4dff'][Math.floor(r() * 4)];
+      for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+        const ox = alongX ? 0 : sz * (W / 2 + 0.05), oz = alongX ? sz * (W / 2 + 0.05) : 0;
+        ch.trims.add(new THREE.BoxGeometry(len, 0.18, 0.18), col, x + ox, y + sy * (H / 2 - 0.1), z + oz, 0, ry, 0);
+      }
+      for (const sz of [-1, 1]) {
+        const ox = alongX ? 0 : sz * (W / 2 + 0.06), oz = alongX ? sz * (W / 2 + 0.06) : 0;
+        ch.trims.add(new THREE.BoxGeometry(len - 2, 1.0, 0.08), '#9fe9ff', x + ox, y + 0.2, z + oz, 0, ry, 0);
+      }
+      this.addBox(alongX ? { x0: x - len / 2, x1: x + len / 2, z0: z - W / 2, z1: z + W / 2, y0: y - H / 2, y1: y + H / 2 }
+        : { x0: x - W / 2, x1: x + W / 2, z0: z - len / 2, z1: z + len / 2, y0: y - H / 2, y1: y + H / 2 });
+      made++;
     }
   }
 
