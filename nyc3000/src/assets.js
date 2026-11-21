@@ -9,12 +9,23 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 const scenes = {};
 
+// The claude.ai preview page can't serve .glb files, so there (window.NYC_MODEL_EXT = 'js')
+// each model comes as a small JS module holding the same GLB as base64.
+async function fetchModel(loader, name) {
+  if (typeof window !== 'undefined' && window.NYC_MODEL_EXT === 'js') {
+    const mod = await import(/* @vite-ignore */ new URL(`models/${name}.js`, document.baseURI).href);
+    const bin = Uint8Array.from(atob(mod.default), c => c.charCodeAt(0));
+    return loader.parseAsync(bin.buffer, '');
+  }
+  return loader.loadAsync(`models/${name}.glb`);
+}
+
 export async function loadModels(files, onProgress) {
   const loader = new GLTFLoader();
   let done = 0;
   await Promise.all(files.map(async name => {
     try {
-      const gltf = await loader.loadAsync(`models/${name}.glb`);
+      const gltf = await fetchModel(loader, name);
       gltf.scene.updateMatrixWorld(true);
       scenes[name] = gltf.scene;
     } catch (e) {
