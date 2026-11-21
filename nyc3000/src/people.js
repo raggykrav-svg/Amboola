@@ -3,6 +3,7 @@
 // dozen pedestrian looks (hair, hoods, caps, coats, neon trims, umbrellas).
 import * as THREE from 'three';
 import { Parts, MAT } from './parts.js';
+import { modelNode, modelNames, flatten } from './assets.js';
 
 // ---- skeleton (rest pose, metres, character faces -Z) ----
 const BONES = [
@@ -135,17 +136,37 @@ function buildPed(seed) {
   return { geo: P.build(), umbrella, scale: female ? 0.94 + r() * 0.06 : 0.98 + r() * 0.08 };
 }
 
+// ---------- Blender people (public/models/people.glb) ----------
+// Skinned to the same bone names, bound in an A-pose (keep in sync with blender/people.py).
+const ARM_A = 0.62, LEG_B = 0.10;
+const allDetail = () => 'det';
+function blenderVariant(kind) {
+  const node = modelNode('people', 'p_' + kind);
+  if (!node) return null;
+  const hi = flatten(node, allDetail, { glow: true, bones: BI });
+  const low = modelNode('people', 'p_' + kind + '_lod1');
+  const lo = low ? flatten(low, allDetail, { glow: true, bones: BI }) : hi;
+  return { blender: true, geo: hi.det, geo1: lo.det, scale: node.userData.scale || 1, umbrella: !!node.userData.umbrella };
+}
+
 const cache = {};
 function variant(kind) {
   if (cache[kind]) return cache[kind];
-  let v;
-  if (kind === 'soldier') v = { geo: buildSoldier(false), scale: 1 };
-  else if (kind === 'cop') v = { geo: buildSoldier(true), scale: 1.02 };
-  else v = buildPed(parseInt(kind.slice(3), 10) || 0);
+  let v = blenderVariant(kind);
+  if (!v) {
+    if (kind === 'soldier') v = { geo: buildSoldier(false), scale: 1 };
+    else if (kind === 'cop') v = { geo: buildSoldier(true), scale: 1.02 };
+    else v = buildPed(parseInt(kind.slice(3), 10) || 0);
+  }
   cache[kind] = v;
   return v;
 }
 export const PED_VARIANTS = 14;
+let pedCount = 0;
+function pedVariants() {
+  if (!pedCount) pedCount = modelNames('people', 'p_ped').filter(n => !n.endsWith('_lod1')).length || PED_VARIANTS;
+  return pedCount;
+}
 
 // ---------- IK ----------
 const _t = new THREE.Vector3();
@@ -168,18 +189,32 @@ const BLADE = -0.5; // rifle stance: chest turned so the left shoulder leads
 
 export class Humanoid {
   constructor(kind = 'ped') {
-    if (kind === 'ped') kind = 'ped' + Math.floor(Math.random() * PED_VARIANTS);
+    if (kind === 'ped') kind = 'ped' + Math.floor(Math.random() * pedVariants());
     this.kind = kind;
     const v = variant(kind);
     this.umbrella = !!v.umbrella;
+    this.armOut = v.blender ? 0.14 : 0.08; // smooth bodies need the arms a little further out
     this.root = new THREE.Group();
     const bones = BONES.map(([name]) => { const b = new THREE.Bone(); b.name = name; return b; });
     BONES.forEach(([, p, o], i) => { bones[i].position.set(...o); if (p >= 0) bones[p].add(bones[i]); });
-    const m = this.mesh = new THREE.SkinnedMesh(v.geo, MAT.skin);
+    const mat = v.blender ? MAT.skinRM : MAT.skin;
+    const m = this.mesh = new THREE.SkinnedMesh(v.geo, mat);
     m.castShadow = true;
     m.add(bones[0]);
-    m.bind(new THREE.Skeleton(bones));
-    this.root.add(m);
+    if (v.blender) { // bind in the A-pose the Blender mesh was modelled in
+      bones[BI.uaL].rotation.z = -ARM_A; bones[BI.uaR].rotation.z = ARM_A;
+      bones[BI.thL].rotation.z = -LEG_B; bones[BI.thR].rotation.z = LEG_B;
+    }
+    const skel = new THREE.Skeleton(bones);
+    m.bind(skel);
+    if (v.blender && v.geo1 && v.geo1 !== v.geo) {
+      // far away: a lighter mesh on the same skeleton
+      const m1 = new THREE.SkinnedMesh(v.geo1, mat);
+      m1.castShadow = true;
+      m1.bind(skel, m.bindMatrix);
+      const lod = new THREE.LOD(); lod.addLevel(m, 0); lod.addLevel(m1, 24);
+      this.root.add(lod);
+    } else this.root.add(m);
     this.root.scale.setScalar(v.scale || 1);
     this.b = Object.fromEntries(BONES.map(([name], i) => [name, bones[i]]));
     for (const s of ['L', 'R']) this.b['ua' + s].rotation.order = 'YXZ';
@@ -244,14 +279,14 @@ export class Humanoid {
       b.hdL.rotation.set(0, 0, 0); b.hdR.rotation.set(0, 0, 0);
     } else {
       const aswing = (0.35 + run * 0.5) * s;
-      b.uaR.rotation.set(-Math.sin(ph) * aswing * 0.9 + 0.05, 0, 0.08);
+      b.uaR.rotation.set(-Math.sin(ph) * aswing * 0.9 + 0.05, 0, this.armOut);
       b.faR.rotation.set(0.25 + run * 1.0 + Math.max(0, -Math.sin(ph)) * 0.3 * s, 0, 0);
       b.hdR.rotation.set(0, 0, 0);
       if (this.umbrella) {
         b.uaL.rotation.set(0.35, 0.25, -0.15); b.faL.rotation.set(1.3, 0, 0);
         b.hdL.rotation.set(-1.65, -0.25, 0.15); // keep the umbrella upright
       } else {
-        b.uaL.rotation.set(Math.sin(ph) * aswing * 0.9 + 0.05, 0, -0.08);
+        b.uaL.rotation.set(Math.sin(ph) * aswing * 0.9 + 0.05, 0, -this.armOut);
         b.faL.rotation.set(0.25 + run * 1.0 + Math.max(0, Math.sin(ph)) * 0.3 * s, 0, 0);
         b.hdL.rotation.set(0, 0, 0);
       }

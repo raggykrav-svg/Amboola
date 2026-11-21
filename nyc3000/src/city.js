@@ -3,6 +3,40 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture, brickTextures } from './textures.js';
 import { Parts } from './models.js';
+import { modelNode, modelNames, flatten } from './assets.js';
+
+// ---------- Blender towers and rooftop props (public/models/buildings.glb) ----------
+const isGlow = m => m.emissive && m.emissive.r + m.emissive.g + m.emissive.b > 0.001;
+const sortBuilding = m => (m.name.startsWith('win') ? 'body' : m.name.startsWith('n_tc') ? 'tc' : isGlow(m) ? 'trim' : 'detail');
+let HEROES = null, PROPS = null;
+function heroes() {
+  if (HEROES) return HEROES;
+  HEROES = [];
+  for (const name of modelNames('buildings', 'twr_')) {
+    if (/_col\d+$/.test(name)) continue;
+    const g = flatten(modelNode('buildings', name), sortBuilding, { uv: true });
+    if (!g.body) continue;
+    const bb = new THREE.Box3();
+    for (const k in g) { g[k].computeBoundingBox(); bb.union(g[k].boundingBox); }
+    const cols = [];
+    for (let k = 0; ; k++) {
+      const c = modelNode('buildings', `${name}_col${k}`); if (!c) break;
+      cols.push([c.position.x, c.position.y, c.position.z, Math.abs(c.scale.x), Math.abs(c.scale.y), Math.abs(c.scale.z)]);
+    }
+    // footprint = the base of the facade (towers may overhang a little higher up)
+    const fb = new THREE.Box3(), p = g.body.attributes.position, v = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); if (v.y < 2) fb.expandByPoint(v); }
+    HEROES.push({ name, g, w: fb.max.x - fb.min.x, d: fb.max.z - fb.min.z, top: bb.max.y, cols, used: 0 });
+  }
+  return HEROES;
+}
+function props() {
+  if (PROPS) return PROPS;
+  PROPS = {};
+  for (const name of modelNames('buildings', 'prop_')) PROPS[name.slice(5)] = flatten(modelNode('buildings', name), sortBuilding);
+  return PROPS;
+}
+const _M = new THREE.Matrix4();
 
 export function mulberry32(a) {
   return function () {
@@ -222,6 +256,8 @@ export class City {
   // ---------- one building on one lot ----------
   _building(ch, r, o) {
     const { bx, bz, lw, ld, h, ts, faces } = o;
+    const heroRoll = r();
+    if (!ts && h >= 150 && heroRoll < 0.35 && this._heroTower(ch, r, o)) return;
     const square = Math.abs(lw - ld) < 2;
     let style = 'box';
     if (h <= 44 && !ts) style = 'low';
@@ -283,15 +319,19 @@ export class City {
     }
     if (flatRoof && !roofUsed && topH <= 90 && r() < (style === 'low' ? 0.7 : 0.35)) {
       const mx = Math.max(0, tw / 2 - 3), mz = Math.max(0, td / 2 - 3);
-      this._waterTower(D, bx + (r() - 0.5) * 2 * mx, topH, bz + (r() - 0.5) * 2 * mz);
+      this._waterTower(D, bx + (r() - 0.5) * 2 * mx, topH, bz + (r() - 0.5) * 2 * mz, T, r);
     }
     if (flatRoof && !roofUsed && tw > 10) {
-      const n = 1 + Math.floor(r() * 3);
+      const n = 1 + Math.floor(r() * 3), P = props();
       for (let k = 0; k < n; k++) {
-        const ux = bx + (r() - 0.5) * (tw - 5), uz = bz + (r() - 0.5) * (td - 5);
-        D.box(2.4, 1.3, 1.8, '#3a3f4a', ux, topH + 0.65, uz);
-        D.cyl(0.55, 0.55, 0.06, 10, '#15171c', ux, topH + 1.33, uz);
+        const ux = bx + (r() - 0.5) * (tw - 5), uz = bz + (r() - 0.5) * (td - 5), rot = r() < 0.5 ? 0 : Math.PI / 2;
+        if (P.ac) this._prop(D, T, P.ac, ux, topH, uz, rot);
+        else {
+          D.box(2.4, 1.3, 1.8, '#3a3f4a', ux, topH + 0.65, uz);
+          D.cyl(0.55, 0.55, 0.06, 10, '#15171c', ux, topH + 1.33, uz);
+        }
       }
+      if (P.dish && r() < 0.35) this._prop(D, T, P.dish, bx + (tw / 2 - 2) * (r() < 0.5 ? -1 : 1), topH, bz + (td / 2 - 2) * (r() < 0.5 ? -1 : 1), r() * Math.PI * 2);
     }
     if (style !== 'oct') this._storefronts(ch, r, o, style);
     this.lots.push({ ...o, style, topH });
@@ -365,7 +405,68 @@ export class City {
     for (let k = 0; k < 8; k++) { const t = k * Math.PI / 4; T.box(0.35, 0.35, 0.35, '#ffa43a', x + Math.cos(t) * (rad - 0.4), y + 0.45, z + Math.sin(t) * (rad - 0.4)); }
   }
 
-  _waterTower(D, x, y, z) {
+  // a Blender prop: solid parts into the details mesh, glowing parts into the neon trims
+  _prop(D, T, g, x, y, z, rot = 0) {
+    _M.makeRotationY(rot).setPosition(x, y, z);
+    if (g.detail) D.addColored(g.detail, _M);
+    if (g.trim) T.addColored(g.trim, _M);
+  }
+
+  // a Blender landmark tower on a podium that fills the lot. Returns false if none fits.
+  _heroTower(ch, r, o) {
+    const H = heroes();
+    if (!H.length) return false;
+    const { bx, bz, lw, ld } = o;
+    const fits = [];
+    for (const t of H) {
+      if (t.used >= 2) continue; // each landmark at most twice
+      for (const rot of [0, Math.PI / 2]) {
+        const w = rot ? t.d : t.w, d = rot ? t.w : t.d;
+        if (w <= lw + 0.6 && d <= ld + 0.6 && (w * d) / (lw * ld) > 0.3) fits.push({ t, rot });
+      }
+    }
+    if (!fits.length) return false;
+    const least = Math.min(...fits.map(f => f.t.used));
+    const pool = fits.filter(f => f.t.used === least);
+    const { t, rot } = pool[Math.floor(r() * pool.length)];
+    t.used++;
+    const m = Math.floor(r() * 3);
+    const tint = new THREE.Color().setHSL(0.58 + r() * 0.3, 0.18, 0.62 + r() * 0.3);
+    const tc = ['#29f3ff', '#ff2bd6', '#8a4dff', '#ffa43a', '#ff1e3c'][Math.floor(r() * 5)];
+    // podium: keeps the street wall, the shop fronts and the collision at ground level
+    const ph = 8;
+    ch.bodies[m].push(this._uvBox(lw, ph, ld, bx, ph / 2, bz, tint));
+    this.addBox({ x0: bx - lw / 2, x1: bx + lw / 2, z0: bz - ld / 2, z1: bz + ld / 2, y0: 0, y1: ph });
+    ch.trims.box(lw + 0.3, 0.3, 0.3, tc, bx, ph + 0.15, bz - ld / 2); ch.trims.box(lw + 0.3, 0.3, 0.3, tc, bx, ph + 0.15, bz + ld / 2);
+    ch.trims.box(0.3, 0.3, ld + 0.3, tc, bx - lw / 2, ph + 0.15, bz); ch.trims.box(0.3, 0.3, ld + 0.3, tc, bx + lw / 2, ph + 0.15, bz);
+    _M.makeRotationY(rot).setPosition(bx, 0, bz);
+    const body = t.g.body.clone().applyMatrix4(_M);
+    const col = body.attributes.color, uv = body.attributes.uv;
+    for (let i = 0; i < col.count; i++) col.setXYZ(i, col.getX(i) * tint.r, col.getY(i) * tint.g, col.getZ(i) * tint.b);
+    const ou = Math.floor(r() * 8) / 8, ov = Math.floor(r() * 16) / 16;
+    for (let i = 0; i < uv.count; i++) if (Math.abs(uv.getX(i) - 0.004) > 1e-4 || Math.abs(uv.getY(i) - 0.004) > 1e-4) uv.setXY(i, uv.getX(i) + ou, uv.getY(i) + ov);
+    ch.bodies[m].push(body);
+    if (t.g.detail) ch.details.addColored(t.g.detail, _M);
+    if (t.g.trim) ch.trims.addColored(t.g.trim, _M);
+    if (t.g.tc) ch.trims.addColored(t.g.tc, _M, tc);
+    const c = Math.cos(rot), sn = Math.sin(rot);
+    for (const [x, y, z, hx, hy, hz] of t.cols) {
+      const wx = bx + x * c + z * sn, wz = bz - x * sn + z * c;
+      const ex = rot ? hz : hx, ez = rot ? hx : hz;
+      this.addBox({ x0: wx - ex, x1: wx + ex, z0: wz - ez, z1: wz + ez, y0: Math.max(0, y - hy), y1: y + hy });
+    }
+    this._storefronts(ch, r, o, 'box');
+    this.lots.push({ ...o, style: 'hero', topH: t.top, tower: t.name });
+    return true;
+  }
+
+  _waterTower(D, x, y, z, T = null, r = Math.random) {
+    const P = props(), wt = (r() < 0.3 && P.watertower_neon) ? P.watertower_neon : P.watertower;
+    if (wt && T) {
+      this._prop(D, T, wt, x, y, z, Math.floor(r() * 4) * Math.PI / 2);
+      this.addBox({ x0: x - 1.7, x1: x + 1.7, z0: z - 1.7, z1: z + 1.7, y0: y, y1: y + 7.5 });
+      return;
+    }
     const wood = '#5a4434', iron = '#1e1a18';
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) D.box(0.2, 3.4, 0.2, iron, x + sx * 1.15, y + 1.7, z + sz * 1.15);
     D.box(2.6, 0.12, 0.12, iron, x, y + 1.6, z - 1.15); D.box(2.6, 0.12, 0.12, iron, x, y + 1.6, z + 1.15);
@@ -445,8 +546,8 @@ export class City {
       const i = 1 + Math.floor(r() * (N - 1)), j = Math.floor(r() * N);
       if (i === 5 || j === 4 || j === 5) continue;
       const road = roadC(i), e0 = road - ROAD / 2 - 5, e1 = road + ROAD / 2 + 5;
-      const A = this.lots.filter(L => L.style !== 'oct' && (alongX ? (L.bi === i - 1 && L.bj === j && L.bx + L.lw / 2 > e0 - 0.5) : (L.bj === i - 1 && L.bi === j && L.bz + L.ld / 2 > e0 - 0.5)));
-      const B = this.lots.filter(L => L.style !== 'oct' && (alongX ? (L.bi === i && L.bj === j && L.bx - L.lw / 2 < e1 + 0.5) : (L.bj === i && L.bi === j && L.bz - L.ld / 2 < e1 + 0.5)));
+      const A = this.lots.filter(L => L.style !== 'oct' && L.style !== 'hero' && (alongX ? (L.bi === i - 1 && L.bj === j && L.bx + L.lw / 2 > e0 - 0.5) : (L.bj === i - 1 && L.bi === j && L.bz + L.ld / 2 > e0 - 0.5)));
+      const B = this.lots.filter(L => L.style !== 'oct' && L.style !== 'hero' && (alongX ? (L.bi === i && L.bj === j && L.bx - L.lw / 2 < e1 + 0.5) : (L.bj === i && L.bi === j && L.bz - L.ld / 2 < e1 + 0.5)));
       if (!A.length || !B.length) continue;
       const a = A[Math.floor(r() * A.length)], b = B[Math.floor(r() * B.length)];
       const lo = Math.max(alongX ? a.bz - a.ld / 2 : a.bx - a.lw / 2, alongX ? b.bz - b.ld / 2 : b.bx - b.lw / 2) + 3;

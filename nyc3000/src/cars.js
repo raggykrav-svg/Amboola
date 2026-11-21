@@ -3,6 +3,7 @@
 // Each vehicle is two draw calls (glossy paint + details/lights) plus sirens on police.
 import * as THREE from 'three';
 import { Parts, MAT, paintMat, mesh, decalTexture } from './parts.js';
+import { modelNode, markerPos, flatten } from './assets.js';
 
 export const VEHICLE_TYPES = {
   sedan: { name: 'NEO-SEDAN', flying: false, maxSpeed: 52, accel: 14, armor: 100 },
@@ -160,9 +161,27 @@ function hoverCar(type) {
   };
 }
 
+// ---------- Blender cars (public/models/cars.glb): LOD 0 up close, LOD 1 far away ----------
+const isPaint = m => (m.name.startsWith('paint') ? 'paint' : 'det');
+function blenderCar(type) {
+  const node = modelNode('cars', type);
+  if (!node) return null;
+  const hi = flatten(node, isPaint, { glow: true });
+  const low = modelNode('cars', type + '_lod1');
+  const lo = low ? flatten(low, isPaint, { glow: true }) : hi;
+  const G = { blender: true, paint: hi.paint, det: hi.det, paint1: lo.paint, det1: lo.det, siren: null, decal: null };
+  const s = markerPos('cars', type + '_siren');
+  if (s) G.siren = { y: s.y, z: s.z };
+  const d = markerPos('cars', type + '_decal');
+  if (d) G.decal = { text: 'NYPD', x: d.x, y: d.y, z: d.z, col: '#1d3fb0' };
+  const t = modelNode('cars', 'taxi_sign');
+  if (type === 'taxi' && t) G.decal = { text: 'TAXI', roof: true, y: t.position.y, z: t.position.z, d: (t.userData.d || 0.3), col: '#111111' };
+  return G;
+}
+
 const cache = {};
 function geos(type) {
-  if (!cache[type]) cache[type] = VEHICLE_TYPES[type].flying ? hoverCar(type) : groundCar(type);
+  if (!cache[type]) cache[type] = blenderCar(type) || (VEHICLE_TYPES[type].flying ? hoverCar(type) : groundCar(type));
   return cache[type];
 }
 
@@ -182,8 +201,16 @@ export function makeVehicleMesh(type, paintHex) {
   const grp = new THREE.Group();
   const color = type === 'police' || type === 'flypolice' ? '#121318' : type === 'taxi' ? '#f2c21a' : paintHex;
   const body = new THREE.Group(); grp.add(body);
-  body.add(mesh(G.paint, paintMat(color)));
-  body.add(mesh(G.det, MAT.detail));
+  if (G.blender) {
+    const lod = new THREE.LOD(), near = new THREE.Group(), far = new THREE.Group();
+    near.add(mesh(G.paint, paintMat(color)), mesh(G.det, MAT.detailRM));
+    far.add(mesh(G.paint1, paintMat(color)), mesh(G.det1, MAT.detailRM));
+    lod.addLevel(near, 0); lod.addLevel(far, 32);
+    body.add(lod);
+  } else {
+    body.add(mesh(G.paint, paintMat(color)));
+    body.add(mesh(G.det, MAT.detail));
+  }
   if (G.siren) {
     const { y, z } = G.siren;
     const r = new THREE.Mesh(sirenGeo, sirenRed); r.position.set(-0.32, y, z); body.add(r);
@@ -194,7 +221,7 @@ export function makeVehicleMesh(type, paintHex) {
     if (!decalMats[k]) decalMats[k] = new THREE.MeshBasicMaterial({ map: decalTexture(d.text, d.col), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     for (const sx of [-1, 1]) {
       const p = new THREE.Mesh(decalGeo, decalMats[k]);
-      if (d.roof) { p.scale.set(0.55, 0.55, 1); p.position.set(0, d.y, sx * 0.17); p.rotation.y = sx > 0 ? 0 : Math.PI; }
+      if (d.roof) { p.scale.set(0.55, 0.55, 1); p.position.set(0, d.y, (d.z || 0) + sx * ((d.d || 0.3) / 2 + 0.015)); p.rotation.y = sx > 0 ? 0 : Math.PI; }
       else { p.position.set(sx * d.x, d.y, d.z); p.rotation.y = sx * Math.PI / 2; }
       body.add(p);
     }

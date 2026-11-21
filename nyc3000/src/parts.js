@@ -44,6 +44,22 @@ export class Parts {
     this.list.push(g);
     return this;
   }
+  // add geometry that already has per-vertex colours (Blender models); color overrides them
+  addColored(geo, matrix = null, color = null) {
+    const g = geo.index ? geo.toNonIndexed() : geo.clone();
+    for (const a of ['uv', 'uv1', 'glow', 'rm', 'skinIndex', 'skinWeight']) if (g.attributes[a]) g.deleteAttribute(a);
+    if (matrix) g.applyMatrix4(matrix);
+    const n = g.attributes.position.count;
+    if (color) {
+      _c.set(color);
+      const col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    }
+    if (this.useGlow) g.setAttribute('glow', new THREE.BufferAttribute(new Float32Array(n).fill(this.curGlow), 1));
+    this.list.push(g);
+    return this;
+  }
   box(w, h, d, color, x, y, z, rx, ry, rz) { return this.add(new THREE.BoxGeometry(w, h, d), color, x, y, z, rx, ry, rz); }
   // rounded-ish box: a box with its vertical edges chamfered (8-sided prism)
   slab(w, h, d, color, x, y, z, rx, ry, rz, ch = 0.25) {
@@ -64,19 +80,25 @@ export class Parts {
 }
 
 // MeshStandardMaterial where vertices with glow = 1 shine like neon (one draw call for body + lights).
-export function glowStandard(params = {}, glowGain = 2.4) {
+// perVertexRM: roughness / metalness come from a per-vertex 'rm' attribute (Blender models).
+export function glowStandard(params = {}, glowGain = 2.4, perVertexRM = false) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, ...params });
   m.onBeforeCompile = sh => {
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float glow;\nvarying float vGlow;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = glow;');
+      .replace('#include <common>', '#include <common>\nattribute float glow;\nvarying float vGlow;' + (perVertexRM ? '\nattribute vec2 rm;\nvarying vec2 vRM;' : ''))
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = glow;' + (perVertexRM ? '\nvRM = rm;' : ''));
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vGlow;')
+      .replace('#include <common>', '#include <common>\nvarying float vGlow;' + (perVertexRM ? '\nvarying vec2 vRM;' : ''))
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         totalEmissiveRadiance += vColor.rgb * vGlow * ${glowGain.toFixed(2)};
         diffuseColor.rgb *= 1.0 - vGlow * 0.85;`);
+    if (perVertexRM) {
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = vRM.x;')
+        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = vRM.y;');
+    }
   };
-  m.customProgramCacheKey = () => 'glowStd' + glowGain;
+  m.customProgramCacheKey = () => 'glowStd' + glowGain + (perVertexRM ? 'rm' : '');
   return m;
 }
 
@@ -86,10 +108,14 @@ export const MAT = {
   // characters (skinned) and vehicle details
   skin: glowStandard({ roughness: 0.55, metalness: 0.25, flatShading: true }),
   detail: glowStandard({ roughness: 0.4, metalness: 0.45 }),
+  // Blender models: smooth shading, roughness / metalness per vertex
+  detailRM: glowStandard({}, 2.4, true),
+  skinRM: glowStandard({}, 2.4, true),
   paint: {},
 };
+// car paint; the vertex colour carries the baked ambient occlusion (white on procedural cars)
 export function paintMat(hex) {
-  if (!MAT.paint[hex]) MAT.paint[hex] = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.22, metalness: 0.55, envMapIntensity: 1.3 });
+  if (!MAT.paint[hex]) MAT.paint[hex] = new THREE.MeshStandardMaterial({ color: hex, vertexColors: true, roughness: 0.22, metalness: 0.55, envMapIntensity: 1.3 });
   return MAT.paint[hex];
 }
 

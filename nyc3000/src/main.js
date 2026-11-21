@@ -17,6 +17,7 @@ import { Game } from './game.js';
 import { HUD } from './hud.js';
 import { buildTitleScene } from './title.js';
 import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
+import { loadModels } from './assets.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -405,6 +406,8 @@ async function boot() {
   const step = (p, t) => { $('loadFill').style.width = (p * 100) + '%'; $('loadText').textContent = t; return new Promise(r => setTimeout(r, 30)); };
   await step(0.05, 'Loading fonts…');
   try { await Promise.race([document.fonts.load('900 40px Orbitron'), new Promise(r => setTimeout(r, 1500))]); } catch { /* ignore */ }
+  await step(0.08, 'Loading Blender models…');
+  await loadModels(['cars', 'people', 'buildings'], p => { $('loadFill').style.width = (8 + p * 7) + '%'; });
   await step(0.15, 'Building Manhattan 3000…');
   city = new City(scene);
   city.build();
