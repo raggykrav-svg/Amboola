@@ -11457,6 +11457,7 @@ const CHALS = [
       g.position.z = -.3; player.car.group.add(g);
       const drops = []; let last = [player.x, player.z];
       for (let t = 0; t < 200 && drops.length < 3; t++) { const q = chalRandomStreet(C); if (Math.hypot(q[0] - last[0], q[1] - last[1]) > 200 && Math.hypot(q[0] - last[0], q[1] - last[1]) < 420) { drops.push(q); last = q; } }
+      while (drops.length < 3) drops.push(chalRandomStreet(C));   // (never fewer than 3 customers: the 200–420 m rule can fail in a small town)
       const S = { g, stack: 10, drops, done: 0, t: 0, cool: 0, mk: null, onHit(h) { if (this.cool > 0 || h < 3 || !this.stack) return; this.cool = .8; this.stack--; const b = this.g.children[this.stack]; b.visible = false; audio.whack?.(); toast('🍕 A PIZZA FELL OFF!', `${this.stack} LEFT · CAREFUL!`); } };
       chalPizzaNext(S, C); chalNote('🍕 Deliver to 3 customers. Drive smoothly: every bump knocks a pizza off the tower!'); return S;
     },
