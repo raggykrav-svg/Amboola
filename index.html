@@ -3655,6 +3655,23 @@ const audio = new AudioSys();
    PLAYER CAR
    ===================================================================== */
 let player = null;
+// free the GPU copies of what only a removed car used: its cockpit (made of its own boxes and canvas dials) and its own
+// textures. Without it every DRIVE (and every race's rival cars) left them on the graphics card, and after
+// some 60 car changes in one session the graphics ran out (shader errors, then a frozen or black picture). Anything still
+// in a scene, a Blender model's own meshes (every copy of that car shares them) and the cached number plates stay; if
+// something off-scene still holds a freed one, three.js simply uploads it again when it is next drawn.
+function freeCar(group) {
+  const geos = new Set(), mats = new Set(), list = o => o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+  group.traverse(o => { if (o.geometry) geos.add(o.geometry); list(o).forEach(m => mats.add(m)); });
+  if (!geos.size && !mats.size) return;
+  const keepG = new Set(), keepM = new Set(), mark = o => { if (o.geometry) keepG.add(o.geometry); list(o).forEach(m => keepM.add(m)); };
+  scene.traverse(mark); gScene.traverse(mark); TITLE.scene?.traverse(mark);
+  for (const id in MODELS) MODELS[id]?.traverse?.(mark);
+  const texOf = m => TEX_KEYS.map(k => m[k]).filter(t => t?.isTexture && !t.isRenderTargetTexture);
+  const keepT = new Set(Object.values(plateTex)); for (const m of keepM) texOf(m).forEach(t => keepT.add(t));
+  for (const g of geos) if (!keepG.has(g)) g.dispose();
+  for (const m of mats) if (!keepM.has(m)) texOf(m).forEach(t => { if (!keepT.has(t)) t.dispose(); });   // (not the materials: their shader programs are shared, and freeing them would recompile the next car's)
+}
 class Player {
   constructor(spec, paintIdx) {
     this.spec = spec; const p = PAINTS[paintIdx];
@@ -3675,7 +3692,7 @@ class Player {
     this.setLights(TIMES[timeName]);
   }
   setLights(T) { this.head.intensity = T.head * 6; this.car.headMat.emissiveIntensity = T.head ? 6 : .6; this.baseTail = T.lamps ? 2.5 : 1.2; }
-  dispose() { scene.remove(this.car.group, this.head, this.head.target); }
+  dispose() { scene.remove(this.car.group, this.head, this.head.target); freeCar(this.car.group); }
   headSync() { const g = this.car.group; g.updateMatrixWorld(); g.localToWorld(this.head.position.set(0, .8, 2.2)); g.localToWorld(this.head.target.position.set(0, 0, 25)); this.head.target.updateMatrixWorld(); }
   resetToRoad() {
     if (soccer) return soccerReset(this);
@@ -5199,7 +5216,7 @@ function buildGarage() {
 }
 function showGarageCar() {
   if (!MODELS[CARS[carIdx].id]) loadModel(CARS[carIdx].id);
-  if (gCar) gScene.remove(gCar.group);
+  if (gCar) { gScene.remove(gCar.group); freeCar(gCar.group); }
   const p = PAINTS[paintIdx]; gCar = applyCustom(buildCar(CARS[carIdx], p.c, p.m, p.r), CARS[carIdx].id); gCar.group.position.y = .08; if (CARS[carIdx].heli) { gCar.group.scale.setScalar(.55); } else if (CARS[carIdx].jet) { gCar.group.scale.setScalar(.3); gCar.group.position.y = .7; }
   dentCar(gCar, dentsOf(CARS[carIdx].id));
   gCar.headMat.emissiveIntensity = 2.5; gCar.tailMat.emissiveIntensity = 2;
@@ -5346,7 +5363,7 @@ function updateAd(dt) {
 }
 function endAd() {
   const A = ad; if (!A) return; ad = null;
-  gScene.remove(A.studio.group); scene.remove(A.street.group);
+  gScene.remove(A.studio.group); scene.remove(A.street.group); freeCar(A.studio.group); freeCar(A.street.group);
   A.hidden.forEach(o => o.visible = true); if (gCar) gCar.group.visible = true;
   A.spots.forEach((s, i) => { s.intensity = A.spotI[i]; }); if (A.spots[0]) A.spots[0].position.x = 4;
   camera.fov = 62; camera.updateProjectionMatrix();
@@ -5390,7 +5407,7 @@ function updateAllAd(dt) {
     const c = A.list[A.i + 1];
     if (c && MODEL_FILES.includes(c.id) && !MODELS[c.id] && A.ct < ALL_AD_D + 2.5) { /* hold the current shot */ }
     else {
-      A.i++; A.ct = 0; scene.remove(A.street.group);
+      A.i++; A.ct = 0; scene.remove(A.street.group); freeCar(A.street.group);
       if (c) {
         const p = PAINTS[owns(c) ? savedPaint(c) : c.paint ?? 0], car = applyCustom(buildCar(c, p.c, p.m, p.r), owns(c) ? c.id : '__ad');
         car.headMat.emissiveIntensity = 7; car.tailMat.emissiveIntensity = 3; scene.add(car.group); A.street = car;
@@ -5895,7 +5912,7 @@ class RaceAI {
     this.pose(dt);
     if (this.finish == null && this.prog >= race.laps * T.L) this.finish = race.t;
   }
-  dispose() { scene.remove(this.car.group); }
+  dispose() { scene.remove(this.car.group); freeCar(this.car.group); }
 }
 function pickRivals(spec, n) {
   if (spec.f1) return CARS.filter(c => c.f1 && c.id !== spec.id).sort(() => Math.random() - .5).slice(0, n);   // an F1 car races the other F1 teams
@@ -10247,7 +10264,7 @@ class StreetRacer {
     this.s = Math.min(T.L, this.s + this.v * dt); if (this.s >= T.L) this.done = true;
     this.pose(dt);
   }
-  dispose() { scene.remove(this.car.group); }
+  dispose() { scene.remove(this.car.group); freeCar(this.car.group); }
 }
 function startMeetRace(M, r) {
   const sp = CARS.find(c => c.id === r.car), stake = meetStake(sp); if (wallet.usd < stake) return;
@@ -18122,7 +18139,7 @@ function titleCar() {   // your car (the one picked in the garage, in its paint)
   const c = CARS[carIdx], key = `${c.id}:${paintIdx}:${!!MODELS[c.id]}`;
   if (TITLE.carKey === key) return; TITLE.carKey = key;
   if (!MODELS[c.id]) loadModel(c.id).then(() => { if (state === 'title') titleCar(); });
-  if (TITLE.car) TITLE.scene.remove(TITLE.car.group);
+  if (TITLE.car) { TITLE.scene.remove(TITLE.car.group); freeCar(TITLE.car.group); }
   const p = PAINTS[paintIdx], car = TITLE.car = applyCustom(buildCar(c, p.c, p.m, p.r), c.id);
   dentCar(car, dentsOf(c.id)); car.headMat.emissiveIntensity = 3; car.tailMat.emissiveIntensity = 2.5;
   car.group.scale.setScalar(c.jet ? .3 : c.heli ? .55 : Math.min(1, 5.8 / (BODIES[c.body]?.L || 4.6)));   // the bus and the trucks shrink to fit the podium
