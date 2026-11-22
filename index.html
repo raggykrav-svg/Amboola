@@ -469,7 +469,7 @@
   #phBtns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; pointer-events:auto; } #phBtns button { font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:.1em; padding:10px 18px; color:#111; background:#ffc21f; border:none; cursor:pointer; } #phBtns #phExit { background:#444; color:#fff; }
   @media (max-width: 600px) { #dailyhud { top:122px; font-size:10px; max-width:52vw; } #fuelBar { width:120px; } }
   #helpbtn { position:absolute; left:22px; top:66px; font-size:13px; letter-spacing:.2em; color:var(--dim); text-shadow:0 1px 4px #000; }
-  #help { position:absolute; left:22px; top:92px; background:var(--panel); padding:12px 16px; font-size:15px; line-height:1.55; letter-spacing:.05em;
+  #help { position:absolute; z-index:6; left:22px; top:92px; background:var(--panel); padding:12px 16px; font-size:15px; line-height:1.55; letter-spacing:.05em;
     border-left:3px solid var(--accent); backdrop-filter:blur(6px); }
   #help kbd { font-family:'Orbitron',sans-serif; font-size:11px; background:#222733; padding:2px 6px; border-radius:3px; margin-right:6px; color:#fff; }
 
@@ -10605,8 +10605,14 @@ function buildStuntPark() {
   addRamp({ x: wx0 + 6, z: z0 + 8, ry: E, prof: 'wedge', W: 6, L: 7, H: 1.5, col: '#1e5bff' });                   // a little flip wedge
   // tyre stacks on the plaza corners
   const tyres = []; for (const [x0, x1] of [[ax0, ax1], [wx0, wx1]]) for (const [x, z] of [[x0 + 2, z0 + 2], [x1 - 2, z0 + 2], [x0 + 2, z1 - 2], [x1 - 2, z1 - 2]]) { tyres.push([x, 0, z, 0]); addCol(x - 1.1, z - 1.1, x + 1.1, z + 1.1); }
-  const tg = mergeGeometries([0, .55, 1.1].map(y => new THREE.TorusGeometry(.7, .28, 8, 16).rotateX(Math.PI / 2).translate(0, y + .28, 0)));
-  regBreakList(tyres, [instanced(tg, new THREE.MeshStandardMaterial({ color: 0x151517, roughness: .9 }), tyres)], 'tyres', 1);
+  // (rubber grey with a painted red-and-white tyre in the middle, like a race track's tyre wall: in plain near-black they
+  // read as a shapeless black blob in the corner of the screen where every drive starts)
+  const tg = mergeGeometries([[0, '#3a3b40'], [.55, null], [1.1, '#3a3b40']].map(([y, hex]) => {
+    const t = new THREE.TorusGeometry(.7, .28, 8, 16).rotateX(Math.PI / 2).translate(0, y + .28, 0), n = t.attributes.position.count, c = new Float32Array(n * 3), col = new THREE.Color();
+    for (let i = 0; i < n; i++) { col.set(hex || (Math.floor((Math.atan2(t.attributes.position.getZ(i), t.attributes.position.getX(i)) + Math.PI) / (Math.PI / 4)) % 2 ? '#e8e8e8' : '#d0141e')); c.set([col.r, col.g, col.b], i * 3); }
+    t.setAttribute('color', new THREE.BufferAttribute(c, 3)); return t;
+  }));
+  regBreakList(tyres, [instanced(tg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 }), tyres)], 'tyres', 1);
   // the big sign at the entrance, facing the road where you start
   const t = signTex(1024, 320, '#0d1b2a', [['AMBOOLA STUNT PARK', .38, .26, OR, '#fff'], ['JUMPS · FLIPS · LOOP  ←  スタントパーク', .74, .15, OR, '#ffd21f']], '#ff6a1a');
   const sm = new THREE.MeshBasicMaterial({ map: t }); dynMats.neon.push(sm);

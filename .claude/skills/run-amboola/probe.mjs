@@ -1,11 +1,12 @@
-// node .claude/skills/run-amboola/probe.mjs <repoRoot> <outLog> probes/a.js [probes/b.js …]  — loads the game (models and all, high quality, 640x360), then evaluates each probe file in turn and logs its result
+// node .claude/skills/run-amboola/probe.mjs <repoRoot> <outLog> probes/a.js [probes/b.js …]  (VW/VH: viewport, default 640x360) — loads the game (models and all, high quality), then evaluates each probe file in turn and logs its result
+// then check: page errors, NaN, the car still drives in free roam, leftover HUD, the camera near the car, state back to 'drive'
 import { createRequire } from 'node:module'; import { execSync } from 'node:child_process'; import fs from 'node:fs'; import path from 'node:path';
 const [ROOT, OUT, ...FILES] = process.argv.slice(2);
 const require = createRequire(path.join(execSync('npm root -g').toString().trim(), 'noop.js'));
 const { chromium } = require('playwright');
 const V = '0.169.0', THREE_DIR = '/tmp/amboola-three/package';
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
-const page = await (await browser.newContext({ viewport: { width: 640, height: 360 } })).newPage();
+const page = await (await browser.newContext({ viewport: { width: +(process.env.VW || 640), height: +(process.env.VH || 360) } })).newPage();
 let errs = []; page.on('pageerror', e => errs.push('PAGEERROR ' + e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 4).join(' | '))); page.on('console', m => { if (m.type() === 'error' && !/Failed to load/.test(m.text())) errs.push('console.error ' + m.text().slice(0, 300)); });
 await page.route(`https://cdn.jsdelivr.net/npm/three@${V}/**`, r => r.fulfill({ path: path.join(THREE_DIR, new URL(r.request().url()).pathname.replace(`/npm/three@${V}/`, '')), contentType: 'application/javascript' }));
 await page.route('https://fonts.googleapis.com/**', r => r.abort());
