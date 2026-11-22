@@ -14,7 +14,7 @@ import { Audio } from './audio.js';
 import { City } from './city.js';
 import { Rain, Effects } from './effects.js';
 import { Game } from './game.js';
-import { HUD } from './hud.js';
+import { HUD, updateScanner } from './hud.js';
 import { buildTitleScene } from './title.js';
 import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
 import { loadModels } from './assets.js';
@@ -180,6 +180,7 @@ let pausedAt = 0;
 function openPause() {
   if (state !== 'play') return;
   pausedAt = performance.now();
+  updateScanner(game, camera, false);
   wantLock = false;
   if (document.pointerLockElement) document.exitPointerLock();
   input.reset();
@@ -376,7 +377,7 @@ function placeMoon(focus) {
 }
 
 // ---------- loop ----------
-let last = performance.now(), fpsInterval = 0, lastFrame = 0, fpsSm = 60;
+let last = performance.now(), fpsInterval = 0, lastFrame = 0, fpsSm = 60, wasScanning = false;
 function frame(now) {
   requestAnimationFrame(frame);
   if (fpsInterval && now - lastFrame < fpsInterval - 1.5) return;
@@ -396,8 +397,13 @@ function frame(now) {
   if (state === 'loading') return;
   const inMenu = state === 'menu' || ((state === 'options' || state === 'controls') && optionsReturn === 'menu');
   if (state === 'play') {
-    game.update(dt);
+    // hold Q (on foot): scanner, and time slows down like in Cyberpunk
+    const p = game.player, scanning = input.down('KeyQ') && p.alive && !p.vehicle && !game.interior;
+    if (scanning && !wasScanning) audio.play('scan');
+    wasScanning = scanning;
+    game.update(scanning ? dt * 0.4 : dt);
     hud.update(game, dt, settings.showFps, fpsSm);
+    updateScanner(game, camera, scanning);
   } else if (inMenu) updateMenuCam(dt);
   input.endFrame();
   // world updates
@@ -429,7 +435,7 @@ async function boot() {
   await step(0.7, 'Spawning traffic & neon…');
   fx = new Effects(scene, city.glowTex);
   hud = new HUD();
-  game = new Game({ scene, camera, city, fx, audio, settings, hud, input });
+  game = new Game({ scene, camera, city, fx, audio, settings, hud, input, renderer });
   game.player.h.root.visible = false;
   game.rooms = buildRooms(scene, city); // shop and flat interiors behind the street doors
   game.onSave = () => { storage.set(SAVE_KEY, JSON.stringify(game.saveData())); return !!readSave(); };

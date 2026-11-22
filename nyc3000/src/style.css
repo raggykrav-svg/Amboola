@@ -223,3 +223,26 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
 #bossName { font-family: var(--font); font-size: 13px; letter-spacing: .25em; color: #ff8ab0; text-shadow: 0 0 10px #ff2bd6; margin-bottom: 4px; }
 #bossBar .bar { height: 10px; border: 1px solid rgba(255,43,214,.8); background: rgba(0,0,0,.55); }
 #bossBar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff2040, #ff2bd6); box-shadow: 0 0 12px #ff2bd6; transition: width .15s; }
+
+/* ---- speech lines, detection, scanner, objective photo ---- */
+#objPhoto { display: none; float: right; width: 84px; height: 49px; object-fit: cover; margin: 2px 0 4px 10px; border: 1px solid #b98cff; border-radius: 4px; }
+#objective.photo #objPhoto { display: block; }
+#say { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); max-width: min(760px, 90vw); text-align: center;
+  font: 600 18px Rajdhani, Arial, sans-serif; color: #fff; text-shadow: 0 1px 3px #000, 0 0 8px #000; opacity: 0; transition: opacity .3s; pointer-events: none; }
+#say b { font-family: Orbitron, Arial, sans-serif; font-size: 13px; letter-spacing: 1px; margin-right: 6px; }
+#detect { position: absolute; left: 50%; top: calc(50% - 64px); transform: translateX(-50%); display: none; text-align: center; pointer-events: none; }
+#detectText { font: 900 15px Orbitron, Arial, sans-serif; color: #ffd23a; text-shadow: 0 0 6px #000; letter-spacing: 2px; }
+#detect .bar { width: 90px; height: 4px; background: rgba(0,0,0,.5); margin: 3px auto 0; border-radius: 2px; overflow: hidden; }
+#detectFill { display: block; height: 100%; width: 0; background: #ffd23a; }
+#detect.spotted #detectText { color: #ff2040; }
+#detect.spotted #detectFill { background: #ff2040; }
+#scan { position: absolute; inset: 0; display: none; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(41,243,255,.22) 100%), repeating-linear-gradient(0deg, rgba(41,243,255,.05) 0 2px, transparent 2px 5px); }
+#scan.on { display: block; }
+.scan-title { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); font: 700 13px Orbitron, Arial; letter-spacing: 3px; color: #29f3ff; text-shadow: 0 0 8px #29f3ff; }
+.scan-label { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; font: 600 13px Rajdhani, Arial, sans-serif; color: #e8f6ff;
+  background: rgba(4,10,24,.72); border-left: 3px solid #29f3ff; padding: 2px 7px; border-radius: 2px; }
+.scan-label small { display: block; font-size: 11px; opacity: .8; letter-spacing: 1px; }
+.scan-label.focus { font-size: 16px; padding: 4px 10px; }
+.scan-label .hp { height: 3px; background: rgba(255,255,255,.15); margin-top: 2px; }
+.scan-label .hp i { display: block; height: 100%; background: currentColor; }

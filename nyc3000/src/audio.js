@@ -162,6 +162,10 @@ export class Audio {
       case 'cash': this._tone(t, 1568, 0.07, 'square', 0.07); this._tone(t + 0.08, 2093, 0.3, 'triangle', 0.11); this._noiseHit(t + 0.06, 0.12, 6000, 0.05); break;
       case 'alarm': for (let k = 0; k < 10; k++) this._tone(t + k * 0.22, k % 2 ? 880 : 1175, 0.18, 'square', 0.05); break;
       case 'sleep': [12, 7, 4, 0].forEach((n, i) => this._tone(t + i * 0.18, 392 * Math.pow(2, n / 12), 0.4, 'triangle', 0.07)); break;
+      case 'alert': this._tone(t, 520, 0.12, 'square', 0.09); this._tone(t + 0.12, 780, 0.22, 'square', 0.09); break;
+      case 'punch': this._noiseHit(t, 0.12, 300, 0.35, null, 'lowpass'); this._sweep(t, 180, 60, 0.15, 'sine', 0.2); break;
+      case 'woof': this._sweep(t, 420, 220, 0.12, 'sawtooth', 0.08); this._sweep(t + 0.2, 460, 230, 0.12, 'sawtooth', 0.08); break;
+      case 'scan': this._sweep(t, 300, 1800, 0.25, 'sine', 0.05); break;
       case 'crash': this._noiseHit(t, 0.4, 500, 0.35 * a, null, 'lowpass'); break;
     }
   }

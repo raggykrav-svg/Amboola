@@ -67,8 +67,73 @@ export function brickTextures() {
   }
   // dark roof patches in both bottom-left and top-left corners (roofs sample uv 0.004)
   for (const yy of [0, 508]) { g.fillStyle = '#2c2a2e'; g.fillRect(0, yy, 4, 4); ge.fillStyle = '#000'; ge.fillRect(0, yy, 4, 4); }
-  const mk = cv => { const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
-  return [mk(c), mk(e)];
+  return [mkRepeat(c), mkRepeat(e)];
+}
+function mkRepeat(cv) { const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
+const pickR = a => a[Math.floor(Math.random() * a.length)];
+
+// Megabuilding facade: concrete decks with balconies, small lit flats, AC units, laundry and
+// the odd neon strip. Same 4 m cells as the window texture (32 m across, 64 m up).
+export function megaTextures() {
+  const c = canvas(256, 512), g = c.getContext('2d');
+  const e = canvas(256, 512), ge = e.getContext('2d');
+  g.fillStyle = '#3a3b44'; g.fillRect(0, 0, 256, 512);
+  ge.fillStyle = '#000'; ge.fillRect(0, 0, 256, 512);
+  const lights = ['#ffd9a0', '#ffc070', '#9fe9ff', '#ff9ad8', '#fff0d0', '#b9ffd9', '#c8b0ff', '#ffe08a'];
+  for (let r = 0; r < 16; r++) {
+    const y = r * 32;
+    for (let col = 0; col < 8; col++) {
+      const x = col * 32;
+      g.fillStyle = '#1c1d24'; g.fillRect(x + 2, y + 2, 28, 23); // recessed balcony
+      const lit = Math.random() < 0.52, wc = pickR(lights);
+      const ww = 9 + Math.floor(Math.random() * 9), wx = x + 4 + Math.floor(Math.random() * (24 - ww));
+      g.fillStyle = lit ? wc : '#121318'; g.fillRect(wx, y + 5, ww, 15);
+      if (lit) {
+        ge.globalAlpha = 0.5 + Math.random() * 0.5; ge.fillStyle = wc; ge.fillRect(wx, y + 5, ww, 15); ge.globalAlpha = 1;
+        if (Math.random() < 0.3) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(wx, y + 5, ww, 6); ge.fillStyle = 'rgba(0,0,0,.6)'; ge.fillRect(wx, y + 5, ww, 6); }
+      }
+      g.fillStyle = '#62646f'; g.fillRect(x + 2, y + 18, 28, 2); // railing
+      for (let k = x + 4; k < x + 30; k += 4) g.fillRect(k, y + 18, 1, 7);
+      const s = Math.random();
+      if (s < 0.22) { g.fillStyle = '#8d909b'; g.fillRect(x + 21, y + 13, 8, 7); g.fillStyle = '#4d4f58'; g.fillRect(x + 22, y + 15, 6, 1); g.fillRect(x + 22, y + 17, 6, 1); }
+      else if (s < 0.34) { g.fillStyle = '#888'; g.fillRect(x + 4, y + 8, 22, 1); for (let k = 0; k < 4; k++) { g.fillStyle = pickR(['#e23a9c', '#2ab8ff', '#ffd23a', '#e8e8ee', '#3aff9a']); g.fillRect(x + 5 + k * 5, y + 9, 3, 5); } }
+      else if (s < 0.42) { g.fillStyle = '#2f6a3a'; g.fillRect(x + 4, y + 13, 6, 5); g.fillStyle = '#3f8a4a'; g.fillRect(x + 5, y + 11, 4, 3); }
+      else if (s < 0.5) { const nc = pickR(['#ff2bd6', '#29f3ff', '#ffa43a', '#3aff9a']); g.fillStyle = nc; g.fillRect(x + 2, y + 2, 28, 2); ge.fillStyle = nc; ge.fillRect(x + 2, y + 2, 28, 2); }
+    }
+    g.fillStyle = '#4e505b'; g.fillRect(0, y + 25, 256, 7); // floor slab
+    g.fillStyle = '#26272e'; g.fillRect(0, y + 25, 256, 1);
+  }
+  g.fillStyle = '#464853';
+  for (let col = 0; col <= 8; col += 2) g.fillRect(col * 32 - 2, 0, 4, 512); // concrete fins
+  for (const yy of [0, 508]) { g.fillStyle = '#26272d'; g.fillRect(0, yy, 4, 4); ge.fillStyle = '#000'; ge.fillRect(0, yy, 4, 4); }
+  return [mkRepeat(c), mkRepeat(e)];
+}
+
+// Corporate glass: dark blue curtain wall, thin mullions, a few offices still lit and the odd
+// whole floor glowing.
+export function corpTextures() {
+  const c = canvas(256, 512), g = c.getContext('2d');
+  const e = canvas(256, 512), ge = e.getContext('2d');
+  const grd = g.createLinearGradient(0, 0, 256, 512);
+  grd.addColorStop(0, '#0e1a2e'); grd.addColorStop(0.5, '#0a1424'); grd.addColorStop(1, '#122038');
+  g.fillStyle = grd; g.fillRect(0, 0, 256, 512);
+  ge.fillStyle = '#000'; ge.fillRect(0, 0, 256, 512);
+  for (let r = 0; r < 16; r++) {
+    const y = r * 32, floorLit = Math.random() < 0.16, tone = Math.random() < 0.75 ? '#d6ecff' : '#8fe9ff';
+    for (let col = 0; col < 16; col++) {
+      const x = col * 16, lit = floorLit ? Math.random() < 0.92 : Math.random() < 0.1;
+      if (lit) {
+        g.fillStyle = tone; g.globalAlpha = 0.8; g.fillRect(x + 1, y + 4, 14, 20); g.globalAlpha = 1;
+        ge.globalAlpha = 0.45 + Math.random() * 0.4; ge.fillStyle = tone; ge.fillRect(x + 1, y + 4, 14, 20); ge.globalAlpha = 1;
+      } else { g.fillStyle = 'rgba(90,140,210,0.07)'; g.fillRect(x + 1, y + 4, 14, 20); }
+    }
+    g.fillStyle = '#04070d'; g.fillRect(0, y + 26, 256, 6); // spandrel
+    g.fillStyle = 'rgba(120,180,255,0.16)'; g.fillRect(0, y + 26, 256, 1);
+  }
+  g.fillStyle = '#070b14';
+  for (let x = 0; x <= 256; x += 16) g.fillRect(x - 1, 0, 2, 512);
+  for (const yy of [0, 508]) { g.fillStyle = '#0b0e18'; g.fillRect(0, yy, 4, 4); ge.fillStyle = '#000'; ge.fillRect(0, yy, 4, 4); }
+  return [mkRepeat(c), mkRepeat(e)];
 }
 
 export function groundTexture() {

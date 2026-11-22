@@ -289,6 +289,19 @@ export class Humanoid {
       b.uaR.rotation.set(0.1, 0, 1.98 - sh); b.faR.rotation.set(0, 0, 1.16 + sh);
       b.hdL.rotation.set(0, 0, 0); b.hdR.rotation.set(0, 0, 0);
       b.head.rotation.set(-0.15, 0, 0);
+    } else if (opts.dance) {
+      // hands in the air, bouncing knees, swaying hips (the giant holograms)
+      const t = this.phase * 5, beat = Math.sin(t), slow = Math.sin(t * 0.5), up = Math.max(0, beat), dn = Math.max(0, -beat);
+      b.hips.position.y = 0.95 - 0.07 * Math.abs(beat);
+      b.hips.rotation.set(0, slow * 0.35, beat * 0.07);
+      b.spine.rotation.set(0.06, -slow * 0.25, -beat * 0.08);
+      b.chest.rotation.set(0, 0, beat * 0.05);
+      b.head.rotation.set(0.12 * Math.abs(beat), slow * 0.3, 0);
+      b.uaL.rotation.set(0, 0, -2.25 - 0.45 * up); b.faL.rotation.set(0, 0, -0.85 + 0.6 * dn);
+      b.uaR.rotation.set(0, 0, 2.25 + 0.45 * dn); b.faR.rotation.set(0, 0, 0.85 - 0.6 * up);
+      b.hdL.rotation.set(0, 0, 0); b.hdR.rotation.set(0, 0, 0);
+      b.thL.rotation.set(0.4 * up, 0, -0.06); b.shL.rotation.set(-0.8 * up, 0, 0);
+      b.thR.rotation.set(0.4 * dn, 0, 0.06); b.shR.rotation.set(-0.8 * dn, 0, 0);
     } else if (opts.flail) {
       b.uaL.rotation.set(2.4 + Math.sin(ph * 2) * 0.6, 0.3, -0.3); b.faL.rotation.set(0.6, 0, 0);
       b.uaR.rotation.set(2.4 + Math.cos(ph * 2) * 0.6, -0.3, 0.3); b.faR.rotation.set(0.6, 0, 0);

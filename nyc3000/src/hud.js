@@ -3,6 +3,8 @@ import { WEAPONS } from './models.js';
 import { TYPES, CHALLENGES } from './challenges.js';
 import { CITY } from './textures.js';
 import { roadC } from './city.js';
+import { HIGHWAYS } from './highway.js';
+import { FACTIONS, randomName } from './ai.js';
 
 const $ = id => document.getElementById(id);
 const { CELL, ROAD, N, HALF } = CITY;
@@ -33,6 +35,11 @@ export class HUD {
   set(id, v, prop = 'textContent') {
     const k = id + prop; if (this.cache[k] === v) return; this.cache[k] = v;
     if (prop === 'width') $(id).style.width = v; else $(id)[prop] = v;
+  }
+  // a speech line at the bottom of the screen: who says what
+  say(name, text, color = '#29f3ff', sec = 3.6) {
+    const el = $('say'); el.innerHTML = ''; const b = document.createElement('b'); b.textContent = name + ':'; b.style.color = color;
+    el.appendChild(b); el.appendChild(document.createTextNode(' ' + text)); el.style.opacity = 1; this.sayT = sec;
   }
   toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; this.toastT = 2.2; }
   kick(a) { this.spread = Math.min(30, this.spread + a); }
@@ -88,6 +95,16 @@ export class HUD {
     this.spread += (6 - this.spread) * (1 - Math.exp(-dt * 10));
     document.getElementById('crosshair').style.setProperty('--g', (this.spread * (g.input.mouseRight ? 0.6 : 1)).toFixed(1) + 'px');
     this.hitT -= dt; $('hitmark').style.opacity = this.hitT > 0 ? 1 : 0;
+    if (this.sayT > 0) { this.sayT -= dt; if (this.sayT <= 0) $('say').style.opacity = 0; }
+    // detection: someone is noticing you (yellow) or you've been spotted (red)
+    const fighting = g.gang.some(e => e.state !== 'dead' && e.alert === 2 && e.sees && !e.neutral);
+    const det = g.ai.detect, dk = fighting ? 'S' : det > 0.04 ? Math.round(det * 20) : -1;
+    if (this.cache.det !== dk) {
+      this.cache.det = dk; const d = $('detect');
+      d.style.display = dk === -1 ? 'none' : 'block'; d.classList.toggle('spotted', fighting);
+      $('detectText').textContent = fighting ? '! SPOTTED !' : det > 0.5 ? '? SEARCHING' : '? NOTICING YOU';
+      $('detectFill').style.width = (fighting ? 100 : det * 100) + '%';
+    }
     // toast
     if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) $('toast').style.opacity = 0; }
     // cash
@@ -116,6 +133,8 @@ export class HUD {
     else if (tgt) dist = Math.round(Math.hypot(tgt.x - pp.x, tgt.z - pp.z)) + ' m · ' + sub;
     else dist = sub;
     $('objective').classList.toggle('challenge', !!chi);
+    const ph = chi && chi.photo;
+    if (this.cache.photo !== ph) { this.cache.photo = ph; if (ph) $('objPhoto').src = ph; $('objective').classList.toggle('photo', !!ph); }
     this.set('objText', ot);
     this.set('objDist', dist);
     // boss health
@@ -158,6 +177,9 @@ export class HUD {
     // roads glow edges
     c.strokeStyle = 'rgba(41,243,255,.25)'; c.lineWidth = 1 / k;
     for (let i = 0; i <= N; i++) { c.beginPath(); c.moveTo(roadC(i), -HALF); c.lineTo(roadC(i), HALF); c.stroke(); c.beginPath(); c.moveTo(-HALF, roadC(i)); c.lineTo(HALF, roadC(i)); c.stroke(); }
+    // elevated highways
+    c.strokeStyle = 'rgba(255,164,58,.32)'; c.lineWidth = 16;
+    for (const H of HIGHWAYS) { c.beginPath(); if (H.axis === 'z') { c.moveTo(H.c, -HALF + 12); c.lineTo(H.c, HALF - 12); } else { c.moveTo(-HALF + 12, H.c); c.lineTo(HALF - 12, H.c); } c.stroke(); }
     // entities
     const dot = (x, z, r, col) => { c.fillStyle = col; c.beginPath(); c.arc(x, z, r / k, 0, 7); c.fill(); };
     for (const v of g.vehicles) {
@@ -178,7 +200,10 @@ export class HUD {
       if (Math.abs(x - pp.x) > range || Math.abs(z - pp.z) > range) continue;
       c.fillStyle = TYPES[def.type].color; c.fillRect(x - 5 / k, z - 5 / k, 10 / k, 10 / k);
     }
-    for (const e of g.gang) if (e.state !== 'dead') dot(e.pos.x, e.pos.z, 2.6, '#ff2040');
+    for (const e of g.gang) if (e.state !== 'dead' && (!e.neutral || e.alert === 2 || g.time - (e.scannedT || -99) < 20)) dot(e.pos.x, e.pos.z, 2.6, e.alert === 2 ? '#ff2040' : '#ffa43a');
+    for (const f of g.ai.friends) if (f.alive && f.state !== 'car' && f.kind !== 'npc') dot(f.pos.x, f.pos.z, 2.6, '#3aff9a');
+    const A = g.ch.active;
+    if (A && A.areaC && !A.found && A.friend && A.friend.state === 'wait') { c.strokeStyle = 'rgba(185,140,255,.8)'; c.lineWidth = 2 / k; c.fillStyle = 'rgba(185,140,255,.15)'; c.beginPath(); c.arc(A.areaC.x, A.areaC.z, A.r, 0, 7); c.fill(); c.stroke(); }
     // shops you can go into (green)
     for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 2.2, '#3aff9a');
     c.restore();
@@ -197,4 +222,58 @@ export class HUD {
     c.beginPath(); c.moveTo(R, R - 9); c.lineTo(R + 6, R + 6); c.lineTo(R, R + 3); c.lineTo(R - 6, R + 6); c.closePath(); c.fill(); c.stroke();
     c.fillStyle = '#29f3ff'; c.font = 'bold 12px Orbitron, Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('N', R + Math.sin(yaw) * (R - 12), R - Math.cos(yaw) * (R - 12));
   }
+}
+
+// ---- the scanner (hold Q): names and info over the people in front of you ----
+const pool = [];
+const _v = { x: 0, y: 0, z: 0 };
+export function updateScanner(g, camera, on) {
+  const box = $('scan');
+  box.classList.toggle('on', on);
+  if (!on) return;
+  const W = innerWidth, H = innerHeight, cam = camera.position;
+  const list = [];
+  const add = (pos, h, name, sub, color, hp, ref) => {
+    const dx = pos.x - cam.x, dz = pos.z - cam.z, d = Math.hypot(dx, dz);
+    if (d > 65) return;
+    const p = camera.position.clone ? null : null; void p;
+    const v = pos.clone().setY(pos.y + h + 0.35).project(camera);
+    if (v.z > 1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05) return;
+    list.push({ x: (v.x + 1) / 2 * W, y: (1 - v.y) / 2 * H, d, name, sub, color, hp, ref });
+  };
+  for (const e of g.peds) if (e.state !== 'dead' && e.state !== 'gone') add(e.pos, 1.9, e.scanName || (e.scanName = randomName()), 'CIVILIAN', '#e8f6ff');
+  for (const e of g.cops) if (e.state !== 'dead') add(e.pos, 1.9, 'NYPD OFFICER', 'POLICE', '#4aa0ff');
+  for (const e of g.gang) {
+    if (e.state === 'dead' || e.ride) continue;
+    e.scannedT = g.time;
+    const F = FACTIONS[e.faction] || FACTIONS.skulls, st = e.alert === 2 ? 'HOSTILE' : e.alert === 1 ? 'SEARCHING' : 'UNAWARE';
+    add(e.pos, 1.9 * e.root.scale.x, e.isBoss ? `★ BOUNTY: ${e.name}` : e.kind === 'psycho' ? 'CYBERPSYCHO' : (e.name || F.one), `${F.name} · ${st}${e.neutral && e.alert < 2 ? ' · LEAVES YOU ALONE' : ''}`, e.isBoss ? '#ffd27a' : F.color, e.health / e.maxHealth);
+  }
+  for (const f of g.ai.friends) if (f.alive && f.state !== 'car') add(f.pos, f.dog ? 1.0 : 1.9, f.name.toUpperCase(), { missing: 'MISSING PERSON · TALK TO THEM (E)', dog: 'LOST ROBOT DOG · PAT HIM (E)', informant: 'INFORMANT · CATCH HIM!', hostage: 'VICTIM · KEEP THEM SAFE', npc: 'WAITING FOR BOLT' }[f.kind] || '', '#3aff9a');
+  list.sort((a, b) => a.d - b.d);
+  const shown = list.slice(0, 14);
+  // push labels apart so a crowd stays readable (nearest stays in place)
+  for (let i = 1; i < shown.length; i++) for (let k = 0; k < 8; k++) {
+    if (!shown.slice(0, i).some(o => Math.abs(o.x - shown[i].x) < 150 && Math.abs(o.y - shown[i].y) < 36)) break;
+    shown[i].y -= 36;
+  }
+  let focus = null, fd = 90;
+  for (const l of shown) { const d = Math.hypot(l.x - W / 2, l.y - H / 2); if (d < fd) { fd = d; focus = l; } }
+  const wrap = $('scanLabels');
+  while (pool.length < shown.length) { const el = document.createElement('div'); el.className = 'scan-label'; wrap.appendChild(el); pool.push(el); }
+  pool.forEach((el, i) => {
+    const l = shown[i];
+    if (!l) { el.style.display = 'none'; return; }
+    el.style.display = 'block'; el.style.left = l.x + 'px'; el.style.top = l.y + 'px';
+    el.style.borderLeftColor = l.color; el.style.color = l.color;
+    el.classList.toggle('focus', l === focus);
+    const key = l.name + l.sub + (l === focus) + (l.hp !== undefined ? Math.round(l.hp * 20) : '');
+    if (el._k !== key) {
+      el._k = key;
+      el.innerHTML = '';
+      el.appendChild(document.createTextNode(l.name));
+      const sm = document.createElement('small'); sm.textContent = l === focus || !l.sub.startsWith('CIVILIAN') ? l.sub : ''; el.appendChild(sm);
+      if (l === focus && l.hp !== undefined) { const hp = document.createElement('div'); hp.className = 'hp'; const i2 = document.createElement('i'); i2.style.width = Math.max(0, l.hp * 100) + '%'; hp.appendChild(i2); el.appendChild(hp); }
+    }
+  });
 }

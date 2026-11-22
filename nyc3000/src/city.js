@@ -1,9 +1,12 @@
 // Procedural neon city: buildings, ground, signs, billboards, lamps, sky lanes + collision.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture, brickTextures } from './textures.js';
+import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture, brickTextures, megaTextures, corpTextures } from './textures.js';
 import { Parts } from './models.js';
 import { modelNode, modelNames, flatten } from './assets.js';
+import { zoneOf, megablock, corpTower, stackTower, marketLots, marketStreet, roofBillboard, streetCables, MAT_MEGA } from './megacity.js';
+import { buildHighways, rampSegments, HighwayTraffic, HIGHWAYS } from './highway.js';
+import { AdScreens, Holograms } from './ads.js';
 
 // ---------- Blender towers and rooftop props (public/models/buildings.glb) ----------
 const isGlow = m => m.emissive && m.emissive.r + m.emissive.g + m.emissive.b > 0.001;
@@ -83,12 +86,29 @@ export class City {
     });
     const [brick, brickE] = brickTextures();
     this.windowMats.push(new THREE.MeshLambertMaterial({ map: brick, emissiveMap: brickE, emissive: 0xffffff, emissiveIntensity: 1.0, vertexColors: true }));
+    // 4: megabuilding concrete, 5: corporate glass
+    const [mega, megaE] = megaTextures(), [corp, corpE] = corpTextures();
+    this.windowMats.push(new THREE.MeshLambertMaterial({ map: mega, emissiveMap: megaE, emissive: 0xffffff, emissiveIntensity: 1.0, vertexColors: true }));
+    this.windowMats.push(new THREE.MeshLambertMaterial({ map: corp, emissiveMap: corpE, emissive: 0xffffff, emissiveIntensity: 1.1, vertexColors: true }));
     this.trimMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
     this.detailMat = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.lots = [];
     this.signGeos = new Map(); // key -> {tex, geos[]}
     this.decals = [];
     this.doors = []; this.doorGrid = new Map();
+    // Night-City extras: ad screens, hologram spots, megabuildings, corporate towers, highway ramps
+    this.adSpots = []; this.holoSpots = []; this.megas = []; this.corps = []; this.ramps = [];
+    this.blocked = new Set(); // road segments ground traffic must not use (under the highway ramps)
+  }
+  segKey(i0, j0, i1, j1) { return i0 < i1 || (i0 === i1 && j0 < j1) ? `${i0},${j0},${i1},${j1}` : `${i1},${j1},${i0},${j0}`; }
+  segBlocked(i0, j0, i1, j1) { return this.blocked.has(this.segKey(i0, j0, i1, j1)); }
+  // an animated ad screen (drawn by ads.js); its dark frame goes into the chunk
+  ad(ch, x, y, z, rotY, w, h, opts = {}) {
+    this.adSpots.push({ x, y, z, rotY, w, h, kind: opts.kind });
+    const nx = Math.sin(rotY), nz = Math.cos(rotY);
+    ch.details.add(new THREE.BoxGeometry(w + 0.7, h + 0.7, 0.35), '#0b0c12', x - nx * 0.22, y, z - nz * 0.22, 0, rotY, 0);
+    if (opts.stand) for (const s of [-0.35, 0.35]) ch.details.add(new THREE.BoxGeometry(0.3, y - h / 2 - (opts.base || 0) + 0.5, 0.3), '#2a2d36', x + Math.cos(rotY) * s * w - nx * 0.5, (y - h / 2) / 2 + (opts.base || 0) / 2, z - Math.sin(rotY) * s * w - nz * 0.5);
+    if (opts.lamps) for (const s of [-0.3, 0.3]) ch.trims.add(new THREE.BoxGeometry(0.5, 0.18, 0.5), '#fff2d0', x + Math.cos(rotY) * s * w + nx * 0.9, y + h / 2 + 0.6, z - Math.sin(rotY) * s * w + nz * 0.9);
   }
 
   addBox(b) {
@@ -127,10 +147,14 @@ export class City {
     // chunks of 2x2 blocks
     const CH = 2, nCh = Math.ceil(N / CH);
     const chunkData = [];
-    for (let i = 0; i < nCh * nCh; i++) chunkData.push({ bodies: [[], [], [], []], trims: new Parts(), details: new Parts(), cx: 0, cz: 0 });
+    for (let i = 0; i < nCh * nCh; i++) chunkData.push({ bodies: [[], [], [], [], [], []], trims: new Parts(), details: new Parts(), cx: 0, cz: 0 });
     const chunkOf = (bi, bj) => chunkData[Math.floor(Math.min(N - 1, Math.max(0, bi)) / CH) * nCh + Math.floor(Math.min(N - 1, Math.max(0, bj)) / CH)];
     for (let bi = 0; bi < N; bi++) for (let bj = 0; bj < N; bj++) this._block(bi, bj, chunkOf(bi, bj), r);
     this._skybridges(chunkOf, r);
+    // elevated highways (their ramps close a few road segments to ground traffic) and cables
+    buildHighways(this, chunkOf);
+    for (const [i0, j0, i1, j1] of rampSegments()) this.blocked.add(this.segKey(i0, j0, i1, j1));
+    streetCables(this, chunkOf, r, new Set(HIGHWAYS.map(H => H.axis + H.road)));
     onProgress && onProgress(0.5);
     chunkData.forEach((ch, idx) => {
       const g = new THREE.Group();
@@ -152,6 +176,10 @@ export class City {
     this._timesSquare();
     this._skyLanes();
     this._decalsMesh();
+    // ad screens and giant holograms
+    this.ads = new AdScreens(this.root, this.adSpots);
+    this.holos = new Holograms(this.root, this);
+    this.hwTraffic = new HighwayTraffic(this.root);
     onProgress && onProgress(1);
   }
 
@@ -230,10 +258,19 @@ export class City {
     }
     const dCenter = Math.hypot(cx, cz) / HALF;
     const ts = (bi === 4 || bi === 5) && (bj === 4 || bj === 5);
+    const zone = ts ? 'ts' : zoneOf(bi, bj);
+    // Night City downtown: corporate towers and megabuildings fill whole blocks
+    if (zone === 'corp' || zone === 'mega') {
+      const o = { bi, bj, cx, cz, S, bx0, bz0, BS };
+      if (zone === 'corp') corpTower(this, ch, r, o); else megablock(this, ch, r, o);
+      return;
+    }
+    const market = zone === 'market';
     const pat = r();
     let lots;
     const G = 3;
-    if (ts || pat < 0.15) lots = [[0, 0, S, S]];
+    if (market) lots = marketLots(r, S);
+    else if (ts || pat < 0.15) lots = [[0, 0, S, S]];
     else if (pat < 0.35) lots = [[0, 0, S / 2 - G / 2, S], [S / 2 + G / 2, 0, S / 2 - G / 2, S]];
     else if (pat < 0.5) lots = [[0, 0, S, S / 2 - G / 2], [0, S / 2 + G / 2, S, S / 2 - G / 2]];
     else {
@@ -241,10 +278,13 @@ export class City {
       lots = [[0, 0, h, h], [o, 0, h, h], [0, o, h, h], [o, o, h, h]];
     }
     for (const [lx, lz, lw, ld] of lots) {
-      let h = (40 + (1 - dCenter) * 140) * (0.45 + r() * 1.1);
+      // big height contrast: low-rise squeezed between towers, a few very tall ones
+      let h = (36 + (1 - dCenter) * 150) * (0.4 + r() * 1.2);
+      if (r() < 0.16) h = 16 + r() * 22;
       if (ts) h = 120 + r() * 60;
-      if (r() < 0.06) h = 220 + r() * 60;
-      h = Math.max(18, Math.min(290, Math.round(h / 4) * 4));
+      if (r() < 0.07) h = 230 + r() * 70;
+      if (market) h = 10 + Math.floor(r() * 7) * 4;
+      h = Math.max(market ? 10 : 16, Math.min(300, Math.round(h / 4) * 4));
       const bx = x0 + lx + lw / 2, bz = z0 + lz + ld / 2;
       // which sides face a street (the lot reaches the block edge)
       const faces = [];
@@ -252,8 +292,9 @@ export class City {
       if (bx + lw / 2 > bx0 + BS - 8) faces.push([1, 0]);
       if (bz - ld / 2 < bz0 + 8) faces.push([0, -1]);
       if (bz + ld / 2 > bz0 + BS - 8) faces.push([0, 1]);
-      this._building(ch, r, { bi, bj, bx, bz, lw, ld, h, ts, faces, bx0, bz0, BS });
+      this._building(ch, r, { bi, bj, bx, bz, lw, ld, h, ts, faces, bx0, bz0, BS, market });
     }
+    if (market) marketStreet(this, ch, r, bx0, bz0, BS);
   }
 
   // ---------- one building on one lot ----------
@@ -261,12 +302,14 @@ export class City {
     const { bx, bz, lw, ld, h, ts, faces } = o;
     const heroRoll = r();
     if (!ts && h >= 150 && heroRoll < 0.35 && this._heroTower(ch, r, o)) return;
+    // jumbled stacks of boxes that overhang the sidewalk
+    if (!ts && !o.market && h >= 64 && r() < 0.3) { stackTower(this, ch, r, o); return; }
     const square = Math.abs(lw - ld) < 2;
     let style = 'box';
     if (h <= 44 && !ts) style = 'low';
     else if (!ts && square && lw >= 24 && h >= 90 && r() < 0.4) style = 'oct';
     else if (!ts && h >= 110 && r() < 0.4) style = 'deco';
-    const m = style === 'low' ? 3 : Math.floor(r() * 3);
+    const m = style === 'low' ? (o.market && r() < 0.5 ? MAT_MEGA : 3) : Math.floor(r() * 3);
     const tint = style === 'low' ? new THREE.Color().setHSL(0.05 + r() * 0.05, 0.3, 0.8 + r() * 0.2) : new THREE.Color().setHSL(0.6 + r() * 0.3, 0.2, 0.55 + r() * 0.35);
     const tc = ['#29f3ff', '#ff2bd6', '#8a4dff', '#ffa43a', '#ff1e3c'][Math.floor(r() * 5)];
     const T = ch.trims, D = ch.details;
@@ -311,7 +354,7 @@ export class City {
       D.box(lw + 1.0, 0.7, 0.6, c, bx, h + 0.15, bz - ld / 2 - 0.2); D.box(lw + 1.0, 0.7, 0.6, c, bx, h + 0.15, bz + ld / 2 + 0.2);
       D.box(0.6, 0.7, ld + 1.0, c, bx - lw / 2 - 0.2, h + 0.15, bz); D.box(0.6, 0.7, ld + 1.0, c, bx + lw / 2 + 0.2, h + 0.15, bz);
       o.fe = [];
-      for (const [fx, fz] of faces) if (r() < 0.75) {
+      for (const [fx, fz] of faces) if (r() < (o.market || m !== 3 ? 0.25 : 0.7)) {
         o.fe.push([fx, fz]);
         const along = fx ? ld : lw, n = along > 30 ? 2 : 1;
         for (let k = 0; k < n; k++) {
@@ -325,10 +368,11 @@ export class City {
       this._waterTower(D, bx + (r() - 0.5) * 2 * mx, topH, bz + (r() - 0.5) * 2 * mz, T, r);
     }
     if (flatRoof && !roofUsed && tw > 10) {
-      const n = 1 + Math.floor(r() * 3), P = props();
+      // detailed Blender AC units on the bigger roofs, plain boxes on the little market ones (cheaper)
+      const n = 1 + Math.floor(r() * 2), P = props();
       for (let k = 0; k < n; k++) {
         const ux = bx + (r() - 0.5) * (tw - 5), uz = bz + (r() - 0.5) * (td - 5), rot = r() < 0.5 ? 0 : Math.PI / 2;
-        if (P.ac) this._prop(D, T, P.ac, ux, topH, uz, rot);
+        if (P.ac && !o.market && style !== 'low') this._prop(D, T, P.ac, ux, topH, uz, rot);
         else {
           D.box(2.4, 1.3, 1.8, '#3a3f4a', ux, topH + 0.65, uz);
           D.cyl(0.55, 0.55, 0.06, 10, '#15171c', ux, topH + 1.33, uz);
@@ -339,6 +383,19 @@ export class City {
     if (style !== 'oct') this._storefronts(ch, r, o, style); else this._octDoors(ch, r, o);
     this.lots.push({ ...o, style, topH });
     if (style !== 'oct') this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
+    if (o.market) {
+      // night markets: more signs and billboards on the roofs
+      this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
+      if (r() < 0.45) roofBillboard(this, ch, r, o, topH);
+    } else if (style !== 'low' && h > 56 && faces.length && r() < 0.16) {
+      // an ad screen on the facade
+      const [fx, fz] = faces[Math.floor(r() * faces.length)], span = fx ? ld : lw;
+      if (span >= 14) {
+        const tall = r() < 0.3, w = tall ? 5 : Math.min(span - 4, 12), hh = tall ? 13 : w / 2;
+        const off = (r() - 0.5) * (span - w - 2), y = 20 + r() * Math.min(40, h - 34);
+        this.ad(ch, fx ? bx + fx * (lw / 2 + 0.5) : bx + off, y, fz ? bz + fz * (ld / 2 + 0.5) : bz + off, Math.atan2(fx, fz), w, hh);
+      }
+    }
   }
 
   _octagon(ch, m, x, z, a, h, tint, tc, r) {
@@ -639,8 +696,9 @@ export class City {
       const i = 1 + Math.floor(r() * (N - 1)), j = Math.floor(r() * N);
       if (i === 5 || j === 4 || j === 5) continue;
       const road = roadC(i), e0 = road - ROAD / 2 - 5, e1 = road + ROAD / 2 + 5;
-      const A = this.lots.filter(L => L.style !== 'oct' && L.style !== 'hero' && (alongX ? (L.bi === i - 1 && L.bj === j && L.bx + L.lw / 2 > e0 - 0.5) : (L.bj === i - 1 && L.bi === j && L.bz + L.ld / 2 > e0 - 0.5)));
-      const B = this.lots.filter(L => L.style !== 'oct' && L.style !== 'hero' && (alongX ? (L.bi === i && L.bj === j && L.bx - L.lw / 2 < e1 + 0.5) : (L.bj === i && L.bi === j && L.bz - L.ld / 2 < e1 + 0.5)));
+      const plain = L => !['oct', 'hero', 'stack', 'mega', 'corp'].includes(L.style);
+      const A = this.lots.filter(L => plain(L) && (alongX ? (L.bi === i - 1 && L.bj === j && L.bx + L.lw / 2 > e0 - 0.5) : (L.bj === i - 1 && L.bi === j && L.bz + L.ld / 2 > e0 - 0.5)));
+      const B = this.lots.filter(L => plain(L) && (alongX ? (L.bi === i && L.bj === j && L.bx - L.lw / 2 < e1 + 0.5) : (L.bj === i && L.bi === j && L.bz - L.ld / 2 < e1 + 0.5)));
       if (!A.length || !B.length) continue;
       const a = A[Math.floor(r() * A.length)], b = B[Math.floor(r() * B.length)];
       const lo = Math.max(alongX ? a.bz - a.ld / 2 : a.bx - a.lw / 2, alongX ? b.bz - b.ld / 2 : b.bx - b.lw / 2) + 3;
@@ -713,16 +771,22 @@ export class City {
   }
 
   _outerRing(r) {
-    const lists = [[], [], []];
-    for (let k = 0; k < 160; k++) {
+    const lists = [[], [], [], [], [], []], beacons = new Parts();
+    for (let k = 0; k < 190; k++) {
       const a = r() * Math.PI * 2, d = HALF + 70 + r() * 420;
       const x = Math.cos(a) * d, z = Math.sin(a) * d;
       if (Math.abs(x) < HALF + 40 && Math.abs(z) < HALF + 40) continue;
-      const w = 20 + r() * 40, h = 40 + r() * 220;
-      lists[k % 3].push(this._uvBox(w, h, w, x, h / 2, z, new THREE.Color(0.6, 0.6, 0.7)));
-      this.addBox({ x0: x - w / 2, x1: x + w / 2, z0: z - w / 2, z1: z + w / 2, y0: 0, y1: h });
+      // a skyline of the rest of the city: megabuildings and a few very tall towers
+      const big = k % 9 === 0, mega = !big && k % 4 === 0;
+      const w = big ? 34 + r() * 20 : mega ? 50 + r() * 30 : 20 + r() * 40, h = big ? 300 + r() * 200 : mega ? 120 + r() * 100 : 40 + r() * 220;
+      const m = big ? 5 : mega ? 4 : k % 3;
+      lists[m].push(this._uvBox(w, h, mega ? w * 0.5 : w, x, h / 2, z, new THREE.Color(0.6, 0.6, 0.7)));
+      this.addBox({ x0: x - w / 2, x1: x + w / 2, z0: z - (mega ? w * 0.25 : w / 2), z1: z + (mega ? w * 0.25 : w / 2), y0: 0, y1: h });
+      if (big || h > 200) beacons.box(1.6, 1.6, 1.6, '#ff1030', x, h + 2, z);
+      if (big) beacons.box(w + 0.6, 0.6, 0.6, ['#29f3ff', '#ff2bd6', '#ffd27a'][k % 3], x, h - 4, z - w / 2);
     }
     lists.forEach((l, m) => { if (l.length) this.root.add(new THREE.Mesh(mergeGeometries(l), this.windowMats[m])); });
+    this.root.add(new THREE.Mesh(beacons.build(), this.trimMat));
   }
 
   _lamps() {
@@ -865,6 +929,15 @@ export class City {
   groundAt(x, z, y = 0) {
     const a = this.cellBoxes(x, z); let g = 0;
     if (a) for (const i of a) { const b = this.boxes[i]; if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && b.y1 <= y + 0.6) g = Math.max(g, b.y1); }
+    // highway ramps: a smooth slope
+    for (const R of this.ramps) {
+      const along = R.axis === 'z' ? z : x, across = R.axis === 'z' ? x - R.c : z - R.c;
+      if (Math.abs(across) > R.half) continue;
+      const t = (along - R.ua) / (R.ub - R.ua);
+      if (t < 0 || t > 1) continue;
+      const h = R.ha + (R.hb - R.ha) * t;
+      if (h <= y + 0.6) g = Math.max(g, h);
+    }
     return g;
   }
   roofAt(x, z) {
@@ -905,6 +978,8 @@ export class City {
     this._bbT = (this._bbT || 0) + dt;
     if (this._bbT > this.bbInterval) { for (const b of this.bbTex) b.update(this._bbT); this._bbT = 0; }
     if (this.tsHolo) { this.tsHolo.rotation.y = time * 0.3; this.tsHolo.position.y = 24 + Math.sin(time) * 0.5; }
+    if (this.ads) this.ads.update(time);
+    if (this.holos) this.holos.update(dt, time, camPos, viewDist);
     this.holoSky.material.opacity = 0.65 + Math.sin(time * 1.3) * 0.15;
   }
 }

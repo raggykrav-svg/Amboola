@@ -76,7 +76,9 @@
             <p><kbd>E</kbd> go into a shop or flat / leave / sleep</p>
             <p><kbd>Right click</kbd> at a shop clerk: rob the shop</p>
             <p><kbd>B</kbd> buy ammo · <kbd>H</kbd> buy a medkit (in shops)</p>
-            <p><kbd>E</kbd> at a challenge marker: start a race or delivery</p>
+            <p><kbd>E</kbd> at a challenge marker: start a race, delivery or search</p>
+            <p><kbd>E</kbd> behind an enemy who hasn't seen you: quiet takedown</p>
+            <p><kbd>Q</kbd> (hold) scanner: names of people, slows time</p>
           </div>
           <div>
             <h3>Driving</h3>
@@ -143,7 +145,10 @@
     <div id="hud">
       <div id="vignette"></div>
       <div id="compass"><div id="compassStrip"></div><i class="compass-mark"></i></div>
-      <div id="objective"><small>OBJECTIVE</small><div id="objText">-</div><div id="objDist"></div></div>
+      <div id="objective"><small>OBJECTIVE</small><img id="objPhoto" alt=""><div id="objText">-</div><div id="objDist"></div></div>
+      <div id="say"></div>
+      <div id="detect"><span id="detectText">?</span><div class="bar"><i id="detectFill"></i></div></div>
+      <div id="scan"><div class="scan-title">SCANNER · hold Q</div><div id="scanLabels"></div></div>
       <div id="wanted"><div id="stars"></div><div id="wantedLabel"></div><div id="cash">$ 0</div><div id="credLabel"></div></div>
       <div id="bossBar"><div id="bossName"></div><div class="bar"><i id="bossFill"></i></div></div>
       <div id="robBar"><span>ROBBING THE SHOP · KEEP AIMING</span><div class="bar"><i id="robFill"></i></div></div>

@@ -8,13 +8,13 @@ export { VEHICLE_TYPES, PAINTS, makeVehicleMesh, flashSirens } from './cars.js';
 
 // ---------- GUNS ----------
 export const WEAPONS = [
-  { id: 'rifle', name: 'PLASMA RIFLE', mag: 28, reserve: 120, rate: 0.1, dmg: 18, speed: 115, spread: 0.012, auto: true, color: 0x29f3ff, pellets: 1, reload: 1.6, sound: 'rifle' },
-  { id: 'pistol', name: 'PULSE PISTOL', mag: 12, reserve: 72, rate: 0.22, dmg: 34, speed: 130, spread: 0.006, auto: false, color: 0xff2bd6, pellets: 1, reload: 1.1, sound: 'pistol' },
-  { id: 'shotgun', name: 'SCATTER CANNON', mag: 6, reserve: 30, rate: 0.75, dmg: 13, speed: 100, spread: 0.07, auto: false, color: 0xffa43a, pellets: 8, reload: 2.0, sound: 'shotgun' },
+  { id: 'rifle', noise: 55, name: 'PLASMA RIFLE', mag: 28, reserve: 120, rate: 0.1, dmg: 18, speed: 115, spread: 0.012, auto: true, color: 0x29f3ff, pellets: 1, reload: 1.6, sound: 'rifle' },
+  { id: 'pistol', noise: 45, name: 'PULSE PISTOL', mag: 12, reserve: 72, rate: 0.22, dmg: 34, speed: 130, spread: 0.006, auto: false, color: 0xff2bd6, pellets: 1, reload: 1.1, sound: 'pistol' },
+  { id: 'shotgun', noise: 60, name: 'SCATTER CANNON', mag: 6, reserve: 30, rate: 0.75, dmg: 13, speed: 100, spread: 0.07, auto: false, color: 0xffa43a, pellets: 8, reload: 2.0, sound: 'shotgun' },
   // sold in the pause-menu shop
-  { id: 'smg', name: 'VOLT SMG', mag: 40, reserve: 200, rate: 0.065, dmg: 11, speed: 125, spread: 0.022, auto: true, color: 0x3aff9a, pellets: 1, reload: 1.4, sound: 'smg', price: 600, cred: 0 },
-  { id: 'sniper', name: 'RAIL SNIPER', mag: 5, reserve: 30, rate: 0.9, dmg: 130, speed: 260, spread: 0, auto: false, color: 0xbff4ff, pellets: 1, reload: 2.2, sound: 'rail', zoom: true, price: 1500, cred: 1 },
-  { id: 'launcher', name: 'PLASMA LAUNCHER', mag: 3, reserve: 12, rate: 1.0, dmg: 60, speed: 75, spread: 0, auto: false, color: 0xff7a2a, pellets: 1, reload: 2.4, sound: 'cannon', explode: 6, price: 3000, cred: 2 },
+  { id: 'smg', noise: 50, name: 'VOLT SMG', mag: 40, reserve: 200, rate: 0.065, dmg: 11, speed: 125, spread: 0.022, auto: true, color: 0x3aff9a, pellets: 1, reload: 1.4, sound: 'smg', price: 600, cred: 0 },
+  { id: 'sniper', noise: 85, name: 'RAIL SNIPER', mag: 5, reserve: 30, rate: 0.9, dmg: 130, speed: 260, spread: 0, auto: false, color: 0xbff4ff, pellets: 1, reload: 2.2, sound: 'rail', zoom: true, price: 1500, cred: 1 },
+  { id: 'launcher', noise: 80, name: 'PLASMA LAUNCHER', mag: 3, reserve: 12, rate: 1.0, dmg: 60, speed: 75, spread: 0, auto: false, color: 0xff7a2a, pellets: 1, reload: 2.4, sound: 'cannon', explode: 6, price: 3000, cred: 2 },
 ];
 
 // Gun front is -Z. userData: muzzle (Object3D), grip / fore (hand targets), stock (length behind the origin).

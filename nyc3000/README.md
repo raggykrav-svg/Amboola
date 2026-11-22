@@ -19,6 +19,12 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Shop](screenshots/11-shop.jpg) | ![Street race](screenshots/12-race.jpg) |
 | **Cyberpsycho fight** | **A ramen bar (one of 10 kinds of room)** |
 | ![Cyberpsycho](screenshots/13-cyberpsycho.jpg) | ![Ramen bar](screenshots/14-ramen-bar.jpg) |
+| **The new skyline: corporate towers and megabuildings** | **The elevated highway** |
+| ![Skyline](screenshots/16-skyline.jpg) | ![Highway](screenshots/17-highway.jpg) |
+| **A giant hologram dancing in a megabuilding courtyard** | **A night market street** |
+| ![Hologram](screenshots/18-hologram.jpg) | ![Night market](screenshots/19-market.jpg) |
+| **Scanner (hold Q) on a bounty** | **Spotted! The bounty runs for his car** |
+| ![Scanner](screenshots/21-scanner.jpg) | ![Spotted](screenshots/22-spotted.jpg) |
 
 ## Run it
 
@@ -64,7 +70,9 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | E | go into a shop or a flat, leave it, or sleep in a flat's bed |
 | Right click (hold) on a shop clerk | rob the shop |
 | B / H | buy ammo / a medkit at a shop counter |
-| E at a challenge marker | start a street race, sky race or delivery |
+| E at a challenge marker | start a street race, sky race, delivery or search |
+| E behind an enemy who hasn't seen you | quiet takedown (knock-out) |
+| Q (hold) | scanner: names over people, who's a gang member, slows time |
 
 | In a car | |
 |---|---|
@@ -108,16 +116,37 @@ Press **Esc** and pick **SHOP** to spend your money. Every card shows the real 3
 
 ### Challenges
 
-Like the gigs and NCPD jobs in Cyberpunk 2077, there are 13 challenges around the city. They're the coloured squares on the minimap. Open **CHALLENGES** in the pause menu to see them all and **TRACK** one to get a marker on your compass and a light beam in the sky.
+Like the gigs and NCPD jobs in Cyberpunk 2077, there are 22 challenges around the city. They're the coloured squares on the minimap. Open **CHALLENGES** in the pause menu to see them all and **TRACK** one to get a marker on your compass and a light beam in the sky.
 
 - **Street races** (yellow): press **E** at the marker, a car is brought to you, then drive through every glowing ring before the timer runs out.
 - **Sky races** (cyan): the same, in a flying car, with rings high above the streets.
-- **Gang hideouts** (red): walk or drive up and the gang attacks. Take them all down. Gang members are marked with red diamonds, and fighting them doesn't make you wanted.
+- **Gang hideouts** (red): the gang hangs around without knowing you're there. Sneak up behind them for quiet takedowns, or open fire. Take them all down. Gang members are marked with red diamonds, and fighting them doesn't make you wanted.
 - **Cyberpsychos** (pink): one huge enemy with a big health bar and a shotgun.
 - **Deliveries** (green): press **E** to grab the package and get it to the green beam in time.
 - **Drone nests** (orange): shoot down every drone.
+- **Find someone** (purple): press **E** at the marker, then search the purple circle (hold **Q** to scan people; the objective box shows a photo). Rescue Dr. Maya Ortiz from her kidnappers and take her to Liberty Med Center, find Lily's lost robot dog Bolt and bring him home, or chase down the informant Glitch on foot and grab him (don't shoot him!). The people you rescue follow you and even hop into your car.
+- **Bounties** (white): a wanted bad guy (Razor Rook, Nova & Vex, Mama Kilowatt) with bodyguards. Knock them out quietly from behind for a $300 bonus, or fight. When some bosses see you, they run for their car and try to get away: shoot or ram the getaway car until they jump out.
+- **Crimes in progress** (blue): robbers holding up a delivery driver, a driver or a shop owner. Stop them, and be careful not to hit the victim.
+
+#### Enemies notice you, like in Cyberpunk 2077
+
+Bad guys don't just attack the moment you show up. They stand around, chat and keep watch.
+- If they **see you** a meter fills up over their head (**?**), faster when you're close or running. When it's full they shout and attack (**!**). The middle of the screen warns you when someone is noticing you.
+- If they **hear gunshots** close by, they start shooting back straight away. Shots further away make them come and look. Every gun has its own noise: the sniper and launcher are the loudest.
+- Bullets flying past them, getting hit, or seeing a friend go down also puts them in a fight, and they shout to the rest of their gang.
+- If you get out of sight for a while they search for you, and after a bit they give up ("Must have been nothing").
+- **Street gangs** (Chrome Skulls, Neon Vipers, Data Rats, Volt Kings, with glowing headbands) hang out on street corners. They leave you alone, unless you shoot near them, point a gun at them or hit them.
 
 Each challenge pays $500–$1,800 plus Street Cred. Street Cred levels (shown under your money) unlock the locked items in the shop. Your money, cars, guns, Street Cred and finished challenges are all saved.
+
+### The city
+
+Downtown looks like Night City now (made-up brands, not copied from the game):
+- **Four corporate towers** 330–400 m tall (LIBERTY CORP, HELIX DYNAMICS, AURELION, KAIROS SYSTEMS) with glowing logos, a halo ring, twin towers joined by skybridges and one with a huge overhanging head. Giant hologram **whales** swim around two of them.
+- **Seven megabuildings** that fill a whole block: concrete slab towers full of balconies, joined by skybridges, with neon decks and their own name (MEGABLOCK 01…). Hologram **dancers**, a waving robot **cat** and a spinning soda can stand on them.
+- **Stacked towers** made of shifted boxes that hang out over the sidewalk, **night markets** with food stalls and lanterns, and **cables** strung across the streets.
+- **Two elevated highways** (SKYWAY 8 and SKYWAY 2) on concrete pillars with their own traffic. Drive up the ramps at the edges of the city, or land a flying car on them.
+- **Ads:** about 50 animated screens on buildings and rooftops, all made-up and kid-friendly (ZAP COLA, ROBO PUP, MOON TRIPS…).
 
 ### Wanted level
 
@@ -174,6 +203,8 @@ blender -b --factory-startup -P blender/build.py -- all
 ## How it's made
 
 - [three.js](https://threejs.org), [Vite](https://vitejs.dev) and [Blender](https://www.blender.org). Every model, texture and sound is generated by code: models by the Blender scripts above, canvas-drawn neon signs and windows, and Web Audio synths. There are no downloaded art or sound files. The fonts (Orbitron, Rajdhani) are SIL Open Font License, bundled through Fontsource.
+- `src/megacity.js`: the Night-City-style buildings (megabuildings, corporate towers, stacked towers, night markets, cables). `src/highway.js`: the elevated highways, their ramps and their traffic. `src/ads.js`: ad screens (one shared texture and shader) and the holograms.
+- `src/ai.js`: the enemy brain (calm, searching, fighting; hearing, sight, squads, takedowns), street gangs and the people you rescue or chase.
 - `src/shop.js`: the pause-menu SHOP (with 3D pictures rendered from the real models) and the CHALLENGES board. `src/challenges.js`: the challenges, Street Cred and their markers.
 - `src/interiors.js`: builds the shop and flat rooms far outside the city. Going through a street door moves you into the right room, and the police wait outside the door.
 - `src/assets.js`: loads the Blender GLB files at start-up and flattens each model into one or two meshes with vertex colours, a neon glow flag and per-vertex shininess. If a file is missing, the game falls back to its built-in code models.
