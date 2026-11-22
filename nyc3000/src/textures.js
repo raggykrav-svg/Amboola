@@ -300,3 +300,34 @@ export function skyTexture(top, mid, bottom) {
   g.fillStyle = grd; g.fillRect(0, 0, 4, 256);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
+
+// Classic Manhattan stone: pale limestone with punched windows, sills and floor ledges. It's
+// light grey so the vertex tint turns it beige, tan, brown or grey per building.
+export function classicTextures() {
+  const c = canvas(256, 512), g = c.getContext('2d');
+  const e = canvas(256, 512), ge = e.getContext('2d');
+  g.fillStyle = '#c9c4bc'; g.fillRect(0, 0, 256, 512);
+  ge.fillStyle = '#3a3630'; ge.fillRect(0, 0, 256, 512); // the stone glows a little in the city light
+  for (let i = 0; i < 1600; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${0.03 + Math.random() * 0.05})`; g.fillRect(Math.random() * 256, Math.random() * 512, 2 + Math.random() * 6, 1 + Math.random() * 3); }
+  const warm = ['#ffd9a0', '#ffc070', '#fff0d0', '#ffe2b0', '#cfe8ff', '#ffb070'];
+  for (let r = 0; r < 16; r++) {
+    const y = r * 32;
+    g.fillStyle = '#a9a39a'; g.fillRect(0, y + 29, 256, 3); // floor ledge
+    for (let col = 0; col < 8; col++) {
+      const x = col * 32 + 9, w = 14, h = 20;
+      const lit = Math.random() < 0.4, wc = lit ? pickR(warm) : '#1a1c22';
+      g.fillStyle = '#7d776e'; g.fillRect(x - 1, y + 5, w + 2, h + 2); // reveal
+      ge.fillStyle = '#0a0a0c'; ge.fillRect(x - 1, y + 5, w + 2, h + 2);
+      g.fillStyle = wc; g.fillRect(x, y + 6, w, h);
+      g.fillStyle = '#5a554e'; g.fillRect(x + w / 2 - 0.5, y + 6, 1, h); g.fillRect(x, y + 6 + h * 0.4, w, 1);
+      g.fillStyle = '#e2ddd4'; g.fillRect(x - 2, y + 26, w + 4, 2); // sill
+      if (lit) {
+        ge.globalAlpha = 0.55 + Math.random() * 0.45; ge.fillStyle = wc; ge.fillRect(x, y + 6, w, h); ge.globalAlpha = 1;
+        if (Math.random() < 0.35) { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(x, y + 6, w, h * 0.5); ge.fillStyle = 'rgba(0,0,0,.6)'; ge.fillRect(x, y + 6, w, h * 0.5); }
+      }
+    }
+  }
+  g.fillStyle = 'rgba(0,0,0,.08)'; for (let col = 0; col <= 8; col += 2) g.fillRect(col * 32 - 1, 0, 2, 512); // piers
+  for (const yy of [0, 508]) { g.fillStyle = '#5a5650'; g.fillRect(0, yy, 4, 4); ge.fillStyle = '#000'; ge.fillRect(0, yy, 4, 4); }
+  return [mkRepeat(c), mkRepeat(e)];
+}

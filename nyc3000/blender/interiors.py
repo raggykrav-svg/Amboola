@@ -1133,6 +1133,77 @@ def flat_loft(P):
     return r.finish((0.2, 0.18, 0.2))
 
 
+# ================================================================== HOTEL
+def hotel_lobby(P):
+    """A hotel lobby: marble floor, a reception desk, a lounge with couches, and two lifts
+    at the back that take you up to the rooms."""
+    r = Room('room_hotel_lobby', 13.0, 10.0, 4.4)
+    r.P = P
+    W, D, H = r.W, r.D, r.H
+
+    def fl(x, y):
+        if -1.2 < x < 1.2:
+            return P['carpet_gold'] if abs(x) > 1.0 else P['carpet_navy']
+        return P['marble_a'] if (int((x + 10) * 1) + int((y + 10) * 1)) % 2 else P['marble_b']
+    r.floor(fl)
+    r.walls(lambda h, z: P['dark_wood'] if z < 1.1 else (P['gold_m'] if 3.6 < z < 3.72 else P['marble_wall']))
+    r.ceiling(P['marble_wall'])
+    # chandeliers
+    for x, y in ((-3.5, -1.0), (0.0, 0.0), (3.5, -1.0)):
+        r.cyl(0.03, 0.03, 0.8, P['gold_m'], (x, y, H - 0.4), seg=6)
+        r.cyl(0.55, 0.3, 0.35, P['gold_m'], (x, y, H - 0.9), seg=16)
+        for k in range(8):
+            a = k * math.pi / 4
+            r.sphere(0.08, P['lamp_warm'], (x + math.cos(a) * 0.5, y + math.sin(a) * 0.5, H - 1.0), u=8, v=6)
+        r.light((x, y, H - 1.2), (1.0, 0.85, 0.6), 0.5, 3.6)
+    # reception desk (east) with the receptionist behind it
+    r.box(0.9, 4.2, 1.1, P['dark_wood'], (4.2, 0.2, 0.55), bevel=0.04)
+    r.box(1.0, 4.3, 0.06, P['marble_a'], (4.2, 0.2, 1.13))
+    r.box(0.02, 4.1, 0.06, P['neon_gold'], (3.74, 0.2, 0.9))
+    r.box(0.4, 0.5, 0.06, P['dark'], (4.4, -0.4, 1.17))
+    r.box(0.05, 0.4, 0.3, P['screen_cyan'], (4.5, -0.4, 1.35), (0, 0.2, 0))
+    r.box(0.25, 0.2, 0.06, P['gold_m'], (4.3, 1.1, 1.19))
+    r.cyl(0.05, 0.05, 0.08, P['gold_m'], (4.3, 1.1, 1.26), seg=8)
+    r.col(3.7, 4.7, -1.95, 2.35, 0, 1.2)
+    r.box(0.06, 5.0, 2.4, P['dark_wood'], (W / 2 - 0.04, 0.2, 2.2))
+    r.light((5.2, 0.2, 2.8), (1.0, 0.85, 0.6), 0.3, 2.2)
+    # lounge (west): two couches facing each other, a table, a rug, plants
+    for y, face in ((-2.2, 1), (1.4, -1)):
+        r.box(3.0, 0.95, 0.45, P['velvet'], (-3.6, y, 0.225), bevel=0.06)
+        r.box(3.0, 0.28, 0.6, P['velvet'], (-3.6, y - face * 0.42, 0.7), bevel=0.08)
+        for s2 in (-1, 1):
+            r.box(0.26, 0.95, 0.62, P['velvet'], (-3.6 + s2 * 1.5, y, 0.31), bevel=0.06)
+        r.col(-5.2, -2.0, y - 0.5, y + 0.5, 0, 0.9)
+    r.box(3.8, 2.6, 0.02, P['rug'], (-3.6, -0.4, 0.012))
+    r.box(1.6, 0.8, 0.06, P['glass_top'], (-3.6, -0.4, 0.42))
+    for x in (-4.2, -3.0):
+        r.cyl(0.04, 0.04, 0.4, P['gold_m'], (x, -0.4, 0.2), seg=6)
+    r.col(-4.4, -2.8, -0.8, 0.0, 0, 0.45)
+    r.plant(P, -5.9, -4.2, 1.2)
+    r.plant(P, -5.9, 3.9, 1.2)
+    r.plant(P, 3.0, 4.2, 1.0)
+    # the lifts (north wall)
+    for x in (-1.5, 1.5):
+        y = D / 2 - 0.05
+        r.box(1.5, 0.08, 2.45, P['steel'], (x, y - 0.04, 1.225))
+        r.box(0.02, 0.09, 2.4, P['dark'], (x, y - 0.06, 1.22))
+        for s2 in (-1, 1):
+            r.box(0.14, 0.14, 2.6, P['gold_m'], (x + s2 * 0.82, y - 0.07, 1.3))
+        r.box(1.8, 0.14, 0.14, P['gold_m'], (x, y - 0.07, 2.6))
+        r.box(0.6, 0.05, 0.22, P['menu_yellow'], (x, y - 0.1, 2.9))
+        r.box(0.12, 0.05, 0.22, P['dark'], (x + 1.0, y - 0.08, 1.2))
+        r.sphere(0.035, P['neon_gold'], (x + 1.0, y - 0.12, 1.25), u=6, v=4)
+        r.light((x, y - 1.0, 2.8), (1.0, 0.9, 0.75), 0.2, 1.8)
+    r.box(1.0, 0.05, 0.5, P['neon_gold'], (0, D / 2 - 0.08, 3.4))
+    r.door(0.0, P, P['gold_m'], P['door_glass'])
+    r.mark('clerk', (5.25, 0.2, 0), **Room.facing(-1, 0))
+    r.mark('counter', (3.0, 0.2, 0))
+    r.mark('lift', (0.0, D / 2 - 1.4, 0))
+    r.mark('sign', (W / 2 - 0.1, 0.2, 2.9), w=3.0, h=0.7, **Room.facing(-1, 0))
+    r.props = dict(hotel=1)
+    return r.finish((0.26, 0.22, 0.2))
+
+
 def pal():
     prod = ['#e23a4a', '#2a8ae0', '#f2c21a', '#3ac05a', '#ff7a2a', '#9a4ae0', '#e8e8ee', '#2ad0c0', '#ff4ab0', '#5a6070']
     bottle = ['#ff3a6a', '#3ad0ff', '#ffd23a', '#7aff5a', '#b06aff', '#ff8a3a']
@@ -1207,7 +1278,7 @@ def pal():
     )
 
 
-ROOMS = [shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, flat_studio, flat_penthouse, flat_gamer, flat_loft]
+ROOMS = [hotel_lobby, shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, flat_studio, flat_penthouse, flat_gamer, flat_loft]
 
 
 def build_all():
@@ -1226,7 +1297,7 @@ def previews(objs, out):
     views = {
         'room_shop_mart': ((-3.8, -3.6, 2.6), (1.5, 1.5, 1.0)), 'room_shop_ramen': ((-4.4, -3.0, 2.3), (1.0, 1.8, 1.1)),
         'room_shop_diner': ((-1.0, -3.6, 2.5), (1.0, 2.0, 0.9)), 'room_shop_bar': ((4.8, -4.0, 2.7), (-1.5, 1.5, 0.9)),
-        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)),
+        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)), 'room_hotel_lobby': ((-5.5, -4.2, 2.8), (1.5, 2.5, 1.2)),
         'room_flat_studio': ((-4.2, -3.9, 2.4), (2.0, 1.5, 0.9)), 'room_flat_penthouse': ((-5.2, -4.4, 2.8), (2.0, 2.0, 1.0)),
         'room_flat_gamer': ((-3.8, -3.6, 2.3), (1.5, 1.5, 0.9)), 'room_flat_loft': ((-4.8, -3.9, 3.2), (2.5, 2.0, 1.2)),
     }

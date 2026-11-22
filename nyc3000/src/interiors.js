@@ -10,7 +10,7 @@ const isGlow = m => m.emissive && m.emissive.r + m.emissive.g + m.emissive.b > 0
 // what's behind a shop door, by the name on its sign (anything else is a corner mart)
 const SHOP_TYPES = {
   'KAIJU RAMEN': 'ramen', 'NOODLE BOTS': 'ramen', 'QUANTUM BURGER': 'diner', 'PLASMA PIZZA': 'diner', 'CYBER DELI': 'diner',
-  'HOLO-BANK': 'bank', 'NEO WALL ST': 'bank', 'NEURAL LINK BAR': 'bar', 'CHROME DOLLS': 'bar', 'HOTEL 3000': 'bar',
+  'HOLO-BANK': 'bank', 'NEO WALL ST': 'bank', 'NEURAL LINK BAR': 'bar', 'CHROME DOLLS': 'bar', 'CLUB 3000': 'bar',
   'ARCADE 9': 'arcade', '24/7 HOLOSHOW': 'arcade', 'PLASMA ARMS': 'guns', 'IRON & NEON GUNS': 'guns',
 };
 // every door gets a lighting mood on top of its room
@@ -22,13 +22,13 @@ export function buildRooms(scene, city) {
   const names = modelNames('interiors', 'room_').filter(n => !n.includes('__'));
   if (!names.length) return null;
   const rooms = { list: [] };
-  const counts = { shop: 0, flat: 0 };
+  const counts = { shop: 0, flat: 0, hotel: 0 };
   const signs = {};
   for (const name of names) {
     const key = name.slice(5), [kind, type] = key.split('_');
-    if (kind !== 'shop' && kind !== 'flat') continue;
+    if (kind !== 'shop' && kind !== 'flat' && kind !== 'hotel') continue;
     const node = modelNode('interiors', name);
-    const o = new THREE.Vector3(1600 + 240 * counts[kind]++, 0, kind === 'shop' ? 1600 : 2150);
+    const o = new THREE.Vector3(1600 + 240 * counts[kind]++, 0, kind === 'shop' ? 1600 : kind === 'hotel' ? 2700 : 2150);
     const g = flatten(node, m => (isGlow(m) ? 'glow' : 'room'), { rgb: true });
     const grp = new THREE.Group();
     grp.position.set(o.x, 0.01, o.z);
@@ -45,7 +45,7 @@ export function buildRooms(scene, city) {
       city.addBox({ x0: o.x + p.x - Math.abs(s.x), x1: o.x + p.x + Math.abs(s.x), z0: o.z + p.z - Math.abs(s.z), z1: o.z + p.z + Math.abs(s.z),
         y0: Math.max(0, p.y - Math.abs(s.y)), y1: p.y + Math.abs(s.y), low: !!c.userData.low });
     }
-    R.spawn = at('spawn'); R.exit = at('exit');
+    R.spawn = at('spawn'); R.exit = at('exit'); R.lift = at('lift');
     R.clerk = at('clerk'); R.clerkYaw = mark('clerk') ? mark('clerk').userData.yaw || 0 : 0;
     R.counter = at('counter'); R.cash = at('cash'); R.bed = at('bed');
     for (let k = 0; at('loot' + k); k++) R.loot.push(at('loot' + k));
@@ -94,6 +94,8 @@ export function buildRooms(scene, city) {
     show: { value: key => { for (const R of rooms.list) for (const ob of R.objects) ob.visible = R.key === key; } },
     forDoor: {
       value: d => {
+        if (d.kind === 'hotel') return rooms.hotel_lobby || null;
+        if (d.hotelFloor) return rooms['flat_' + flats[hash(d.id) % Math.max(1, flats.length)]] || null;
         const type = d.kind === 'shop' ? (SHOP_TYPES[d.name] || 'mart') : flats[hash(d.id) % Math.max(1, flats.length)];
         return rooms[d.kind + '_' + type] || rooms.list.find(R => R.kind === d.kind) || null;
       },

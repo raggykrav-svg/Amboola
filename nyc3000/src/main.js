@@ -438,6 +438,11 @@ async function boot() {
   game = new Game({ scene, camera, city, fx, audio, settings, hud, input, renderer });
   game.player.h.root.visible = false;
   game.rooms = buildRooms(scene, city); // shop and flat interiors behind the street doors
+  hud.onFloor = n => { game.goFloor(n); };
+  game.onLift = on => {
+    if (on) { wantLock = false; if (document.pointerLockElement) document.exitPointerLock(); }
+    else if (state === 'play') { wantLock = true; lockPointer(); }
+  };
   game.onGunShop = () => { openPause(); shopTab = 'guns'; openShop(); };
   game.onSave = () => { storage.set(SAVE_KEY, JSON.stringify(game.saveData())); return !!readSave(); };
   applySettings();

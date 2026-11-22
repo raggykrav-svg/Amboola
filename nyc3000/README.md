@@ -27,8 +27,10 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Scanner](screenshots/21-scanner.jpg) | ![Spotted](screenshots/22-spotted.jpg) |
 | **Doors slide open as you walk up** | **A gun shop** |
 | ![Sliding door](screenshots/23-sliding-door.jpg) | ![Gun shop](screenshots/24-gun-shop.jpg) |
-| **Nine cars in the shop** | |
-| ![New cars](screenshots/25-new-cars.jpg) | |
+| **Nine cars in the shop** | **New building styles: stone, setbacks, round towers** |
+| ![New cars](screenshots/25-new-cars.jpg) | ![Building styles](screenshots/28-building-styles.jpg) |
+| **A hotel lobby** | **The lift: pick a floor** |
+| ![Hotel lobby](screenshots/26-hotel-lobby.jpg) | ![Hotel lift](screenshots/27-hotel-lift.jpg) |
 
 ## Run it
 
@@ -109,6 +111,10 @@ Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 sh
 - **Flats:** each flat has a TV, a kitchen, a sofa and a bed. Most flats hide one stash (cash, ammo or a medkit) that you can find once. Press **E** at the bed to sleep: it heals you, clears your wanted level and saves the game.
 - Your money is shown in the top right. You start with $200, and it's kept in your save.
 
+### Hotels
+
+Many tall buildings have a **hotel** door (HOTEL 3000, GRAND NEON HOTEL, SKYLINE HOTEL, HOTEL AURORA, THE MIDTOWN, HOTEL LUNA): the gold dots on the minimap. Inside is a lobby with a receptionist, couches, chandeliers and two lifts at the back. Walk up to a lift and press **E**: a panel with floors **1–10** pops up. Click a floor (or press 1–9, 0 for 10) and you ride up to your hotel room, a flat you can explore (sleep in the bed to save). Leave the room and the lift takes you back down to the lobby.
+
 ### Doors, gun shops and cars
 
 - **Doors slide open** like in Cyberpunk 2077: walk up to a door and its two panels slide into the frame, with a green light. Just keep walking to go in (or press **E**). The door inside the room opens the same way when you leave. A red light means locked: shops you robbed lock you out for a few minutes.
@@ -150,6 +156,8 @@ Bad guys don't just attack the moment you show up. They stand around, chat and k
 Each challenge pays $500–$1,800 plus Street Cred. Street Cred levels (shown under your money) unlock the locked items in the shop. Your money, cars, guns, Street Cred and finished challenges are all saved.
 
 ### The city
+
+The buildings come in many more shapes and styles now, like the real Manhattan from the air: **pale limestone, tan and brown stone** towers with rows of windows, **golden and blue glass** towers, **"wedding cake" towers** that step back as they rise, **round towers** with stone ledges, and **machine rooms** on the flat roofs.
 
 Downtown looks like Night City now (made-up brands, not copied from the game):
 - **Four corporate towers** 330–400 m tall (LIBERTY CORP, HELIX DYNAMICS, AURELION, KAIROS SYSTEMS) with glowing logos, a halo ring, twin towers joined by skybridges and one with a huge overhanging head. Giant hologram **whales** swim around two of them.

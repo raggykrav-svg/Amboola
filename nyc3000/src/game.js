@@ -631,10 +631,11 @@ export class Game {
     this.city.ground.visible = false;
     this.rooms.show(R.key);
     R.setMood(d.id);
-    if (R.kind === 'shop') this._openShop(d); else this._openFlat(d);
+    if (R.kind === 'shop') this._openShop(d); else if (R.kind === 'hotel') this._openHotel(d); else this._openFlat(d);
   }
   _leaveInterior() {
     const I = this.interior; if (!I) return;
+    if (this.liftOpen) this.closeLift();
     for (const o of I.items) this.scene.remove(o);
     for (let i = this.pickups.length - 1; i >= 0; i--) if (this.pickups[i].room) { this.scene.remove(this.pickups[i].mesh); this.pickups.splice(i, 1); }
     this.interior = null;
@@ -642,9 +643,58 @@ export class Game {
     if (this.rooms) this.rooms.show(null);
     this.hud.robBar(-1);
   }
+  // ---------- hotels: a lobby with a receptionist and a lift up to the rooms ----------
+  _openHotel(d) {
+    const I = this.interior, R = I.room;
+    R.setSign(d.name, d.color);
+    const h = new Humanoid(pedKindFor(d.id + 3));
+    h.root.position.copy(R.clerk); h.root.rotation.y = R.clerkYaw;
+    this.scene.add(h.root); I.items.push(h.root); I.clerk = h;
+    this.hud.toast(`WELCOME TO ${d.name}`);
+  }
+  _updateHotel(dt, lines, near) {
+    const I = this.interior, R = I.room, p = this.player;
+    if (I.clerk) { const want = yawOf(p.pos.x - R.clerk.x, p.pos.z - R.clerk.z); I.clerk.root.rotation.y += angDiff(I.clerk.root.rotation.y, want) * Math.min(1, dt * 3); I.clerk.animate(dt, 0, {}); }
+    if (near(R.counter, 1.6)) lines.push('“Welcome! The lifts are behind you, at the back.”');
+    if (!near(R.lift, 2.2)) { if (this.liftOpen) this.closeLift(); return; }
+    if (!this.liftOpen) {
+      lines.push('<kbd>E</kbd> Call the lift');
+      if (this.input.pressed('KeyE')) this.openLift();
+      return;
+    }
+    for (let k = 1; k <= 10; k++) if (this.input.pressed('Digit' + (k % 10))) { this.goFloor(k); return; }
+  }
+  openLift() { this.liftOpen = true; this.audio.play('ding'); this.hud.lift(true); if (this.onLift) this.onLift(true); }
+  closeLift() { this.liftOpen = false; this.hud.lift(false); if (this.onLift) this.onLift(false); }
+  // ride the lift up and walk into your room on that floor
+  goFloor(n) {
+    const I = this.interior; if (!I || I.kind !== 'hotel') return;
+    this.closeLift();
+    const d = I.door, fd = { id: 60000 + d.id * 16 + n, kind: 'flat', hotelFloor: n, x: d.x, z: d.z, nx: d.nx, nz: d.nz, name: '' };
+    const R2 = this.rooms.forDoor(fd); if (!R2) return;
+    const outside = I.outside, lobby = { door: d, room: I.room };
+    this._leaveInterior();
+    const p = this.player;
+    this.interior = { door: fd, kind: 'flat', room: R2, outside, mood: 'idle', rob: 0, calmT: 0, items: [], hotel: lobby, floor: n };
+    p.pos.copy(R2.spawn); p.pos.y = 0; p.yaw = 0; p.pitch = -0.05; p.vel.set(0, 0, 0); p.vy = 0;
+    this.camState.init = false;
+    this.city.ground.visible = false;
+    this.rooms.show(R2.key); R2.setMood(fd.id);
+    this.audio.play('ding'); this.hud.fade(1.0);
+    this._openFlat(fd);
+  }
   exitDoor() {
     const I = this.interior; if (!I) return;
     const p = this.player, d = I.door;
+    if (I.hotel) { // leaving a hotel room: back down in the lift to the lobby
+      const L = I.hotel; this._leaveInterior();
+      this.interior = { door: L.door, kind: 'hotel', room: L.room, outside: I.outside, mood: 'idle', rob: 0, calmT: 0, items: [] };
+      this.city.ground.visible = false; this.rooms.show(L.room.key); L.room.setMood(L.door.id);
+      this._openHotel(L.door);
+      p.pos.set(L.room.lift.x, 0, L.room.lift.z + 0.4); p.yaw = Math.PI; p.pitch = 0; p.vel.set(0, 0, 0);
+      this.camState.init = false; this.audio.play('ding'); this.hud.fade(0.8);
+      return;
+    }
     this._leaveInterior();
     p.pos.set(I.outside.x, 0, I.outside.z); p.yaw = yawOf(d.nx, d.nz); p.pitch = 0; p.vel.set(0, 0, 0);
     this.camState.init = false;
@@ -671,7 +721,7 @@ export class Game {
       const m = makePickup(kind); m.scale.setScalar(0.6); m.position.copy(spot); this.scene.add(m);
       this.pickups.push({ mesh: m, kind, fixed: false, t: 0, respawn: 0, flat: d.id, room: true, baseY: spot.y + 0.2, cash: 40 + (hsh >>> 8) % 161 });
     }
-    this.hud.toast(`${{ penthouse: 'PENTHOUSE', loft: 'LOFT', gamer: 'FLAT' }[R.type] || 'FLAT'} ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
+    this.hud.toast(d.hotelFloor ? `HOTEL ROOM ${d.hotelFloor}${String(1 + (d.id >> 4) % 20).padStart(2, '0')}` : `${{ penthouse: 'PENTHOUSE', loft: 'LOFT', gamer: 'FLAT' }[R.type] || 'FLAT'} ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
   }
   // is the crosshair on a person standing at pos?
   _aimAt(pos, r, y0, y1) {
@@ -690,6 +740,7 @@ export class Game {
       if (this.input.pressed('KeyE')) { this.exitDoor(); this.hud.prompt(''); return; }
     }
     if (I.kind === 'shop') this._updateShop(dt, lines, near);
+    else if (I.kind === 'hotel') this._updateHotel(dt, lines, near);
     else this._updateFlat(dt, lines, near);
     this.hud.prompt(lines.join(' &nbsp; '));
   }
@@ -917,7 +968,7 @@ export class Game {
     if (!this.interior) { p.pos.x = clamp(p.pos.x, -BOUNDS, BOUNDS); p.pos.z = clamp(p.pos.z, -BOUNDS, BOUNDS); }
     if (p.pos.y < 0) p.pos.y = 0;
     // weapons
-    for (let k = 0; k < WEAPONS.length; k++) if (inp.pressed('Digit' + (k + 1))) this.selectWeapon(k);
+    if (!this.liftOpen) for (let k = 0; k < WEAPONS.length; k++) if (inp.pressed('Digit' + (k + 1))) this.selectWeapon(k);
     if (inp.wheel) this.cycleWeapon(inp.wheel > 0 ? 1 : -1);
     if (inp.pressed('KeyR')) this.reload();
     this.firePlayer(dt);

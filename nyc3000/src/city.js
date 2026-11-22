@@ -1,7 +1,7 @@
 // Procedural neon city: buildings, ground, signs, billboards, lamps, sky lanes + collision.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture, brickTextures, megaTextures, corpTextures } from './textures.js';
+import { CITY, windowTexture, groundTexture, signTexture, Billboard, glowTexture, skyTexture, brickTextures, megaTextures, corpTextures, classicTextures } from './textures.js';
 import { Parts } from './models.js';
 import { modelNode, modelNames, flatten } from './assets.js';
 import { zoneOf, megablock, corpTower, stackTower, marketLots, marketStreet, roofBillboard, streetCables, MAT_MEGA } from './megacity.js';
@@ -56,12 +56,13 @@ export const LANE = 4.5;
 export const BOUNDS = HALF + 6;
 const SIGN_TEXTS = [
   ['KAIJU RAMEN', '#ff2bd6'], ['HOLO-BANK', '#29f3ff'], ['NEO WALL ST', '#ffa43a'], ['BROOKLYN 3000', '#8a4dff'],
-  ['SYNTH CITY', '#29f3ff'], ['ROBO TAXI', '#ffd23a'], ['HOTEL 3000', '#ff1e3c'], ['QUANTUM BURGER', '#ffa43a'],
+  ['SYNTH CITY', '#29f3ff'], ['ROBO TAXI', '#ffd23a'], ['CLUB 3000', '#ff1e3c'], ['QUANTUM BURGER', '#ffa43a'],
   ['CHROME DOLLS', '#ff2bd6'], ['NEURAL LINK BAR', '#3aff9a'], ['24/7 HOLOSHOW', '#29f3ff'], ['CYBER DELI', '#ff1e3c'],
   ['ARCADE 9', '#3aff9a'], ['NOODLE BOTS', '#ffa43a'], ['PLASMA PIZZA', '#ff2bd6'], ['NYC 3000', '#29f3ff'],
   ['PLASMA ARMS', '#ff7a2a'], ['IRON & NEON GUNS', '#ff7a2a'],
 ];
 export const GUN_SHOPS = new Set(['PLASMA ARMS', 'IRON & NEON GUNS']);
+const HOTEL_NAMES = ['HOTEL 3000', 'GRAND NEON HOTEL', 'SKYLINE HOTEL', 'HOTEL AURORA', 'THE MIDTOWN', 'HOTEL LUNA'];
 export const DOORS_PER_BUILDING = 5;
 const DOOR_W = 1.7;
 const VERT_TEXTS = [['ホテル', '#ff2bd6'], ['OPEN', '#3aff9a'], ['BAR', '#29f3ff'], ['ラーメン', '#ffa43a'], ['NEON', '#ff1e3c'], ['CLUB', '#8a4dff']];
@@ -92,6 +93,9 @@ export class City {
     const [mega, megaE] = megaTextures(), [corp, corpE] = corpTextures();
     this.windowMats.push(new THREE.MeshLambertMaterial({ map: mega, emissiveMap: megaE, emissive: 0xffffff, emissiveIntensity: 1.0, vertexColors: true }));
     this.windowMats.push(new THREE.MeshLambertMaterial({ map: corp, emissiveMap: corpE, emissive: 0xffffff, emissiveIntensity: 1.1, vertexColors: true }));
+    // 6: classic Manhattan stone (tinted beige / tan / brown / grey per building)
+    const [stone, stoneE] = classicTextures();
+    this.windowMats.push(new THREE.MeshLambertMaterial({ map: stone, emissiveMap: stoneE, emissive: 0xffffff, emissiveIntensity: 1.0, vertexColors: true }));
     this.trimMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
     this.detailMat = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.lots = [];
@@ -149,7 +153,7 @@ export class City {
     // chunks of 2x2 blocks
     const CH = 2, nCh = Math.ceil(N / CH);
     const chunkData = [];
-    for (let i = 0; i < nCh * nCh; i++) chunkData.push({ bodies: [[], [], [], [], [], []], trims: new Parts(), details: new Parts(), cx: 0, cz: 0 });
+    for (let i = 0; i < nCh * nCh; i++) chunkData.push({ bodies: [[], [], [], [], [], [], []], trims: new Parts(), details: new Parts(), cx: 0, cz: 0 });
     const chunkOf = (bi, bj) => chunkData[Math.floor(Math.min(N - 1, Math.max(0, bi)) / CH) * nCh + Math.floor(Math.min(N - 1, Math.max(0, bj)) / CH)];
     for (let bi = 0; bi < N; bi++) for (let bj = 0; bj < N; bj++) this._block(bi, bj, chunkOf(bi, bj), r);
     this._skybridges(chunkOf, r);
@@ -309,16 +313,40 @@ export class City {
     const square = Math.abs(lw - ld) < 2;
     let style = 'box';
     if (h <= 44 && !ts) style = 'low';
-    else if (!ts && square && lw >= 24 && h >= 90 && r() < 0.4) style = 'oct';
+    else if (!ts && square && lw >= 24 && h >= 90 && r() < 0.4) style = r() < 0.5 ? 'oct' : 'round';
     else if (!ts && h >= 110 && r() < 0.4) style = 'deco';
-    const m = style === 'low' ? (o.market && r() < 0.5 ? MAT_MEGA : 3) : Math.floor(r() * 3);
-    const tint = style === 'low' ? new THREE.Color().setHSL(0.05 + r() * 0.05, 0.3, 0.8 + r() * 0.2) : new THREE.Color().setHSL(0.6 + r() * 0.3, 0.2, 0.55 + r() * 0.35);
+    else if (!ts && h >= 70 && r() < 0.35) style = 'setback';
+    // facades like the real Manhattan: limestone, tan and brown stone, golden or blue glass, and neon windows
+    let m = style === 'low' ? (o.market && r() < 0.5 ? MAT_MEGA : 3) : Math.floor(r() * 3);
+    let tint = style === 'low' ? new THREE.Color().setHSL(0.05 + r() * 0.05, 0.3, 0.8 + r() * 0.2) : new THREE.Color().setHSL(0.6 + r() * 0.3, 0.2, 0.55 + r() * 0.35);
+    if (style !== 'low') {
+      const f = r();
+      if (f < 0.38) { m = 6; tint = new THREE.Color().setHSL([0.09, 0.08, 0.06, 0.1, 0.6][Math.floor(r() * 5)], 0.25 + r() * 0.25, 0.45 + r() * 0.4); }
+      else if (f < 0.55) { m = 5; tint = new THREE.Color().setHSL([0.11, 0.12, 0.55, 0.5][Math.floor(r() * 4)], 0.5, 0.75 + r() * 0.2); }
+    }
     const tc = ['#29f3ff', '#ff2bd6', '#8a4dff', '#ffa43a', '#ff1e3c'][Math.floor(r() * 5)];
     const T = ch.trims, D = ch.details;
     let topH = h, tw = lw, td = ld, flatRoof = true;
     if (style === 'oct') {
       this._octagon(ch, m, bx, bz, lw / 2, h, tint, tc, r);
       flatRoof = false;
+    } else if (style === 'round') {
+      topH = this._round(ch, m, bx, bz, lw / 2, h, tint, tc, r);
+      flatRoof = false;
+    } else if (style === 'setback') {
+      // a "wedding cake": tiers that step back as it rises, with a stone ledge on each one
+      let y = 0, w = lw, d = ld;
+      const tiers = 3 + Math.floor(r() * 3), first = Math.round(h * (0.35 + r() * 0.15) / 4) * 4;
+      const ledge = tint.clone().multiplyScalar(0.7);
+      for (let k = 0; k < tiers; k++) {
+        const th = k === 0 ? first : Math.max(8, Math.round((h - first) / (tiers - 1) / 4) * 4);
+        ch.bodies[m].push(this._uvBox(w, th, d, bx, y + th / 2, bz, tint));
+        this.addBox({ x0: bx - w / 2, x1: bx + w / 2, z0: bz - d / 2, z1: bz + d / 2, y0: y, y1: y + th });
+        D.box(w + 0.8, 0.7, d + 0.8, ledge, bx, y + th, bz);
+        y += th; tw = w; td = d;
+        w = Math.max(8, w * (0.74 + r() * 0.1)); d = Math.max(8, d * (0.74 + r() * 0.1));
+      }
+      topH = y;
     } else {
       ch.bodies[m].push(this._uvBox(lw, h, ld, bx, h / 2, bz, tint));
       this.addBox({ x0: bx - lw / 2, x1: bx + lw / 2, z0: bz - ld / 2, z1: bz + ld / 2, y0: 0, y1: h });
@@ -331,7 +359,7 @@ export class City {
       }
       if (style === 'deco') { topH = this._decoCrown(ch, m, bx, bz, tw, td, topH, tint, r); flatRoof = false; }
     }
-    if (style !== 'low' && style !== 'oct') {
+    if (style !== 'low' && style !== 'oct' && style !== 'round' && m !== 6) {
       if (r() < 0.55) for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) T.box(0.35, h, 0.35, tc, bx + sx * (lw / 2 + 0.1), h / 2, bz + sz * (ld / 2 + 0.1));
       if (r() < 0.3) for (let y = 20; y < h - 10; y += 24 + Math.floor(r() * 3) * 8) {
         T.box(lw + 0.3, 0.3, 0.3, tc, bx, y, bz - ld / 2 - 0.1); T.box(lw + 0.3, 0.3, 0.3, tc, bx, y, bz + ld / 2 + 0.1);
@@ -342,6 +370,14 @@ export class City {
       T.box(0.3, 0.4, td + 0.4, tc, bx - tw / 2, topH + 0.2, bz); T.box(0.3, 0.4, td + 0.4, tc, bx + tw / 2, topH + 0.2, bz);
     }
     let roofUsed = false;
+    // machine room on the roof (lift motors, tanks), like the boxy tops in the photo
+    if (flatRoof && style !== 'low' && tw > 14 && td > 14 && r() < 0.55) {
+      const mw = tw * (0.3 + r() * 0.2), md = td * (0.3 + r() * 0.2), mh = 4 + Math.floor(r() * 3) * 2;
+      const mx = bx + (r() - 0.5) * (tw - mw - 2), mz = bz + (r() - 0.5) * (td - md - 2);
+      ch.bodies[m].push(this._uvBox(mw, mh, md, mx, topH + mh / 2, mz, tint.clone().multiplyScalar(0.8)));
+      this.addBox({ x0: mx - mw / 2, x1: mx + mw / 2, z0: mz - md / 2, z1: mz + md / 2, y0: topH, y1: topH + mh });
+      D.box(mw + 0.4, 0.4, md + 0.4, '#3a3a40', mx, topH + mh + 0.2, mz);
+    }
     if (flatRoof && topH >= 140 && tw >= 18 && td >= 18 && r() < 0.55) { this._helipad(D, T, bx, topH, bz, Math.min(tw, td)); roofUsed = true; }
     else if (flatRoof && topH > 100 && r() < 0.5) {
       const ah = 10 + r() * 25;
@@ -382,9 +418,9 @@ export class City {
       }
       if (P.dish && r() < 0.35) this._prop(D, T, P.dish, bx + (tw / 2 - 2) * (r() < 0.5 ? -1 : 1), topH, bz + (td / 2 - 2) * (r() < 0.5 ? -1 : 1), r() * Math.PI * 2);
     }
-    if (style !== 'oct') this._storefronts(ch, r, o, style); else this._octDoors(ch, r, o);
+    if (style !== 'oct' && style !== 'round') this._storefronts(ch, r, o, style); else this._octDoors(ch, r, o);
     this.lots.push({ ...o, style, topH });
-    if (style !== 'oct') this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
+    if (style !== 'oct' && style !== 'round') this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
     if (o.market) {
       // night markets: more signs and billboards on the roofs
       this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
@@ -432,6 +468,35 @@ export class City {
     ch.trims.box(0.9, 0.9, 0.9, '#ff1030', x, h + mh, z);
     ch.details.cyl(a * 0.55, a * 0.62, 3, 8, '#1c1f2a', x, h + 1.5, z);
     this.addBox({ x0: x - a * 0.6, x1: x + a * 0.6, z0: z - a * 0.6, z1: z + a * 0.6, y0: h, y1: h + 3 });
+  }
+
+  // a round tower (glass or stone drum) with ledges and a smaller drum on top
+  _round(ch, m, x, z, a, h, tint, tc, r) {
+    const seg = 24, R = a;
+    const g = new THREE.CylinderGeometry(R, R, h, seg, 1, true);
+    const uv = g.attributes.uv, cols = Math.max(1, Math.round(2 * Math.PI * R / 4)), rows = Math.max(1, Math.round(h / 4));
+    const ou = Math.floor(r() * 8), ov = Math.floor(r() * 16);
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * cols / 8 + ou / 8, uv.getY(i) * rows / 16 + ov / 16);
+    g.translate(x, h / 2, z);
+    const n = g.attributes.position.count, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { col[i * 3] = tint.r; col[i * 3 + 1] = tint.g; col[i * 3 + 2] = tint.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    ch.bodies[m].push(g);
+    const s2 = a * 0.42, k = a * 0.72;
+    this.addBox({ x0: x - a, x1: x + a, z0: z - s2, z1: z + s2, y0: 0, y1: h });
+    this.addBox({ x0: x - s2, x1: x + s2, z0: z - a, z1: z + a, y0: 0, y1: h });
+    this.addBox({ x0: x - k, x1: x + k, z0: z - k, z1: z + k, y0: 0, y1: h });
+    const D = ch.details, ledge = tint.clone().multiplyScalar(0.6);
+    for (let y = 30; y < h - 6; y += 30 + Math.floor(r() * 3) * 4) D.cyl(R + 0.35, R + 0.35, 0.5, seg, ledge, x, y, z);
+    D.cyl(R + 0.4, R + 0.4, 0.8, seg, ledge, x, h, z); // roof edge (and the roof itself)
+    const dh = 8 + Math.floor(r() * 3) * 4, dr = R * 0.6;
+    D.cyl(dr, dr, dh, 16, tint.clone().multiplyScalar(0.75), x, h + dh / 2, z);
+    D.cyl(dr + 0.3, dr + 0.3, 0.5, 16, ledge, x, h + dh, z);
+    ch.trims.add(new THREE.TorusGeometry(dr + 0.35, 0.15, 4, 32), tc, x, h + dh - 1, z, Math.PI / 2);
+    this.addBox({ x0: x - dr * 0.8, x1: x + dr * 0.8, z0: z - dr * 0.8, z1: z + dr * 0.8, y0: h, y1: h + dh });
+    const mh = 10 + r() * 14;
+    D.box(0.5, mh, 0.5, '#30364a', x, h + dh + mh / 2, z); ch.trims.box(0.9, 0.9, 0.9, '#ff1030', x, h + dh + mh, z);
+    return h + dh;
   }
 
   // stepped art-deco crown with golden neon edges and a spire
@@ -578,6 +643,8 @@ export class City {
     const nShops = style === 'low' ? 1 : o.ts ? 3 : 2;
     const kinds = [];
     for (let d = 0; d < DOORS_PER_BUILDING; d++) kinds.push(d < nShops ? 'shop' : 'flat');
+    // taller buildings often have a hotel: one of the flat doors becomes the hotel entrance
+    if (style !== 'low' && o.h >= 48 && r() < 0.55) kinds[DOORS_PER_BUILDING - 1] = 'hotel';
     for (let i = kinds.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
     const doorSegs = new Map();
     kinds.forEach((kind, d) => {
@@ -612,7 +679,7 @@ export class City {
           const dt = slots[q];
           pane(from, dt - DOOR_W / 2 - 0.45);
           const d = this._door(ch, cx + ax * dt, cz + az * dt, fx, fz, kind, r);
-          if (kind === 'shop') {
+          if (kind === 'shop' || kind === 'hotel') {
             hasShop = true;
             const rotY = fx ? (fx > 0 ? Math.PI / 2 : -Math.PI / 2) : (fz > 0 ? 0 : Math.PI);
             this._sign(d.name, d.color, cx + ax * dt + fx * 0.27, 3.45, cz + az * dt + fz * 0.27, rotY, 2.4, 0.6);
@@ -643,9 +710,9 @@ export class City {
     const ax = fz ? 1 : 0, az = fx ? 1 : 0, W = DOOR_W;
     const rotY = fx ? (fx > 0 ? Math.PI / 2 : -Math.PI / 2) : (fz > 0 ? 0 : Math.PI);
     const quad = (list, w, h, color, along, y, out) => list.add(new THREE.PlaneGeometry(w, h), color, cx + ax * along + fx * out, y, cz + az * along + fz * out, 0, rotY, 0);
-    const isShop = kind === 'shop';
-    const [name, color] = isShop ? SIGN_TEXTS[Math.floor(r() * SIGN_TEXTS.length)] : ['', '#ffc46a'];
-    const frame = isShop ? '#3aff9a' : '#ffc46a';
+    const isShop = kind === 'shop' || kind === 'hotel', hotel = kind === 'hotel';
+    const [name, color] = hotel ? [HOTEL_NAMES[Math.floor(r() * HOTEL_NAMES.length)], '#ffd27a'] : isShop ? SIGN_TEXTS[Math.floor(r() * SIGN_TEXTS.length)] : ['', '#ffc46a'];
+    const frame = hotel ? '#ffd27a' : isShop ? '#3aff9a' : '#ffc46a';
     if (isShop) quad(ch.trims, W, 2.6, '#1c5a52', 0, 1.3, 0.06);
     else quad(ch.details, W, 2.6, '#30364a', 0, 1.3, 0.06);
     quad(ch.trims, W + 0.32, 0.13, frame, 0, 2.67, 0.09);
@@ -698,7 +765,7 @@ export class City {
       const i = 1 + Math.floor(r() * (N - 1)), j = Math.floor(r() * N);
       if (i === 5 || j === 4 || j === 5) continue;
       const road = roadC(i), e0 = road - ROAD / 2 - 5, e1 = road + ROAD / 2 + 5;
-      const plain = L => !['oct', 'hero', 'stack', 'mega', 'corp'].includes(L.style);
+      const plain = L => !['oct', 'round', 'setback', 'hero', 'stack', 'mega', 'corp'].includes(L.style);
       const A = this.lots.filter(L => plain(L) && (alongX ? (L.bi === i - 1 && L.bj === j && L.bx + L.lw / 2 > e0 - 0.5) : (L.bj === i - 1 && L.bi === j && L.bz + L.ld / 2 > e0 - 0.5)));
       const B = this.lots.filter(L => plain(L) && (alongX ? (L.bi === i && L.bj === j && L.bx - L.lw / 2 < e1 + 0.5) : (L.bj === i && L.bi === j && L.bz - L.ld / 2 < e1 + 0.5)));
       if (!A.length || !B.length) continue;

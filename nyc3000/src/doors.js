@@ -40,7 +40,7 @@ export class SlidingDoors {
   _place(r, x, z, nx, nz, kind, glow) {
     r.g.position.set(x + nx * 0.1, 0, z + nz * 0.1);
     r.g.rotation.y = Math.atan2(nx, nz);
-    for (const l of r.leaves) l.leaf.material = kind === 'shop' ? glass : metal;
+    for (const l of r.leaves) l.leaf.material = kind !== 'flat' ? glass : metal;
     r.inside.material.color.set(glow);
     r.g.visible = true;
   }
@@ -85,7 +85,7 @@ export class SlidingDoors {
       if (this.rigs.some(r => r.door === d)) continue;
       const r = this.rigs.find(q => !q.door); if (!r) break;
       r.door = d; r.open = 0;
-      this._place(r, d.x - d.nx * 0.3, d.z - d.nz * 0.3, d.nx, d.nz, d.kind, d.kind === 'shop' ? new THREE.Color(d.color).multiplyScalar(0.55) : '#6a4a24');
+      this._place(r, d.x - d.nx * 0.3, d.z - d.nz * 0.3, d.nx, d.nz, d.kind, d.kind !== 'flat' ? new THREE.Color(d.color).multiplyScalar(0.55) : '#6a4a24');
     }
     for (const r of this.rigs) {
       const d = r.door; if (!d) continue;

@@ -41,6 +41,18 @@ export class HUD {
     const el = $('say'); el.innerHTML = ''; const b = document.createElement('b'); b.textContent = name + ':'; b.style.color = color;
     el.appendChild(b); el.appendChild(document.createTextNode(' ' + text)); el.style.opacity = 1; this.sayT = sec;
   }
+  lift(on) {
+    const el = $('lift');
+    if (on && !this._liftBuilt) {
+      this._liftBuilt = true;
+      for (const n of [9, 10, 7, 8, 5, 6, 3, 4, 1, 2]) {
+        const b = document.createElement('button'); b.textContent = n;
+        b.onclick = () => this.onFloor && this.onFloor(n);
+        $('liftBtns').appendChild(b);
+      }
+    }
+    el.classList.toggle('on', on);
+  }
   toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; this.toastT = 2.2; }
   kick(a) { this.spread = Math.min(30, this.spread + a); }
   hitmark() { this.hitT = 0.15; }
@@ -205,6 +217,7 @@ export class HUD {
     const A = g.ch.active;
     if (A && A.areaC && !A.found && A.friend && A.friend.state === 'wait') { c.strokeStyle = 'rgba(185,140,255,.8)'; c.lineWidth = 2 / k; c.fillStyle = 'rgba(185,140,255,.15)'; c.beginPath(); c.arc(A.areaC.x, A.areaC.z, A.r, 0, 7); c.fill(); c.stroke(); }
     // shops you can go into (green)
+    for (const d of g.city.doors) if (d.kind === 'hotel' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 3.2, '#ffd27a');
     for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) { const gun = GUN_SHOPS.has(d.name); dot(d.x, d.z, gun ? 3.4 : 2.2, gun ? '#ff7a2a' : '#3aff9a'); }
     c.restore();
     // objective / challenge marker (clamped to edge)

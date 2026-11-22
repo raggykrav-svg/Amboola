@@ -246,3 +246,14 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
 .scan-label.focus { font-size: 16px; padding: 4px 10px; }
 .scan-label .hp { height: 3px; background: rgba(255,255,255,.15); margin-top: 2px; }
 .scan-label .hp i { display: block; height: 100%; background: currentColor; }
+
+/* ---- hotel lift panel ---- */
+#lift { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; padding: 16px 18px; background: rgba(20,14,8,.88);
+  border: 2px solid #ffd27a; border-radius: 10px; box-shadow: 0 0 30px rgba(255,210,122,.35); text-align: center; pointer-events: auto; }
+#lift.on { display: block; }
+.lift-title { font: 700 14px Orbitron, Arial; letter-spacing: 2px; color: #ffd27a; margin-bottom: 12px; }
+#liftBtns { display: grid; grid-template-columns: repeat(2, 64px); gap: 10px; justify-content: center; }
+#liftBtns button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid #ffd27a; background: radial-gradient(#3a2a14, #1a1208); color: #ffe6b0;
+  font: 900 22px Orbitron, Arial; cursor: pointer; }
+#liftBtns button:hover { background: radial-gradient(#ffd27a, #b08030); color: #1a1208; }
+.lift-help { margin-top: 10px; font: 600 13px Rajdhani, Arial; color: #e8d8b8; }

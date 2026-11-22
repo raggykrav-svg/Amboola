@@ -167,6 +167,7 @@ export class Audio {
       case 'woof': this._sweep(t, 420, 220, 0.12, 'sawtooth', 0.08); this._sweep(t + 0.2, 460, 230, 0.12, 'sawtooth', 0.08); break;
       case 'scan': this._sweep(t, 300, 1800, 0.25, 'sine', 0.05); break;
       case 'slide': this._noiseHit(t, 0.35, 1400, 0.07, null, 'bandpass'); this._sweep(t, 220, 140, 0.3, 'sine', 0.05); break;
+      case 'ding': this._tone(t, 1318, 0.5, 'sine', 0.1); this._tone(t + 0.18, 1047, 0.7, 'sine', 0.1); break;
       case 'crash': this._noiseHit(t, 0.4, 500, 0.35 * a, null, 'lowpass'); break;
     }
   }
