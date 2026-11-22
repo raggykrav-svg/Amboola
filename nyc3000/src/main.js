@@ -129,9 +129,10 @@ function lockPointer() {
   // some embedded pages silently refuse pointer lock: fall back to plain mouse movement
   setTimeout(() => { if (state === 'play' && !document.pointerLockElement) lockFailed = true; }, 900);
 }
-let wantLock = false;
+let wantLock = false, liftT = -1e9;
 document.addEventListener('pointerlockchange', () => {
-  if (!document.pointerLockElement && state === 'play' && wantLock) openPause();
+  // (the hotel lift frees the mouse for a moment: that's not a reason to pause)
+  if (!document.pointerLockElement && state === 'play' && wantLock && performance.now() - liftT > 1000) openPause();
 });
 
 // ---------- screens ----------
@@ -440,6 +441,7 @@ async function boot() {
   game.rooms = buildRooms(scene, city); // shop and flat interiors behind the street doors
   hud.onFloor = n => { game.goFloor(n); };
   game.onLift = on => {
+    liftT = performance.now();
     if (on) { wantLock = false; if (document.pointerLockElement) document.exitPointerLock(); }
     else if (state === 'play') { wantLock = true; lockPointer(); }
   };

@@ -95,7 +95,8 @@ export function buildRooms(scene, city) {
     forDoor: {
       value: d => {
         if (d.kind === 'hotel') return rooms.hotel_lobby || null;
-        if (d.hotelFloor) return rooms['flat_' + flats[hash(d.id) % Math.max(1, flats.length)]] || null;
+        // hotel rooms: standard rooms on floors 1-6, king suites up on 7-10
+        if (d.hotelFloor) return rooms[d.hotelFloor >= 7 ? 'hotel_king' : 'hotel_standard'] || rooms['flat_' + flats[hash(d.id) % Math.max(1, flats.length)]] || null;
         const type = d.kind === 'shop' ? (SHOP_TYPES[d.name] || 'mart') : flats[hash(d.id) % Math.max(1, flats.length)];
         return rooms[d.kind + '_' + type] || rooms.list.find(R => R.kind === d.kind) || null;
       },

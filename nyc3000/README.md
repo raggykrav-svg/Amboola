@@ -31,6 +31,8 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![New cars](screenshots/25-new-cars.jpg) | ![Building styles](screenshots/28-building-styles.jpg) |
 | **A hotel lobby** | **The lift: pick a floor** |
 | ![Hotel lobby](screenshots/26-hotel-lobby.jpg) | ![Hotel lift](screenshots/27-hotel-lift.jpg) |
+| **A hotel room (floors 1–6)** | **A king suite (floors 7–10)** |
+| ![Hotel room](screenshots/29-hotel-room.jpg) | ![King suite](screenshots/30-king-suite.jpg) |
 
 ## Run it
 
@@ -113,7 +115,7 @@ Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 sh
 
 ### Hotels
 
-Many tall buildings have a **hotel** door (HOTEL 3000, GRAND NEON HOTEL, SKYLINE HOTEL, HOTEL AURORA, THE MIDTOWN, HOTEL LUNA): the gold dots on the minimap. Inside is a lobby with a receptionist, couches, chandeliers and two lifts at the back. Walk up to a lift and press **E**: a panel with floors **1–10** pops up. Click a floor (or press 1–9, 0 for 10) and you ride up to your hotel room, a flat you can explore (sleep in the bed to save). Leave the room and the lift takes you back down to the lobby.
+Many tall buildings have a **hotel** door (HOTEL 3000, GRAND NEON HOTEL, SKYLINE HOTEL, HOTEL AURORA, THE MIDTOWN, HOTEL LUNA): the gold dots on the minimap. Inside is a lobby with a receptionist, couches, chandeliers and two lifts at the back. Walk up to a lift and press **E**: a panel with floors **1–10** pops up. Click a floor (or press 1–9, 0 for 10) and you ride up to your hotel room. Floors 1–6 have **hotel rooms** with two made beds (white duvets, a red runner, a padded headboard), nightstands with lamps, pictures over the beds, a TV on a dresser with a glowing minibar, a desk by a curtained window, a wardrobe, a suitcase on a rack and the bathroom door. Floors 7–10 have **king suites** with a huge bed, a bench at its foot, and a white sofa with flowers by a wide window. Sleep in the bed to save, and look around for a hidden stash. Leave the room and the lift takes you back down to the lobby.
 
 ### Doors, gun shops and cars
 

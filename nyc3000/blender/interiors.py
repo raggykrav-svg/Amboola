@@ -1204,6 +1204,172 @@ def hotel_lobby(P):
     return r.finish((0.26, 0.22, 0.2))
 
 
+def _hotel_bed(r, P, x, y, w, L=2.1, king=False):
+    """A made-up hotel bed against the west wall: headboard, white duvet, a coloured runner and pillows."""
+    hx = -r.W / 2
+    r.box(L, w, 0.32, P['bed_frame'], (hx + L / 2 + 0.08, y, 0.16))
+    r.box(L - 0.05, w - 0.06, 0.24, P['duvet'], (hx + L / 2 + 0.08, y, 0.44), bevel=0.06)
+    r.box(L * 0.62, w - 0.02, 0.05, P['duvet'], (hx + L * 0.62 + 0.12, y, 0.58), bevel=0.02)
+    r.box(0.42, w + 0.02, 0.04, P['runner'], (hx + L * 0.75, y, 0.6))
+    n = 4 if king else 2
+    for k in range(n):
+        py = y - w / 2 + (k + 0.5) * w / n
+        r.box(0.38, w / n - 0.08, 0.16, P['duvet'], (hx + 0.38, py, 0.63), (0, -0.35, 0), bevel=0.06)
+    r.box(0.1, w + 0.5, 1.25, P['headboard'], (hx + 0.06, y, 0.95), bevel=0.03)
+    r.box(0.04, w + 0.3, 0.04, P['neon_gold'], (hx + 0.12, y, 1.6))
+    r.col(hx, hx + L + 0.1, y - w / 2, y + w / 2, 0, 0.7)
+
+
+def _nightstand(r, P, x, y):
+    r.box(0.45, 0.45, 0.55, P['dark_wood'], (x, y, 0.275), bevel=0.02)
+    r.cyl(0.07, 0.09, 0.08, P['gold_m'], (x, y, 0.59), seg=10)
+    r.cyl(0.02, 0.02, 0.3, P['gold_m'], (x, y, 0.78), seg=6)
+    r.cyl(0.13, 0.17, 0.2, P['lamp_warm'], (x, y, 0.98), seg=12)
+    r.light((x + 0.3, y, 1.0), (1.0, 0.78, 0.5), 0.22, 1.6)
+    r.col(x - 0.25, x + 0.25, y - 0.25, y + 0.25, 0, 0.6)
+
+
+def _hotel_shell(r, P, win):
+    W, D, H = r.W, r.D, r.H
+    r.floor(lambda x, y: P['h_carpet_b'] if (int((x + 10) * 2) + int((y + 10) * 2)) % 5 == 0 else P['h_carpet_a'])
+    r.walls(lambda h, z: P['dark_wood'] if z < 0.12 else (P['wainscot'] if z < 0.95 else P['wallpaper']), holes={'N': [(-win / 2, win / 2, 0.8, 2.6)]})
+    r.ceiling(P['fceil'])
+    # the window: frame, sill and heavy curtains either side
+    y = D / 2
+    for (p, sz) in (((0, y, 0.78), (win + 0.2, 0.25, 0.08)), ((0, y, 2.62), (win + 0.2, 0.2, 0.08)), ((-win / 2, y, 1.7), (0.08, 0.2, 1.85)), ((win / 2, y, 1.7), (0.08, 0.2, 1.85))):
+        r.box(*sz, P['frame'], p)
+    for s2 in (-1, 1):
+        r.box(0.7, 0.18, 2.75, P['curtain'], (s2 * (win / 2 + 0.3), y - 0.22, 1.45), bevel=0.04)
+    r.box(win + 1.6, 0.06, 0.06, P['gold_m'], (0, y - 0.15, 2.85))
+    r.light((0, y + 2.0, 2.0), (0.45, 0.55, 1.0), 0.4, 3.0)
+    r.mark('view0', (0, y, 1.7), dir='N')
+    # ceiling lights
+    for x in (-1.5, 1.5):
+        r.cyl(0.25, 0.25, 0.04, P['lamp_warm'], (x, 0, H - 0.02), seg=16)
+        r.light((x, 0, H - 0.3), (1.0, 0.86, 0.68), 0.35, 3.0)
+
+
+def _dresser_tv(r, P, y0, y1):
+    W, D = r.W, r.D
+    x = W / 2
+    r.box(0.5, y1 - y0, 0.8, P['dark_wood'], (x - 0.27, (y0 + y1) / 2, 0.4), bevel=0.02)
+    for k in range(3):
+        r.box(0.02, (y1 - y0) / 3 - 0.1, 0.04, P['gold_m'], (x - 0.53, y0 + (k + 0.5) * (y1 - y0) / 3, 0.62))
+    r.box(0.06, 1.7, 1.0, P['dark'], (x - 0.05, (y0 + y1) / 2, 1.65))
+    r.mark('tv', (x - 0.09, (y0 + y1) / 2, 1.65), w=1.58, h=0.88, **Room.facing(-1, 0))
+    # a minibar with a glowing door in the dresser
+    r.box(0.03, 0.5, 0.5, P['fridge_light'], (x - 0.53, y0 + 0.35, 0.3))
+    r.col(x - 0.55, x, y0, y1, 0, 0.85)
+
+
+def _bath_door(r, P, y):
+    x = r.W / 2
+    r.box(0.06, 0.95, 2.15, P['dark_wood'], (x - 0.03, y, 1.075))
+    for s2 in (-1, 1):
+        r.box(0.1, 0.08, 2.25, P['gold_m'], (x - 0.05, y + s2 * 0.5, 1.12))
+    r.box(0.06, 0.08, 0.04, P['gold_m'], (x - 0.09, y - 0.32, 1.0))
+    r.box(0.03, 0.4, 0.12, P['menu_white'], (x - 0.07, y, 1.75))
+
+
+def _suitcase(r, P, x, y):
+    r.box(0.5, 0.95, 0.06, P['gold_m'], (x, y, 0.45))
+    for s2 in (-1, 1):
+        r.box(0.04, 0.04, 0.45, P['gold_m'], (x, y + s2 * 0.42, 0.22))
+    r.box(0.45, 0.75, 0.3, P['suitcase'], (x, y, 0.63), bevel=0.04)
+    r.box(0.04, 0.2, 0.04, P['dark'], (x, y, 0.8))
+    r.col(x - 0.3, x + 0.3, y - 0.5, y + 0.5, 0, 0.8)
+
+
+def hotel_standard(P):
+    """A standard hotel room: two made beds, nightstands, a TV on the dresser, a desk by the
+    window, a wardrobe, a suitcase and the bathroom door."""
+    r = Room('room_hotel_standard', 8.0, 9.0, 3.0)
+    r.P = P
+    W, D, H = r.W, r.D, r.H
+    _hotel_shell(r, P, 3.0)
+    _hotel_bed(r, P, 0, -1.2, 1.4)
+    _hotel_bed(r, P, 0, 1.4, 1.4)
+    _nightstand(r, P, -W / 2 + 0.3, 0.1)
+    _nightstand(r, P, -W / 2 + 0.3, 2.6)
+    for k, m in enumerate((P['poster_b'], P['poster_c'])):
+        r.box(0.04, 0.9, 0.6, P['gold_m'], (-W / 2 + 0.03, -1.2 + k * 2.6, 2.1))
+        r.box(0.04, 0.8, 0.5, m, (-W / 2 + 0.05, -1.2 + k * 2.6, 2.1))
+    _dresser_tv(r, P, -1.3, 0.9)
+    # desk and chair by the window
+    r.box(1.3, 0.6, 0.05, P['dark_wood'], (2.6, 3.9, 0.76))
+    for s2 in (-1, 1):
+        r.box(0.05, 0.55, 0.74, P['dark_wood'], (2.6 + s2 * 0.6, 3.9, 0.37))
+    r.cyl(0.08, 0.12, 0.3, P['lamp_warm'], (3.1, 4.0, 0.95), seg=10)
+    r.box(0.3, 0.22, 0.02, P['menu_white'], (2.4, 3.9, 0.79))
+    r.box(0.5, 0.5, 0.06, P['velvet'], (2.6, 3.25, 0.48))
+    r.box(0.5, 0.06, 0.6, P['velvet'], (2.6, 3.0, 0.8))
+    r.light((2.6, 3.4, 1.4), (1.0, 0.85, 0.6), 0.2, 1.4)
+    r.col(1.9, 3.3, 3.55, 4.2, 0, 0.8)
+    # wardrobe, suitcase, bathroom
+    r.box(1.4, 0.6, 2.3, P['dark_wood'], (-2.9, -D / 2 + 0.35, 1.15))
+    r.box(0.02, 0.02, 2.0, P['gold_m'], (-2.9, -D / 2 + 0.66, 1.15))
+    r.col(-3.65, -2.15, -D / 2, -D / 2 + 0.7, 0, 2.3)
+    _suitcase(r, P, 1.4, 2.4)
+    _bath_door(r, P, -3.0)
+    r.plant(P, 3.5, -1.9, 0.8)
+    r.door(-0.5, P, P['gold_m'], P['door_metal'])
+    r.mark('bed', (-0.9, 0.1, 0))
+    for k, p in enumerate(((-W / 2 + 0.3, 0.1, 0.65), (2.4, 3.9, 0.8), (W / 2 - 0.3, -0.2, 0.85), (1.4, 2.4, 0.8))):
+        r.mark(f'loot{k}', p)
+    r.props = dict(hotel_room=1)
+    return r.finish((0.24, 0.2, 0.18))
+
+
+def hotel_king(P):
+    """A king suite: a huge bed, a sofa and coffee table by a wide window, a desk, flowers."""
+    r = Room('room_hotel_king', 10.0, 9.0, 3.2)
+    r.P = P
+    W, D, H = r.W, r.D, r.H
+    _hotel_shell(r, P, 5.0)
+    _hotel_bed(r, P, 0, -0.4, 2.1, 2.2, king=True)
+    _nightstand(r, P, -W / 2 + 0.3, -1.9)
+    _nightstand(r, P, -W / 2 + 0.3, 1.1)
+    r.box(0.5, 1.6, 0.45, P['velvet'], (-W / 2 + 2.6, -0.4, 0.225), bevel=0.05)  # bench at the foot
+    r.col(-W / 2 + 2.3, -W / 2 + 2.9, -1.2, 0.4, 0, 0.5)
+    r.box(0.04, 1.8, 0.9, P['gold_m'], (-W / 2 + 0.03, -0.4, 2.25))
+    r.box(0.04, 1.7, 0.8, P['poster_a'], (-W / 2 + 0.05, -0.4, 2.25))
+    _dresser_tv(r, P, -1.6, 0.6)
+    # lounge by the window: sofa facing the view, coffee table, flowers
+    sx, sy = 1.8, 2.6
+    r.box(2.6, 0.9, 0.42, P['white_sofa'], (sx, sy, 0.21), bevel=0.06)
+    r.box(2.6, 0.25, 0.5, P['white_sofa'], (sx, sy - 0.42, 0.62), bevel=0.08)
+    for s2 in (-1, 1):
+        r.box(0.25, 0.9, 0.6, P['white_sofa'], (sx + s2 * 1.3, sy, 0.3), bevel=0.06)
+    for k, m in enumerate((P['pillow_gold'], P['runner'])):
+        r.box(0.45, 0.16, 0.38, m, (sx - 0.6 + k * 1.2, sy - 0.25, 0.6), (0.2, 0, 0), bevel=0.06)
+    r.col(sx - 1.45, sx + 1.45, sy - 0.55, sy + 0.45, 0, 0.8)
+    r.box(1.2, 0.6, 0.05, P['glass_top'], (sx, 3.7, 0.4))
+    r.box(1.1, 0.5, 0.35, P['dark_wood'], (sx, 3.7, 0.18))
+    r.cyl(0.08, 0.06, 0.25, P['white_ceramic'], (sx - 0.3, 3.7, 0.55), seg=10)
+    for k in range(5):
+        r.sphere(0.07, (P['red_seat'], P['pillow_a'], P['menu_yellow'])[k % 3], (sx - 0.3 + (k - 2) * 0.05, 3.7 + (k % 2 - 0.5) * 0.08, 0.72), u=6, v=4)
+    r.col(sx - 0.6, sx + 0.6, 3.4, 4.0, 0, 0.45)
+    r.box(3.4, 2.4, 0.02, P['rug_white'], (sx, 3.1, 0.012))
+    # desk, wardrobe, bathroom, suitcase
+    r.box(1.4, 0.6, 0.05, P['dark_wood'], (-3.0, 3.9, 0.76))
+    for s2 in (-1, 1):
+        r.box(0.05, 0.55, 0.74, P['dark_wood'], (-3.0 + s2 * 0.65, 3.9, 0.37))
+    r.box(0.4, 0.3, 0.02, P['screen_cyan'], (-3.0, 4.0, 1.0), (0.3, 0, 0))
+    r.col(-3.75, -2.25, 3.55, 4.2, 0, 0.8)
+    r.box(1.6, 0.6, 2.4, P['dark_wood'], (-3.6, -D / 2 + 0.35, 1.2))
+    r.box(0.02, 0.02, 2.1, P['gold_m'], (-3.6, -D / 2 + 0.66, 1.2))
+    r.col(-4.45, -2.75, -D / 2, -D / 2 + 0.7, 0, 2.4)
+    _suitcase(r, P, 3.6, -1.4)
+    _bath_door(r, P, -3.2)
+    r.plant(P, 4.3, 1.2, 1.0)
+    r.door(0.5, P, P['gold_m'], P['door_metal'])
+    r.mark('bed', (-1.8, 1.0, 0))
+    for k, p in enumerate(((-W / 2 + 0.3, 1.1, 0.65), (-3.0, 3.9, 0.8), (sx, 3.7, 0.45), (3.6, -1.4, 0.8))):
+        r.mark(f'loot{k}', p)
+    r.props = dict(hotel_room=1, suite=1)
+    return r.finish((0.26, 0.22, 0.2))
+
+
 def pal():
     prod = ['#e23a4a', '#2a8ae0', '#f2c21a', '#3ac05a', '#ff7a2a', '#9a4ae0', '#e8e8ee', '#2ad0c0', '#ff4ab0', '#5a6070']
     bottle = ['#ff3a6a', '#3ad0ff', '#ffd23a', '#7aff5a', '#b06aff', '#ff8a3a']
@@ -1271,6 +1437,10 @@ def pal():
         pipe=mat('pipe', '#8a6a4a', 0.8, 0.4), beam=mat('beam', '#2a2c32', 0.6, 0.5), leather=mat('leather', '#6a3a1e', 0.1, 0.45),
         rug_kilim=mat('rug_kilim', '#8a2a2a', 0, 0.9), rug_kilim2=mat('rug_kilim2', '#2a4a6a', 0, 0.9), butcher_block=mat('butcher_block', '#b08050', 0, 0.6),
         screen_paper=mat('screen_paper', '#e8dcc0', 0, 0.8),
+        # hotel rooms
+        h_carpet_a=mat('h_carpet_a', '#5a2a34', 0, 0.95), h_carpet_b=mat('h_carpet_b', '#7a5a2a', 0, 0.95), wallpaper=mat('wallpaper', '#d8cdb4', 0, 0.8),
+        wainscot=mat('wainscot', '#6a4a32', 0.1, 0.5), headboard=mat('headboard', '#3a2a24', 0.1, 0.6), duvet=mat('duvet', '#f4f2ec', 0, 0.85),
+        runner=mat('runner', '#8a2a3a', 0, 0.8), curtain=mat('curtain', '#7a5a3a', 0, 0.9), suitcase=mat('suitcase', '#2a6a8a', 0.3, 0.4),
         # gun shop
         gun_wall=mat('gun_wall', '#2a2026', 0.1, 0.6), pegboard=mat('pegboard', '#3a3a42', 0.2, 0.7), gun_dark=mat('gun_dark', '#1a1c22', 0.6, 0.35),
         gun_tan=mat('gun_tan', '#6a5a40', 0.3, 0.5), target=mat('target', '#e8e4d8', 0, 0.8), target_ring=mat('target_ring', '#c0202a', 0, 0.6),
@@ -1278,7 +1448,7 @@ def pal():
     )
 
 
-ROOMS = [hotel_lobby, shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, flat_studio, flat_penthouse, flat_gamer, flat_loft]
+ROOMS = [hotel_lobby, hotel_standard, hotel_king, shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, flat_studio, flat_penthouse, flat_gamer, flat_loft]
 
 
 def build_all():
@@ -1297,7 +1467,7 @@ def previews(objs, out):
     views = {
         'room_shop_mart': ((-3.8, -3.6, 2.6), (1.5, 1.5, 1.0)), 'room_shop_ramen': ((-4.4, -3.0, 2.3), (1.0, 1.8, 1.1)),
         'room_shop_diner': ((-1.0, -3.6, 2.5), (1.0, 2.0, 0.9)), 'room_shop_bar': ((4.8, -4.0, 2.7), (-1.5, 1.5, 0.9)),
-        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)), 'room_hotel_lobby': ((-5.5, -4.2, 2.8), (1.5, 2.5, 1.2)),
+        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)), 'room_hotel_lobby': ((-5.5, -4.2, 2.8), (1.5, 2.5, 1.2)), 'room_hotel_standard': ((3.3, -3.9, 2.4), (-1.5, 1.0, 0.8)), 'room_hotel_king': ((4.3, -3.9, 2.6), (-1.5, 1.0, 0.8)),
         'room_flat_studio': ((-4.2, -3.9, 2.4), (2.0, 1.5, 0.9)), 'room_flat_penthouse': ((-5.2, -4.4, 2.8), (2.0, 2.0, 1.0)),
         'room_flat_gamer': ((-3.8, -3.6, 2.3), (1.5, 1.5, 0.9)), 'room_flat_loft': ((-4.8, -3.9, 3.2), (2.5, 2.0, 1.2)),
     }

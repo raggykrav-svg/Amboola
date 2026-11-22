@@ -721,7 +721,7 @@ export class Game {
       const m = makePickup(kind); m.scale.setScalar(0.6); m.position.copy(spot); this.scene.add(m);
       this.pickups.push({ mesh: m, kind, fixed: false, t: 0, respawn: 0, flat: d.id, room: true, baseY: spot.y + 0.2, cash: 40 + (hsh >>> 8) % 161 });
     }
-    this.hud.toast(d.hotelFloor ? `HOTEL ROOM ${d.hotelFloor}${String(1 + (d.id >> 4) % 20).padStart(2, '0')}` : `${{ penthouse: 'PENTHOUSE', loft: 'LOFT', gamer: 'FLAT' }[R.type] || 'FLAT'} ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
+    this.hud.toast(d.hotelFloor ? `${d.hotelFloor >= 7 ? 'KING SUITE' : 'HOTEL ROOM'} ${d.hotelFloor}${String(1 + (d.id >> 4) % 20).padStart(2, '0')}` : `${{ penthouse: 'PENTHOUSE', loft: 'LOFT', gamer: 'FLAT' }[R.type] || 'FLAT'} ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
   }
   // is the crosshair on a person standing at pos?
   _aimAt(pos, r, y0, y1) {
