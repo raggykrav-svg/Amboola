@@ -179,3 +179,47 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
 #robBar .bar { margin-top: 6px; height: 10px; border: 1px solid rgba(58,255,154,.7); background: rgba(0,0,0,.5); }
 #robBar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1fbf6a, #7dffb0); box-shadow: 0 0 12px #3aff9a; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 5; }
+
+/* pause-menu shop and challenges */
+.panel.wide { width: min(1060px, 96vw); }
+.shop-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.shop-head h2 { margin-bottom: 10px; }
+.wallet { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.wallet b { font-family: var(--font2); font-size: 28px; color: #7dffb0; text-shadow: 0 0 10px rgba(58,255,154,.6); }
+.wallet span { font-family: var(--font); font-size: 11px; letter-spacing: .2em; color: #ffd27a; }
+#shopTabs { max-width: 420px; margin-bottom: 14px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.card { background: rgba(10,20,44,.85); border: 1px solid rgba(41,243,255,.25); padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.card .pic { height: 120px; display: flex; align-items: center; justify-content: center; background: #0c1634; overflow: hidden; font-size: 46px; }
+.card .pic img { width: 100%; height: 100%; object-fit: cover; }
+.card-name { font-family: var(--font); font-size: 14px; letter-spacing: .12em; color: #dff8ff; }
+.card-stats { font-size: 13px; color: #8fb0c8; letter-spacing: .04em; min-height: 18px; }
+.card .buy { font-size: 13px; letter-spacing: .12em; padding: 9px; color: #001018; background: #7dffb0; border: 0; box-shadow: 0 0 12px rgba(58,255,154,.5); }
+.card .buy:disabled { background: #26324a; color: #7f8ea8; box-shadow: none; cursor: default; }
+.card.owned { border-color: rgba(58,255,154,.6); }
+.card.owned .buy:not(:disabled) { background: var(--cyan); }
+.card.locked { opacity: .7; }
+.card.locked .pic img { filter: grayscale(.8) brightness(.6); }
+.shop-msg { min-height: 22px; margin-top: 10px; font-size: 16px; letter-spacing: .05em; }
+.shop-msg.ok { color: #7dffb0; } .shop-msg.bad { color: #ff8a98; }
+.cred-bar { height: 8px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,210,122,.5); margin: 2px 0 10px; }
+.cred-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffa43a, #ffd27a); box-shadow: 0 0 10px #ffa43a; }
+.ch-help { font-size: 15px; color: #a9c4da; margin: 4px 0 12px; line-height: 1.35; }
+.ch-list { display: flex; flex-direction: column; gap: 6px; }
+.ch-row { display: grid; grid-template-columns: 36px 1fr 150px 90px 120px; align-items: center; gap: 10px; padding: 6px 10px; background: rgba(10,20,44,.85); border: 1px solid rgba(41,243,255,.18); }
+.ch-row.tracked { border-color: #ffd23a; box-shadow: 0 0 12px rgba(255,210,58,.35); }
+.ch-row.done { opacity: .55; }
+.ch-icon { font-size: 22px; text-align: center; }
+.ch-type { font-family: var(--font); font-size: 10px; letter-spacing: .2em; }
+.ch-name { font-size: 17px; font-weight: 700; color: #e6f6ff; }
+.ch-reward { color: #7dffb0; font-weight: 700; }
+.ch-dist { color: #a9c4da; font-family: var(--font); font-size: 12px; }
+.ch-row .mbtn.small { padding: 6px 10px; font-size: 12px; }
+@media (max-width: 700px) { .ch-row { grid-template-columns: 30px 1fr 100px; } .ch-dist, .ch-reward { display: none; } }
+#credLabel { font-family: var(--font); font-size: 10px; letter-spacing: .2em; color: #ffd27a; margin-top: 2px; }
+#objective.challenge { border-left-color: #ffd23a; }
+#objective.challenge small { color: #ffd23a; }
+#bossBar { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); width: min(460px, 70vw); display: none; text-align: center; }
+#bossName { font-family: var(--font); font-size: 13px; letter-spacing: .25em; color: #ff8ab0; text-shadow: 0 0 10px #ff2bd6; margin-bottom: 4px; }
+#bossBar .bar { height: 10px; border: 1px solid rgba(255,43,214,.8); background: rgba(0,0,0,.55); }
+#bossBar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff2040, #ff2bd6); box-shadow: 0 0 12px #ff2bd6; transition: width .15s; }

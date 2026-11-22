@@ -15,6 +15,10 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![People and cars](screenshots/06-new-models.jpg) | ![Buildings](screenshots/07-buildings.jpg) |
 | **Robbing a shop** | **Inside a flat** |
 | ![Robbing a shop](screenshots/08-shop-robbery.jpg) | ![Inside a flat](screenshots/09-flat.jpg) |
+| **Pause-menu shop** | **Street race challenge** |
+| ![Shop](screenshots/11-shop.jpg) | ![Street race](screenshots/12-race.jpg) |
+| **Cyberpsycho fight** | **A ramen bar (one of 10 kinds of room)** |
+| ![Cyberpsycho](screenshots/13-cyberpsycho.jpg) | ![Ramen bar](screenshots/14-ramen-bar.jpg) |
 
 ## Run it
 
@@ -55,10 +59,12 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | Space | jump |
 | R | reload |
 | 1 / 2 / 3 or mouse wheel | plasma rifle / pulse pistol / scatter cannon |
+| 4 / 5 / 6 | VOLT SMG / RAIL SNIPER / PLASMA LAUNCHER (once you buy them) |
 | F | jack the nearest car (the driver gets thrown out and runs away) |
 | E | go into a shop or a flat, leave it, or sleep in a flat's bed |
 | Right click (hold) on a shop clerk | rob the shop |
 | B / H | buy ammo / a medkit at a shop counter |
+| E at a challenge marker | start a street race, sky race or delivery |
 
 | In a car | |
 |---|---|
@@ -70,7 +76,7 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | Mouse | look around (the camera swings back by itself) |
 | F | get out (flying cars land by themselves first) |
 
-**Esc** pauses (Resume, Options, Save, Controls, Quit to menu). **M** mutes the sound.
+**Esc** pauses (Resume, Shop, Challenges, Options, Save, Controls, Quit to menu). **M** mutes the sound.
 
 ### Missions
 
@@ -86,9 +92,32 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 
 Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 shop and 4 flats, Times Square buildings 3 shops and 2 flats). Shop doors glow green with the shop's name above them, and shops show as green dots on the minimap. Flat doors are metal with a warm light, a lamp and an intercom. Walk up to a door and press **E** to go in.
 
-- **Shops:** hold **right click** to aim your gun at the clerk. They put their hands up, and if you keep aiming the robbery bar fills, then they drop a bag of money ($150–$500) on the counter. Walk up to the counter to grab it. The alarm goes off and you get 2 wanted stars, and that shop has nothing left for 4 minutes. You can also pay at the counter: **B** for ammo ($100), **H** for a medkit ($150).
+- **Every door is different inside.** A shop's sign decides what's behind it: ramen bars (KAIJU RAMEN, NOODLE BOTS), diners (QUANTUM BURGER, PLASMA PIZZA, CYBER DELI), cyber bars with a dance floor and a disco ball (NEURAL LINK BAR, CHROME DOLLS, HOTEL 3000), arcades (ARCADE 9, 24/7 HOLOSHOW), banks with a vault (HOLO-BANK, NEO WALL ST) and corner marts (the rest). Flats are studios, glass-walled penthouses with a hot tub and a piano, gamer dens full of RGB lights, or brick lofts. Every door also gets its own lighting mood.
+- **Shops:** hold **right click** to aim your gun at the clerk. They put their hands up, and if you keep aiming the robbery bar fills, then they drop a bag of money ($150–$500) on the counter. Walk up to the counter to grab it. The alarm goes off and you get 2 wanted stars, and that shop has nothing left for 4 minutes. You can also pay at the counter: **B** for ammo ($100), **H** for a medkit ($150). **Banks** pay $700–$1,500 but give you 3 stars, and they don't sell anything.
 - **Flats:** each flat has a TV, a kitchen, a sofa and a bed. Most flats hide one stash (cash, ammo or a medkit) that you can find once. Press **E** at the bed to sleep: it heals you, clears your wanted level and saves the game.
 - Your money is shown in the top right. You start with $200, and it's kept in your save.
+
+### The shop (pause menu)
+
+Press **Esc** and pick **SHOP** to spend your money. Every card shows the real 3D model.
+
+- **Cars:** NEO-SEDAN $400, VOLT RUNNER $900, SKY TAXI $1,500, HOVER SPORTS CAR $2,500, NYPD INTERCEPTOR $3,500 and NYPD SKY CRUISER $5,000. A car you buy is parked right next to you (or outside the door if you're indoors), and you keep it: press **DELIVER** any time to get it brought to you again for free. Driving your own police car doesn't get you in trouble.
+- **Guns:** VOLT SMG $600 (fast), RAIL SNIPER $1,500 (huge damage, zooms in when you aim) and PLASMA LAUNCHER $3,000 (explosive shots). They go on keys 4, 5 and 6.
+- **Gear:** ammo packs and medkits.
+- The best cars and guns are locked until you have enough **Street Cred**, which you earn from challenges.
+
+### Challenges
+
+Like the gigs and NCPD jobs in Cyberpunk 2077, there are 13 challenges around the city. They're the coloured squares on the minimap. Open **CHALLENGES** in the pause menu to see them all and **TRACK** one to get a marker on your compass and a light beam in the sky.
+
+- **Street races** (yellow): press **E** at the marker, a car is brought to you, then drive through every glowing ring before the timer runs out.
+- **Sky races** (cyan): the same, in a flying car, with rings high above the streets.
+- **Gang hideouts** (red): walk or drive up and the gang attacks. Take them all down. Gang members are marked with red diamonds, and fighting them doesn't make you wanted.
+- **Cyberpsychos** (pink): one huge enemy with a big health bar and a shotgun.
+- **Deliveries** (green): press **E** to grab the package and get it to the green beam in time.
+- **Drone nests** (orange): shoot down every drone.
+
+Each challenge pays $500–$1,800 plus Street Cred. Street Cred levels (shown under your money) unlock the locked items in the shop. Your money, cars, guns, Street Cred and finished challenges are all saved.
 
 ### Wanted level
 
@@ -138,13 +167,14 @@ blender -b --factory-startup -P blender/build.py -- all
 - `blender/cars.py`: six vehicles. Ground cars have lofted bodies: smooth cross-sections along a side profile with real wheel arches, a greenhouse split into glass, roof and pillars, door seams, lathed tyres and rims with neon rings, headlights, a full-width tail light, mirrors and underglow. The muscle car has a hood scoop, racing stripes, a spoiler and quad exhausts. The police car has white doors, a light bar and a push bar. Hover cars have a bubble canopy, thruster pods on pylons, tail fins and glowing hover pads. The sky taxi has a checker stripe, a roof sign and four hover pods.
 - `blender/people.py`: the soldier, the NYPD cyber-cop and 12 pedestrians. Bodies are metaballs, one smooth piece per item of clothing (top, trousers or skirt, skin, shoes, hair, hood), plus hard-surface armour, helmets with visors, caps, headphones, bags and neon umbrellas. They're skinned to the game's 17-bone skeleton in an A-pose, so the walk and run cycle and the gun-holding arm IK still drive them.
 - `blender/buildings.py`: six landmark skyscrapers (an art-deco spire with a sunburst crown, a twisting glass tower, a round tower with a floating halo ring, a stepped Empire-style tower with a mast, a glass-pyramid tower and a slim tower with a sloped crown) and rooftop props (wooden water towers, one kind with neon, AC units and satellite dishes). Tower facades are UV-mapped for the game's window textures, and their collision boxes are exported too.
-- `blender/interiors.py`: the inside of a neon corner shop (checkered floor, aisles full of products, a counter with a cash register, drink fridges, an arcade machine, an ATM) and a flat (wooden floor, kitchen with an island, sofa, TV, gaming desk, bed, big window). The lighting is baked into the vertex colours with ray-traced shadows, so the game draws the rooms cheaply.
+- `blender/interiors.py`: 10 rooms. The shops are a corner mart, a ramen bar with red lanterns and steaming pots, a diner with booths, a jukebox and a pizza oven, a cyber bar with a dance floor and a DJ booth, a marble bank with teller windows and a vault, and an arcade with rows of cabinets and a claw machine. The flats are a studio, a penthouse with glass walls, a hot tub and a grand piano, a gamer den, and a brick loft with a factory window and Edison bulbs. The lighting is baked into the vertex colours with ray-traced shadows, so the game draws the rooms cheaply.
 - `blender/lib.py`: shared helpers: part building, lofts and lathes, ambient occlusion baked into vertex colours with ray casts, sharp edges by angle, GLB export and preview renders.
 - Every car and person also gets a lighter far-away version (level of detail), so the game stays as fast as before.
 
 ## How it's made
 
 - [three.js](https://threejs.org), [Vite](https://vitejs.dev) and [Blender](https://www.blender.org). Every model, texture and sound is generated by code: models by the Blender scripts above, canvas-drawn neon signs and windows, and Web Audio synths. There are no downloaded art or sound files. The fonts (Orbitron, Rajdhani) are SIL Open Font License, bundled through Fontsource.
+- `src/shop.js`: the pause-menu SHOP (with 3D pictures rendered from the real models) and the CHALLENGES board. `src/challenges.js`: the challenges, Street Cred and their markers.
 - `src/interiors.js`: builds the shop and flat rooms far outside the city. Going through a street door moves you into the right room, and the police wait outside the door.
 - `src/assets.js`: loads the Blender GLB files at start-up and flattens each model into one or two meshes with vertex colours, a neon glow flag and per-vertex shininess. If a file is missing, the game falls back to its built-in code models.
 - `src/city.js`: a 10×10-block Manhattan grid built from a fixed seed, so saves always load into the same city. Buildings are merged into 2×2-block chunks to keep draw calls low, with collision boxes in a spatial hash. Every building gets 5 street doors (shops and flats). The Blender towers stand on podiums with shop fronts, among code-built glass towers, octagonal towers, art-deco crowns, brick walk-ups with fire escapes, helipads and glowing skybridges.

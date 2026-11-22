@@ -140,6 +140,8 @@ export class Audio {
     if (a <= 0.01) return;
     switch (name) {
       case 'rifle': this._sweep(t, 1800, 220, 0.12, 'sawtooth', 0.12 * a); this._noiseHit(t, 0.05, 4000, 0.08 * a); break;
+      case 'smg': this._sweep(t, 2200, 500, 0.08, 'sawtooth', 0.08 * a); this._noiseHit(t, 0.03, 5000, 0.05 * a); break;
+      case 'rail': this._sweep(t, 400, 3200, 0.18, 'sawtooth', 0.12 * a); this._sweep(t + 0.05, 3000, 200, 0.35, 'square', 0.08 * a); this._noiseHit(t, 0.2, 2500, 0.12 * a); break;
       case 'pistol': this._sweep(t, 2600, 400, 0.16, 'square', 0.1 * a); break;
       case 'shotgun': this._noiseHit(t, 0.35, 600, 0.4 * a, null, 'lowpass'); this._sweep(t, 400, 60, 0.3, 'sawtooth', 0.15 * a); break;
       case 'enemy': this._sweep(t, 1200, 300, 0.12, 'square', 0.06 * a); break;

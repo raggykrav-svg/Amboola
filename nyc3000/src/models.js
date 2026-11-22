@@ -11,6 +11,10 @@ export const WEAPONS = [
   { id: 'rifle', name: 'PLASMA RIFLE', mag: 28, reserve: 120, rate: 0.1, dmg: 18, speed: 115, spread: 0.012, auto: true, color: 0x29f3ff, pellets: 1, reload: 1.6, sound: 'rifle' },
   { id: 'pistol', name: 'PULSE PISTOL', mag: 12, reserve: 72, rate: 0.22, dmg: 34, speed: 130, spread: 0.006, auto: false, color: 0xff2bd6, pellets: 1, reload: 1.1, sound: 'pistol' },
   { id: 'shotgun', name: 'SCATTER CANNON', mag: 6, reserve: 30, rate: 0.75, dmg: 13, speed: 100, spread: 0.07, auto: false, color: 0xffa43a, pellets: 8, reload: 2.0, sound: 'shotgun' },
+  // sold in the pause-menu shop
+  { id: 'smg', name: 'VOLT SMG', mag: 40, reserve: 200, rate: 0.065, dmg: 11, speed: 125, spread: 0.022, auto: true, color: 0x3aff9a, pellets: 1, reload: 1.4, sound: 'smg', price: 600, cred: 0 },
+  { id: 'sniper', name: 'RAIL SNIPER', mag: 5, reserve: 30, rate: 0.9, dmg: 130, speed: 260, spread: 0, auto: false, color: 0xbff4ff, pellets: 1, reload: 2.2, sound: 'rail', zoom: true, price: 1500, cred: 1 },
+  { id: 'launcher', name: 'PLASMA LAUNCHER', mag: 3, reserve: 12, rate: 1.0, dmg: 60, speed: 75, spread: 0, auto: false, color: 0xff7a2a, pellets: 1, reload: 2.4, sound: 'cannon', explode: 6, price: 3000, cred: 2 },
 ];
 
 // Gun front is -Z. userData: muzzle (Object3D), grip / fore (hand targets), stock (length behind the origin).
@@ -46,7 +50,7 @@ function gunGeo(id) {
     P.sphere(0.03, '#ffb0ff', 0, 0.05, -0.37);
     P.box(0.075, 0.03, 0.02, '#ff2bd6', 0, -0.03, 0.045);
     info = { muzzle: -0.38, grip: [0, -0.1, 0.02], fore: [-0.04, -0.12, 0.0], stock: 0.42 };
-  } else {
+  } else if (id === 'shotgun') {
     P.slab(0.14, 0.15, 0.56, '#3a2d26', 0, 0.02, -0.18, 0, 0, 0, 0.25);
     P.cyl(0.05, 0.05, 0.5, 8, '#2a2f3a', 0, 0.06, -0.66, Math.PI / 2);
     P.cyl(0.045, 0.045, 0.5, 8, '#2a2f3a', 0, -0.03, -0.62, Math.PI / 2);
@@ -58,6 +62,47 @@ function gunGeo(id) {
     P.cyl(0.06, 0.06, 0.02, 8, '#ffd27a', 0, 0.06, -0.92, Math.PI / 2);
     P.box(0.125, 0.02, 0.2, '#ffa43a', 0, -0.09, -0.5);
     info = { muzzle: -0.93, grip: [0, -0.1, -0.02], fore: [-0.02, -0.09, -0.3], stock: 0.34 };
+  } else if (id === 'smg') {
+    P.slab(0.09, 0.14, 0.44, '#262c38', 0, 0.02, -0.16, 0, 0, 0, 0.3);
+    P.cyl(0.03, 0.03, 0.2, 8, '#14161c', 0, 0.04, -0.46, Math.PI / 2);
+    P.box(0.07, 0.17, 0.09, '#14161c', 0, -0.1, -0.02, 0.25);
+    P.box(0.06, 0.3, 0.07, '#1a1d26', 0, -0.2, -0.2, -0.1); // long magazine
+    P.box(0.06, 0.12, 0.08, '#14161c', 0, -0.08, -0.33);
+    P.box(0.05, 0.05, 0.22, '#2a303c', 0, 0.02, 0.13);   // folding stock
+    P.box(0.05, 0.12, 0.04, '#2a303c', 0, -0.03, 0.24);
+    P.glow();
+    P.box(0.095, 0.022, 0.32, '#3aff9a', 0, 0.09, -0.16);
+    P.box(0.065, 0.03, 0.08, '#3aff9a', 0, -0.28, -0.2);
+    P.sphere(0.03, '#c8ffd8', 0, 0.04, -0.57);
+    info = { muzzle: -0.6, grip: [0, -0.1, -0.02], fore: [-0.02, -0.1, -0.3], stock: 0.24 };
+  } else if (id === 'sniper') {
+    P.slab(0.1, 0.15, 0.7, '#2e3442', 0, 0.02, -0.2, 0, 0, 0, 0.3);
+    P.cyl(0.03, 0.03, 0.75, 8, '#14161c', 0, 0.04, -0.9, Math.PI / 2);   // rail barrel
+    for (const z of [-0.65, -0.95, -1.2]) P.box(0.1, 0.03, 0.05, '#2e3442', 0, 0.04, z);
+    P.box(0.07, 0.19, 0.1, '#14161c', 0, -0.11, -0.02, 0.3);
+    P.box(0.07, 0.14, 0.1, '#1a1d26', 0, -0.09, -0.24);
+    P.slab(0.09, 0.15, 0.32, '#2e3442', 0, -0.01, 0.2, 0, 0, 0, 0.3);
+    P.cyl(0.045, 0.045, 0.36, 10, '#14161c', 0, 0.18, -0.2, Math.PI / 2);  // scope
+    P.box(0.04, 0.06, 0.04, '#14161c', 0, 0.12, -0.12);
+    P.box(0.04, 0.06, 0.04, '#14161c', 0, 0.12, -0.3);
+    P.glow();
+    for (const z of [-0.65, -0.95, -1.2]) P.box(0.105, 0.012, 0.03, '#bff4ff', 0, 0.06, z);
+    P.box(0.105, 0.02, 0.5, '#29f3ff', 0, 0.1, -0.22);
+    P.cyl(0.04, 0.04, 0.01, 10, '#ff2bd6', 0, 0.18, -0.385, Math.PI / 2);
+    P.sphere(0.03, '#e8ffff', 0, 0.04, -1.29);
+    info = { muzzle: -1.32, grip: [0, -0.1, -0.03], fore: [-0.02, -0.1, -0.26], stock: 0.36 };
+  } else if (id === 'launcher') {
+    P.cyl(0.1, 0.1, 0.95, 12, '#2a2e3a', 0, 0.03, -0.3, Math.PI / 2);
+    P.cyl(0.12, 0.12, 0.12, 12, '#1a1d26', 0, 0.03, -0.76, Math.PI / 2);
+    P.cyl(0.11, 0.11, 0.1, 12, '#1a1d26', 0, 0.03, 0.15, Math.PI / 2);
+    P.box(0.07, 0.2, 0.1, '#14161c', 0, -0.13, -0.05, 0.25);
+    P.box(0.07, 0.18, 0.08, '#14161c', 0, -0.13, -0.42, -0.15);
+    P.box(0.05, 0.1, 0.12, '#14161c', 0, 0.17, -0.3);
+    P.glow();
+    for (const z of [-0.55, -0.3, -0.05]) P.cyl(0.105, 0.105, 0.03, 12, '#ff7a2a', 0, 0.03, z, Math.PI / 2);
+    P.cyl(0.08, 0.08, 0.01, 12, '#ffb070', 0, 0.03, -0.83, Math.PI / 2);
+    P.box(0.02, 0.02, 0.06, '#ff2bd6', 0, 0.23, -0.3);
+    info = { muzzle: -0.84, grip: [0, -0.12, -0.04], fore: [-0.02, -0.12, -0.38], stock: 0.24 };
   }
   gunCache[id] = { geo: P.build(), info };
   return gunCache[id];

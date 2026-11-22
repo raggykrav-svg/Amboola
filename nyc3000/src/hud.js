@@ -1,5 +1,6 @@
 // HUD: bars, ammo, wanted stars, minimap, compass, prompts.
 import { WEAPONS } from './models.js';
+import { TYPES, CHALLENGES } from './challenges.js';
 import { CITY } from './textures.js';
 import { roadC } from './city.js';
 
@@ -25,7 +26,7 @@ export class HUD {
     }
     strip.innerHTML = html + '<span class="obj" id="compassObj">◆</span>';
     this.strip = strip; this.cObj = $('compassObj');
-    $('wSlots').innerHTML = WEAPONS.map((w, i) => `<span data-i="${i}">${i + 1} ${w.id.toUpperCase()}</span>`).join('');
+    this.slots = '';
     this.frame = 0;
   }
   show(on) { this.el.classList.toggle('show', on); }
@@ -66,6 +67,9 @@ export class HUD {
       const w = WEAPONS[p.wi], a = p.ammo[p.wi];
       this.set('wName', w.name); this.set('ammoMag', String(a.mag)); this.set('ammoRes', String(a.res));
       $('ammo').classList.toggle('low', a.mag <= Math.ceil(w.mag * 0.25));
+      // slots for the guns you own (bought guns get keys 4-6)
+      const own = p.owned.map(o => (o ? 1 : 0)).join('');
+      if (this.slots !== own) { this.slots = own; this.cache.wi = -1; $('wSlots').innerHTML = WEAPONS.map((w, i) => (p.owned[i] ? `<span data-i="${i}">${i + 1} ${w.id.toUpperCase()}</span>` : '')).join(''); }
       if (this.cache.wi !== p.wi) { this.cache.wi = p.wi; document.querySelectorAll('#wSlots span').forEach(s => s.classList.toggle('on', +s.dataset.i === p.wi)); }
       const rb = $('reloadBar');
       rb.style.visibility = p.reloadT > 0 ? 'visible' : 'hidden';
@@ -90,6 +94,7 @@ export class HUD {
     if (this.cache.cash !== g.cash) {
       const up = this.cache.cash !== undefined && g.cash > this.cache.cash;
       this.cache.cash = g.cash; $('cash').textContent = '$ ' + Math.floor(g.cash).toLocaleString('en-US');
+      $('credLabel').textContent = 'STREET CRED ' + g.credLevel;
       if (up) { const c = $('cash'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
     }
     // wanted
@@ -101,16 +106,22 @@ export class HUD {
       $('stars').classList.toggle('flash', st > 0 && !g.policeSeen);
       $('wantedLabel').textContent = st ? (g.policeSeen ? 'NYPD IN PURSUIT' : 'EVADING…') : '';
     }
-    // objective
+    // objective (an active or tracked challenge takes over the box)
     const [txt, sub] = g.objectiveText();
-    const ot = st > 0 ? 'Escape NYPD pursuit' : txt;
-    this.set('objText', ot);
-    const tgt = g.objTarget, pp = g.wpos();
-    let dist = '';
-    if (st > 0) dist = 'Get out of sight of the police until the stars fade · then: ' + txt;
+    const chi = g.ch.hud();
+    const tgt = chi ? chi.target : g.objTarget, pp = g.wpos();
+    let ot = st > 0 ? 'Escape NYPD pursuit' : txt, dist = '';
+    if (chi) { ot = chi.title; dist = (tgt ? Math.round(Math.hypot(tgt.x - pp.x, tgt.z - pp.z)) + ' m · ' : '') + chi.sub; }
+    else if (st > 0) dist = 'Get out of sight of the police until the stars fade · then: ' + txt;
     else if (tgt) dist = Math.round(Math.hypot(tgt.x - pp.x, tgt.z - pp.z)) + ' m · ' + sub;
     else dist = sub;
+    $('objective').classList.toggle('challenge', !!chi);
+    this.set('objText', ot);
     this.set('objDist', dist);
+    // boss health
+    const boss = chi && chi.boss;
+    $('bossBar').style.display = boss && boss.state !== 'dead' ? 'block' : 'none';
+    if (boss) { this.set('bossName', chi.title); this.set('bossFill', Math.max(0, boss.health / boss.maxHealth * 100) + '%', 'width'); }
     // compass
     const yaw = v ? v.yaw + g.camState.yawOff : p.yaw;
     const heading = ((-yaw * 180 / Math.PI) % 360 + 360) % 360;
@@ -119,15 +130,15 @@ export class HUD {
     if (tgt) {
       const b = ((Math.atan2(tgt.x - pp.x, -(tgt.z - pp.z)) * 180 / Math.PI) + 360) % 360;
       let rel = b; if (rel - heading > 180) rel -= 360; if (heading - rel > 180) rel += 360;
-      this.cObj.style.display = 'block'; this.cObj.style.left = (rel * 3) + 'px';
+      this.cObj.style.display = 'block'; this.cObj.style.left = (rel * 3) + 'px'; this.cObj.style.color = chi ? '#ffd23a' : '';
     } else this.cObj.style.display = 'none';
     // fps
     const f = $('fps'); f.style.display = showFps ? 'block' : 'none';
     if (showFps && this.frame % 10 === 0) f.textContent = fps.toFixed(0) + ' FPS';
-    if (this.frame % (g.settings.preset === 'low' ? 2 : 1) === 0) this.minimap(g, pp, yaw);
+    if (this.frame % (g.settings.preset === 'low' ? 2 : 1) === 0) this.minimap(g, pp, yaw, tgt);
   }
 
-  minimap(g, pp, yaw) {
+  minimap(g, pp, yaw, target) {
     const c = this.mm, S = 200, R = S / 2;
     const range = g.player.vehicle ? (g.player.vehicle.flying ? 320 : 220) : 140;
     const k = R / range;
@@ -154,16 +165,25 @@ export class HUD {
       let col = v.mode === 'sky' ? 'rgba(160,140,255,.5)' : 'rgba(220,220,240,.6)';
       if (v.mode === 'police' || v.mode === 'policeAir') col = (Math.floor(g.time * 4) % 2) ? '#ff2040' : '#3a7aff';
       if (v.mode === 'parked' || v.mode === 'abandoned') col = v.flying ? '#29f3ff' : '#ffd23a';
+      if (v.owned) col = '#3aff9a';
       dot(v.pos.x, v.pos.z, 2.6, col);
     }
     for (const e of g.cops) if (e.state !== 'dead') dot(e.pos.x, e.pos.z, 2.4, '#ff2040');
     for (const d of g.drones) if (!d.dead) dot(d.pos.x, d.pos.z, 3, d.police ? '#3a7aff' : '#ff2bd6');
     for (const p of g.pickups) if (p.mesh.visible && !p.room) dot(p.mesh.position.x, p.mesh.position.z, 2, p.kind === 'health' ? '#3aff7a' : '#ffa43a');
+    // challenges (coloured squares) and gang members (red)
+    for (const def of CHALLENGES) {
+      if (g.ch.done.has(def.id)) continue;
+      const [i, j] = def.path ? def.path[0] : def.at, x = roadC(i), z = roadC(j);
+      if (Math.abs(x - pp.x) > range || Math.abs(z - pp.z) > range) continue;
+      c.fillStyle = TYPES[def.type].color; c.fillRect(x - 5 / k, z - 5 / k, 10 / k, 10 / k);
+    }
+    for (const e of g.gang) if (e.state !== 'dead') dot(e.pos.x, e.pos.z, 2.6, '#ff2040');
     // shops you can go into (green)
     for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 2.2, '#3aff9a');
     c.restore();
-    // objective marker (clamped to edge)
-    const t = g.objTarget;
+    // objective / challenge marker (clamped to edge)
+    const t = target;
     if (t) {
       const dx = t.x - pp.x, dz = t.z - pp.z;
       const cs = Math.cos(yaw), sn = Math.sin(yaw);

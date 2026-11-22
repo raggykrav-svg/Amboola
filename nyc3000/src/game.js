@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { CITY } from './textures.js';
 import { roadC, LANE, BOUNDS } from './city.js';
+import { Challenges, credLevel } from './challenges.js';
 import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens, pedKindFor } from './models.js';
 
 const { CELL, ROAD, N, HALF } = CITY;
@@ -46,16 +47,30 @@ class Vehicle {
 }
 
 // ---------------- PEOPLE ----------------
-class Person {
+const enemyMarkGeo = new THREE.OctahedronGeometry(0.16, 0);
+const enemyMarkMat = new THREE.MeshBasicMaterial({ color: 0xff2040, toneMapped: false });
+const haloMat = new THREE.MeshBasicMaterial({ color: 0xff1030, toneMapped: false });
+export class Person {
   constructor(game, kind) {
     this.game = game; this.kind = kind;
     this.h = new Humanoid(kind === 'cop' ? 'cop' : 'ped');
     this.root = this.h.root;
     this.pos = new V3(); this.vel = new V3(); this.yaw = 0;
-    this.state = 'walk'; this.t = 0; this.health = kind === 'cop' ? 70 : 30;
+    this.state = 'walk'; this.t = 0; this.health = kind === 'cop' ? 70 : kind === 'gang' ? 60 : kind === 'psycho' ? 700 : 30;
+    this.maxHealth = this.health;
     this.speed = 0;
     game.scene.add(this.root);
     if (kind === 'cop') { this.gun = makeGun('pistol'); this.h.holdGun(this.gun); this.shootT = rand(1, 2); }
+    if (kind === 'gang' || kind === 'psycho') {
+      // challenge enemies: armed, with a red marker over their heads
+      this.gun = makeGun(kind === 'psycho' ? 'shotgun' : Math.random() < 0.5 ? 'rifle' : 'pistol'); this.h.holdGun(this.gun);
+      this.shootT = rand(1, 2.5); this.state = 'fight';
+      const mk = new THREE.Mesh(enemyMarkGeo, enemyMarkMat); mk.position.y = 2.25; this.root.add(mk); this.mark = mk;
+      if (kind === 'psycho') {
+        this.root.scale.setScalar(1.35);
+        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.03, 4, 20), haloMat); halo.rotation.x = Math.PI / 2; halo.position.y = 2.0; this.root.add(halo);
+      }
+    }
   }
   dispose() { this.game.scene.remove(this.root); }
 }
@@ -87,6 +102,9 @@ export class Game {
     // doors, shops and flats
     this.cash = 0; this.interior = null; this.rooms = null; this.onSave = null;
     this.shops = new Map(); this.looted = new Set(); this._firedT = -9;
+    // pause-menu shop and challenges
+    this.garage = new Set(); this.cred = 0; this.gang = [];
+    this.ch = new Challenges(this);
     this._buildPlayer();
     // tall light beam that marks the objective in the world
     const bg = new THREE.CylinderGeometry(1.4, 1.4, 400, 16, 1, true); bg.translate(0, 200, 0);
@@ -102,7 +120,7 @@ export class Game {
     this.player = {
       h, pos: new V3(), vy: 0, yaw: 0, pitch: 0, onGround: true, vel: new V3(),
       health: 100, shield: 100, shieldDelay: 0,
-      ammo: WEAPONS.map(w => ({ mag: w.mag, res: w.reserve })), wi: 0,
+      ammo: WEAPONS.map(w => ({ mag: w.mag, res: w.reserve })), wi: 0, owned: WEAPONS.map(w => !w.price),
       reloadT: 0, fireCD: 0, alive: true, vehicle: null, deadT: 0, pendingExit: false, hurtT: 0, cannon: 100,
     };
     h.holdGun(this.guns[0]);
@@ -119,11 +137,16 @@ export class Game {
       p.ammo = WEAPONS.map((w, i) => ({ mag: save.ammo?.[i]?.mag ?? w.mag, res: save.ammo?.[i]?.res ?? w.reserve }));
       p.wi = save.wi || 0; this.objective = save.objective || 0; this.wave = save.wave || 1;
       this.cash = save.cash ?? 200; this.looted = new Set(save.looted || []);
+      p.owned = WEAPONS.map(w => !w.price || (save.guns || []).includes(w.id));
+      this.garage = new Set(save.garage || []); this.cred = save.cred || 0;
     } else {
       p.pos.set(SPAWN.x, 0, SPAWN.z); p.yaw = SPAWN.yaw; p.health = 100; p.shield = 100;
       p.ammo = WEAPONS.map(w => ({ mag: w.mag, res: w.reserve })); p.wi = 0; this.objective = 0; this.wave = 1;
       this.cash = 200; this.looted = new Set();
+      p.owned = WEAPONS.map(w => !w.price); this.garage = new Set(); this.cred = 0;
     }
+    if (!p.owned[p.wi]) p.wi = 0;
+    this.ch.reset(save);
     this._leaveInterior(); this.shops.clear();
     p.pitch = 0;
     this.selectWeapon(p.wi, true);
@@ -137,7 +160,8 @@ export class Game {
   }
 
   clearWorld() {
-    for (const a of [this.vehicles, this.peds, this.cops, this.drones, this.runners]) { a.forEach(e => e.dispose()); a.length = 0; }
+    if (this.ch) this.ch.cancel(true);
+    for (const a of [this.vehicles, this.peds, this.cops, this.drones, this.runners, this.gang]) { a.forEach(e => e.dispose()); a.length = 0; }
     this.pickups.forEach(p => this.scene.remove(p.mesh)); this.pickups.length = 0;
     this.fx.clear();
     if (this.beam) this.beam.visible = false;
@@ -152,7 +176,8 @@ export class Game {
       const rx = roadC(clamp(Math.round((x + HALF) / CELL), 0, N)), rz = roadC(clamp(Math.round((z + HALF) / CELL), 0, N));
       if (Math.abs(x - rx) < Math.abs(z - rz)) x = rx; else z = rz;
     }
-    return { v: 1, pos: [x, 0, z], yaw: v ? v.yaw : p.yaw, health: Math.round(p.health), shield: Math.round(p.shield), ammo: p.ammo.map(a => ({ ...a })), wi: p.wi, objective: this.objective < 0 ? this._objNext : this.objective, wave: this.wave, cash: this.cash, looted: [...this.looted], time: Date.now() };
+    return { v: 1, pos: [x, 0, z], yaw: v ? v.yaw : p.yaw, health: Math.round(p.health), shield: Math.round(p.shield), ammo: p.ammo.map(a => ({ ...a })), wi: p.wi, objective: this.objective < 0 ? this._objNext : this.objective, wave: this.wave, cash: this.cash, looted: [...this.looted],
+      guns: WEAPONS.filter((w, i) => p.owned[i] && w.price).map(w => w.id), garage: [...this.garage], cred: this.cred, done: [...this.ch.done], time: Date.now() };
   }
 
   // where the player is in the city: inside a shop or flat that's the street door they used
@@ -290,10 +315,15 @@ export class Game {
   // ---------- weapons ----------
   selectWeapon(i, silent) {
     const p = this.player; i = (i + WEAPONS.length) % WEAPONS.length;
+    if (!p.owned[i]) return;
     if (p.wi === i && !silent) return;
     p.wi = i; p.reloadT = 0; p.fireCD = 0.2;
     p.h.holdGun(this.guns[i]);
     if (!silent) this.audio.play('switch');
+  }
+  cycleWeapon(dir) {
+    const p = this.player;
+    for (let k = 1; k <= WEAPONS.length; k++) { const i = (p.wi + dir * k + WEAPONS.length * 2) % WEAPONS.length; if (p.owned[i]) { this.selectWeapon(i); return; } }
   }
   reload() {
     const p = this.player, w = WEAPONS[p.wi], a = p.ammo[p.wi];
@@ -312,6 +342,7 @@ export class Game {
     };
     for (const e of this.peds) if (e.state !== 'gone') test(e.pos, 0.5, e.pos.y, e.pos.y + 1.9);
     for (const e of this.cops) test(e.pos, 0.5, e.pos.y, e.pos.y + 1.9);
+    for (const e of this.gang) if (e.state !== 'dead') test(e.pos, 0.5 * e.root.scale.x, e.pos.y, e.pos.y + 1.9 * e.root.scale.x);
     for (const d of this.drones) if (!d.dead) test(d.pos, 1.0, d.pos.y - 0.8, d.pos.y + 0.8);
     for (const v of this.vehicles) if (v !== ignore) test(v.pos, 2.2, v.pos.y, v.pos.y + 1.7);
     return out.copy(cam.position).addScaledVector(tmp2, best);
@@ -334,7 +365,8 @@ export class Game {
     for (let k = 0; k < w.pellets; k++) {
       const d = dir.clone();
       d.x += (Math.random() - 0.5) * w.spread * 2; d.y += (Math.random() - 0.5) * w.spread * 2; d.z += (Math.random() - 0.5) * w.spread * 2; d.normalize();
-      this.fx.bolt(muzzle, d, w.speed, w.color, 'player', w.dmg);
+      const b = this.fx.bolt(muzzle, d, w.speed, w.color, 'player', w.dmg);
+      if (w.explode) b.explode = w.explode;
     }
     this.fx.muzzle(muzzle, w.color, this.settings.preset !== 'low');
     this.audio.play(w.sound);
@@ -393,6 +425,7 @@ export class Game {
       if (b.owner === 'player') {
         for (const e of this.peds) { if (hit) break; if (e.state === 'gone' || e.state === 'dead') continue; const h = segHit(e.pos, 0.45, e.pos.y, e.pos.y + 1.9); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
         for (const e of this.cops) { if (hit) break; if (e.state === 'dead') continue; const h = segHit(e.pos, 0.5, e.pos.y, e.pos.y + 1.9); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
+        for (const e of this.gang) { if (hit) break; if (e.state === 'dead') continue; const sc = e.root.scale.x; const h = segHit(e.pos, 0.5 * sc, e.pos.y, e.pos.y + 1.9 * sc); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
         for (const d of this.drones) { if (hit) break; if (d.dead) continue; const h = segHit(d.pos, 1.0, d.pos.y - 0.7, d.pos.y + 0.7); if (h) { hit = { pos: h }; this.damageDrone(d, b.dmg); } }
         for (const v of this.vehicles) { if (hit) break; if (v === p.vehicle || v.mode === 'wreck') continue; const h = segHit(v.pos, 2.0, v.pos.y, v.pos.y + 1.6); if (h) { hit = { pos: h }; this.damageVehicle(v, b.dmg, true); } }
         if (hit && !hit.wall) this.hud.hitmark();
@@ -402,6 +435,7 @@ export class Game {
         const h = p.alive && segHit(target, r, target.y, target.y + y1);
         if (h) { hit = { pos: h }; if (p.vehicle) this.damageVehicle(p.vehicle, b.dmg * 0.8, false); else this.damagePlayer(b.dmg); }
       }
+      if (hit && b.explode) this.blast(hit.pos, b.explode, b.dmg);
       if (hit) {
         this.fx.sparks(hit.pos, b.color, hit.wall ? 8 : 14, 5);
         this.fx.flash(hit.pos, b.color, 1.6, 0.08);
@@ -420,8 +454,17 @@ export class Game {
     this.audio.play('hurt');
     if (p.health <= 0) this.killPlayer();
   }
+  // plasma launcher blast: hurts everything around it (but not you)
+  blast(pos, radius, dmg) {
+    this.fx.explosion(pos.clone()); this.audio.play('explode', pos.distanceTo(this.camera.position));
+    const hurt = (e, k = 1) => { const d = e.pos.distanceTo(pos); if (d < radius) this.damagePerson(e, dmg * 2 * k * (1 - d / radius) + 20, tmp.subVectors(e.pos, pos)); };
+    for (const e of [...this.peds, ...this.cops, ...this.gang]) if (e.state !== 'dead' && e.state !== 'gone') hurt(e);
+    for (const d of this.drones) if (!d.dead && d.pos.distanceTo(pos) < radius) this.damageDrone(d, dmg * 2);
+    for (const v of this.vehicles) if (v !== this.player.vehicle && v.mode !== 'wreck' && v.pos.distanceTo(pos) < radius + 1.5) this.damageVehicle(v, dmg * 2.5, true);
+  }
   killPlayer() {
     const p = this.player; p.health = 0; p.alive = false; p.deadT = 3.2;
+    this.ch.onPlayerDeath();
     if (p.vehicle) this.exitVehicle(true);
     this.hud.dead(true);
   }
@@ -440,8 +483,16 @@ export class Game {
     if (e.state === 'dead') return;
     e.health -= dmg;
     if (e.kind === 'cop') { this.crime(0.12); e.aggro = true; }
+    if (e.kind === 'gang' || e.kind === 'psycho') e.aggro = true;
     if (e.health <= 0) {
       e.state = 'dead'; e.t = 12; e.fallT = 0;
+      if (e.mark) e.mark.visible = false;
+      if (e.kind === 'gang' || e.kind === 'psycho') {
+        e.vel.copy(vel ? vel.clone().setY(0).normalize().multiplyScalar(3) : new V3()); e.vel.y = 2.5;
+        this.audio.play('yell', e.pos.distanceTo(this.camera.position));
+        this.ch.onKill(e);
+        return;
+      }
       e.vel.copy(vel ? vel.clone().setY(0).normalize().multiplyScalar(3) : new V3()); e.vel.y = 2.5;
       if (e.kind === 'cop') { this.crime(1, 'COP DOWN · WANTED LEVEL UP'); if (Math.random() < 0.6) this._pickup(e.pos.x, e.pos.z, Math.random() < 0.6 ? 'ammo' : 'health'); }
       else { this.crime(1, 'CIVILIAN DOWN · WANTED LEVEL UP'); this.audio.play('yell', e.pos.distanceTo(this.camera.position)); }
@@ -454,6 +505,7 @@ export class Game {
       d.dead = true; d.fallV = 0;
       this.fx.explosion(d.pos.clone()); this.audio.play('explode', d.pos.distanceTo(this.camera.position));
       if (d.police) this.crime(0.6);
+      if (d.challenge) this.ch.onKill(d);
       if (d.rogue && (this.objective === 0 || this.objective === 4)) {
         this.objCount++;
         const need = this.objective === 0 ? 4 : 3 + this.wave * 2;
@@ -478,22 +530,138 @@ export class Game {
     // splash damage
     const p = this.player;
     if (!p.vehicle && p.pos.distanceTo(v.pos) < 7) this.damagePlayer(30);
-    for (const e of [...this.peds, ...this.cops]) if (e.pos.distanceTo(v.pos) < 7) this.damagePerson(e, 100, tmp.subVectors(e.pos, v.pos));
+    for (const e of [...this.peds, ...this.cops, ...this.gang]) if (e.pos.distanceTo(v.pos) < 7) this.damagePerson(e, 100, tmp.subVectors(e.pos, v.pos));
     if (v.flying && v.pos.y > 2) v.falling = true;
+  }
+
+  // ---------- pause-menu shop ----------
+  get credLevel() { return credLevel(this.cred); }
+  buyGun(i) {
+    const w = WEAPONS[i], p = this.player;
+    if (p.owned[i]) return 'owned';
+    if (this.credLevel < (w.cred || 0)) return 'locked';
+    if (this.cash < w.price) return 'cash';
+    this.cash -= w.price; p.owned[i] = true; p.ammo[i] = { mag: w.mag, res: w.reserve };
+    this.selectWeapon(i, true); this.audio.play('cash');
+    return 'ok';
+  }
+  buyCar(type, price, cred) {
+    if (this.garage.has(type)) { this.deliverCar(type); return 'delivered'; }
+    if (this.credLevel < cred) return 'locked';
+    if (this.cash < price) return 'cash';
+    this.cash -= price; this.garage.add(type); this.deliverCar(type); this.audio.play('cash');
+    return 'ok';
+  }
+  buySupply(what) {
+    const p = this.player, price = PRICES[what];
+    if (this.cash < price) return 'cash';
+    if (what === 'ammo') {
+      if (p.ammo.every((a, j) => !p.owned[j] || a.res >= WEAPONS[j].reserve * 2)) return 'full';
+      p.ammo.forEach((a, j) => { a.res = Math.min(WEAPONS[j].reserve * 2, a.res + WEAPONS[j].reserve); });
+    } else {
+      if (p.health >= 100 && p.shield >= 100) return 'full';
+      p.health = 100; p.shield = 100;
+    }
+    this.cash -= price; this.audio.play('cash');
+    return 'ok';
+  }
+  // park one of your cars next to you (or outside the door when you're indoors)
+  deliverCar(type, temp = false) {
+    const p = this.player, base = this.wpos();
+    if (!temp) for (let i = this.vehicles.length - 1; i >= 0; i--) { const v = this.vehicles[i]; if (v.owned === type && v !== p.vehicle) { v.dispose(); this.vehicles.splice(i, 1); } }
+    let spot = null;
+    const yaw0 = this.interior ? yawOf(this.interior.door.nx, this.interior.door.nz) : p.vehicle ? p.vehicle.yaw : p.yaw;
+    for (let k = 0; k < 24 && !spot; k++) {
+      const a = yaw0 + [1.2, -1.2, 0.6, -0.6, 2.2, -2.2, 0, Math.PI][k % 8], r = 5 + Math.floor(k / 8) * 3;
+      const x = base.x - Math.sin(a) * r, z = base.z - Math.cos(a) * r;
+      if (Math.abs(x) > BOUNDS - 3 || Math.abs(z) > BOUNDS - 3) continue;
+      if (this.city.collide(x, z, 2.6, 0.2, 1.8).hit || this.city.inside(x, 1, z)) continue;
+      if (this.vehicles.some(v => Math.hypot(v.pos.x - x, v.pos.z - z) < 5.5)) continue;
+      spot = [x, z];
+    }
+    if (!spot) spot = [base.x + 4, base.z + 4];
+    const v = this._addVehicle(type, spot[0], spot[1], yaw0, 'parked');
+    v.owned = temp ? false : type; v.hasDriver = false;
+    if (v.flying) v.pos.y = this.city.groundAt(v.pos.x, v.pos.z, 1) + 0.7;
+    v.sync();
+    this.fx.flash(v.pos.clone().setY(v.pos.y + 1), 0x3aff9a, 6, 0.4);
+    return v;
+  }
+  spawnChallengeDrone(x, y, z) {
+    const d = new Drone(this, x, y, z, false);
+    d.rogue = false; d.challenge = true;
+    this.drones.push(d);
+    return d;
+  }
+
+  // ---------- challenge enemies: gang members and cyberpsychos ----------
+  spawnGang(x, z, n, kind = 'gang') {
+    const out = [];
+    for (let k = 0; k < n * 4 && out.length < n; k++) {
+      const a = Math.random() * Math.PI * 2, r = kind === 'psycho' ? 0 : rand(3, 11);
+      const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+      const c = this.city.collide(px, pz, 0.6, 0.3, 1.8);
+      if (c.hit && kind !== 'psycho') continue;
+      const e = new Person(this, kind);
+      e.pos.set(c.x, 0, c.z); e.yaw = Math.random() * 6; e.home = new V3(x, 0, z);
+      e.root.position.copy(e.pos);
+      this.gang.push(e); out.push(e);
+    }
+    return out;
+  }
+  updateGang(dt) {
+    const p = this.player, tp = this.wpos();
+    for (let i = this.gang.length - 1; i >= 0; i--) {
+      const e = this.gang[i];
+      if (e.state === 'dead') { this._personPhysics(e, dt); e.t -= dt; e.root.position.copy(e.pos); if (e.t <= 0) { e.dispose(); this.gang.splice(i, 1); } continue; }
+      const boss = e.kind === 'psycho';
+      const to = tmp.subVectors(tp, e.pos).setY(0), dist = to.length(); to.normalize();
+      const awake = (e.aggro || dist < (boss ? 70 : 45)) && p.alive && !this.interior;
+      let mv = 0;
+      if (awake) {
+        e.aggro = true;
+        e.yaw = yawOf(to.x, to.z);
+        if (dist > (boss ? 6 : 18)) mv = boss ? 6.5 : 4.5; else if (dist < (boss ? 3 : 8)) mv = -2.5;
+        e.strafe = e.strafe || (Math.random() < 0.5 ? -1 : 1);
+        const rr = new V3(-to.z, 0, to.x).multiplyScalar(e.strafe * (boss ? 2.5 : 1.6));
+        e.pos.addScaledVector(to, mv * dt).addScaledVector(rr, dt);
+        if (Math.random() < dt * 0.4) e.strafe *= -1;
+        e.shootT -= dt;
+        const eye = e.pos.clone().setY(e.pos.y + 1.5 * e.root.scale.x);
+        const tgt = tp.clone().setY(tp.y + (p.vehicle ? 0.8 : 1.2));
+        if (e.shootT <= 0 && dist < 55) {
+          e.shootT = boss ? rand(0.5, 0.9) : rand(0.9, 1.7);
+          const dir = tmp2.subVectors(tgt, eye).normalize();
+          if (this.city.raycast(eye, dir, dist) >= dist - 1.5) {
+            const muzzle = e.gun ? e.gun.userData.muzzle.getWorldPosition(new V3()) : eye;
+            for (let k = 0; k < (boss ? 3 : 1); k++) this.enemyShoot(muzzle, tgt, (boss ? 0.09 : 0.08) + dist * 0.002, boss ? 7 : 5, boss ? 0xff2a2a : 0xffa43a);
+          }
+        }
+      } else if (e.home && e.pos.distanceTo(e.home) > 12) {
+        const back = tmp.subVectors(e.home, e.pos).setY(0).normalize(); e.yaw = yawOf(back.x, back.z); e.pos.addScaledVector(back, 2 * dt); mv = 2;
+      }
+      const col = this.city.collide(e.pos.x, e.pos.z, 0.45, 0.3, 1.8); e.pos.x = col.x; e.pos.z = col.z;
+      e.pos.y = this.city.groundAt(e.pos.x, e.pos.z, e.pos.y);
+      const pitch = Math.atan2(tp.y + 1.2 - (e.pos.y + 1.5), Math.max(1, dist));
+      e.h.animate(dt, Math.abs(mv) + (awake ? 1.5 : 0), awake ? { aim: pitch } : { aim: 0 });
+      e.root.position.copy(e.pos); e.root.rotation.y = e.yaw;
+      if (e.mark) { e.mark.rotation.y += dt * 3; e.mark.position.y = 2.25 + Math.sin(this.time * 4) * 0.08; }
+    }
   }
 
   // ---------- street doors: shops and flats ----------
   enterDoor(d) {
-    const R = this.rooms && this.rooms[d.kind];
+    const R = this.rooms && this.rooms.forDoor(d);
     if (!R) { this.hud.toast(d.kind === 'shop' ? 'CLOSED' : 'NOBODY HOME'); return; }
     const p = this.player;
-    this.interior = { door: d, kind: d.kind, room: R, outside: new V3(d.x + d.nx * 1.2, 0, d.z + d.nz * 1.2), mood: 'idle', rob: 0, calmT: 0, items: [] };
+    this.interior = { door: d, kind: R.kind, room: R, outside: new V3(d.x + d.nx * 1.2, 0, d.z + d.nz * 1.2), mood: 'idle', rob: 0, calmT: 0, items: [] };
     p.pos.copy(R.spawn); p.pos.y = 0; p.yaw = 0; p.pitch = -0.05; p.vel.set(0, 0, 0); p.vy = 0; p.onGround = true;
     this.camState.init = false;
     this.audio.play('door'); this.hud.fade(0.35);
     this.city.ground.visible = false;
-    this.rooms.show(d.kind);
-    if (d.kind === 'shop') this._openShop(d); else this._openFlat(d);
+    this.rooms.show(R.key);
+    R.setMood(d.id);
+    if (R.kind === 'shop') this._openShop(d); else this._openFlat(d);
   }
   _leaveInterior() {
     const I = this.interior; if (!I) return;
@@ -514,17 +682,17 @@ export class Game {
   }
   _shop(d) { let st = this.shops.get(d.id); if (!st) this.shops.set(d.id, st = { robbedUntil: -1 }); return st; }
   _openShop(d) {
-    const R = this.rooms.shop, I = this.interior;
+    const I = this.interior, R = I.room;
     R.setSign(d.name, d.color);
     const h = new Humanoid(pedKindFor(d.id));
-    h.root.position.copy(R.clerk); h.root.rotation.y = Math.PI / 2;
+    h.root.position.copy(R.clerk); h.root.rotation.y = R.clerkYaw;
     this.scene.add(h.root); I.items.push(h.root); I.clerk = h;
     const robbed = this._shop(d).robbedUntil > this.time;
     I.mood = robbed ? 'robbed' : 'idle';
     this.hud.toast(robbed ? 'THE CLERK REMEMBERS YOU…' : d.name);
   }
   _openFlat(d) {
-    const R = this.rooms.flat;
+    const R = this.interior.room;
     R.setChannel(d.id);
     // every flat may hide one stash (cash, ammo or a medkit) that you can find once
     const hsh = Math.imul(d.id + 1, 2654435761) >>> 0;
@@ -533,7 +701,7 @@ export class Game {
       const m = makePickup(kind); m.scale.setScalar(0.6); m.position.copy(spot); this.scene.add(m);
       this.pickups.push({ mesh: m, kind, fixed: false, t: 0, respawn: 0, flat: d.id, room: true, baseY: spot.y + 0.2, cash: 40 + (hsh >>> 8) % 161 });
     }
-    this.hud.toast(`FLAT ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
+    this.hud.toast(`${{ penthouse: 'PENTHOUSE', loft: 'LOFT', gamer: 'FLAT' }[R.type] || 'FLAT'} ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
   }
   // is the crosshair on a person standing at pos?
   _aimAt(pos, r, y0, y1) {
@@ -577,20 +745,21 @@ export class Game {
     h.animate(dt, 0, { handsUp: I.mood === 'scared' || I.mood === 'robbed' });
     if (near(R.counter, 1.9)) {
       if (robbed) lines.push('“Take it and go!”');
-      else {
+      else if (R.props.sells) {
         lines.push(`<kbd>B</kbd> Ammo $${PRICES.ammo}`, `<kbd>H</kbd> Medkit $${PRICES.medkit}`);
         if (inp.pressed('KeyB')) this._buy('ammo');
         if (inp.pressed('KeyH')) this._buy('medkit');
       }
     }
-    if (!robbed && I.mood === 'idle') lines.push('<kbd>Right mouse</kbd> aim at the clerk to rob the shop');
+    if (!robbed && I.mood === 'idle') lines.push(R.props.teller ? '<kbd>Right mouse</kbd> aim at the teller to rob the bank' : '<kbd>Right mouse</kbd> aim at the clerk to rob the shop');
   }
   _payout() {
     const I = this.interior, R = I.room, st = this._shop(I.door);
-    const amount = Math.round((150 + Math.random() * 350) / 10) * 10;
+    const lo = R.props.payout_min || 150, hi = R.props.payout_max || 500;
+    const amount = Math.round((lo + Math.random() * (hi - lo)) / 10) * 10;
     st.robbedUntil = this.time + 240; I.mood = 'robbed'; I.rob = 0;
-    this.crime(2, 'SHOP ROBBED · WANTED LEVEL UP');
-    this.hud.toast(`THE CLERK GAVE YOU $${amount} · GRAB THE BAG!`);
+    this.crime(R.props.stars || 2, R.props.teller ? 'BANK ROBBED · WANTED LEVEL UP' : 'SHOP ROBBED · WANTED LEVEL UP');
+    this.hud.toast(`${R.props.teller ? 'THE TELLER' : 'THE CLERK'} GAVE YOU $${amount} · GRAB THE BAG!`);
     this.audio.play('alarm');
     // the money bag lands on the counter: walk up to it to take it
     const m = makePickup('cash'); m.scale.setScalar(0.6); m.position.copy(R.cash); this.scene.add(m);
@@ -704,8 +873,10 @@ export class Game {
       }
     }
 
+    this.ch.update(dt);
     this.updateVehicles(dt);
     this.updatePeople(dt);
+    this.updateGang(dt);
     this.updateDrones(dt);
     this.updateBolts(dt);
     this.updatePolice(dt);
@@ -725,9 +896,10 @@ export class Game {
 
   updateOnFoot(dt) {
     const p = this.player, inp = this.input, s = this.settings;
-    // look
-    p.yaw -= inp.dx * 0.0022 * s.sensitivity;
-    p.pitch -= inp.dy * 0.0022 * s.sensitivity * (s.invertY ? -1 : 1);
+    // look (slower while zoomed in)
+    const zs = Math.min(1, this.camera.fov / 70);
+    p.yaw -= inp.dx * 0.0022 * s.sensitivity * zs;
+    p.pitch -= inp.dy * 0.0022 * s.sensitivity * zs * (s.invertY ? -1 : 1);
     p.recoil = (p.recoil || 0) * Math.exp(-dt * 10);
     p.pitch = clamp(p.pitch + (p.recoil || 0) * dt * 8, -1.2, 1.25);
     // move
@@ -771,10 +943,8 @@ export class Game {
     if (!this.interior) { p.pos.x = clamp(p.pos.x, -BOUNDS, BOUNDS); p.pos.z = clamp(p.pos.z, -BOUNDS, BOUNDS); }
     if (p.pos.y < 0) p.pos.y = 0;
     // weapons
-    if (inp.pressed('Digit1')) this.selectWeapon(0);
-    if (inp.pressed('Digit2')) this.selectWeapon(1);
-    if (inp.pressed('Digit3')) this.selectWeapon(2);
-    if (inp.wheel) this.selectWeapon(p.wi + (inp.wheel > 0 ? 1 : -1));
+    for (let k = 0; k < WEAPONS.length; k++) if (inp.pressed('Digit' + (k + 1))) this.selectWeapon(k);
+    if (inp.wheel) this.cycleWeapon(inp.wheel > 0 ? 1 : -1);
     if (inp.pressed('KeyR')) this.reload();
     this.firePlayer(dt);
     // shield regen
@@ -791,13 +961,14 @@ export class Game {
     const lines = [];
     if (door) lines.push(`<kbd>E</kbd> ${door.kind === 'shop' ? 'Go into ' + door.name : 'Go into the flat'}`);
     if (nv) lines.push(`<kbd>F</kbd> ${nv.hasDriver ? 'Jack' : 'Enter'} ${nv.def.name}`);
+    const cp = !door && this.ch.prompt(); if (cp) lines.push(cp);
     this.hud.prompt(lines.join(' &nbsp; '));
     if (door && this.input.pressed('KeyE')) this.enterDoor(door);
   }
 
   updateDriving(dt) {
     const p = this.player, v = p.vehicle, inp = this.input;
-    this.hud.prompt('');
+    this.hud.prompt(this.ch.prompt() || '');
     const def = v.def;
     let thr = (inp.down('KeyW') ? 1 : 0) - (inp.down('KeyS') ? 1 : 0);
     let steer = (inp.down('KeyA') ? 1 : 0) - (inp.down('KeyD') ? 1 : 0);
@@ -856,7 +1027,7 @@ export class Game {
           this.damagePerson(e, 100, f.clone().multiplyScalar(v.speed)); e.vel.copy(f).multiplyScalar(Math.abs(v.speed) * 0.5); e.vel.y = 5;
         }
       }
-      for (const e of this.cops) {
+      for (const e of [...this.cops, ...this.gang]) {
         if (e.state === 'dead') continue;
         if (Math.abs(v.speed) > 5 && Math.abs(e.pos.y - v.pos.y) < 2 && Math.hypot(e.pos.x - v.pos.x, e.pos.z - v.pos.z) < 2.2) { this.damagePerson(e, 100, f.clone().multiplyScalar(v.speed)); e.vel.copy(f).multiplyScalar(Math.abs(v.speed) * 0.5); e.vel.y = 5; }
       }
@@ -920,7 +1091,7 @@ export class Game {
       if (v.mode === 'sky') nS++;
       // despawn far vehicles (not parked set pieces)
       const far = v.mode === 'sky' ? 480 : 300;
-      if (v !== p.vehicle && !v.home && d > far && v.mode !== 'parked') { v.dispose(); this.vehicles.splice(i, 1); continue; }
+      if (v !== p.vehicle && !v.home && !v.owned && d > far && v.mode !== 'parked') { v.dispose(); this.vehicles.splice(i, 1); continue; }
       if (v.home && d > 300 && v.mode !== 'parked' && v !== p.vehicle) { // reset pad cars when far away
         v.dispose(); this.vehicles.splice(i, 1);
         const nv = this._addVehicle(v.type, v.home.x, v.home.z, Math.random() * 6, 'parked'); nv.pos.y = 1.0; nv.home = v.home;
@@ -1367,7 +1538,7 @@ export class Game {
       // camera squeezed against a wall: hide the body so it doesn't fill the screen
       p.h.root.visible = p.alive ? want.distanceTo(pivot) > 1.1 : true;
       cam.rotation.set(0, 0, 0); cam.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
-      cam.fov += (70 - this.aimZoom * 18 - cam.fov) * (1 - Math.exp(-dt * 12));
+      cam.fov += (70 - this.aimZoom * (WEAPONS[p.wi].zoom ? 50 : 18) - cam.fov) * (1 - Math.exp(-dt * 12));
     }
     cam.updateProjectionMatrix();
   }

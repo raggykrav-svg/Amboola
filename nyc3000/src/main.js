@@ -19,6 +19,7 @@ import { buildTitleScene } from './title.js';
 import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
 import { loadModels } from './assets.js';
 import { buildRooms } from './interiors.js';
+import { renderShop, renderChallenges } from './shop.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -136,7 +137,7 @@ document.addEventListener('pointerlockchange', () => {
 // ---------- screens ----------
 let state = 'loading', optionsReturn = 'menu';
 function showScreen(id) {
-  for (const s of ['loading', 'title', 'menu', 'options', 'controls', 'pause']) $(s).classList.toggle('show', s === id);
+  for (const s of ['loading', 'title', 'menu', 'options', 'controls', 'pause', 'shop', 'challenges']) $(s).classList.toggle('show', s === id);
 }
 function setState(s) {
   state = s;
@@ -150,6 +151,7 @@ function onKey(e) {
   else if (state === 'play' && e.code === 'Escape') openPause();
   else if (state === 'pause' && e.code === 'Escape' && performance.now() - pausedAt > 400) resume();
   else if ((state === 'options' || state === 'controls') && e.code === 'Escape') backFromOptions();
+  else if ((state === 'shop' || state === 'challenges') && e.code === 'Escape') backToPause();
   if (e.code === 'KeyM') { const m = audio.toggleMute(); hud && hud.toast(m ? 'SOUND OFF' : 'SOUND ON'); }
 }
 
@@ -206,6 +208,17 @@ $('bControls').onclick = () => openControls('menu');
 $('bOptBack').onclick = backFromOptions;
 $('bCtrlBack').onclick = backFromOptions;
 $('bResume').onclick = resume;
+// pause-menu shop and challenges
+let shopTab = 'cars';
+const menuCtx = () => ({ game, renderer, scene, audio });
+function openShop() { renderShop(menuCtx(), shopTab); $('shopMsg').textContent = ''; showScreen('shop'); setState('shop'); }
+function openChallenges() { renderChallenges(menuCtx()); showScreen('challenges'); setState('challenges'); }
+function backToPause() { showScreen('pause'); setState('pause'); }
+$('bShop').onclick = openShop;
+$('bChallenges').onclick = openChallenges;
+$('bShopBack').onclick = backToPause;
+$('bChBack').onclick = backToPause;
+document.querySelectorAll('#shopTabs button').forEach(b => { b.onclick = () => { shopTab = b.dataset.tab; $('shopMsg').textContent = ''; renderShop(menuCtx(), shopTab); audio.play('ui'); }; });
 $('bPOptions').onclick = () => openOptions('pause');
 $('bPControls').onclick = () => openControls('pause');
 $('bSave').onclick = () => {

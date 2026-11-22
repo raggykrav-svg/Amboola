@@ -1,74 +1,110 @@
-// Shop and flat interiors (Blender: public/models/interiors.glb). Each room is built once,
-// far outside the city; walking through a street door teleports the player into it.
+// Shop and flat interiors (Blender: public/models/interiors.glb): six kinds of shop and four
+// kinds of flat. Each room is built once, far outside the city; walking through a street door
+// moves the player into the room that fits the door (a shop's sign decides what's inside).
 // Lighting is baked into the vertex colours in Blender, so the rooms are drawn unlit.
 import * as THREE from 'three';
-import { modelNode, flatten } from './assets.js';
+import { modelNode, modelNames, flatten } from './assets.js';
 import { signTexture } from './textures.js';
 
-const ORIGIN = { shop: new THREE.Vector3(1600, 0, 1600), flat: new THREE.Vector3(1800, 0, 1600) };
 const isGlow = m => m.emissive && m.emissive.r + m.emissive.g + m.emissive.b > 0.001;
+// what's behind a shop door, by the name on its sign (anything else is a corner mart)
+const SHOP_TYPES = {
+  'KAIJU RAMEN': 'ramen', 'NOODLE BOTS': 'ramen', 'QUANTUM BURGER': 'diner', 'PLASMA PIZZA': 'diner', 'CYBER DELI': 'diner',
+  'HOLO-BANK': 'bank', 'NEO WALL ST': 'bank', 'NEURAL LINK BAR': 'bar', 'CHROME DOLLS': 'bar', 'HOTEL 3000': 'bar',
+  'ARCADE 9': 'arcade', '24/7 HOLOSHOW': 'arcade',
+};
+// every door gets a lighting mood on top of its room
+const MOODS = [[1, 1, 1], [1.1, 0.95, 0.84], [0.86, 0.96, 1.12], [1.08, 0.86, 1.05], [0.9, 1.08, 0.95], [1.05, 1.0, 0.9]];
+const DIRS = { E: [1, 0], W: [-1, 0], N: [0, -1], S: [0, 1] }; // Blender compass -> game xz
+const hash = n => Math.imul(n + 7, 2654435761) >>> 0;
 
 export function buildRooms(scene, city) {
-  const rooms = {};
-  for (const kind of ['shop', 'flat']) {
-    const node = modelNode('interiors', 'room_' + kind);
-    if (!node) return null;
-    const o = ORIGIN[kind];
+  const names = modelNames('interiors', 'room_').filter(n => !n.includes('__'));
+  if (!names.length) return null;
+  const rooms = { list: [] };
+  const counts = { shop: 0, flat: 0 };
+  const signs = {};
+  for (const name of names) {
+    const key = name.slice(5), [kind, type] = key.split('_');
+    if (kind !== 'shop' && kind !== 'flat') continue;
+    const node = modelNode('interiors', name);
+    const o = new THREE.Vector3(1600 + 240 * counts[kind]++, 0, kind === 'shop' ? 1600 : 2150);
     const g = flatten(node, m => (isGlow(m) ? 'glow' : 'room'), { rgb: true });
     const grp = new THREE.Group();
     grp.position.set(o.x, 0.01, o.z);
-    const roomMat = new THREE.MeshBasicMaterial({ vertexColors: true });
-    roomMat.color.setScalar(0.5); // keep walls under the bloom threshold so only lamps and neon glow
-    grp.add(new THREE.Mesh(g.room, roomMat), new THREE.Mesh(g.glow, city.trimMat));
+    const mat = new THREE.MeshBasicMaterial({ vertexColors: true });
+    grp.add(new THREE.Mesh(g.room, mat));
+    if (g.glow) grp.add(new THREE.Mesh(g.glow, city.trimMat));
     scene.add(grp);
-    const at = name => { const m = modelNode('interiors', `room_${kind}_${name}`); return m ? m.position.clone().add(o) : null; };
+    const R = { key, kind, type, origin: o, objects: [grp], props: { ...node.userData }, mat, loot: [] };
+    const mark = k => modelNode('interiors', `${name}__${k}`);
+    const at = k => { const m = mark(k); return m ? m.position.clone().add(o) : null; };
     for (let k = 0; ; k++) {
-      const c = modelNode('interiors', `room_${kind}_col${k}`); if (!c) break;
+      const c = mark('col' + k); if (!c) break;
       const p = c.position, s = c.scale;
-      city.addBox({ x0: o.x + p.x - Math.abs(s.x), x1: o.x + p.x + Math.abs(s.x), z0: o.z + p.z - Math.abs(s.z), z1: o.z + p.z + Math.abs(s.z), y0: Math.max(0, p.y - Math.abs(s.y)), y1: p.y + Math.abs(s.y) });
+      city.addBox({ x0: o.x + p.x - Math.abs(s.x), x1: o.x + p.x + Math.abs(s.x), z0: o.z + p.z - Math.abs(s.z), z1: o.z + p.z + Math.abs(s.z),
+        y0: Math.max(0, p.y - Math.abs(s.y)), y1: p.y + Math.abs(s.y), low: !!c.userData.low });
     }
-    rooms[kind] = { kind, origin: o, group: grp, objects: [grp], spawn: at('spawn'), exit: at('exit') };
+    R.spawn = at('spawn'); R.exit = at('exit');
+    R.clerk = at('clerk'); R.clerkYaw = mark('clerk') ? mark('clerk').userData.yaw || 0 : 0;
+    R.counter = at('counter'); R.cash = at('cash'); R.bed = at('bed');
+    for (let k = 0; at('loot' + k); k++) R.loot.push(at('loot' + k));
+    // a screen plane at a marker: the shop's name sign, or the flat's TV
+    const plane = (m, toneMapped) => {
+      const d = m.userData, mesh = new THREE.Mesh(new THREE.PlaneGeometry(d.w || 2.4, d.h || 0.6),
+        new THREE.MeshBasicMaterial({ toneMapped, transparent: !toneMapped }));
+      mesh.position.copy(m.position).add(o);
+      mesh.rotation.y = d.rot || 0;
+      mesh.translateZ(0.015);
+      scene.add(mesh); R.objects.push(mesh);
+      return mesh;
+    };
+    if (mark('sign')) {
+      R.sign = plane(mark('sign'), false);
+      R.setSign = (text, color) => {
+        const k = text + color;
+        if (!signs[k]) signs[k] = signTexture(text, color, { bg: 'rgba(0,0,0,0)' });
+        R.sign.material.map = signs[k]; R.sign.material.needsUpdate = true;
+      };
+    } else R.setSign = () => {};
+    if (mark('tv')) {
+      R.tv = plane(mark('tv'), false);
+      R.tv.material.transparent = false;
+      R.setChannel = k => { R.tv.material.map = city.bbTex[k % city.bbTex.length].tex; R.tv.material.needsUpdate = true; };
+      R.setChannel(0);
+    } else R.setChannel = () => {};
+    // city skyline outside the windows
+    for (let v = 0; mark('view' + v); v++) {
+      const m = mark('view' + v), [dx, dz] = DIRS[m.userData.dir] || DIRS.E, p = m.position.clone().add(o);
+      const lists = [[], [], []];
+      for (let k = 0; k < 14; k++) {
+        const w = 14 + (k * 7) % 18, h = 60 + (k * 37) % 120, far = 18 + (k % 4) * 22 + (k * 13) % 9, side = -70 + k * 11;
+        const x = p.x + dx * far + (dz ? side : 0), z = p.z + dz * far + (dx ? side : 0);
+        lists[k % 3].push(city._uvBox(w, h, w, x, h / 2 - 70, z, new THREE.Color(0.6, 0.6, 0.75)));
+      }
+      lists.forEach((l, i) => { const sky = new THREE.Mesh(mergeBoxes(l), city.windowMats[i]); scene.add(sky); R.objects.push(sky); });
+    }
+    R.setMood = id => { const t = MOODS[hash(id) % MOODS.length]; mat.color.setRGB(t[0] * 0.5, t[1] * 0.5, t[2] * 0.5); };
+    R.setMood(0);
+    rooms[key] = R; rooms.list.push(R);
   }
-  // shop: the shop's name on the wall behind the counter
-  const S = rooms.shop;
-  S.clerk = at2('shop', 'clerk'); S.counter = at2('shop', 'counter'); S.cash = at2('shop', 'cash');
-  const sp = at2('shop', 'sign');
-  S.sign = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 0.62), new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true }));
-  S.sign.position.copy(sp).setX(sp.x - 0.02); S.sign.rotation.y = -Math.PI / 2;
-  scene.add(S.sign); S.objects.push(S.sign);
-  const signs = {};
-  S.setSign = (name, color) => {
-    const k = name + color;
-    if (!signs[k]) signs[k] = signTexture(name, color, { bg: 'rgba(0,0,0,0)' });
-    S.sign.material.map = signs[k]; S.sign.material.needsUpdate = true;
-  };
-  // flat: bed, a TV that shows the city's animated billboards, loot spots, a skyline outside the window
-  const F = rooms.flat;
-  F.bed = at2('flat', 'bed');
-  F.loot = [0, 1, 2, 3].map(k => at2('flat', 'loot' + k)).filter(Boolean);
-  const tvNode = modelNode('interiors', 'room_flat_tv'), tv = at2('flat', 'tv');
-  F.tv = new THREE.Mesh(new THREE.PlaneGeometry(tvNode.userData.w || 2.1, tvNode.userData.h || 1.15),
-    new THREE.MeshBasicMaterial({ map: city.bbTex[0].tex, toneMapped: false }));
-  F.tv.position.copy(tv).setZ(tv.z + 0.01);
-  scene.add(F.tv); F.objects.push(F.tv);
-  F.setChannel = k => { F.tv.material.map = city.bbTex[k % city.bbTex.length].tex; F.tv.material.needsUpdate = true; };
-  const view = at2('flat', 'view');
-  const lists = [[], [], []];
-  for (let k = 0; k < 14; k++) {
-    const w = 14 + (k * 7) % 18, h = 60 + (k * 37) % 120, x = view.x + 18 + (k % 4) * 22 + (k * 13) % 9, z = view.z - 70 + k * 11;
-    lists[k % 3].push(city._uvBox(w, h, w, x, h / 2 - 70, z, new THREE.Color(0.6, 0.6, 0.75)));
-  }
-  lists.forEach((l, m) => { const sky = new THREE.Mesh(mergeBoxes(l), city.windowMats[m]); scene.add(sky); F.objects.push(sky); });
-  // only the room the player is in gets drawn
-  Object.defineProperty(rooms, 'show', { value: kind => { for (const k of ['shop', 'flat']) for (const ob of rooms[k].objects) ob.visible = k === kind; } });
+  const flats = rooms.list.filter(R => R.kind === 'flat').map(R => R.type).sort();
+  Object.defineProperties(rooms, {
+    // only the room the player is in gets drawn
+    show: { value: key => { for (const R of rooms.list) for (const ob of R.objects) ob.visible = R.key === key; } },
+    forDoor: {
+      value: d => {
+        const type = d.kind === 'shop' ? (SHOP_TYPES[d.name] || 'mart') : flats[hash(d.id) % Math.max(1, flats.length)];
+        return rooms[d.kind + '_' + type] || rooms.list.find(R => R.kind === d.kind) || null;
+      },
+    },
+  });
   rooms.show(null);
   return rooms;
-
-  function at2(kind, name) { const m = modelNode('interiors', `room_${kind}_${name}`); return m ? m.position.clone().add(ORIGIN[kind]) : null; }
 }
 
 function mergeBoxes(list) {
-  // the city's merge helper lives in BufferGeometryUtils; boxes are tiny, so merge by hand
+  // the boxes are tiny, so merge them by hand (position, normal, uv, colour, index)
   let n = 0, ni = 0;
   for (const g of list) { n += g.attributes.position.count; ni += g.index.count; }
   const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2), col = new Float32Array(n * 3), idx = new Uint32Array(ni);
