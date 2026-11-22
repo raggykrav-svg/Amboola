@@ -17090,6 +17090,7 @@ function startPC(k) {
   if (pc) endPC(true);
   chalEnd(null); footEnd(true);
   if (P.chal === 'yas') return yasStart(k);
+  if (P.chal === 'tour') return openParties(PST.tour ? 'tour' : 'car');   // (the World Tour is raced from its own list: no challenge to start)
   endActs(); endChase(null, player); endMeetRace(false, true); if (race) endRace(false); if (drag) endDrag(false); if (taxi) endTaxi(); clearNav(true);
   pc = { k, kind: P.chal, t: 0 };
   ({ flood: floodStart, fire: fireStart, hunt: huntStart })[P.chal](pc);
