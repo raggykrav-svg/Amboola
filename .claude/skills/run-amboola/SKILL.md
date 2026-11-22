@@ -838,6 +838,39 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - The road's heights (`prepTroodosRoad`) are box-smoothed three times (±12 samples, shrinking at the ends) after the 20 % clamps. `troLegsIn` splits stretches by index runs (sorted), and takes the place along the road from the 7 nearest samples.
 - Test: drive `TRO.Rd` with an autopilot through `simStep` and count `p.air` take-offs and the second difference of `p.y` per frame. Before: 127–200 take-offs and jolts up to 18 g. After: 0 take-offs at 15–70 m/s, and at most 0.5 g on the road.
 
+## Glitch hunt: the sweep and the probes (Nov 2026)
+
+Two tools find "it froze / it broke" bugs that a single run misses. Both use the probe set-up: the game loaded with every model, high quality, 640×360, rendering stubbed by `window.__render`.
+
+- **`sweep.mjs <repo> <log> [only,comma]`** walks about 90 activities: taxi, outlaw, police, 5 drags, 8 tracks, soccer, monster, tow/fire jobs, lantern, king, the world race, 8 country races and deliveries, 24 challenges, the parties, 3 night meets, Troodos, heli, jet, flying car, photo, wash, refuel, crash, foot, map and FUTURE.
+  - **Each activity:** park on the home road (-5.7, 150), start it, drive 9 s with a swaying autopilot (rendering every 20th frame), end it, then check:
+    - throws and NaN;
+    - the state back to `drive`;
+    - the car still drives (4 s full throttle on the home road, about 43 m in the GR86);
+    - `#ctxLost`;
+    - leftover HUD ids (`chainLbl`/`chainPts` are just the fading skill chain).
+  - **Wrong starts in the sweep** (not game bugs):
+    - Country challenges start from Tokyo, not their marker.
+    - `startPC(4)` is the World Tour, raced from its own list.
+    - The heli and the jet end in the garage, not in `drive`.
+    - The hotel challenges leave you on foot.
+  - **Run time:** about 4 h for everything on 4 cores. Never run more than 2 browsers at once: a third got OOM-killed.
+- **`probe.mjs <repo> <log> probes/x.js …`** evaluates probe files in one page:
+  - `allcars.js`: drive every car 3 s in one session.
+  - `places.js`: fast-travel to every map place: inside a building, stuck, underground, errors.
+  - `leak.js`: GPU geometries/textures over 5 rounds of 6 car changes.
+  - `lift.js`: the page open 50 minutes, then the ski village and every country race.
+  - `soak.js`: 20 game minutes of city driving: memory, scene size, ms per tick.
+  - `tunnel.js`: a fully loaded V24 fired at buildings at about 800 km/h; never ends up inside one.
+- **What it found and fixed:**
+  - **GPU memory leak:** every DRIVE left the old car's cockpit geometry and canvas dials on the GPU, and so did race rivals, the garage car, ads and the title car. After about 60 car changes, shaders failed to validate. `freeCar(group)` now frees the geometry and textures only that car used. It skips anything still in `scene`/`gScene`/`TITLE.scene`, the MODELS meshes and `plateTex`, and never frees materials (shared programs). `leak.js`: geometries now stay flat.
+  - **Ski lift:** it used `(u + t·.004·dir + 10) % 1` with `t = performance.now()/1000`. After 42 minutes of page time the down-going chairs got a negative `u`, `getPointAt` threw every frame near the snow (and in the Alps races), and the car froze. It now wraps both ways.
+  - **`worldStep()`:** the 14 world updates after the physics run one by one, and one that throws is reported once and skipped.
+  - **Pizza Tower:** always has 3 customers.
+  - **`startPC` for the World Tour:** opens its list.
+- **Texture counts climb on their own:** `warmTick()` uploads one queued scene texture per frame, so `renderer.info.memory.textures` rises until the queue is empty. That is not a leak.
+  - To see who creates a GPU texture, wrap the WebGL context's `createTexture`/`deleteTexture` and keep `new Error().stack` per live texture.
+
 ## The picture never freezes (context loss, frame errors)
 
 - On a phone the graphics memory can run out. The browser then takes the WebGL context away while the game goes on: the speedometer and the minimap (2D canvases) keep moving under a frozen or black 3D picture.
