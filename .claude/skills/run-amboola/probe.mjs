@@ -1,5 +1,4 @@
 // node .claude/skills/run-amboola/probe.mjs <repoRoot> <outLog> probes/a.js [probes/b.js …]  (VW/VH: viewport, default 640x360) — loads the game (models and all, high quality), then evaluates each probe file in turn and logs its result
-// then check: page errors, NaN, the car still drives in free roam, leftover HUD, the camera near the car, state back to 'drive'
 import { createRequire } from 'node:module'; import { execSync } from 'node:child_process'; import fs from 'node:fs'; import path from 'node:path';
 const [ROOT, OUT, ...FILES] = process.argv.slice(2);
 const require = createRequire(path.join(execSync('npm root -g').toString().trim(), 'noop.js'));
