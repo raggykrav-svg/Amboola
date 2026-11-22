@@ -157,6 +157,9 @@ export class Audio {
       case 'star': this._tone(t, 880, 0.12, 'square', 0.08); this._tone(t + 0.12, 660, 0.18, 'square', 0.08); break;
       case 'pickup': this._tone(t, 700, 0.06, 'triangle', 0.1); this._tone(t + 0.07, 1050, 0.1, 'triangle', 0.1); break;
       case 'objective': [0, 4, 7, 12].forEach((n, i) => this._tone(t + i * 0.09, 523 * Math.pow(2, n / 12), 0.2, 'triangle', 0.1)); break;
+      case 'cash': this._tone(t, 1568, 0.07, 'square', 0.07); this._tone(t + 0.08, 2093, 0.3, 'triangle', 0.11); this._noiseHit(t + 0.06, 0.12, 6000, 0.05); break;
+      case 'alarm': for (let k = 0; k < 10; k++) this._tone(t + k * 0.22, k % 2 ? 880 : 1175, 0.18, 'square', 0.05); break;
+      case 'sleep': [12, 7, 4, 0].forEach((n, i) => this._tone(t + i * 0.18, 392 * Math.pow(2, n / 12), 0.4, 'triangle', 0.07)); break;
       case 'crash': this._noiseHit(t, 0.4, 500, 0.35 * a, null, 'lowpass'); break;
     }
   }

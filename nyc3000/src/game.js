@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CITY } from './textures.js';
 import { roadC, LANE, BOUNDS } from './city.js';
-import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens } from './models.js';
+import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens, pedKindFor } from './models.js';
 
 const { CELL, ROAD, N, HALF } = CITY;
 const V3 = THREE.Vector3;
@@ -13,6 +13,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
 const yawOf = (dx, dz) => Math.atan2(-dx, -dz);
 export const SPAWN = { x: 13, z: -22, yaw: Math.PI * 0.85 };
+export const PRICES = { ammo: 100, medkit: 150 };
 
 // ---------------- VEHICLE ----------------
 class Vehicle {
@@ -83,6 +84,9 @@ export class Game {
     this.active = false;
     this.camState = { yawOff: 0, pitchOff: 0, idle: 0, pos: new V3(), init: false };
     this.aimZoom = 0;
+    // doors, shops and flats
+    this.cash = 0; this.interior = null; this.rooms = null; this.onSave = null;
+    this.shops = new Map(); this.looted = new Set(); this._firedT = -9;
     this._buildPlayer();
     // tall light beam that marks the objective in the world
     const bg = new THREE.CylinderGeometry(1.4, 1.4, 400, 16, 1, true); bg.translate(0, 200, 0);
@@ -114,10 +118,13 @@ export class Game {
       p.yaw = save.yaw || 0; p.health = save.health ?? 100; p.shield = save.shield ?? 100;
       p.ammo = WEAPONS.map((w, i) => ({ mag: save.ammo?.[i]?.mag ?? w.mag, res: save.ammo?.[i]?.res ?? w.reserve }));
       p.wi = save.wi || 0; this.objective = save.objective || 0; this.wave = save.wave || 1;
+      this.cash = save.cash ?? 200; this.looted = new Set(save.looted || []);
     } else {
       p.pos.set(SPAWN.x, 0, SPAWN.z); p.yaw = SPAWN.yaw; p.health = 100; p.shield = 100;
       p.ammo = WEAPONS.map(w => ({ mag: w.mag, res: w.reserve })); p.wi = 0; this.objective = 0; this.wave = 1;
+      this.cash = 200; this.looted = new Set();
     }
+    this._leaveInterior(); this.shops.clear();
     p.pitch = 0;
     this.selectWeapon(p.wi, true);
     this.wanted = 0; this.evadeT = 0;
@@ -139,12 +146,20 @@ export class Game {
   saveData() {
     const p = this.player, v = p.vehicle;
     let x = v ? v.pos.x : p.pos.x, z = v ? v.pos.z : p.pos.z;
+    if (this.interior) { x = this.interior.outside.x; z = this.interior.outside.z; } // saved inside: load at the door
     if (v || this.city.inside(x, 1, z)) {
       // saved from a car (maybe above a roof): load on the nearest street instead
       const rx = roadC(clamp(Math.round((x + HALF) / CELL), 0, N)), rz = roadC(clamp(Math.round((z + HALF) / CELL), 0, N));
       if (Math.abs(x - rx) < Math.abs(z - rz)) x = rx; else z = rz;
     }
-    return { v: 1, pos: [x, 0, z], yaw: v ? v.yaw : p.yaw, health: Math.round(p.health), shield: Math.round(p.shield), ammo: p.ammo.map(a => ({ ...a })), wi: p.wi, objective: this.objective < 0 ? this._objNext : this.objective, wave: this.wave, time: Date.now() };
+    return { v: 1, pos: [x, 0, z], yaw: v ? v.yaw : p.yaw, health: Math.round(p.health), shield: Math.round(p.shield), ammo: p.ammo.map(a => ({ ...a })), wi: p.wi, objective: this.objective < 0 ? this._objNext : this.objective, wave: this.wave, cash: this.cash, looted: [...this.looted], time: Date.now() };
+  }
+
+  // where the player is in the city: inside a shop or flat that's the street door they used
+  wpos() {
+    const p = this.player;
+    if (this.interior) return this.interior.outside;
+    return p.vehicle ? p.vehicle.pos : p.pos;
   }
 
   // ---------- objectives ----------
@@ -159,7 +174,7 @@ export class Game {
     else if (i === 3) this.objTarget = new V3(roadC(9), 90, 0);
     else {
       const n = 3 + this.wave * 2;
-      const p = this.player.vehicle ? this.player.vehicle.pos : this.player.pos;
+      const p = this.wpos();
       for (let k = 0; k < n; k++) {
         const a = Math.random() * 6.28, d = rand(40, 70);
         this.drones.push(new Drone(this, p.x + Math.cos(a) * d, rand(14, 30) + (this.player.vehicle?.flying ? p.y : 0), p.z + Math.sin(a) * d, false));
@@ -312,7 +327,7 @@ export class Game {
     const want = w.auto ? inp.mouseDown : inp.mouseClicked;
     if (!want || p.fireCD > 0) return;
     if (a.mag <= 0) { this.audio.play('empty'); p.fireCD = 0.3; if (a.res > 0) this.reload(); return; }
-    a.mag--; p.fireCD = w.rate;
+    a.mag--; p.fireCD = w.rate; this._firedT = this.time;
     const muzzle = this.guns[p.wi].userData.muzzle.getWorldPosition(new V3());
     const aim = this.aimPoint(new V3());
     const dir = aim.sub(muzzle).normalize();
@@ -412,6 +427,7 @@ export class Game {
   }
   respawn() {
     const p = this.player;
+    this._leaveInterior();
     p.alive = true; p.health = 100; p.shield = 100;
     p.pos.set(SPAWN.x, 0, SPAWN.z); p.yaw = SPAWN.yaw; p.vy = 0;
     p.h.root.rotation.set(0, 0, 0);
@@ -464,6 +480,151 @@ export class Game {
     if (!p.vehicle && p.pos.distanceTo(v.pos) < 7) this.damagePlayer(30);
     for (const e of [...this.peds, ...this.cops]) if (e.pos.distanceTo(v.pos) < 7) this.damagePerson(e, 100, tmp.subVectors(e.pos, v.pos));
     if (v.flying && v.pos.y > 2) v.falling = true;
+  }
+
+  // ---------- street doors: shops and flats ----------
+  enterDoor(d) {
+    const R = this.rooms && this.rooms[d.kind];
+    if (!R) { this.hud.toast(d.kind === 'shop' ? 'CLOSED' : 'NOBODY HOME'); return; }
+    const p = this.player;
+    this.interior = { door: d, kind: d.kind, room: R, outside: new V3(d.x + d.nx * 1.2, 0, d.z + d.nz * 1.2), mood: 'idle', rob: 0, calmT: 0, items: [] };
+    p.pos.copy(R.spawn); p.pos.y = 0; p.yaw = 0; p.pitch = -0.05; p.vel.set(0, 0, 0); p.vy = 0; p.onGround = true;
+    this.camState.init = false;
+    this.audio.play('door'); this.hud.fade(0.35);
+    this.city.ground.visible = false;
+    this.rooms.show(d.kind);
+    if (d.kind === 'shop') this._openShop(d); else this._openFlat(d);
+  }
+  _leaveInterior() {
+    const I = this.interior; if (!I) return;
+    for (const o of I.items) this.scene.remove(o);
+    for (let i = this.pickups.length - 1; i >= 0; i--) if (this.pickups[i].room) { this.scene.remove(this.pickups[i].mesh); this.pickups.splice(i, 1); }
+    this.interior = null;
+    this.city.ground.visible = true;
+    if (this.rooms) this.rooms.show(null);
+    this.hud.robBar(-1);
+  }
+  exitDoor() {
+    const I = this.interior; if (!I) return;
+    const p = this.player, d = I.door;
+    this._leaveInterior();
+    p.pos.set(I.outside.x, 0, I.outside.z); p.yaw = yawOf(d.nx, d.nz); p.pitch = 0; p.vel.set(0, 0, 0);
+    this.camState.init = false;
+    this.audio.play('door'); this.hud.fade(0.35);
+  }
+  _shop(d) { let st = this.shops.get(d.id); if (!st) this.shops.set(d.id, st = { robbedUntil: -1 }); return st; }
+  _openShop(d) {
+    const R = this.rooms.shop, I = this.interior;
+    R.setSign(d.name, d.color);
+    const h = new Humanoid(pedKindFor(d.id));
+    h.root.position.copy(R.clerk); h.root.rotation.y = Math.PI / 2;
+    this.scene.add(h.root); I.items.push(h.root); I.clerk = h;
+    const robbed = this._shop(d).robbedUntil > this.time;
+    I.mood = robbed ? 'robbed' : 'idle';
+    this.hud.toast(robbed ? 'THE CLERK REMEMBERS YOU…' : d.name);
+  }
+  _openFlat(d) {
+    const R = this.rooms.flat;
+    R.setChannel(d.id);
+    // every flat may hide one stash (cash, ammo or a medkit) that you can find once
+    const hsh = Math.imul(d.id + 1, 2654435761) >>> 0;
+    if (!this.looted.has(d.id) && hsh % 100 < 70 && R.loot.length) {
+      const kind = ['cash', 'cash', 'ammo', 'health'][hsh % 4], spot = R.loot[(hsh >>> 4) % R.loot.length];
+      const m = makePickup(kind); m.scale.setScalar(0.6); m.position.copy(spot); this.scene.add(m);
+      this.pickups.push({ mesh: m, kind, fixed: false, t: 0, respawn: 0, flat: d.id, room: true, baseY: spot.y + 0.2, cash: 40 + (hsh >>> 8) % 161 });
+    }
+    this.hud.toast(`FLAT ${1 + d.id % 40}${'ABCD'[d.id % 4]}`);
+  }
+  // is the crosshair on a person standing at pos?
+  _aimAt(pos, r, y0, y1) {
+    const cam = this.camera; cam.getWorldDirection(tmp2);
+    tmp.subVectors(pos, cam.position); const t = tmp.dot(tmp2);
+    if (t < 0.5 || t > 14) return false;
+    const px = cam.position.x + tmp2.x * t - pos.x, pz = cam.position.z + tmp2.z * t - pos.z, py = cam.position.y + tmp2.y * t - pos.y;
+    return px * px + pz * pz < r * r && py > y0 && py < y1;
+  }
+  updateInterior(dt) {
+    const I = this.interior, R = I.room, p = this.player;
+    const near = (q, r) => q && Math.hypot(p.pos.x - q.x, p.pos.z - q.z) < r;
+    const lines = [];
+    if (near(R.exit, 1.7)) {
+      lines.push('<kbd>E</kbd> Leave');
+      if (this.input.pressed('KeyE')) { this.exitDoor(); this.hud.prompt(''); return; }
+    }
+    if (I.kind === 'shop') this._updateShop(dt, lines, near);
+    else this._updateFlat(dt, lines, near);
+    this.hud.prompt(lines.join(' &nbsp; '));
+  }
+  _updateShop(dt, lines, near) {
+    const I = this.interior, R = I.room, p = this.player, inp = this.input, st = this._shop(I.door);
+    const robbed = st.robbedUntil > this.time;
+    // "showing the gun": aiming (right mouse) at the clerk, or firing a shot in the shop
+    const aimed = inp.mouseRight && this._aimAt(R.clerk, 0.6, 0.3, 2.0);
+    const fired = this.time - this._firedT < 1e-6;
+    if (!robbed && (aimed || fired)) {
+      if (I.mood !== 'scared') { I.mood = 'scared'; this.hud.toast('HANDS UP! KEEP AIMING…'); this.audio.play('yell'); }
+      I.calmT = 0;
+      I.rob = Math.min(1, I.rob + dt / 2.5 + (fired ? 0.3 : 0));
+      if (I.rob >= 1) this._payout();
+    } else if (I.mood === 'scared') {
+      I.calmT += dt; I.rob = Math.max(0, I.rob - dt * 0.1);
+      if (I.calmT > 5) { I.mood = 'idle'; I.rob = 0; this.hud.toast('THE CLERK CALMED DOWN'); }
+    }
+    this.hud.robBar(I.mood === 'scared' ? I.rob : -1);
+    // the clerk watches you; hands up while scared and after handing over the money
+    const h = I.clerk, want = yawOf(p.pos.x - R.clerk.x, p.pos.z - R.clerk.z);
+    h.root.rotation.y += angDiff(h.root.rotation.y, want) * Math.min(1, dt * 4);
+    h.animate(dt, 0, { handsUp: I.mood === 'scared' || I.mood === 'robbed' });
+    if (near(R.counter, 1.9)) {
+      if (robbed) lines.push('“Take it and go!”');
+      else {
+        lines.push(`<kbd>B</kbd> Ammo $${PRICES.ammo}`, `<kbd>H</kbd> Medkit $${PRICES.medkit}`);
+        if (inp.pressed('KeyB')) this._buy('ammo');
+        if (inp.pressed('KeyH')) this._buy('medkit');
+      }
+    }
+    if (!robbed && I.mood === 'idle') lines.push('<kbd>Right mouse</kbd> aim at the clerk to rob the shop');
+  }
+  _payout() {
+    const I = this.interior, R = I.room, st = this._shop(I.door);
+    const amount = Math.round((150 + Math.random() * 350) / 10) * 10;
+    st.robbedUntil = this.time + 240; I.mood = 'robbed'; I.rob = 0;
+    this.crime(2, 'SHOP ROBBED · WANTED LEVEL UP');
+    this.hud.toast(`THE CLERK GAVE YOU $${amount} · GRAB THE BAG!`);
+    this.audio.play('alarm');
+    // the money bag lands on the counter: walk up to it to take it
+    const m = makePickup('cash'); m.scale.setScalar(0.6); m.position.copy(R.cash); this.scene.add(m);
+    this.pickups.push({ mesh: m, kind: 'cash', fixed: false, t: 0, respawn: 0, room: true, baseY: R.cash.y + 0.12, cash: amount });
+  }
+  _buy(what) {
+    const price = PRICES[what], p = this.player;
+    if (this.cash < price) { this.hud.toast('NOT ENOUGH CASH'); this.audio.play('empty'); return; }
+    if (what === 'ammo') {
+      if (p.ammo.every((a, j) => a.res >= WEAPONS[j].reserve * 2)) { this.hud.toast('AMMO FULL'); return; }
+      p.ammo.forEach((a, j) => { a.res = Math.min(WEAPONS[j].reserve * 2, a.res + WEAPONS[j].reserve); });
+    } else {
+      if (p.health >= 100 && p.shield >= 100) { this.hud.toast('YOU ARE ALREADY HEALTHY'); return; }
+      p.health = 100; p.shield = 100;
+    }
+    this.cash -= price;
+    this.audio.play('cash');
+    this.hud.toast(what === 'ammo' ? `+ AMMO · -$${price}` : `+ HEALTH · -$${price}`);
+  }
+  _updateFlat(dt, lines, near) {
+    const R = this.interior.room;
+    if (near(R.bed, 2.0)) {
+      lines.push('<kbd>E</kbd> Sleep: save the game and heal');
+      if (this.input.pressed('KeyE')) this._sleep();
+    }
+  }
+  _sleep() {
+    const p = this.player;
+    p.health = 100; p.shield = 100;
+    if (this.stars) { this.wanted = 0; this.evadeT = 0; this._calmPolice(); }
+    this.hud.fade(1.4);
+    this.audio.play('sleep');
+    const saved = this.onSave ? this.onSave() : false;
+    this.hud.toast(saved ? 'GOOD MORNING · GAME SAVED' : 'GOOD MORNING');
   }
 
   // ---------- vehicles: enter / exit ----------
@@ -607,7 +768,7 @@ export class Game {
         if (d < r && d > 1e-4) { p.pos.x = cx + dx / d * r; p.pos.z = cz + dz / d * r; }
       }
     }
-    p.pos.x = clamp(p.pos.x, -BOUNDS, BOUNDS); p.pos.z = clamp(p.pos.z, -BOUNDS, BOUNDS);
+    if (!this.interior) { p.pos.x = clamp(p.pos.x, -BOUNDS, BOUNDS); p.pos.z = clamp(p.pos.z, -BOUNDS, BOUNDS); }
     if (p.pos.y < 0) p.pos.y = 0;
     // weapons
     if (inp.pressed('Digit1')) this.selectWeapon(0);
@@ -624,9 +785,14 @@ export class Game {
     h.root.position.copy(p.pos);
     h.root.rotation.y = p.yaw;
     h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { aim: p.pitch * 0.85, air: !p.onGround });
-    // prompt
-    const nv = this.nearestVehicle(4.2);
-    this.hud.prompt(nv ? `<kbd>F</kbd> ${nv.hasDriver ? 'Jack' : 'Enter'} ${nv.def.name}` : '');
+    // prompts: cars, street doors, things inside rooms
+    if (this.interior) { this.updateInterior(dt); return; }
+    const nv = this.nearestVehicle(4.2), door = p.onGround ? this.city.doorNear(p.pos.x, p.pos.z, 2.1) : null;
+    const lines = [];
+    if (door) lines.push(`<kbd>E</kbd> ${door.kind === 'shop' ? 'Go into ' + door.name : 'Go into the flat'}`);
+    if (nv) lines.push(`<kbd>F</kbd> ${nv.hasDriver ? 'Jack' : 'Enter'} ${nv.def.name}`);
+    this.hud.prompt(lines.join(' &nbsp; '));
+    if (door && this.input.pressed('KeyE')) this.enterDoor(door);
   }
 
   updateDriving(dt) {
@@ -743,7 +909,7 @@ export class Game {
   }
 
   updateVehicles(dt) {
-    const p = this.player, pp = p.vehicle ? p.vehicle.pos : p.pos;
+    const p = this.player, pp = this.wpos();
     const crowd = this.settings.crowd;
     const wantTraffic = [0, 10, 18, 28][crowd], wantSky = [0, 10, 18, 28][crowd];
     let nT = 0, nS = 0;
@@ -818,7 +984,7 @@ export class Game {
         if (ni < 0 || ni > N || nj < 0 || nj > N) continue;
         let weight = w;
         if (police) { // head toward the player
-          const tp = this.player.vehicle ? this.player.vehicle.pos : this.player.pos;
+          const tp = this.wpos();
           const dNow = Math.hypot(roadC(v.ti) - tp.x, roadC(v.tj) - tp.z), dNext = Math.hypot(roadC(ni) - tp.x, roadC(nj) - tp.z);
           weight = dNext < dNow ? 10 : 0.5;
         }
@@ -881,7 +1047,7 @@ export class Game {
   }
 
   _policeAI(v, dt) {
-    const p = this.player, tp = p.vehicle ? p.vehicle.pos : p.pos;
+    const p = this.player, tp = this.wpos();
     const d = Math.hypot(tp.x - v.pos.x, tp.z - v.pos.z);
     if (this.stars === 0) { v.mode = 'traffic'; if (v.direct) { v.direct = false; this._resnap(v); } return; }
     if (p.vehicle && p.vehicle.flying && tp.y > 15) {
@@ -922,7 +1088,7 @@ export class Game {
   }
 
   _policeAirAI(v, dt) {
-    const p = this.player, tp = p.vehicle ? p.vehicle.pos : p.pos;
+    const p = this.player, tp = this.wpos();
     if (this.stars === 0) { v.mode = 'sky'; v.lane = this.city.skyLanes[0]; return; }
     const target = tmp.copy(tp); target.y = Math.max(tp.y + 6, 14);
     const to = tmp2.subVectors(target, v.pos); const d = to.length();
@@ -941,7 +1107,7 @@ export class Game {
     v.bob += dt * 3;
     v.roll = -clamp(diff, -0.6, 0.6) * 0.4;
     this._vehCollide(v, dt, false);
-    if (d < 70) {
+    if (d < 70 && !this.interior) {
       v.shootT -= dt;
       if (v.shootT <= 0) {
         v.shootT = rand(0.8, 1.4);
@@ -953,7 +1119,7 @@ export class Game {
 
   // ---------- people ----------
   updatePeople(dt) {
-    const p = this.player, pp = p.vehicle ? p.vehicle.pos : p.pos;
+    const p = this.player, pp = this.wpos();
     const want = [0, 14, 26, 40][this.settings.crowd];
     for (let i = this.peds.length - 1; i >= 0; i--) {
       const e = this.peds[i];
@@ -1026,7 +1192,7 @@ export class Game {
         c.shootT -= dt;
         const eye = c.pos.clone().setY(c.pos.y + 1.5);
         const tgt = tp.clone().setY(tp.y + (p.vehicle ? 0.8 : 1.2));
-        if (c.shootT <= 0 && dist < 60 && p.alive) {
+        if (c.shootT <= 0 && dist < 60 && p.alive && !this.interior) {
           c.shootT = rand(0.8, 1.5);
           const dir = tmp2.subVectors(tgt, eye).normalize();
           if (this.city.raycast(eye, dir, dist) >= dist - 1.5) {
@@ -1054,7 +1220,7 @@ export class Game {
   }
 
   updateDrones(dt) {
-    const p = this.player, tp = p.vehicle ? p.vehicle.pos : p.pos;
+    const p = this.player, tp = this.wpos();
     for (let i = this.drones.length - 1; i >= 0; i--) {
       const d = this.drones[i];
       if (d.dead) {
@@ -1080,7 +1246,7 @@ export class Game {
       d.mesh.position.copy(d.pos); d.mesh.position.y += Math.sin(this.time * 3 + i) * 0.2;
       d.mesh.rotation.y = yawOf(tp.x - d.pos.x, tp.z - d.pos.z);
       d.mesh.rotation.z = clamp(-d.vel.x * 0.02, -0.3, 0.3);
-      if (engage && p.alive) {
+      if (engage && p.alive && !this.interior) {
         d.shootT -= dt;
         const dd = d.pos.distanceTo(tp);
         if (d.shootT <= 0 && dd < 60) {
@@ -1097,7 +1263,7 @@ export class Game {
   }
 
   updatePolice(dt) {
-    const p = this.player, tp = p.vehicle ? p.vehicle.pos : p.pos, stars = this.stars;
+    const p = this.player, tp = this.wpos(), stars = this.stars;
     // evasion: no police unit near for a while -> lose a star
     let seen = false;
     for (const v of this.vehicles) if ((v.mode === 'police' || v.mode === 'policeAir') && v.pos.distanceTo(tp) < 75) seen = true;
@@ -1146,10 +1312,12 @@ export class Game {
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const k = this.pickups[i];
       if (k.respawn > 0) { k.respawn -= dt; k.mesh.visible = k.respawn <= 0; continue; }
-      k.t += dt; k.mesh.rotation.y += dt * 1.5; k.mesh.position.y = 0.6 + Math.sin(k.t * 3) * 0.12;
+      k.t += dt; k.mesh.rotation.y += dt * 1.5; k.mesh.position.y = (k.baseY ?? 0.6) + Math.sin(k.t * 3) * 0.12;
       if (!p.vehicle && p.alive && Math.hypot(p.pos.x - k.mesh.position.x, p.pos.z - k.mesh.position.z) < 1.6 && Math.abs(p.pos.y - k.mesh.position.y) < 2) {
         if (k.kind === 'ammo') { p.ammo.forEach((a, j) => { a.res = Math.min(WEAPONS[j].reserve * 2, a.res + Math.ceil(WEAPONS[j].reserve * 0.5)); }); this.hud.toast('+ AMMO'); }
+        else if (k.kind === 'cash') { this.cash += k.cash || 50; this.hud.toast(`+ $${k.cash || 50}`); this.audio.play('cash'); }
         else { p.health = Math.min(100, p.health + 40); p.shield = 100; this.hud.toast('+ HEALTH'); }
+        if (k.flat !== undefined) this.looted.add(k.flat);
         this.audio.play('pickup');
         if (k.fixed) { k.respawn = 30; k.mesh.visible = false; } else { this.scene.remove(k.mesh); this.pickups.splice(i, 1); }
       }

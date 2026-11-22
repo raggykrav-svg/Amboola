@@ -170,3 +170,12 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
   .bar { width: 110px; }
   #objective { max-width: 60vw; }
 }
+
+/* money, shop robberies, door fades */
+#cash { margin-top: 6px; font-family: var(--font2); font-size: 24px; font-weight: 700; color: #7dffb0; text-shadow: 0 0 10px rgba(58,255,154,.7); letter-spacing: .04em; }
+#cash.pop { animation: cashpop .6s ease-out; }
+@keyframes cashpop { 0% { transform: scale(1.35); color: #fff; } 100% { transform: scale(1); } }
+#robBar { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); width: 300px; display: none; text-align: center; font-size: 12px; letter-spacing: .18em; color: #7dffb0; text-shadow: 0 0 8px rgba(58,255,154,.6); }
+#robBar .bar { margin-top: 6px; height: 10px; border: 1px solid rgba(58,255,154,.7); background: rgba(0,0,0,.5); }
+#robBar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1fbf6a, #7dffb0); box-shadow: 0 0 12px #3aff9a; }
+#fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 5; }

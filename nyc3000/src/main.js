@@ -18,6 +18,7 @@ import { HUD } from './hud.js';
 import { buildTitleScene } from './title.js';
 import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
 import { loadModels } from './assets.js';
+import { buildRooms } from './interiors.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -212,7 +213,7 @@ $('bSave').onclick = () => {
   $('pauseMsg').textContent = readSave() ? '✔ Game saved' : 'Could not save (storage blocked)';
   audio.play('pickup');
 };
-$('bQuit').onclick = () => { game.active = false; game.clearWorld(); game.player.h.root.visible = false; goMenu(); };
+$('bQuit').onclick = () => { game.active = false; game._leaveInterior(); game.clearWorld(); game.player.h.root.visible = false; goMenu(); };
 document.querySelectorAll('button').forEach(b => b.addEventListener('mouseenter', () => audio.play('ui')));
 
 // ---------- options ----------
@@ -390,12 +391,13 @@ function frame(now) {
   const focus = state === 'play' || state === 'pause' ? (game.player.vehicle ? game.player.vehicle.pos : game.player.pos) : camera.position;
   placeMoon(focus);
   playerLight.position.set(focus.x, focus.y + 3, focus.z);
-  playerLight.intensity = state === 'play' || state === 'pause' ? (game.player.vehicle ? 6 : 18) : 0;
+  playerLight.intensity = state === 'play' || state === 'pause' ? (game.player.vehicle ? 6 : game.interior ? 4 : 18) : 0;
   city.sky.position.copy(camera.position);
   if (state !== 'pause') {
     city.update(dt, camera.position, settings.viewDist, performance.now() / 1000);
     rain.update(dt, camera.position);
   }
+  if (rain.mesh) rain.mesh.visible = !(game && game.interior); // no rain indoors
   if (bgFlags.menu && inMenu) { renderer.setClearColor(0x000000); renderer.clear(); return; }
   if (useBloom) { renderPass.scene = scene; renderPass.camera = camera; composer.render(dt); }
   else renderer.render(scene, camera);
@@ -407,7 +409,7 @@ async function boot() {
   await step(0.05, 'Loading fonts…');
   try { await Promise.race([document.fonts.load('900 40px Orbitron'), new Promise(r => setTimeout(r, 1500))]); } catch { /* ignore */ }
   await step(0.08, 'Loading Blender models…');
-  await loadModels(['cars', 'people', 'buildings'], p => { $('loadFill').style.width = (8 + p * 7) + '%'; });
+  await loadModels(['cars', 'people', 'buildings', 'interiors'], p => { $('loadFill').style.width = (8 + p * 7) + '%'; });
   await step(0.15, 'Building Manhattan 3000…');
   city = new City(scene);
   city.build();
@@ -416,6 +418,8 @@ async function boot() {
   hud = new HUD();
   game = new Game({ scene, camera, city, fx, audio, settings, hud, input });
   game.player.h.root.visible = false;
+  game.rooms = buildRooms(scene, city); // shop and flat interiors behind the street doors
+  game.onSave = () => { storage.set(SAVE_KEY, JSON.stringify(game.saveData())); return !!readSave(); };
   applySettings();
   resize();
   await step(0.9, 'Compiling shaders…');

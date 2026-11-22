@@ -76,8 +76,10 @@ export function flatten(node, classify, opts = {}) {
     const base = em ? mat.emissive : mat.color;
     const col = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
+      // vertex colour = baked AO (grey) or, with opts.rgb, baked coloured light
       const a = ao && !em ? ao.getX(i) : 1;
-      col[i * 3] = base.r * a; col[i * 3 + 1] = base.g * a; col[i * 3 + 2] = base.b * a;
+      const ag = ao && !em && opts.rgb ? ao.getY(i) : a, ab = ao && !em && opts.rgb ? ao.getZ(i) : a;
+      col[i * 3] = base.r * a; col[i * 3 + 1] = base.g * ag; col[i * 3 + 2] = base.b * ab;
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     if (opts.glow) {

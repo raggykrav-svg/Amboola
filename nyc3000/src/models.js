@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Parts, MAT, paintMat, mesh } from './parts.js';
 
 export { Parts, MAT, paintMat };
-export { Humanoid } from './people.js';
+export { Humanoid, pedKindFor } from './people.js';
 export { VEHICLE_TYPES, PAINTS, makeVehicleMesh, flashSirens } from './cars.js';
 
 // ---------- GUNS ----------
@@ -107,8 +107,8 @@ const pickupGeo = {};
 export function makePickup(kind) {
   const grp = new THREE.Group();
   if (!pickupGeo[kind]) {
-    const b = new Parts(), g = new Parts(), c = kind === 'health' ? '#3aff7a' : '#ffa43a';
-    b.box(0.7, 0.45, 0.5, '#1d2230', 0, 0, 0);
+    const b = new Parts(), g = new Parts(), c = kind === 'health' ? '#3aff7a' : kind === 'cash' ? '#ffd23a' : '#ffa43a';
+    b.box(0.7, 0.45, 0.5, kind === 'cash' ? '#1f5a30' : '#1d2230', 0, 0, 0);
     g.box(0.72, 0.08, 0.52, c, 0, 0.08, 0);
     g.box(0.2, 0.2, 0.54, c, 0, -0.05, 0);
     if (kind === 'health') g.box(0.54, 0.08, 0.2, c, 0, 0.06, 0); // plus sign on top

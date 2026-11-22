@@ -38,6 +38,19 @@ export class HUD {
   hitmark() { this.hitT = 0.15; }
   prompt(html) { if (this.cache.prompt === html) return; this.cache.prompt = html; const p = $('prompt'); p.innerHTML = html; p.style.display = html ? 'block' : 'none'; }
   dead(on) { $('dead').classList.toggle('show', on); }
+  // black flash when going through a door or sleeping
+  fade(sec = 0.4) {
+    const f = $('fade'); f.style.transition = 'none'; f.style.opacity = 1;
+    clearTimeout(this._fadeT);
+    this._fadeT = setTimeout(() => { f.style.transition = `opacity ${sec}s`; f.style.opacity = 0; }, sec * 400);
+  }
+  // shop robbery progress (v < 0 hides it)
+  robBar(v) {
+    const k = v < 0 ? -1 : Math.round(v * 100);
+    if (this.cache.rob === k) return; this.cache.rob = k;
+    $('robBar').style.display = k < 0 ? 'none' : 'block';
+    if (k >= 0) $('robFill').style.width = k + '%';
+  }
 
   update(g, dt, showFps, fps) {
     this.frame++;
@@ -73,6 +86,12 @@ export class HUD {
     this.hitT -= dt; $('hitmark').style.opacity = this.hitT > 0 ? 1 : 0;
     // toast
     if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) $('toast').style.opacity = 0; }
+    // cash
+    if (this.cache.cash !== g.cash) {
+      const up = this.cache.cash !== undefined && g.cash > this.cache.cash;
+      this.cache.cash = g.cash; $('cash').textContent = '$ ' + Math.floor(g.cash).toLocaleString('en-US');
+      if (up) { const c = $('cash'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
+    }
     // wanted
     const st = g.stars;
     const sk = st + '|' + (g.policeSeen ? 1 : 0);
@@ -86,7 +105,7 @@ export class HUD {
     const [txt, sub] = g.objectiveText();
     const ot = st > 0 ? 'Escape NYPD pursuit' : txt;
     this.set('objText', ot);
-    const tgt = g.objTarget, pp = v ? v.pos : p.pos;
+    const tgt = g.objTarget, pp = g.wpos();
     let dist = '';
     if (st > 0) dist = 'Get out of sight of the police until the stars fade · then: ' + txt;
     else if (tgt) dist = Math.round(Math.hypot(tgt.x - pp.x, tgt.z - pp.z)) + ' m · ' + sub;
@@ -139,7 +158,9 @@ export class HUD {
     }
     for (const e of g.cops) if (e.state !== 'dead') dot(e.pos.x, e.pos.z, 2.4, '#ff2040');
     for (const d of g.drones) if (!d.dead) dot(d.pos.x, d.pos.z, 3, d.police ? '#3a7aff' : '#ff2bd6');
-    for (const p of g.pickups) if (p.mesh.visible) dot(p.mesh.position.x, p.mesh.position.z, 2, p.kind === 'health' ? '#3aff7a' : '#ffa43a');
+    for (const p of g.pickups) if (p.mesh.visible && !p.room) dot(p.mesh.position.x, p.mesh.position.z, 2, p.kind === 'health' ? '#3aff7a' : '#ffa43a');
+    // shops you can go into (green)
+    for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 2.2, '#3aff9a');
     c.restore();
     // objective marker (clamped to edge)
     const t = g.objTarget;

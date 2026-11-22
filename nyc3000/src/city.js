@@ -57,6 +57,8 @@ const SIGN_TEXTS = [
   ['CHROME DOLLS', '#ff2bd6'], ['NEURAL LINK BAR', '#3aff9a'], ['24/7 HOLOSHOW', '#29f3ff'], ['CYBER DELI', '#ff1e3c'],
   ['ARCADE 9', '#3aff9a'], ['NOODLE BOTS', '#ffa43a'], ['PLASMA PIZZA', '#ff2bd6'], ['NYC 3000', '#29f3ff'],
 ];
+export const DOORS_PER_BUILDING = 5;
+const DOOR_W = 1.7;
 const VERT_TEXTS = [['ホテル', '#ff2bd6'], ['OPEN', '#3aff9a'], ['BAR', '#29f3ff'], ['ラーメン', '#ffa43a'], ['NEON', '#ff1e3c'], ['CLUB', '#8a4dff']];
 
 export class City {
@@ -86,6 +88,7 @@ export class City {
     this.lots = [];
     this.signGeos = new Map(); // key -> {tex, geos[]}
     this.decals = [];
+    this.doors = []; this.doorGrid = new Map();
   }
 
   addBox(b) {
@@ -333,7 +336,7 @@ export class City {
       }
       if (P.dish && r() < 0.35) this._prop(D, T, P.dish, bx + (tw / 2 - 2) * (r() < 0.5 ? -1 : 1), topH, bz + (td / 2 - 2) * (r() < 0.5 ? -1 : 1), r() * Math.PI * 2);
     }
-    if (style !== 'oct') this._storefronts(ch, r, o, style);
+    if (style !== 'oct') this._storefronts(ch, r, o, style); else this._octDoors(ch, r, o);
     this.lots.push({ ...o, style, topH });
     if (style !== 'oct') this._lotSigns(bx, bz, lw, ld, h, o.bx0, o.bz0, o.BS, r);
   }
@@ -499,43 +502,133 @@ export class City {
     }
   }
 
-  // lit shop windows and awnings along the street sides at ground level
+  // lit shop windows and awnings along the street sides at ground level, plus the building's
+  // 5 street doors: shops (rob them!) and flats. Door data goes into this.doors for the game.
   _storefronts(ch, r, o, style) {
     const { bx, bz, lw, ld, faces } = o;
     const shop = ['#ffd9a0', '#9fe9ff', '#ff9ae6', '#fff0d0', '#ffb070', '#b9ffd9', '#c8b0ff'];
     const neon = ['#ff2bd6', '#29f3ff', '#ffa43a', '#3aff9a', '#8a4dff', '#ff1e3c'];
     const awn = ['#b02238', '#2a5aa8', '#228a70', '#7a3ab0', '#b0701a', '#3a3f4a'];
     const col = new THREE.Color();
+    const segs = [];
     for (const [fx, fz] of faces) {
       const along = fx ? ld : lw, n = Math.max(1, Math.floor(along / 6.5));
-      const seg = along / n;
+      for (let k = 0; k < n; k++) segs.push([fx, fz, along, along / n, k]);
+    }
+    // which segments get doors, and what kind: 2 shops + 3 flats (brick walk-ups 1 + 4, Times Square 3 + 2)
+    const nShops = style === 'low' ? 1 : o.ts ? 3 : 2;
+    const kinds = [];
+    for (let d = 0; d < DOORS_PER_BUILDING; d++) kinds.push(d < nShops ? 'shop' : 'flat');
+    for (let i = kinds.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
+    const doorSegs = new Map();
+    kinds.forEach((kind, d) => {
+      const i = Math.min(segs.length - 1, Math.floor((d + 0.5) * segs.length / kinds.length));
+      if (!doorSegs.has(i)) doorSegs.set(i, []);
+      doorSegs.get(i).push(kind);
+    });
+    segs.forEach(([fx, fz, along, seg, k], i) => {
       const wx = bx + fx * lw / 2, wz = bz + fz * ld / 2;
       const ax = fz ? 1 : 0, az = fx ? 1 : 0, ry = fx ? Math.PI / 2 : 0;
-      for (let k = 0; k < n; k++) {
-        if (style !== 'low' && r() < 0.25) continue; // some blank lobby walls
-        const t = -along / 2 + seg * (k + 0.5);
-        const cx = wx + ax * t, cz = wz + az * t;
-        // window panes: dim interior light split by dark mullions (the wall shows through the gaps)
-        col.set(shop[Math.floor(r() * shop.length)]).multiplyScalar(0.32 + r() * 0.18);
-        const panes = seg > 6 ? 3 : 2, pw = (seg - 1.0) / panes;
+      const doors = doorSegs.get(i);
+      if (!doors && style !== 'low' && r() < 0.25) return; // some blank lobby walls
+      const t = -along / 2 + seg * (k + 0.5);
+      const cx = wx + ax * t, cz = wz + az * t;
+      // window panes: dim interior light split by dark mullions (the wall shows through the gaps)
+      col.set(shop[Math.floor(r() * shop.length)]).multiplyScalar(0.32 + r() * 0.18);
+      const pane = (from, to) => {
+        const w = to - from; if (w < 0.8) return;
+        const panes = w > 4.6 ? 3 : w > 2.6 ? 2 : 1, pw = w / panes;
         for (let q = 0; q < panes; q++) {
-          const pt = -((seg - 1.0) / 2) + pw * (q + 0.5);
+          const pt = from + pw * (q + 0.5);
           ch.trims.add(new THREE.BoxGeometry(pw - 0.16, 2.5, 0.1), col, cx + ax * pt + fx * 0.08, 1.85, cz + az * pt + fz * 0.08, 0, ry, 0);
         }
-        // shop sign strip and dark header
-        ch.details.add(new THREE.BoxGeometry(seg - 0.3, 0.55, 0.24), '#101116', cx + fx * 0.12, 3.45, cz + fz * 0.12, 0, ry, 0);
-        if (r() < 0.8) ch.trims.add(new THREE.BoxGeometry((seg - 1.2) * (0.5 + r() * 0.5), 0.14, 0.06), neon[Math.floor(r() * neon.length)], cx + fx * 0.26, 3.45, cz + fz * 0.26, 0, ry, 0);
-        if (r() < 0.75) {
-          // slanted awning: its depth axis points out from the wall
-          const tilt = 0.32, g = fx ? new THREE.BoxGeometry(1.6, 0.1, seg - 0.5) : new THREE.BoxGeometry(seg - 0.5, 0.1, 1.6);
-          ch.details.add(g, awn[Math.floor(r() * awn.length)], cx + fx * 0.85, 4.05, cz + fz * 0.85, fz ? fz * tilt : 0, 0, fx ? -fx * tilt : 0);
-          if (r() < 0.5) {
-            const e = fx ? new THREE.BoxGeometry(0.06, 0.06, seg - 0.5) : new THREE.BoxGeometry(seg - 0.5, 0.06, 0.06);
-            ch.trims.add(e, neon[Math.floor(r() * neon.length)], cx + fx * 1.6, 3.78, cz + fz * 1.6);
+      };
+      const half = (seg - 1.0) / 2;
+      let hasShop = false;
+      if (doors) {
+        // doors spread across the segment, shop windows in the gaps
+        const slots = doors.map((_, q) => -half + (seg - 1.0) * (q + 0.5) / doors.length);
+        let from = -half;
+        doors.forEach((kind, q) => {
+          const dt = slots[q];
+          pane(from, dt - DOOR_W / 2 - 0.45);
+          const d = this._door(ch, cx + ax * dt, cz + az * dt, fx, fz, kind, r);
+          if (kind === 'shop') {
+            hasShop = true;
+            const rotY = fx ? (fx > 0 ? Math.PI / 2 : -Math.PI / 2) : (fz > 0 ? 0 : Math.PI);
+            this._sign(d.name, d.color, cx + ax * dt + fx * 0.27, 3.45, cz + az * dt + fz * 0.27, rotY, 2.4, 0.6);
           }
+          from = dt + DOOR_W / 2 + 0.45;
+        });
+        pane(from, half);
+      } else pane(-half, half);
+      // shop sign strip and dark header
+      ch.details.add(new THREE.BoxGeometry(seg - 0.3, 0.55, 0.24), '#101116', cx + fx * 0.12, 3.45, cz + fz * 0.12, 0, ry, 0);
+      if (!hasShop && r() < 0.8) ch.trims.add(new THREE.BoxGeometry((seg - 1.2) * (0.5 + r() * 0.5), 0.14, 0.06), neon[Math.floor(r() * neon.length)], cx + fx * 0.26, 3.45, cz + fz * 0.26, 0, ry, 0);
+      if (r() < 0.75) {
+        // slanted awning: its depth axis points out from the wall
+        const tilt = 0.32, g = fx ? new THREE.BoxGeometry(1.6, 0.1, seg - 0.5) : new THREE.BoxGeometry(seg - 0.5, 0.1, 1.6);
+        ch.details.add(g, awn[Math.floor(r() * awn.length)], cx + fx * 0.85, 4.05, cz + fz * 0.85, fz ? fz * tilt : 0, 0, fx ? -fx * tilt : 0);
+        if (r() < 0.5) {
+          const e = fx ? new THREE.BoxGeometry(0.06, 0.06, seg - 0.5) : new THREE.BoxGeometry(seg - 0.5, 0.06, 0.06);
+          ch.trims.add(e, neon[Math.floor(r() * neon.length)], cx + fx * 1.6, 3.78, cz + fz * 1.6);
         }
       }
+    });
+  }
+
+  // one street door on a wall at (cx, cz) facing (fx, fz). Shops: lit glass and a green frame;
+  // flats: a metal door with a warm frame, a lamp and an intercom.
+  _door(ch, cx, cz, fx, fz, kind, r) {
+    // flat panels facing the street (2 triangles each): 1465 doors stay cheap
+    const ax = fz ? 1 : 0, az = fx ? 1 : 0, W = DOOR_W;
+    const rotY = fx ? (fx > 0 ? Math.PI / 2 : -Math.PI / 2) : (fz > 0 ? 0 : Math.PI);
+    const quad = (list, w, h, color, along, y, out) => list.add(new THREE.PlaneGeometry(w, h), color, cx + ax * along + fx * out, y, cz + az * along + fz * out, 0, rotY, 0);
+    const isShop = kind === 'shop';
+    const [name, color] = isShop ? SIGN_TEXTS[Math.floor(r() * SIGN_TEXTS.length)] : ['', '#ffc46a'];
+    const frame = isShop ? '#3aff9a' : '#ffc46a';
+    if (isShop) quad(ch.trims, W, 2.6, '#1c5a52', 0, 1.3, 0.06);
+    else quad(ch.details, W, 2.6, '#30364a', 0, 1.3, 0.06);
+    quad(ch.trims, W + 0.32, 0.13, frame, 0, 2.67, 0.09);
+    for (const sd of [-1, 1]) quad(ch.trims, 0.13, 2.67, frame, sd * (W / 2 + 0.09), 1.34, 0.09);
+    if (isShop) quad(ch.trims, 0.05, 0.9, '#e8f6ff', 0.55, 1.2, 0.08);
+    else {
+      quad(ch.trims, 0.6, 0.12, '#fff2d0', 0, 2.98, 0.12);
+      quad(ch.trims, 0.16, 0.28, '#29f3ff', W / 2 + 0.45, 1.35, 0.07);
     }
+    const d = { id: this.doors.length, kind, name, color, x: cx + fx * 0.3, z: cz + fz * 0.3, nx: fx, nz: fz };
+    this.doors.push(d);
+    const key = Math.floor((d.x + 1000) / 21) * 4096 + Math.floor((d.z + 1000) / 21);
+    if (!this.doorGrid.has(key)) this.doorGrid.set(key, []);
+    this.doorGrid.get(key).push(d);
+    return d;
+  }
+
+  // doors for octagonal towers: on the flat faces that look onto a street
+  _octDoors(ch, r, o) {
+    const { bx, bz, lw, faces } = o;
+    const a = lw / 2;
+    const kinds = ['shop', 'shop', 'flat', 'flat', 'flat'];
+    for (let i = kinds.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
+    kinds.forEach((kind, i) => {
+      const [fx, fz] = faces[i % faces.length];
+      const extra = Math.floor(i / faces.length), n = Math.ceil((kinds.length - (i % faces.length)) / faces.length);
+      const off = n > 1 ? (extra - (n - 1) / 2) * 3.6 : 0;
+      const ax = fz ? 1 : 0, az = fx ? 1 : 0;
+      const d = this._door(ch, bx + fx * a + ax * off, bz + fz * a + az * off, fx, fz, kind, r);
+      if (kind === 'shop') this._sign(d.name, d.color, d.x - fx * 0.03 + 0, 3.3, d.z - fz * 0.03, fx ? (fx > 0 ? Math.PI / 2 : -Math.PI / 2) : (fz > 0 ? 0 : Math.PI), 2.4, 0.6);
+    });
+  }
+
+  // the nearest street door within r metres of (x, z)
+  doorNear(x, z, r) {
+    let best = null, bd = r;
+    const cx = Math.floor((x + 1000) / 21), cz = Math.floor((z + 1000) / 21);
+    for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) {
+      const a = this.doorGrid.get(i * 4096 + j); if (!a) continue;
+      for (const d of a) { const dd = Math.hypot(d.x - x, d.z - z); if (dd < bd) { bd = dd; best = d; } }
+    }
+    return best;
   }
 
   // glowing glass skybridges between towers across a street

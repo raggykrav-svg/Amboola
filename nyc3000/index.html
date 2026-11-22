@@ -73,6 +73,9 @@
             <p><kbd>R</kbd> reload</p>
             <p><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> / <kbd>Wheel</kbd> switch gun</p>
             <p><kbd>F</kbd> jack the nearest car</p>
+            <p><kbd>E</kbd> go into a shop or flat / leave / sleep</p>
+            <p><kbd>Right click</kbd> at a shop clerk: rob the shop</p>
+            <p><kbd>B</kbd> buy ammo · <kbd>H</kbd> buy a medkit (in shops)</p>
           </div>
           <div>
             <h3>Driving</h3>
@@ -109,12 +112,15 @@
       <div class="dead-sub">Respawning at Liberty Med Center…</div>
     </div>
 
+    <div id="fade"></div>
+
     <!-- HUD -->
     <div id="hud">
       <div id="vignette"></div>
       <div id="compass"><div id="compassStrip"></div><i class="compass-mark"></i></div>
       <div id="objective"><small>OBJECTIVE</small><div id="objText">-</div><div id="objDist"></div></div>
-      <div id="wanted"><div id="stars"></div><div id="wantedLabel"></div></div>
+      <div id="wanted"><div id="stars"></div><div id="wantedLabel"></div><div id="cash">$ 0</div></div>
+      <div id="robBar"><span>ROBBING THE SHOP · KEEP AIMING</span><div class="bar"><i id="robFill"></i></div></div>
       <div id="fps"></div>
       <div id="toast"></div>
 

@@ -162,6 +162,15 @@ function variant(kind) {
   return v;
 }
 export const PED_VARIANTS = 14;
+// a pedestrian look for number n, skipping the ones that carry an umbrella (shop clerks)
+export function pedKindFor(n) {
+  const count = pedVariants();
+  for (let k = 0; k < count; k++) {
+    const kind = 'ped' + ((n + k) % count);
+    if (!variant(kind).umbrella) return kind;
+  }
+  return 'ped0';
+}
 let pedCount = 0;
 function pedVariants() {
   if (!pedCount) pedCount = modelNames('people', 'p_ped').filter(n => !n.endsWith('_lod1')).length || PED_VARIANTS;
@@ -273,6 +282,13 @@ export class Humanoid {
       reach(b.uaR, b.faR, SHOULDER_R, _g, 0.25);
       reach(b.uaL, b.faL, SHOULDER_L, _f, -0.35);
       b.hdR.rotation.set(0, 0, 0); b.hdL.rotation.set(0, 0, 0);
+    } else if (opts.handsUp) {
+      // hold-up: both hands in the air, a little shaky
+      const sh = Math.sin(this.phase * 9) * 0.05;
+      b.uaL.rotation.set(0.1, 0, -1.98 + sh); b.faL.rotation.set(0, 0, -1.16 - sh);
+      b.uaR.rotation.set(0.1, 0, 1.98 - sh); b.faR.rotation.set(0, 0, 1.16 + sh);
+      b.hdL.rotation.set(0, 0, 0); b.hdR.rotation.set(0, 0, 0);
+      b.head.rotation.set(-0.15, 0, 0);
     } else if (opts.flail) {
       b.uaL.rotation.set(2.4 + Math.sin(ph * 2) * 0.6, 0.3, -0.3); b.faL.rotation.set(0.6, 0, 0);
       b.uaR.rotation.set(2.4 + Math.cos(ph * 2) * 0.6, -0.3, 0.3); b.faR.rotation.set(0.6, 0, 0);

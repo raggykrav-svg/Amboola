@@ -44,3 +44,7 @@ if 'people' in what or 'all' in what:
 if 'buildings' in what or 'all' in what:
     import buildings
     run('buildings', buildings)
+
+if 'interiors' in what or 'all' in what:
+    import interiors
+    run('interiors', interiors)

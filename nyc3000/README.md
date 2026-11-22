@@ -13,6 +13,8 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Driving](screenshots/05-driving.jpg) | ![Flying](screenshots/04-flying.jpg) |
 | **People and cars (Blender models)** | **The skyline with the Blender towers** |
 | ![People and cars](screenshots/06-new-models.jpg) | ![Buildings](screenshots/07-buildings.jpg) |
+| **Robbing a shop** | **Inside a flat** |
+| ![Robbing a shop](screenshots/08-shop-robbery.jpg) | ![Inside a flat](screenshots/09-flat.jpg) |
 
 ## Run it
 
@@ -54,6 +56,9 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | R | reload |
 | 1 / 2 / 3 or mouse wheel | plasma rifle / pulse pistol / scatter cannon |
 | F | jack the nearest car (the driver gets thrown out and runs away) |
+| E | go into a shop or a flat, leave it, or sleep in a flat's bed |
+| Right click (hold) on a shop clerk | rob the shop |
+| B / H | buy ammo / a medkit at a shop counter |
 
 | In a car | |
 |---|---|
@@ -74,6 +79,16 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 3. Steal a flying car at **Hover Pad 06** (the orange light beam).
 4. Fly through the **SKYLANE A5** gate.
 5. Then free roam with drone waves that keep getting bigger.
+
+### Shops, flats and money
+
+![Shop and flat doors](screenshots/10-doors.jpg)
+
+Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 shop and 4 flats, Times Square buildings 3 shops and 2 flats). Shop doors glow green with the shop's name above them, and shops show as green dots on the minimap. Flat doors are metal with a warm light, a lamp and an intercom. Walk up to a door and press **E** to go in.
+
+- **Shops:** hold **right click** to aim your gun at the clerk. They put their hands up, and if you keep aiming the robbery bar fills, then they drop a bag of money ($150–$500) on the counter. Walk up to the counter to grab it. The alarm goes off and you get 2 wanted stars, and that shop has nothing left for 4 minutes. You can also pay at the counter: **B** for ammo ($100), **H** for a medkit ($150).
+- **Flats:** each flat has a TV, a kitchen, a sofa and a bed. Most flats hide one stash (cash, ammo or a medkit) that you can find once. Press **E** at the bed to sleep: it heals you, clears your wanted level and saves the game.
+- Your money is shown in the top right. You start with $200, and it's kept in your save.
 
 ### Wanted level
 
@@ -118,19 +133,21 @@ cd nyc3000
 blender -b --factory-startup -P blender/build.py -- all
 ```
 
-`npm run models` does the same if `blender` is on your PATH. Build one group with `-- cars`, `-- people` or `-- buildings`. Add `--preview some/folder` to also render Cycles preview images of the models. If `blender` isn't on your PATH, use its full path, for example `/Applications/Blender.app/Contents/MacOS/Blender` on a Mac.
+`npm run models` does the same if `blender` is on your PATH. Build one group with `-- cars`, `-- people`, `-- buildings` or `-- interiors`. Add `--preview some/folder` to also render Cycles preview images of the models. If `blender` isn't on your PATH, use its full path, for example `/Applications/Blender.app/Contents/MacOS/Blender` on a Mac.
 
 - `blender/cars.py`: six vehicles. Ground cars have lofted bodies: smooth cross-sections along a side profile with real wheel arches, a greenhouse split into glass, roof and pillars, door seams, lathed tyres and rims with neon rings, headlights, a full-width tail light, mirrors and underglow. The muscle car has a hood scoop, racing stripes, a spoiler and quad exhausts. The police car has white doors, a light bar and a push bar. Hover cars have a bubble canopy, thruster pods on pylons, tail fins and glowing hover pads. The sky taxi has a checker stripe, a roof sign and four hover pods.
 - `blender/people.py`: the soldier, the NYPD cyber-cop and 12 pedestrians. Bodies are metaballs, one smooth piece per item of clothing (top, trousers or skirt, skin, shoes, hair, hood), plus hard-surface armour, helmets with visors, caps, headphones, bags and neon umbrellas. They're skinned to the game's 17-bone skeleton in an A-pose, so the walk and run cycle and the gun-holding arm IK still drive them.
 - `blender/buildings.py`: six landmark skyscrapers (an art-deco spire with a sunburst crown, a twisting glass tower, a round tower with a floating halo ring, a stepped Empire-style tower with a mast, a glass-pyramid tower and a slim tower with a sloped crown) and rooftop props (wooden water towers, one kind with neon, AC units and satellite dishes). Tower facades are UV-mapped for the game's window textures, and their collision boxes are exported too.
+- `blender/interiors.py`: the inside of a neon corner shop (checkered floor, aisles full of products, a counter with a cash register, drink fridges, an arcade machine, an ATM) and a flat (wooden floor, kitchen with an island, sofa, TV, gaming desk, bed, big window). The lighting is baked into the vertex colours with ray-traced shadows, so the game draws the rooms cheaply.
 - `blender/lib.py`: shared helpers: part building, lofts and lathes, ambient occlusion baked into vertex colours with ray casts, sharp edges by angle, GLB export and preview renders.
 - Every car and person also gets a lighter far-away version (level of detail), so the game stays as fast as before.
 
 ## How it's made
 
 - [three.js](https://threejs.org), [Vite](https://vitejs.dev) and [Blender](https://www.blender.org). Every model, texture and sound is generated by code: models by the Blender scripts above, canvas-drawn neon signs and windows, and Web Audio synths. There are no downloaded art or sound files. The fonts (Orbitron, Rajdhani) are SIL Open Font License, bundled through Fontsource.
+- `src/interiors.js`: builds the shop and flat rooms far outside the city. Going through a street door moves you into the right room, and the police wait outside the door.
 - `src/assets.js`: loads the Blender GLB files at start-up and flattens each model into one or two meshes with vertex colours, a neon glow flag and per-vertex shininess. If a file is missing, the game falls back to its built-in code models.
-- `src/city.js`: a 10×10-block Manhattan grid built from a fixed seed, so saves always load into the same city. Buildings are merged into 2×2-block chunks to keep draw calls low, with collision boxes in a spatial hash. The Blender towers stand on podiums with shop fronts, among code-built glass towers, octagonal towers, art-deco crowns, brick walk-ups with fire escapes, helipads and glowing skybridges.
+- `src/city.js`: a 10×10-block Manhattan grid built from a fixed seed, so saves always load into the same city. Buildings are merged into 2×2-block chunks to keep draw calls low, with collision boxes in a spatial hash. Every building gets 5 street doors (shops and flats). The Blender towers stand on podiums with shop fronts, among code-built glass towers, octagonal towers, art-deco crowns, brick walk-ups with fire escapes, helipads and glowing skybridges.
 - `src/game.js`: player, weapons, plasma bolts, pedestrians, traffic on a road graph, sky-lane flying traffic, police AI, missions, save data.
 - `src/people.js`: the 17-bone skeleton (knees, elbows, hands), the walk and run cycle and the two-bone arm IK that puts the hands on the gun. It also has the code-built fallback people.
 - `src/cars.js`: vehicle stats, sirens, NYPD and TAXI decals, and the code-built fallback cars.
