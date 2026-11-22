@@ -7532,8 +7532,9 @@ function buildSkiLift() {
   const chairs = []; const chairG = mergeGeometries([new THREE.BoxGeometry(.06, 2, .06).translate(0, -1, 0), new THREE.BoxGeometry(1.6, .12, .7).translate(0, -2, .2), new THREE.BoxGeometry(1.6, .8, .1).translate(0, -1.6, -.15)]);
   const chairM = new THREE.InstancedMesh(chairG, new THREE.MeshStandardMaterial({ color: 0x2f5fb0, roughness: .5 }), 2 * Math.round(L / 18)); scene.add(chairM);
   for (let k = 0; k < chairM.count; k++) chairs.push({ u: (k % (chairM.count / 2)) / (chairM.count / 2), s: k < chairM.count / 2 ? 0 : 1 });
+  // (u wraps both ways: the old '(… + 10) % 1' went negative after 42 minutes with the page open, and the down-going chairs threw every frame)
   lift.update = t => { const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1);
-    chairs.forEach((c, k) => { const u = (c.u + t * .004 * (c.s ? -1 : 1) + 10) % 1, p = curves[c.s].getPointAt(u); M.compose(v.copy(p), q.setFromAxisAngle(up, Math.atan2(dirx, dirz) + (c.s ? Math.PI : 0)), one); chairM.setMatrixAt(k, M); });
+    chairs.forEach((c, k) => { const u = (((c.u + t * .004 * (c.s ? -1 : 1)) % 1) + 1) % 1, p = curves[c.s].getPointAt(u); M.compose(v.copy(p), q.setFromAxisAngle(up, Math.atan2(dirx, dirz) + (c.s ? Math.PI : 0)), one); chairM.setMatrixAt(k, M); });
     chairM.instanceMatrix.needsUpdate = true; };
   lift.update(0);
   const st = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 6), new THREE.MeshStandardMaterial({ color: 0x6b4a2f })); st.position.set(top[0], snowHeight(top[0], top[1]) + 2, top[1]); scene.add(st);
@@ -18232,6 +18233,10 @@ function renderFrame(dt) {   // the picture, whatever breaks (see GFX above)
     }
   }
 }
+const WORLD_ERR = new Set();
+function worldStep(dt, fns) {
+  for (let k = 0; k < fns.length; k++) { try { fns[k](); } catch (e) { if (!WORLD_ERR.has(k)) { WORLD_ERR.add(k); console.error('Amboola: a world update failed (skipped, the game goes on):', e); } } }
+}
 function frameError(e, dt) {   // a bug somewhere in a frame: tell the console once, and still draw the picture
   if (!GFX.errSeen) { GFX.errSeen = true; console.error('Amboola: a frame failed (the game goes on):', e); }
   if (['drive', 'pause', 'overlay'].includes(state)) { try { renderFrame(dt); } catch (e2) { } }
@@ -18429,7 +18434,10 @@ function tick(dt) {
     scene.fog.density = fogDensity() * lerp(1, .28, clamp(py / 170, 0, 1)); if (JG.baseFog) scene.fog.color.copy(JG.baseFog); updateJungle(dt); // above the haze: the city view clears up
     seaView();
     sky.position.copy(camera.position);
-    updateWeather(dt, player); updateAreas(dt, player); updateCountryCulling(dt); updateSpeedCams(dt, player); updateRally(dt, player); updateMeets(dt, player); bridgeTraffic.update(dt, player); updatePatrols(dt, player); updateActs(dt, player); updateHotels(dt, foot ? foot.x : player.x, foot ? foot.z : player.z); updateCrowd(dt, foot ? foot.x : player.x, foot ? foot.z : player.z); updateJams(dt, player); updateChal(dt); updateParties(dt, player);
+    // the world around you, each part on its own: one that throws (a scenery animation, a country's crowd) is reported once
+    // and skipped, instead of stopping the rest of the frame (the camera, the HUD, the sound) every frame from then on
+    const fx2 = foot ? foot.x : player.x, fz2 = foot ? foot.z : player.z;
+    worldStep(dt, [() => updateWeather(dt, player), () => updateAreas(dt, player), () => updateCountryCulling(dt), () => updateSpeedCams(dt, player), () => updateRally(dt, player), () => updateMeets(dt, player), () => bridgeTraffic.update(dt, player), () => updatePatrols(dt, player), () => updateActs(dt, player), () => updateHotels(dt, fx2, fz2), () => updateCrowd(dt, fx2, fz2), () => updateJams(dt, player), () => updateChal(dt), () => updateParties(dt, player)]);
     audio.weather(WX.wet, player.speed, camMode >= 2 || SEA.under);
     audio.update(dt, { speed: player.speed, rpm: player.rpm, throttle: player.throttle, slip: player.slip, limiter: player.limiter, shifting: player.shiftT, interior: camMode >= 2 || SEA.under, air: player.air });
     // big screens cycle
