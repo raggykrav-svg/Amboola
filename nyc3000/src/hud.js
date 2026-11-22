@@ -2,7 +2,7 @@
 import { WEAPONS } from './models.js';
 import { TYPES, CHALLENGES } from './challenges.js';
 import { CITY } from './textures.js';
-import { roadC } from './city.js';
+import { roadC, GUN_SHOPS } from './city.js';
 import { HIGHWAYS } from './highway.js';
 import { FACTIONS, randomName } from './ai.js';
 
@@ -205,7 +205,7 @@ export class HUD {
     const A = g.ch.active;
     if (A && A.areaC && !A.found && A.friend && A.friend.state === 'wait') { c.strokeStyle = 'rgba(185,140,255,.8)'; c.lineWidth = 2 / k; c.fillStyle = 'rgba(185,140,255,.15)'; c.beginPath(); c.arc(A.areaC.x, A.areaC.z, A.r, 0, 7); c.fill(); c.stroke(); }
     // shops you can go into (green)
-    for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 2.2, '#3aff9a');
+    for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) { const gun = GUN_SHOPS.has(d.name); dot(d.x, d.z, gun ? 3.4 : 2.2, gun ? '#ff7a2a' : '#3aff9a'); }
     c.restore();
     // objective / challenge marker (clamped to edge)
     const t = target;

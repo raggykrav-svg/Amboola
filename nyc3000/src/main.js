@@ -438,6 +438,7 @@ async function boot() {
   game = new Game({ scene, camera, city, fx, audio, settings, hud, input, renderer });
   game.player.h.root.visible = false;
   game.rooms = buildRooms(scene, city); // shop and flat interiors behind the street doors
+  game.onGunShop = () => { openPause(); shopTab = 'guns'; openShop(); };
   game.onSave = () => { storage.set(SAVE_KEY, JSON.stringify(game.saveData())); return !!readSave(); };
   applySettings();
   resize();

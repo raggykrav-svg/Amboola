@@ -4,6 +4,7 @@ import { CITY } from './textures.js';
 import { roadC, LANE, BOUNDS } from './city.js';
 import { Challenges, credLevel } from './challenges.js';
 import { EnemyAI, COMBAT } from './ai.js';
+import { SlidingDoors } from './doors.js';
 import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens, pedKindFor } from './models.js';
 
 const { CELL, ROAD, N, HALF } = CITY;
@@ -105,6 +106,7 @@ export class Game {
     this.garage = new Set(); this.cred = 0; this.gang = [];
     this.ch = new Challenges(this);
     this.ai = new EnemyAI(this); // gang members that notice gunfire, street gangs, people to rescue
+    this.slide = new SlidingDoors(this.scene); // Cyberpunk-style doors that slide open
     this._buildPlayer();
     // tall light beam that marks the objective in the world
     const bg = new THREE.CylinderGeometry(1.4, 1.4, 400, 16, 1, true); bg.translate(0, 200, 0);
@@ -238,6 +240,9 @@ export class Game {
     this._addVehicle('muscle', 8.2, -40, 0, 'parked');
     this._addVehicle('hover', -8.2, -34, Math.PI, 'parked');
     this._addVehicle('sedan', 40, 8.2, -Math.PI / 2, 'parked');
+    this._addVehicle('super', 8.2, -58, 0, 'parked');
+    this._addVehicle('compact', 52, -8.2, Math.PI / 2, 'parked');
+    this._addVehicle('van', -8.2, -64, Math.PI, 'parked');
     void pl;
   }
   _addVehicle(type, x, z, yaw, mode) { const v = new Vehicle(this, type, x, z, yaw, mode); this.vehicles.push(v); return v; }
@@ -255,7 +260,7 @@ export class Game {
       const d = Math.hypot(x - px, z - pz);
       if (d < (police ? 110 : 70) || d > (police ? 230 : 260)) continue;
       if (this.vehicles.some(v => Math.hypot(v.pos.x - x, v.pos.z - z) < 10)) continue;
-      const type = police ? 'police' : (Math.random() < 0.6 ? 'sedan' : 'muscle');
+      const type = police ? 'police' : ['sedan', 'sedan', 'muscle', 'compact', 'compact', 'van', 'super'][Math.floor(Math.random() * 7)];
       const v = this._addVehicle(type, x, z, yawOf(dx, dz), police ? 'police' : 'traffic');
       v.h = h; v.ti = ni; v.tj = nj; v.speed = police ? 20 : 10;
       this._laneTarget(v);
@@ -613,7 +618,9 @@ export class Game {
   }
 
   // ---------- street doors: shops and flats ----------
+  doorLocked(d) { return d.kind === 'shop' && this._shop(d).robbedUntil > this.time; }
   enterDoor(d) {
+    if (this.doorLocked(d)) { this.hud.toast('LOCKED · THEY REMEMBER YOU ROBBED THEM'); this.audio.play('empty'); return; }
     const R = this.rooms && this.rooms.forDoor(d);
     if (!R) { this.hud.toast(d.kind === 'shop' ? 'CLOSED' : 'NOBODY HOME'); return; }
     const p = this.player;
@@ -709,6 +716,7 @@ export class Game {
     if (near(R.counter, 1.9)) {
       if (robbed) lines.push('“Take it and go!”');
       else if (R.props.sells) {
+        if (R.props.guns) { lines.push('<kbd>E</kbd> Look at the guns'); if (inp.pressed('KeyE') && this.onGunShop) this.onGunShop(); }
         lines.push(`<kbd>B</kbd> Ammo $${PRICES.ammo}`, `<kbd>H</kbd> Medkit $${PRICES.medkit}`);
         if (inp.pressed('KeyB')) this._buy('ammo');
         if (inp.pressed('KeyH')) this._buy('medkit');
@@ -842,6 +850,7 @@ export class Game {
     this.updateVehicles(dt);
     this.updatePeople(dt);
     this.ai.update(dt);
+    this.slide.update(dt, this);
     this.updateDrones(dt);
     this.updateBolts(dt);
     this.updatePolice(dt);
@@ -1062,7 +1071,7 @@ export class Game {
   updateVehicles(dt) {
     const p = this.player, pp = this.wpos();
     const crowd = this.settings.crowd;
-    const wantTraffic = [0, 10, 18, 28][crowd], wantSky = [0, 10, 18, 28][crowd];
+    const wantTraffic = [0, 13, 22, 32][crowd], wantSky = [0, 10, 18, 28][crowd];
     let nT = 0, nS = 0;
     for (let i = this.vehicles.length - 1; i >= 0; i--) {
       const v = this.vehicles[i];

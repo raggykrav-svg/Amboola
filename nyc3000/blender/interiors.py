@@ -667,6 +667,99 @@ def shop_arcade(P):
     return r.finish((0.16, 0.13, 0.22))
 
 
+def shop_guns(P):
+    """A gun shop: pegboard walls full of rifles and pistols, a glass display counter,
+    ammo crates and a little shooting range behind glass at the back."""
+    rnd = random.Random(21)
+    r = Room('room_shop_guns', 10.0, 8.0, 3.4)
+    r.P = P
+    W, D, H = r.W, r.D, r.H
+    r.floor(lambda x, y: P['concrete_a'] if (int((x + 10) * 1) + int((y + 10) * 1)) % 2 else P['concrete_b'], cell=1.0)
+    r.walls(lambda h, z: P['gun_wall'] if z > 0.5 else P['steel_dark'])
+    r.ceiling(P['club_ceil'])
+    # neon strips and ceiling lamps
+    for (p0, p1) in (((-W / 2 + 0.03, -D / 2, 2.9), (-W / 2 + 0.03, 1.4, 2.9)), ((W / 2 - 0.03, -D / 2, 2.9), (W / 2 - 0.03, 1.4, 2.9))):
+        r.line(p0, p1, 0.025, P['neon_orange'])
+    for x in (-3.0, 0.0, 3.0):
+        for y in (-2.6, -0.4):
+            r.box(1.2, 0.2, 0.05, P['lamp'], (x, y, H - 0.03))
+            r.light((x, y, H - 0.3), (1.0, 0.92, 0.85), 0.3, 2.6)
+
+    def rifle(x, y, z, fx, k):
+        """A rifle hanging on a side wall (fx = direction the wall faces), pointing along y."""
+        body = P['gun_dark'] if k % 3 else P['gun_tan']
+        L = rnd.uniform(0.9, 1.25)
+        r.box(0.08, L * 0.55, 0.13, body, (x, y, z))
+        r.box(0.05, L * 0.4, 0.04, P['steel'], (x, y + L * 0.45, z + 0.03))
+        r.box(0.07, L * 0.25, 0.11, body, (x, y - L * 0.38, z - 0.02))
+        r.box(0.06, 0.08, 0.2, P['gun_dark'], (x, y + 0.05, z - 0.14))
+        r.box(0.06, 0.06, 0.16, P['gun_dark'], (x, y - 0.1, z - 0.12))
+        r.box(0.085, L * 0.3, 0.02, (P['neon_orange'], P['neon_cyan'], P['neon_pink'])[k % 3], (x + fx * 0.01, y, z + 0.075))
+        r.box(0.04, 0.2, 0.05, P['gun_dark'], (x, y + 0.1, z + 0.1))
+
+    def pistol(x, y, z, k):
+        r.box(0.06, 0.24, 0.07, P['gun_dark'], (x, y, z))
+        r.box(0.055, 0.07, 0.13, P['gun_dark'], (x, y - 0.07, z - 0.08))
+        r.box(0.065, 0.16, 0.015, (P['neon_pink'], P['neon_cyan'])[k % 2], (x, y + 0.02, z + 0.04))
+
+    # side walls: pegboards with rifles and pistols
+    for sx in (-1, 1):
+        xw = sx * (W / 2 - 0.04)
+        r.box(0.04, 5.2, 2.0, P['pegboard'], (xw, -1.0, 1.6))
+        k = 0
+        for z in (2.3, 1.75, 1.2):
+            y = -3.3
+            while y < 1.2:
+                rifle(xw - sx * 0.07, y + 0.6, z, -sx, k)
+                y += 1.4 + rnd.uniform(-0.05, 0.1)
+                k += 1
+        for q in range(8):
+            pistol(xw - sx * 0.06, -3.2 + q * 0.62, 0.72, q)
+        r.col(min(xw, xw - sx * 0.3), max(xw, xw - sx * 0.3), -3.7, 1.7, 0, 2.6)
+    # glass display counter across the room with guns inside, the clerk behind it
+    r.box(5.0, 0.8, 0.5, P['counter'], (0.6, 0.6, 0.25))
+    r.box(5.0, 0.8, 0.45, P['glass_top'], (0.6, 0.6, 0.73))
+    r.box(5.05, 0.85, 0.04, P['chrome'], (0.6, 0.6, 0.97))
+    r.line((-1.9, 0.19, 0.12), (3.1, 0.19, 0.12), 0.02, P['neon_orange'])
+    for q in range(6):
+        x = -1.5 + q * 0.8
+        r.box(0.55, 0.12, 0.05, P['gun_dark'], (x, 0.6, 0.6), (0, 0, rnd.uniform(-0.2, 0.2)))
+        r.box(0.3, 0.13, 0.015, (P['neon_cyan'], P['neon_pink'], P['neon_orange'])[q % 3], (x, 0.6, 0.63))
+    r.light((0.6, 0.6, 0.8), (1.0, 0.7, 0.4), 0.15, 1.6)
+    r.col(-1.9, 3.1, 0.2, 1.0, 0, 1.0)
+    # the cash register end
+    r.box(0.45, 0.4, 0.14, P['dark'], (2.6, 0.6, 1.06))
+    r.box(0.34, 0.06, 0.24, P['screen_green'], (2.6, 0.42, 1.25), (0.3, 0, 0))
+    # back: a shooting range behind a glass wall
+    r.box(W - 0.4, 0.06, 1.6, P['glass_blue'], (0, 1.75, 1.7))
+    r.box(W - 0.4, 0.12, 0.9, P['steel_dark'], (0, 1.75, 0.45))
+    r.box(W - 0.4, 0.14, 0.06, P['neon_orange'], (0, 1.75, 0.92))
+    r.col(-W / 2, W / 2, 1.65, 1.85, 0, H)
+    for q in range(4):
+        x = -3.6 + q * 2.4
+        r.box(0.04, 2.1, 0.04, P['steel'], (x, 2.9, 2.6))
+        r.box(0.6, 0.03, 0.8, P['target'], (x, 3.85, 1.4))
+        for rr, m in ((0.3, P['target_ring']), (0.18, P['target']), (0.07, P['target_ring'])):
+            r.cyl(rr, rr, 0.01, m, (x, 3.83, 1.4), (math.pi / 2, 0, 0), seg=16)
+        r.light((x, 3.2, 2.6), (1.0, 0.95, 0.8), 0.18, 1.6)
+    for x in (-4.2, 0.0, 4.2):
+        r.box(0.08, 2.2, 2.4, P['steel_dark'], (x, 2.9, 1.2))
+    # ammo crates and a big sign
+    for q in range(5):
+        x, y = rnd.uniform(2.6, 4.2), rnd.uniform(-3.5, -2.3)
+        r.box(0.6, 0.4, 0.35, P['crate'], (x, y, 0.175 + (q % 2) * 0.36))
+        r.box(0.61, 0.05, 0.08, P['neon_orange'], (x, y - 0.18, 0.2 + (q % 2) * 0.36))
+    r.col(2.2, 4.6, -3.8, -2.0, 0, 0.8)
+    r.box(2.4, 0.06, 0.5, P['neon_orange'], (0.6, 1.66, 2.9))
+    r.door(-2.5, P, P['neon_orange'], P['door_metal'])
+    r.mark('clerk', (0.9, 1.25, 0), **Room.facing(0, -1))
+    r.mark('counter', (0.9, -0.3, 0))
+    r.mark('cash', (2.2, 0.55, 1.02))
+    r.mark('sign', (0.6, 1.62, 2.4), w=2.6, h=0.6, **Room.facing(0, -1))
+    r.props = dict(payout_min=300, payout_max=800, stars=3, sells=1, guns=1)
+    return r.finish((0.2, 0.16, 0.18))
+
+
 # ================================================================== FLATS
 def flat_studio(P):
     rnd = random.Random(11)
@@ -1107,10 +1200,14 @@ def pal():
         pipe=mat('pipe', '#8a6a4a', 0.8, 0.4), beam=mat('beam', '#2a2c32', 0.6, 0.5), leather=mat('leather', '#6a3a1e', 0.1, 0.45),
         rug_kilim=mat('rug_kilim', '#8a2a2a', 0, 0.9), rug_kilim2=mat('rug_kilim2', '#2a4a6a', 0, 0.9), butcher_block=mat('butcher_block', '#b08050', 0, 0.6),
         screen_paper=mat('screen_paper', '#e8dcc0', 0, 0.8),
+        # gun shop
+        gun_wall=mat('gun_wall', '#2a2026', 0.1, 0.6), pegboard=mat('pegboard', '#3a3a42', 0.2, 0.7), gun_dark=mat('gun_dark', '#1a1c22', 0.6, 0.35),
+        gun_tan=mat('gun_tan', '#6a5a40', 0.3, 0.5), target=mat('target', '#e8e4d8', 0, 0.8), target_ring=mat('target_ring', '#c0202a', 0, 0.6),
+        crate=mat('crate', '#3a4a2a', 0.1, 0.7),
     )
 
 
-ROOMS = [shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, flat_studio, flat_penthouse, flat_gamer, flat_loft]
+ROOMS = [shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, flat_studio, flat_penthouse, flat_gamer, flat_loft]
 
 
 def build_all():
@@ -1129,7 +1226,7 @@ def previews(objs, out):
     views = {
         'room_shop_mart': ((-3.8, -3.6, 2.6), (1.5, 1.5, 1.0)), 'room_shop_ramen': ((-4.4, -3.0, 2.3), (1.0, 1.8, 1.1)),
         'room_shop_diner': ((-1.0, -3.6, 2.5), (1.0, 2.0, 0.9)), 'room_shop_bar': ((4.8, -4.0, 2.7), (-1.5, 1.5, 0.9)),
-        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)),
+        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)),
         'room_flat_studio': ((-4.2, -3.9, 2.4), (2.0, 1.5, 0.9)), 'room_flat_penthouse': ((-5.2, -4.4, 2.8), (2.0, 2.0, 1.0)),
         'room_flat_gamer': ((-3.8, -3.6, 2.3), (1.5, 1.5, 0.9)), 'room_flat_loft': ((-4.8, -3.9, 3.2), (2.5, 2.0, 1.2)),
     }

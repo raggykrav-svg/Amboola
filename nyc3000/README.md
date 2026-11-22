@@ -25,6 +25,10 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Hologram](screenshots/18-hologram.jpg) | ![Night market](screenshots/19-market.jpg) |
 | **Scanner (hold Q) on a bounty** | **Spotted! The bounty runs for his car** |
 | ![Scanner](screenshots/21-scanner.jpg) | ![Spotted](screenshots/22-spotted.jpg) |
+| **Doors slide open as you walk up** | **A gun shop** |
+| ![Sliding door](screenshots/23-sliding-door.jpg) | ![Gun shop](screenshots/24-gun-shop.jpg) |
+| **Nine cars in the shop** | |
+| ![New cars](screenshots/25-new-cars.jpg) | |
 
 ## Run it
 
@@ -105,11 +109,17 @@ Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 sh
 - **Flats:** each flat has a TV, a kitchen, a sofa and a bed. Most flats hide one stash (cash, ammo or a medkit) that you can find once. Press **E** at the bed to sleep: it heals you, clears your wanted level and saves the game.
 - Your money is shown in the top right. You start with $200, and it's kept in your save.
 
+### Doors, gun shops and cars
+
+- **Doors slide open** like in Cyberpunk 2077: walk up to a door and its two panels slide into the frame, with a green light. Just keep walking to go in (or press **E**). The door inside the room opens the same way when you leave. A red light means locked: shops you robbed lock you out for a few minutes.
+- **Gun shops** (PLASMA ARMS, IRON & NEON GUNS) are the orange dots on the minimap. Inside there are racks of guns, a glass counter and a shooting range. Press **E** at the counter to look at the guns (the shop's GUNS & GEAR page opens), or **B** / **H** for ammo and medkits.
+- **More cars:** the LUMEN GT supercar, the little PIXEL MINI and the METRO VAN (modelled in Blender like the rest), driving in traffic, parked near the start and for sale in the shop. There's also more traffic.
+
 ### The shop (pause menu)
 
 Press **Esc** and pick **SHOP** to spend your money. Every card shows the real 3D model.
 
-- **Cars:** NEO-SEDAN $400, VOLT RUNNER $900, SKY TAXI $1,500, HOVER SPORTS CAR $2,500, NYPD INTERCEPTOR $3,500 and NYPD SKY CRUISER $5,000. A car you buy is parked right next to you (or outside the door if you're indoors), and you keep it: press **DELIVER** any time to get it brought to you again for free. Driving your own police car doesn't get you in trouble.
+- **Cars:** PIXEL MINI $300, METRO VAN $1,100, LUMEN GT $4,200, NEO-SEDAN $400, VOLT RUNNER $900, SKY TAXI $1,500, HOVER SPORTS CAR $2,500, NYPD INTERCEPTOR $3,500 and NYPD SKY CRUISER $5,000. A car you buy is parked right next to you (or outside the door if you're indoors), and you keep it: press **DELIVER** any time to get it brought to you again for free. Driving your own police car doesn't get you in trouble.
 - **Guns:** VOLT SMG $600 (fast), RAIL SNIPER $1,500 (huge damage, zooms in when you aim) and PLASMA LAUNCHER $3,000 (explosive shots). They go on keys 4, 5 and 6.
 - **Gear:** ammo packs and medkits.
 - The best cars and guns are locked until you have enough **Street Cred**, which you earn from challenges.

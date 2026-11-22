@@ -59,7 +59,9 @@ const SIGN_TEXTS = [
   ['SYNTH CITY', '#29f3ff'], ['ROBO TAXI', '#ffd23a'], ['HOTEL 3000', '#ff1e3c'], ['QUANTUM BURGER', '#ffa43a'],
   ['CHROME DOLLS', '#ff2bd6'], ['NEURAL LINK BAR', '#3aff9a'], ['24/7 HOLOSHOW', '#29f3ff'], ['CYBER DELI', '#ff1e3c'],
   ['ARCADE 9', '#3aff9a'], ['NOODLE BOTS', '#ffa43a'], ['PLASMA PIZZA', '#ff2bd6'], ['NYC 3000', '#29f3ff'],
+  ['PLASMA ARMS', '#ff7a2a'], ['IRON & NEON GUNS', '#ff7a2a'],
 ];
+export const GUN_SHOPS = new Set(['PLASMA ARMS', 'IRON & NEON GUNS']);
 export const DOORS_PER_BUILDING = 5;
 const DOOR_W = 1.7;
 const VERT_TEXTS = [['ホテル', '#ff2bd6'], ['OPEN', '#3aff9a'], ['BAR', '#29f3ff'], ['ラーメン', '#ffa43a'], ['NEON', '#ff1e3c'], ['CLUB', '#8a4dff']];

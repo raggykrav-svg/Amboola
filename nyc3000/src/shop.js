@@ -8,9 +8,12 @@ import { thumbnail } from './thumbs.js';
 
 export const CAR_SHOP = [
   { type: 'sedan', price: 400, cred: 0, paint: '#1a6bd8' },
+  { type: 'compact', price: 300, cred: 0, paint: '#ff4ab0' },
   { type: 'muscle', price: 900, cred: 0, paint: '#d8c21a' },
+  { type: 'van', price: 1100, cred: 0, paint: '#e8e8f0' },
   { type: 'taxi', price: 1500, cred: 1, paint: '#f2c21a' },
   { type: 'hover', price: 2500, cred: 2, paint: '#c01848' },
+  { type: 'super', price: 4200, cred: 3, paint: '#c01848' },
   { type: 'police', price: 3500, cred: 3, paint: '#121318' },
   { type: 'flypolice', price: 5000, cred: 4, paint: '#121318' },
 ];
