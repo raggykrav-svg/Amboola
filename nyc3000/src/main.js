@@ -20,6 +20,7 @@ import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
 import { loadModels } from './assets.js';
 import { buildRooms } from './interiors.js';
 import { renderShop, renderChallenges } from './shop.js';
+import { MapScreen } from './mapscreen.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -138,7 +139,7 @@ document.addEventListener('pointerlockchange', () => {
 // ---------- screens ----------
 let state = 'loading', optionsReturn = 'menu';
 function showScreen(id) {
-  for (const s of ['loading', 'title', 'menu', 'options', 'controls', 'pause', 'shop', 'challenges']) $(s).classList.toggle('show', s === id);
+  for (const s of ['loading', 'title', 'menu', 'options', 'controls', 'pause', 'shop', 'challenges', 'map']) $(s).classList.toggle('show', s === id);
 }
 function setState(s) {
   state = s;
@@ -153,6 +154,8 @@ function onKey(e) {
   else if (state === 'pause' && e.code === 'Escape' && performance.now() - pausedAt > 400) resume();
   else if ((state === 'options' || state === 'controls') && e.code === 'Escape') backFromOptions();
   else if ((state === 'shop' || state === 'challenges') && e.code === 'Escape') backToPause();
+  else if (state === 'play' && e.code === 'Tab' && !e.repeat) openMap('play');
+  else if (state === 'map' && (e.code === 'Escape' || e.code === 'Tab') && !e.repeat) closeMap();
   if (e.code === 'KeyM') { const m = audio.toggleMute(); hud && hud.toast(m ? 'SOUND OFF' : 'SOUND ON'); }
 }
 
@@ -218,6 +221,18 @@ function openChallenges() { renderChallenges(menuCtx()); showScreen('challenges'
 function backToPause() { showScreen('pause'); setState('pause'); }
 $('bShop').onclick = openShop;
 $('bChallenges').onclick = openChallenges;
+// the big map
+let mapScreen = null, mapFrom = 'pause';
+function openMap(from) {
+  mapFrom = from;
+  if (from === 'play') { openPause(); }
+  showScreen('map'); setState('map');
+  if (!mapScreen) mapScreen = new MapScreen();
+  mapScreen.open(game);
+}
+function closeMap() { if (mapFrom === 'play') resume(); else backToPause(); }
+$('bMap').onclick = () => openMap('pause');
+$('bMapBack').onclick = closeMap;
 $('bShopBack').onclick = backToPause;
 $('bChBack').onclick = backToPause;
 document.querySelectorAll('#shopTabs button').forEach(b => { b.onclick = () => { shopTab = b.dataset.tab; $('shopMsg').textContent = ''; renderShop(menuCtx(), shopTab); audio.play('ui'); }; });

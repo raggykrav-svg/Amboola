@@ -79,6 +79,7 @@
             <p><kbd>E</kbd> at a challenge marker: start a race, delivery or search</p>
             <p><kbd>E</kbd> behind an enemy who hasn't seen you: quiet takedown</p>
             <p><kbd>Q</kbd> (hold) scanner: names of people, slows time</p>
+            <p><kbd>Tab</kbd> map: click a place to get a GPS line to it</p>
           </div>
           <div>
             <h3>Driving</h3>
@@ -118,12 +119,39 @@
       </div>
     </div>
 
+    <!-- MAP (Tab) -->
+    <div id="map" class="screen panel-screen">
+      <div class="panel map-panel">
+        <div class="shop-head"><h2>MAP</h2><div class="wallet"><b id="mapCur"></b><span>Click a place · wheel = zoom · drag = move</span></div></div>
+        <div class="map-body">
+          <div class="map-wrap"><canvas id="mapCanvas"></canvas></div>
+          <div class="map-side">
+            <div class="map-q">WHERE DO YOU WANT TO GO?</div>
+            <div id="mapPick" class="map-pick"></div>
+            <div id="mapDist" class="map-dist"></div>
+            <button class="mbtn small" id="mapGo">SET DESTINATION</button>
+            <button class="mbtn small" id="mapClear">CLEAR GPS</button>
+            <div class="map-q">QUICK</div>
+            <div id="mapQuick">
+              <button class="mbtn small" data-q="shop">NEAREST SHOP</button>
+              <button class="mbtn small" data-q="guns">NEAREST GUN SHOP</button>
+              <button class="mbtn small" data-q="hotel">NEAREST HOTEL</button>
+              <button class="mbtn small" data-q="challenge">NEAREST CHALLENGE</button>
+            </div>
+            <div class="map-legend"><span style="color:#3aff9a">●</span> shop <span style="color:#ff7a2a">●</span> gun shop <span style="color:#ffd27a">●</span> hotel <span style="color:#ffa43a">▬</span> highway <span style="color:#ffd23a">■</span> challenge</div>
+          </div>
+        </div>
+        <div class="panel-buttons"><button class="mbtn small" id="bMapBack">BACK</button></div>
+      </div>
+    </div>
+
     <!-- PAUSE -->
     <div id="pause" class="screen panel-screen">
       <div class="panel narrow">
         <h2>PAUSED</h2>
         <button class="mbtn" id="bResume">RESUME</button>
         <button class="mbtn" id="bShop">SHOP</button>
+        <button class="mbtn" id="bMap">MAP</button>
         <button class="mbtn" id="bChallenges">CHALLENGES</button>
         <button class="mbtn" id="bPOptions">OPTIONS</button>
         <button class="mbtn" id="bSave">SAVE GAME</button>

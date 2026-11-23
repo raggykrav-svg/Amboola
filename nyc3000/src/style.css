@@ -257,3 +257,17 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
   font: 900 22px Orbitron, Arial; cursor: pointer; }
 #liftBtns button:hover { background: radial-gradient(#ffd27a, #b08030); color: #1a1208; }
 .lift-help { margin-top: 10px; font: 600 13px Rajdhani, Arial; color: #e8d8b8; }
+
+/* ---- big map ---- */
+.panel.map-panel { width: min(1180px, 96vw); max-width: none; }
+.map-body { display: flex; gap: 14px; height: min(64vh, 620px); }
+.map-wrap { flex: 1; min-width: 0; border: 1px solid rgba(41,243,255,.35); border-radius: 6px; overflow: hidden; }
+#mapCanvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+.map-side { width: 230px; display: flex; flex-direction: column; gap: 8px; }
+.map-side .mbtn { width: 100%; }
+.map-q { font: 700 12px Orbitron, Arial; letter-spacing: 2px; color: #29f3ff; margin-top: 4px; }
+.map-pick { font: 700 16px Rajdhani, Arial; color: #fff; min-height: 40px; }
+.map-dist { font: 600 13px Rajdhani, Arial; color: #9fb0d0; }
+#mapQuick { display: flex; flex-direction: column; gap: 6px; }
+.map-legend { margin-top: auto; font: 600 12px Rajdhani, Arial; color: #c8d0e8; line-height: 1.6; }
+@media (max-width: 760px) { .map-body { flex-direction: column; height: auto; } .map-wrap { height: 50vh; } .map-side { width: 100%; } }

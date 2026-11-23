@@ -141,7 +141,13 @@ export class Challenges {
     return CHALLENGES.map(def => ({ def, type: TYPES[def.type], done: this.done.has(def.id), active: this.active && this.active.def === def,
       tracked: this.tracked === def.id, dist: Math.round(startOf(def).distanceTo(new THREE.Vector3(p.x, 0, p.z))) }));
   }
-  track(id) { this.tracked = this.tracked === id ? null : id; }
+  track(id) {
+    this.tracked = this.tracked === id ? null : id;
+    // tracking a challenge also sets the GPS line to its marker
+    const def = this.def(id);
+    if (this.tracked) this.g.gps.set(startOf(def), `${TYPES[def.type].label}: ${def.name}`);
+    else if (this.g.gps.dest) this.g.gps.clear();
+  }
 
   // the start marker the player is standing at (races, deliveries and searches start with E)
   _startHere() {

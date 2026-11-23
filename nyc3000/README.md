@@ -33,6 +33,10 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Hotel lobby](screenshots/26-hotel-lobby.jpg) | ![Hotel lift](screenshots/27-hotel-lift.jpg) |
 | **A hotel room (floors 1–6)** | **A king suite (floors 7–10)** |
 | ![Hotel room](screenshots/29-hotel-room.jpg) | ![King suite](screenshots/30-king-suite.jpg) |
+| **The map (Tab): pick where to go** | **GPS arrows on the road** |
+| ![Map](screenshots/31-map.jpg) | ![GPS on the road](screenshots/32-gps-road.jpg) |
+| **Flying: the line goes straight there** | |
+| ![GPS while flying](screenshots/33-gps-flying.jpg) | |
 
 ## Run it
 
@@ -81,6 +85,7 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | E at a challenge marker | start a street race, sky race, delivery or search |
 | E behind an enemy who hasn't seen you | quiet takedown (knock-out) |
 | Q (hold) | scanner: names over people, who's a gang member, slows time |
+| Tab | the big map: click a place, SET DESTINATION, follow the arrows |
 
 | In a car | |
 |---|---|
@@ -112,6 +117,12 @@ Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 sh
 - **Shops:** hold **right click** to aim your gun at the clerk. They put their hands up, and if you keep aiming the robbery bar fills, then they drop a bag of money ($150–$500) on the counter. Walk up to the counter to grab it. The alarm goes off and you get 2 wanted stars, and that shop has nothing left for 4 minutes. You can also pay at the counter: **B** for ammo ($100), **H** for a medkit ($150). **Banks** pay $700–$1,500 but give you 3 stars, and they don't sell anything.
 - **Flats:** each flat has a TV, a kitchen, a sofa and a bed. Most flats hide one stash (cash, ammo or a medkit) that you can find once. Press **E** at the bed to sleep: it heals you, clears your wanted level and saves the game.
 - Your money is shown in the top right. You start with $200, and it's kept in your save.
+
+### The map and the GPS
+
+Press **Tab** (or **MAP** in the pause menu) for the big map of the whole city: shops (green), gun shops (orange), hotels (gold), the highways, challenges (coloured squares), your own cars and you. Scroll to zoom and drag to move it. **Click a place** and the side panel asks *Where do you want to go?* and names what you picked (a shop, a hotel, a challenge, or just a map marker); press **SET DESTINATION**. There are also quick buttons for the nearest shop, gun shop, hotel or challenge.
+
+Like in Cyberpunk 2077, a line of glowing yellow **arrows is painted on the roads** all the way there (it takes the streets with the fewest turns and avoids the highway ramps), and it's also drawn on the minimap. If you leave the route it finds a new one. **When you fly**, the line goes **straight through the air** to the spot instead. A yellow beam marks the destination, and you get *YOU HAVE ARRIVED* when you're there. **TRACK** on a challenge sets the GPS to it too.
 
 ### Hotels
 

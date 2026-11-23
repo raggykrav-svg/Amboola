@@ -5,6 +5,7 @@ import { roadC, LANE, BOUNDS } from './city.js';
 import { Challenges, credLevel } from './challenges.js';
 import { EnemyAI, COMBAT } from './ai.js';
 import { SlidingDoors } from './doors.js';
+import { GPS } from './gps.js';
 import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens, pedKindFor } from './models.js';
 
 const { CELL, ROAD, N, HALF } = CITY;
@@ -107,6 +108,7 @@ export class Game {
     this.ch = new Challenges(this);
     this.ai = new EnemyAI(this); // gang members that notice gunfire, street gangs, people to rescue
     this.slide = new SlidingDoors(this.scene); // Cyberpunk-style doors that slide open
+    this.gps = new GPS(this); // pick a destination on the map, follow the arrows
     this._buildPlayer();
     // tall light beam that marks the objective in the world
     const bg = new THREE.CylinderGeometry(1.4, 1.4, 400, 16, 1, true); bg.translate(0, 200, 0);
@@ -165,6 +167,7 @@ export class Game {
   clearWorld() {
     if (this.ch) this.ch.cancel(true);
     if (this.ai) this.ai.clear();
+    if (this.gps) this.gps.clear();
     for (const a of [this.vehicles, this.peds, this.cops, this.drones, this.runners, this.gang]) { a.forEach(e => e.dispose()); a.length = 0; }
     this.pickups.forEach(p => this.scene.remove(p.mesh)); this.pickups.length = 0;
     this.fx.clear();
@@ -902,6 +905,7 @@ export class Game {
     this.updatePeople(dt);
     this.ai.update(dt);
     this.slide.update(dt, this);
+    this.gps.update(dt);
     this.updateDrones(dt);
     this.updateBolts(dt);
     this.updatePolice(dt);

@@ -137,7 +137,8 @@ export class HUD {
     }
     // objective (an active or tracked challenge takes over the box)
     const [txt, sub] = g.objectiveText();
-    const chi = g.ch.hud();
+    let chi = g.ch.hud();
+    if (g.gps.dest && !(chi && g.ch.active)) chi = { title: `GPS: ${g.gps.label}`, sub: 'Follow the arrows on the road', target: g.gps.dest };
     const tgt = chi ? chi.target : g.objTarget, pp = g.wpos();
     let ot = st > 0 ? 'Escape NYPD pursuit' : txt, dist = '';
     if (chi) { ot = chi.title; dist = (tgt ? Math.round(Math.hypot(tgt.x - pp.x, tgt.z - pp.z)) + ' m · ' : '') + chi.sub; }
@@ -202,6 +203,8 @@ export class HUD {
       if (v.owned) col = '#3aff9a';
       dot(v.pos.x, v.pos.z, 2.6, col);
     }
+    const rt = g.gps.route;
+    if (g.gps.dest && rt.length > 1) { c.strokeStyle = '#ffd23a'; c.lineWidth = 4 / k; c.lineJoin = 'round'; c.beginPath(); c.moveTo(rt[0].x, rt[0].z); for (const q of rt) c.lineTo(q.x, q.z); c.stroke(); }
     for (const e of g.cops) if (e.state !== 'dead') dot(e.pos.x, e.pos.z, 2.4, '#ff2040');
     for (const d of g.drones) if (!d.dead) dot(d.pos.x, d.pos.z, 3, d.police ? '#3a7aff' : '#ff2bd6');
     for (const p of g.pickups) if (p.mesh.visible && !p.room) dot(p.mesh.position.x, p.mesh.position.z, 2, p.kind === 'health' ? '#3aff7a' : '#ffa43a');
