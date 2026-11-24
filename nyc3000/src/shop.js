@@ -9,6 +9,8 @@ import { IMPLANTS } from './activities.js';
 
 export const CAR_SHOP = [
   { type: 'sedan', price: 400, cred: 0, paint: '#1a6bd8' },
+  { type: 'bike', price: 700, cred: 0, paint: '#1a8ad8' },
+  { type: 'chopper', price: 1200, cred: 0, paint: '#2a1a2a' },
   { type: 'compact', price: 300, cred: 0, paint: '#ff4ab0' },
   { type: 'muscle', price: 900, cred: 0, paint: '#d8c21a' },
   { type: 'van', price: 1100, cred: 0, paint: '#e8e8f0' },

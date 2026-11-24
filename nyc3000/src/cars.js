@@ -12,6 +12,8 @@ export const VEHICLE_TYPES = {
   super: { name: 'LUMEN GT', flying: false, maxSpeed: 72, accel: 24, armor: 90 },
   compact: { name: 'PIXEL MINI', flying: false, maxSpeed: 44, accel: 15, armor: 80 },
   van: { name: 'METRO VAN', flying: false, maxSpeed: 46, accel: 11, armor: 170 },
+  bike: { name: 'VOLT BIKE', flying: false, maxSpeed: 68, accel: 24, armor: 60, bike: true },
+  chopper: { name: 'NEON CHOPPER', flying: false, maxSpeed: 58, accel: 19, armor: 80, bike: true },
   hover: { name: 'HOVER SPORTS CAR', flying: true, maxSpeed: 95, accel: 24, armor: 110, cannon: true },
   taxi: { name: 'SKY TAXI', flying: true, maxSpeed: 75, accel: 18, armor: 120, cannon: true },
   flypolice: { name: 'NYPD SKY CRUISER', flying: true, maxSpeed: 100, accel: 26, armor: 180, police: true, cannon: true },
@@ -178,6 +180,8 @@ function blenderCar(type) {
   const d = markerPos('cars', type + '_decal');
   if (d) G.decal = { text: 'NYPD', x: d.x, y: d.y, z: d.z, col: '#1d3fb0' };
   const t = modelNode('cars', 'taxi_sign');
+  const seat = markerPos('cars', type + '_seat');
+  if (seat) G.seat = seat.clone();
   if (type === 'taxi' && t) G.decal = { text: 'TAXI', roof: true, y: t.position.y, z: t.position.z, d: (t.userData.d || 0.3), col: '#111111' };
   return G;
 }
@@ -230,5 +234,6 @@ export function makeVehicleMesh(type, paintHex) {
     }
   }
   grp.userData.body = body;
+  if (G.seat) grp.userData.seat = G.seat;
   return grp;
 }

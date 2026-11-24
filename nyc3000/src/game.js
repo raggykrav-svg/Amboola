@@ -137,6 +137,7 @@ export class Game {
     this.clearWorld();
     const p = this.player;
     p.alive = true; p.vehicle = null; p.pendingExit = false; p.vy = 0; p.vel.set(0, 0, 0);
+    if (p.h.root.parent !== this.scene) this.scene.add(p.h.root); // still sitting on a bike from last time
     p.h.root.visible = true; p.h.root.rotation.set(0, 0, 0);
     if (save) {
       p.pos.set(save.pos[0], 0, save.pos[2]); p.pos.y = this.city.groundAt(p.pos.x, p.pos.z, 1);
@@ -250,6 +251,8 @@ export class Game {
     this._addVehicle('super', 8.2, -58, 0, 'parked');
     this._addVehicle('compact', 52, -8.2, Math.PI / 2, 'parked');
     this._addVehicle('van', -8.2, -64, Math.PI, 'parked');
+    this._addVehicle('bike', 9.0, -24, 0.3, 'parked');
+    this._addVehicle('chopper', 9.2, -30, 0.3, 'parked');
     void pl;
   }
   _addVehicle(type, x, z, yaw, mode) { const v = new Vehicle(this, type, x, z, yaw, mode); this.vehicles.push(v); return v; }
@@ -869,6 +872,11 @@ export class Game {
     this.audio.play('door');
     p.vehicle = v; v.mode = 'player'; v.lane = null;
     p.h.root.visible = false; p.reloadT = 0;
+    if (v.def.bike) { // you sit on a motorbike, so you stay visible
+      const seat = v.mesh.userData.seat || new V3(0, 0.9, 0.3);
+      p.h.holdGun(null); v.body.add(p.h.root);
+      p.h.root.position.set(seat.x, seat.y - 0.93, seat.z); p.h.root.rotation.set(0, 0, 0); p.h.root.visible = true;
+    }
     p.cannon = 100;
     this.camState.init = false; this.camState.yawOff = 0; this.camState.pitchOff = 0;
     this.hud.toast(v.def.name);
@@ -886,6 +894,7 @@ export class Game {
     p.vy = 0; p.yaw = v.yaw;
     p.vehicle = null; p.pendingExit = false;
     if (v.mode !== 'wreck') { v.mode = 'abandoned'; v.speed *= force ? 1 : 0.3; }
+    if (p.h.root.parent !== this.scene) { this.scene.add(p.h.root); p.h.root.rotation.set(0, 0, 0); this.selectWeapon(p.wi, true); }
     p.h.root.visible = true;
     this.audio.play('door');
     this.audio.setEngine(false, 0, false);
@@ -1042,11 +1051,12 @@ export class Game {
       else v.speed *= Math.exp(-dt * 0.5);
       if (p.pendingExit || hb) v.speed *= Math.exp(-dt * (hb ? 1.6 : 3));
       v.speed = clamp(v.speed, -14, def.maxSpeed);
-      const maxSteer = 0.55 / (1 + Math.abs(v.speed) / 25);
+      const maxSteer = (def.bike ? 0.7 : 0.55) / (1 + Math.abs(v.speed) / (def.bike ? 32 : 25));
       v.steer += (steer * maxSteer - v.steer) * (1 - Math.exp(-dt * 8));
       v.yaw += v.speed / 2.8 * Math.tan(v.steer) * dt * (hb ? 1.7 : 1);
       v.pos.addScaledVector(f, v.speed * dt);
-      v.roll += (-v.steer * Math.min(1, Math.abs(v.speed) / 30) * 0.12 - v.roll) * (1 - Math.exp(-dt * 6));
+      v.roll += (-v.steer * Math.min(1, Math.abs(v.speed) / 30) * (def.bike ? 1.1 : 0.12) - v.roll) * (1 - Math.exp(-dt * 6));
+      if (def.bike) p.h.animate(dt, 0, { ride: v.type === 'bike' ? 'sport' : 'chopper' });
       v.pitch += (clamp((prevSpeed - v.speed) / dt * 0.004, -0.06, 0.06) - v.pitch) * (1 - Math.exp(-dt * 6));
       this._groundY(v, dt, true);
       this._vehCollide(v, dt, true);
@@ -1112,9 +1122,10 @@ export class Game {
     const f = v.fwd;
     const y0 = v.pos.y + 0.3, y1 = v.pos.y + 1.5;
     let hit = false, cx = 0, cz = 0;
-    for (const o of [-1.3, 1.3]) {
+    const bike = v.def.bike;
+    for (const o of bike ? [-0.7, 0.7] : [-1.3, 1.3]) {
       const x = v.pos.x + f.x * o, z = v.pos.z + f.z * o;
-      const c = this.city.collide(x, z, 1.15, y0, y1);
+      const c = this.city.collide(x, z, bike ? 0.55 : 1.15, y0, y1);
       if (c.hit) { hit = true; cx += c.x - x; cz += c.z - z; }
       if (v.pos.y < 6.5) { // lamp poles
         const pc = this.city.pushPoles(x, z, 1.0);
@@ -1136,7 +1147,7 @@ export class Game {
     for (const o of this.vehicles) {
       if (o === v || o.mode === 'sky' && Math.abs(o.pos.y - v.pos.y) > 4) continue;
       if (Math.abs(o.pos.y - v.pos.y) > 2.5) continue;
-      const dx = o.pos.x - v.pos.x, dz = o.pos.z - v.pos.z, d = Math.hypot(dx, dz), R = 3.6;
+      const dx = o.pos.x - v.pos.x, dz = o.pos.z - v.pos.z, d = Math.hypot(dx, dz), R = (v.def.bike || o.def.bike) ? 2.7 : 3.6;
       if (d < R && d > 1e-3) {
         const push = (R - d) / d * 0.5;
         v.pos.x -= dx * push; v.pos.z -= dz * push;
@@ -1579,7 +1590,7 @@ export class Game {
       cs.yawOff -= inp.dx * 0.003 * s.sensitivity;
       cs.pitchOff = clamp(cs.pitchOff - inp.dy * 0.003 * s.sensitivity * (s.invertY ? -1 : 1), -0.5, 0.9);
       if (cs.idle > 1.5) { cs.yawOff *= Math.exp(-dt * 2); cs.pitchOff *= Math.exp(-dt * 2); }
-      const dist = v.flying ? 11 : 8.5, h = v.flying ? 3.5 : 3.0;
+      const dist = v.flying ? 11 : v.def.bike ? 5.8 : 8.5, h = v.flying ? 3.5 : v.def.bike ? 2.2 : 3.0;
       const yaw = v.yaw + cs.yawOff, pitch = 0.18 + cs.pitchOff + (v.flying ? -v.pitch * 0.5 : 0);
       const fx = -Math.sin(yaw) * Math.cos(pitch), fz = -Math.cos(yaw) * Math.cos(pitch), fy = Math.sin(pitch);
       const pivot = tmp.copy(v.pos); pivot.y += 1.6;

@@ -289,6 +289,20 @@ export class Humanoid {
       b.uaR.rotation.set(0.1, 0, 1.98 - sh); b.faR.rotation.set(0, 0, 1.16 + sh);
       b.hdL.rotation.set(0, 0, 0); b.hdR.rotation.set(0, 0, 0);
       b.head.rotation.set(-0.15, 0, 0);
+    } else if (opts.ride) {
+      // sitting on a motorbike: knees up, hands on the bars, leaning forward (sport) or back (chopper)
+      const lean = opts.ride === 'sport' ? -0.5 : -0.05;
+      b.hips.position.y = 0.95; b.hips.rotation.set(0, 0, 0);
+      b.spine.rotation.set(lean, 0, 0); b.chest.rotation.set(lean * 0.4, 0, 0); b.head.rotation.set(-lean * 0.8, 0, 0);
+      for (const s of ['L', 'R']) {
+        const sx = s === 'L' ? -1 : 1;
+        b['th' + s].rotation.set(opts.ride === 'sport' ? 1.45 : 1.25, 0, sx * 0.28);
+        b['sh' + s].rotation.set(opts.ride === 'sport' ? -1.7 : -1.1, 0, 0);
+        b['ft' + s].rotation.set(0.3, 0, 0);
+        b['ua' + s].rotation.set(opts.ride === 'sport' ? 0.9 : 1.25, 0, -sx * 0.15);
+        b['fa' + s].rotation.set(opts.ride === 'sport' ? 0.7 : 0.25, 0, 0);
+        b['hd' + s].rotation.set(0, 0, 0);
+      }
     } else if (opts.fists) {
       // boxing: fists up in a guard, punches shoot one arm straight out
       for (const s of ['L', 'R']) {

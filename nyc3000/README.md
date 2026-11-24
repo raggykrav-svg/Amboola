@@ -39,8 +39,8 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![GPS while flying](screenshots/33-gps-flying.jpg) | ![Cyber clinic](screenshots/34-cyber-clinic.jpg) |
 | **Implants (CYBERWARE)** | **Hacking an ATM** |
 | ![Cyberware](screenshots/35-cyberware.jpg) | ![ATM hack](screenshots/36-atm-hack.jpg) |
-| **A fist fight** | |
-| ![Fist fight](screenshots/37-fist-fight.jpg) | |
+| **A fist fight** | **Riding a motorbike** |
+| ![Fist fight](screenshots/37-fist-fight.jpg) | ![Motorbike](screenshots/38-motorbike.jpg) |
 
 ## Run it
 
@@ -156,6 +156,7 @@ Many tall buildings have a **hotel** door (HOTEL 3000, GRAND NEON HOTEL, SKYLINE
 
 - **Doors slide open** like in Cyberpunk 2077: walk up to a door and its two panels slide into the frame, with a green light. Just keep walking to go in (or press **E**). The door inside the room opens the same way when you leave. A red light means locked: shops you robbed lock you out for a few minutes.
 - **Gun shops** (PLASMA ARMS, IRON & NEON GUNS) are the orange dots on the minimap. Inside there are racks of guns, a glass counter and a shooting range. Press **E** at the counter to look at the guns (the shop's GUNS & GEAR page opens), or **B** / **H** for ammo and medkits.
+- **Motorbikes:** the sporty **VOLT BIKE** (up to 245 km/h) and the long, low **NEON CHOPPER**, both modelled in Blender. Walk up and press **F** to ride: you stay on the bike in a riding pose (crouched on the sport bike, sitting back on the chopper), it leans into turns and the camera sits closer. Two are parked right next to the start, and you can buy them in the shop ($700 and $1,200).
 - **More cars:** the LUMEN GT supercar, the little PIXEL MINI and the METRO VAN (modelled in Blender like the rest), driving in traffic, parked near the start and for sale in the shop. There's also more traffic.
 
 ### The shop (pause menu)

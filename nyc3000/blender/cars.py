@@ -498,14 +498,79 @@ def hover_car(kind, lod):
     return ob
 
 
-KINDS = ['sedan', 'muscle', 'police', 'super', 'compact', 'van', 'hover', 'taxi', 'flypolice']
+# ------------------------------------------------------------------ motorbikes
+def _rod(b, m, a, c, r, seg=8):
+    """A round tube from point a to point c."""
+    a, c = V(a), V(c)
+    d = c - a
+    rot = V((0, 0, 1)).rotation_difference(d.normalized()).to_euler()
+    b.cyl(r, r, d.length, m, tuple((a + c) / 2), tuple(rot), seg=seg)
+
+
+def motorbike(kind, lod):
+    """A sport bike ('bike') or a long, low chopper ('chopper'). Forward is +Y."""
+    P = palette()
+    b = Builder()
+    chop = kind == 'chopper'
+    yf, yr, wr = (0.98, -0.8, 0.34) if chop else (0.72, -0.72, 0.32)
+    neon = 'pink' if chop else 'cyan'
+    wheel(b, P, 0, yf, wr, 0.15, 1, neon, lod)
+    wheel(b, P, 0, yr, wr, 0.24 if chop else 0.18, 1, neon, lod)
+    wheel(b, P, 0, yf, wr * 0.999, 0.15, -1, neon, lod) if lod == 0 else None
+    seg = 10 if lod == 0 else 6
+    # front fork and handlebar
+    top = (0, yf - (0.42 if chop else 0.2), 1.12 if chop else 0.98)
+    for sx in (-0.09, 0.09):
+        _rod(b, P['chrome'], (sx, yf, wr), (sx, top[1], top[2]), 0.028, seg)
+    hb = top[2] + (0.12 if chop else 0.04)
+    _rod(b, P['black'], (-0.38 if chop else -0.32, top[1] - 0.05, hb + (0.12 if chop else 0)), (0.38 if chop else 0.32, top[1] - 0.05, hb + (0.12 if chop else 0)), 0.022, seg)
+    for sx in (-1, 1):
+        b.cyl(0.03, 0.03, 0.12, P['rubber'], (sx * (0.37 if chop else 0.31), top[1] - 0.05, hb + (0.12 if chop else 0)), (0, math.pi / 2, 0), seg=seg)
+    # rear swingarm and the frame
+    for sx in (-0.11, 0.11):
+        _rod(b, P['trim'], (sx, yr, wr), (sx, -0.05, 0.45), 0.03, seg)
+    _rod(b, P['trim'], (0, -0.05, 0.45), (0, top[1] - 0.05, top[2] - 0.15), 0.04, seg)
+    # engine
+    b.box(0.34, 0.5, 0.34, P['trim'], (0, 0.05, 0.47), bevel=0.04 if lod == 0 else 0)
+    for k in range(3 if lod == 0 else 0):
+        b.box(0.36, 0.04, 0.3, P['chrome'], (0, -0.12 + k * 0.12, 0.48))
+    b.box(0.3, 0.4, 0.02, P[neon], (0, 0.05, 0.29))  # underglow
+    if chop:
+        b.sphere(0.2, P['paint'], (0, 0.25, 0.92), (0.85, 1.5, 0.75), u=14 if lod == 0 else 8, v=8 if lod == 0 else 5)  # teardrop tank
+        b.box(0.32, 0.55, 0.09, P['black'], (0, -0.35, 0.72), bevel=0.04 if lod == 0 else 0)  # low seat
+        b.box(0.3, 0.18, 0.3, P['black'], (0, -0.66, 0.82), (0.3, 0, 0), bevel=0.04 if lod == 0 else 0)  # backrest
+        b.box(0.34, 0.5, 0.06, P['paint'], (0, yr + 0.05, wr + 0.38), (0.25, 0, 0), bevel=0.02 if lod == 0 else 0)  # rear fender
+        for sx in (-1, 1):
+            _rod(b, P['chrome'], (sx * 0.2, 0.0, 0.42), (sx * 0.22, -1.05, 0.38), 0.05, seg)  # long exhausts
+        b.box(0.05, 0.9, 0.04, P[neon], (0.2, 0.15, 0.78))
+        b.box(0.05, 0.9, 0.04, P[neon], (-0.2, 0.15, 0.78))
+        seat = (0, -0.3, 0.78)
+    else:
+        b.box(0.36, 0.62, 0.26, P['paint'], (0, 0.12, 0.86), (-0.12, 0, 0), bevel=0.06 if lod == 0 else 0)  # tank
+        b.box(0.44, 0.5, 0.42, P['paint'], (0, 0.6, 0.82), (-0.55, 0, 0), bevel=0.06 if lod == 0 else 0)  # nose fairing
+        b.box(0.34, 0.1, 0.22, P['glass'], (0, 0.62, 1.1), (-0.9, 0, 0))  # windscreen
+        b.box(0.28, 0.58, 0.09, P['black'], (0, -0.36, 0.9), (0.08, 0, 0), bevel=0.03 if lod == 0 else 0)  # seat
+        b.box(0.3, 0.5, 0.2, P['paint'], (0, -0.72, 0.96), (0.28, 0, 0), bevel=0.05 if lod == 0 else 0)  # tail
+        b.box(0.04, 0.7, 0.04, P[neon], (0.2, 0.2, 0.72), (-0.15, 0, 0))
+        b.box(0.04, 0.7, 0.04, P[neon], (-0.2, 0.2, 0.72), (-0.15, 0, 0))
+        _rod(b, P['chrome'], (0.16, -0.1, 0.38), (0.2, -0.95, 0.62), 0.055, seg)  # exhaust
+        seat = (0, -0.3, 0.92)
+    # lights
+    b.box(0.22, 0.04, 0.1, P['head'], (0, (0.9 if not chop else top[1] + 0.12), (0.84 if not chop else top[2] - 0.12)))
+    b.box(0.2, 0.04, 0.05, P['tail'], (0, (-0.98 if not chop else yr - 0.2), (1.0 if not chop else wr + 0.4)))
+    if lod == 0:
+        marker(f'{kind}_seat', seat)
+    return finish(b, kind + ('_lod1' if lod else ''), sharp=45, ao=dict(dist=0.5, rays=30 if lod == 0 else 16, ground=0.0, floor=0.3))
+
+
+KINDS = ['sedan', 'muscle', 'police', 'super', 'compact', 'van', 'bike', 'chopper', 'hover', 'taxi', 'flypolice']
 
 
 def build_all(lods=(0, 1)):
     objs = []
     for kind in KINDS:
         for lod in lods:
-            ob = ground_car(kind, lod) if kind in GROUND else hover_car(kind, lod)
+            ob = ground_car(kind, lod) if kind in GROUND else motorbike(kind, lod) if kind in ('bike', 'chopper') else hover_car(kind, lod)
             print(f'  {ob.name}: {tri_count(ob)} triangles')
             objs.append(ob)
     return objs
