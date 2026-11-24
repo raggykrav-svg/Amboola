@@ -125,7 +125,7 @@
       <div class="panel map-panel">
         <div class="shop-head"><h2>MAP</h2><div class="wallet"><b id="mapCur"></b><span>Click a place · wheel = zoom · drag = move</span></div></div>
         <div class="map-body">
-          <div class="map-wrap"><canvas id="mapCanvas"></canvas></div>
+          <div class="map-wrap"><canvas id="mapCanvas"></canvas><div id="mapTip"></div><div id="mapDistrict"></div></div>
           <div class="map-side">
             <div class="map-q">WHERE DO YOU WANT TO GO?</div>
             <div id="mapPick" class="map-pick"></div>
@@ -139,7 +139,18 @@
               <button class="mbtn small" data-q="hotel">NEAREST HOTEL</button>
               <button class="mbtn small" data-q="challenge">NEAREST CHALLENGE</button>
             </div>
-            <div class="map-legend"><span style="color:#3aff9a">●</span> shop <span style="color:#ff7a2a">●</span> gun shop <span style="color:#ffd27a">●</span> hotel <span style="color:#ffa43a">▬</span> highway <span style="color:#ffd23a">■</span> challenge</div>
+            <div class="map-q">SHOW ON MAP</div>
+            <div id="mapFilters">
+              <label><input type="checkbox" data-f="challenges" checked><i style="color:#ffd23a">◆</i> Challenges</label>
+              <label><input type="checkbox" data-f="guns" checked><i style="color:#ff8a3a">⊕</i> Gun shops</label>
+              <label><input type="checkbox" data-f="clinic" checked><i style="color:#3aff9a">✚</i> Cyber clinics</label>
+              <label><input type="checkbox" data-f="hotel" checked><i style="color:#ffd27a">H</i> Hotels</label>
+              <label><input type="checkbox" data-f="shop" checked><i style="color:#29f3ff">■</i> Shops</label>
+              <label><input type="checkbox" data-f="food" checked><i style="color:#ff9ad8">◒</i> Street food</label>
+              <label><input type="checkbox" data-f="atm" checked><i style="color:#3aff9a">$</i> ATMs</label>
+              <label><input type="checkbox" data-f="tags" checked><i style="color:#ff2bd6">☺</i> Neon tags found</label>
+              <label><input type="checkbox" data-f="cars" checked><i style="color:#3aff9a">▬</i> Your cars</label>
+            </div>
           </div>
         </div>
         <div class="panel-buttons"><button class="mbtn small" id="bMapBack">BACK</button></div>
@@ -191,6 +202,7 @@
       <div id="hitmark"></div>
       <div id="prompt"></div>
 
+      <div id="hudDistrict"></div>
       <div id="bl">
         <canvas id="minimap" width="200" height="200"></canvas>
         <div class="bars">

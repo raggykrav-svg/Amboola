@@ -33,7 +33,7 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Hotel lobby](screenshots/26-hotel-lobby.jpg) | ![Hotel lift](screenshots/27-hotel-lift.jpg) |
 | **A hotel room (floors 1–6)** | **A king suite (floors 7–10)** |
 | ![Hotel room](screenshots/29-hotel-room.jpg) | ![King suite](screenshots/30-king-suite.jpg) |
-| **The map (Tab): pick where to go** | **GPS arrows on the road** |
+| **The map (Tab), Cyberpunk-style** | **GPS arrows on the road** |
 | ![Map](screenshots/31-map.jpg) | ![GPS on the road](screenshots/32-gps-road.jpg) |
 | **Flying: the line goes straight there** | **A cyber clinic** |
 | ![GPS while flying](screenshots/33-gps-flying.jpg) | ![Cyber clinic](screenshots/34-cyber-clinic.jpg) |
@@ -144,7 +144,13 @@ Your implants and neon tags are saved with the game.
 
 ### The map and the GPS
 
-Press **Tab** (or **MAP** in the pause menu) for the big map of the whole city: shops (green), gun shops (orange), hotels (gold), the highways, challenges (coloured squares), your own cars and you. Scroll to zoom and drag to move it. **Click a place** and the side panel asks *Where do you want to go?* and names what you picked (a shop, a hotel, a challenge, or just a map marker); press **SET DESTINATION**. There are also quick buttons for the nearest shop, gun shop, hotel or challenge.
+Press **Tab** (or **MAP** in the pause menu) for the big map. It's drawn like the map in Cyberpunk 2077: a dark screen with red-outlined buildings that **stand up as 3D blocks** (the taller the building, the taller the block, and the corporate towers glow brighter), faint red streets, yellow highways, scanlines, and the **district names** written big across the city: **TIMES SQUARE**, **MIDTOWN SPIRES**, **NEON MARKET**, **HARBOR SIDE**, **NORTH YARDS** and **SOUTH BAY** (our own districts). The district you're in is shown in the corner of the map and under the minimap, and a message pops up when you walk into a new one.
+
+Every kind of place has its own icon: a crosshair for **gun shops**, a green cross for **cyber clinics**, **H** for hotels, a bag for shops, a bowl for street food, **$** for ATMs you can hack, smiley faces for the neon tags you've found, a car for your own cars, and a coloured diamond with the job's picture for each **challenge**. Zoom in to see the small places (shops, food, ATMs). **Hover the mouse over an icon** to see its name. The **SHOW ON MAP** checkboxes on the right hide or show each kind.
+
+![Zoomed-in map with a hover tooltip](screenshots/39-map-zoom.jpg)
+
+Scroll to zoom and drag to move it. **Click a place** and the side panel asks *Where do you want to go?* and names what you picked (a shop, a hotel, a challenge, or just a map marker); press **SET DESTINATION**. There are also quick buttons for the nearest shop, gun shop, hotel or challenge.
 
 Like in Cyberpunk 2077, a line of glowing yellow **arrows is painted on the roads** all the way there (it takes the streets with the fewest turns and avoids the highway ramps), and it's also drawn on the minimap. If you leave the route it finds a new one. **When you fly**, the line goes **straight through the air** to the spot instead. A yellow beam marks the destination, and you get *YOU HAVE ARRIVED* when you're there. **TRACK** on a challenge sets the GPS to it too.
 

@@ -483,4 +483,4 @@ function sim(seconds, step = 1 / 30) {
   for (let t = 0; t < seconds; t += step) { game.update(step); input.pressedSet.clear(); input.mouseClicked = false; input.dx = input.dy = 0; }
   hud.update(game, 0.016, settings.showFps, fpsSm);
 }
-window.nyc = { sim, models: MODELS, THREE, get game() { return game; }, get city() { return city; }, settings, setOption, startGame, goMenu, openPause, resume, renderer, camera, scene, input, get state() { return state; } };
+window.nyc = { sim, get map() { return mapScreen; }, models: MODELS, THREE, get game() { return game; }, get city() { return city; }, settings, setOption, startGame, goMenu, openPause, resume, renderer, camera, scene, input, get state() { return state; } };

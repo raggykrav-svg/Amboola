@@ -5,6 +5,7 @@ import { CITY } from './textures.js';
 import { roadC, GUN_SHOPS, CLINICS } from './city.js';
 import { HIGHWAYS } from './highway.js';
 import { FACTIONS, randomName } from './ai.js';
+import { MapScreen } from './mapscreen.js';
 
 const $ = id => document.getElementById(id);
 const { CELL, ROAD, N, HALF } = CITY;
@@ -164,6 +165,9 @@ export class HUD {
       let rel = b; if (rel - heading > 180) rel -= 360; if (heading - rel > 180) rel += 360;
       this.cObj.style.display = 'block'; this.cObj.style.left = (rel * 3) + 'px'; this.cObj.style.color = chi ? '#ffd23a' : '';
     } else this.cObj.style.display = 'none';
+    // the district you're in (it pops when it changes, like in Cyberpunk)
+    const dn = MapScreen.district(pp.x, pp.z);
+    if (this.cache.district !== dn) { if (this.cache.district && g.active && !g.interior) this.toast(dn); this.cache.district = dn; $('hudDistrict').textContent = dn; }
     // fps
     const f = $('fps'); f.style.display = showFps ? 'block' : 'none';
     if (showFps && this.frame % 10 === 0) f.textContent = fps.toFixed(0) + ' FPS';

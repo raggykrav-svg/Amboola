@@ -290,3 +290,24 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
 #hackTime { font: 600 13px Rajdhani; color: #ffd23a; }
 body.slowmo #game { filter: saturate(1.4) hue-rotate(-12deg) contrast(1.05); }
 body.slowmo #vignette { opacity: .6 !important; box-shadow: inset 0 0 160px rgba(255,210,58,.5); }
+
+/* ---- the map, Cyberpunk-style colours ---- */
+#map .panel.map-panel { background: linear-gradient(160deg, rgba(14,8,10,.96), rgba(6,10,13,.96)); border-color: #ff5a4e; box-shadow: 0 0 40px rgba(255,90,78,.25); }
+#map h2 { color: #ff5a4e; text-shadow: 0 0 12px rgba(255,90,78,.7); }
+#map .map-wrap { position: relative; border-color: rgba(255,90,78,.55); }
+#map .map-q { color: #f6e24a; }
+#map .mbtn { border-color: #ff5a4e; color: #ffd8d2; }
+#map .mbtn:hover:not(:disabled) { background: rgba(255,90,78,.25); }
+#map #mapGo { background: #f6e24a; color: #140a08; border-color: #f6e24a; }
+#mapTip { position: absolute; display: none; pointer-events: none; padding: 4px 8px; background: rgba(8,4,6,.92); border-left: 3px solid #f6e24a; color: #fff;
+  font: 700 13px Rajdhani, Arial; white-space: nowrap; }
+#mapDistrict { position: absolute; left: 12px; top: 10px; font: 900 16px Orbitron, Arial; letter-spacing: 3px; color: #f6e24a; text-shadow: 0 0 10px rgba(0,0,0,.9); pointer-events: none; }
+#mapFilters { display: flex; flex-direction: column; gap: 2px; font: 600 13px Rajdhani, Arial; color: #e8d8d4; }
+#mapFilters label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+#mapFilters input { accent-color: #ff5a4e; }
+#mapFilters i { font-style: normal; width: 14px; text-align: center; font-weight: 900; }
+.map-side { overflow-y: auto; }
+#hudDistrict { position: absolute; left: 20px; bottom: 228px; font: 900 12px Orbitron, Arial; letter-spacing: 3px; color: #f6e24a; text-shadow: 0 0 6px #000; }
+#map .panel.map-panel { width: 98vw; max-height: 96vh; padding: 18px 22px; }
+#map .map-body { height: min(74vh, 860px); }
+#map .map-side { width: 250px; }
