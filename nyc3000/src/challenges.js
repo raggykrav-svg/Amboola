@@ -28,6 +28,8 @@ export const TYPES = {
   find: { label: 'FIND SOMEONE', color: '#b98cff', icon: '🔍' },
   bounty: { label: 'BOUNTY', color: '#e8ecff', icon: '🎯' },
   crime: { label: 'CRIME IN PROGRESS', color: '#4aa0ff', icon: '🚨' },
+  brawl: { label: 'FIST FIGHT', color: '#ff8a5a', icon: '👊' },
+  shooting: { label: 'SHOOTING GALLERY', color: '#9fff3a', icon: '🎯' },
 };
 // positions are road crossings (i, j) on the 0..10 road grid
 export const CHALLENGES = [
@@ -59,8 +61,14 @@ export const CHALLENGES = [
   { id: 'crime1', type: 'crime', name: 'ROBBERY IN PROGRESS', at: [5, 1], thugs: 3, faction: 'skulls', victim: 'Delivery driver', cash: 500, cred: 140 },
   { id: 'crime2', type: 'crime', name: 'CARJACKING ON 2ND AVE', at: [2, 6], thugs: 2, faction: 'rats', victim: 'Driver', car: true, cash: 450, cred: 130 },
   { id: 'crime3', type: 'crime', name: 'HOLD-UP AT ARCADE 9', at: [7, 7], thugs: 4, faction: 'vipers', victim: 'Shop owner', cash: 600, cred: 170 },
+  // ---- fist fights: no guns, beat three fighters one after the other ----
+  { id: 'brawl1', type: 'brawl', name: 'FIGHT NIGHT AT THE DOCKS', at: [10, 6], foes: [['Iron Ike', 70], ['Big Mo', 100], ['Champion Rex', 140]], cash: 900, cred: 250 },
+  { id: 'brawl2', type: 'brawl', name: 'ROOFTOP RUMBLE', at: [6, 10], foes: [['Spike', 80], ['Tank Tanaka', 130]], cash: 700, cred: 200 },
+  // ---- shooting galleries: hit as many hologram targets as you can ----
+  { id: 'shoot1', type: 'shooting', name: 'NEON RANGE', at: [2, 0], time: 40, need: 15, cash: 600, cred: 160 },
+  { id: 'shoot2', type: 'shooting', name: 'SKY TARGETS', at: [10, 2], time: 40, need: 18, cash: 800, cred: 200 },
 ];
-const STARTS_WITH_E = new Set(['race', 'sky', 'delivery', 'find']);
+const STARTS_WITH_E = new Set(['race', 'sky', 'delivery', 'find', 'brawl', 'shooting']);
 const AUTO_RANGE = { gang: 95, psycho: 60, drones: 80, bounty: 95, crime: 90 };
 
 // checkpoints along a route of road crossings: one at every crossing on the way
@@ -121,6 +129,11 @@ export class Challenges {
     const edge = new THREE.Mesh(new THREE.TorusGeometry(1, 0.004, 4, 96), new THREE.MeshBasicMaterial({ color: 0xb98cff, toneMapped: false }));
     edge.rotation.x = Math.PI / 2; edge.position.y = 0.15; this.area.add(edge);
     this.area.visible = false; game.scene.add(this.area);
+    // the fight ring and the hologram targets
+    this.ring = new THREE.Mesh(new THREE.TorusGeometry(7, 0.12, 4, 48), new THREE.MeshBasicMaterial({ color: 0xff8a5a, toneMapped: false }));
+    this.ring.rotation.x = Math.PI / 2; this.ring.visible = false; game.scene.add(this.ring);
+    this.targetGeo = new THREE.RingGeometry(0.25, 0.9, 24);
+    this.targetMat = new THREE.MeshBasicMaterial({ color: 0x9fff3a, side: THREE.DoubleSide, toneMapped: false, transparent: true, opacity: 0.9 });
   }
 
   reset(save) {
@@ -227,6 +240,18 @@ export class Challenges {
     } else if (def.type === 'find') this._startFind(def, a);
     else if (def.type === 'bounty') this._startBounty(def, a);
     else if (def.type === 'crime') this._startCrime(def, a);
+    else if (def.type === 'brawl') {
+      if (p.vehicle) g.exitVehicle(true);
+      a.spot = startOf(def); a.round = 0;
+      p.fists = true; p.h.holdGun(null); p.punchT = 0;
+      this.ring.visible = true; this.ring.position.set(a.spot.x, 0.12, a.spot.z);
+      g.hud.say('REFEREE', 'No guns in the ring! Left click to punch. Beat them all!', '#ff8a5a', 5);
+      this._nextFoe(a);
+    } else if (def.type === 'shooting') {
+      if (p.vehicle) g.exitVehicle(true);
+      a.spot = startOf(def); a.left = def.time; a.score = 0; a.targets = []; a.spawnT = 0;
+      g.hud.say('RANGE MASTER', `Shoot the hologram targets! ${def.need} hits to win, every extra hit pays more.`, '#9fff3a', 5);
+    }
     this.active = a;
     this.tracked = def.id;
     g.audio.play('objective');
@@ -369,9 +394,109 @@ export class Challenges {
     g.hud.say('NYPD DISPATCH', `${def.victim} in trouble. Stop the ${FACTIONS[def.faction].name}, and be careful not to hit the victim!`, '#4aa0ff', 6);
   }
 
+  // ---------- fist fights ----------
+  _nextFoe(a) {
+    const g = this.g, [name, hp] = a.def.foes[a.round];
+    if (a.foe) a.foe.dispose();
+    const e = g.newPerson('ped'); e.health = e.maxHealth = hp; e.name = name;
+    const ang = Math.random() * Math.PI * 2; e.pos.set(a.spot.x + Math.cos(ang) * 4, 0, a.spot.z + Math.sin(ang) * 4);
+    e.punchT = 1.2; e.cool = 1.5; e.side = false;
+    a.foe = e; a.boss = e;
+    g.hud.toast(`ROUND ${a.round + 1}: ${name.toUpperCase()}`); g.audio.play('alarm');
+  }
+  // the player's punch lands (called halfway through the swing)
+  punch() {
+    const a = this.active, g = this.g, p = g.player;
+    if (!a || !a.foe || a.foe.state === 'dead') return;
+    const e = a.foe, dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz);
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    if (d > 2.3 || (dx * fx + dz * fz) / Math.max(d, 1e-3) < 0.35) { g.audio.play('empty'); return; }
+    e.health -= 12 + Math.random() * 6; e.hurtT = 0.25;
+    e.pos.x += dx / d * 0.6; e.pos.z += dz / d * 0.6;
+    g.audio.play('punch'); g.hud.hitmark(); g.hud.kick(3);
+    if (e.health <= 0) {
+      e.state = 'dead'; e.t = 6; e.fallT = 0; e.vel.set(dx / d * 2, 2, dz / d * 2);
+      g.audio.play('yell');
+      a.round++;
+      if (a.round >= a.def.foes.length) { g.hud.say('REFEREE', 'And the winner is… YOU!', '#ff8a5a'); this.complete(); }
+      else { a.waitT = 2.5; g.hud.toast(`${e.name.toUpperCase()} IS DOWN!`); }
+    }
+  }
+  _updateBrawl(dt, a) {
+    const g = this.g, p = g.player, e = a.foe;
+    if (Math.hypot(p.pos.x - a.spot.x, p.pos.z - a.spot.z) > 22) { this.fail('YOU LEFT THE RING'); return; }
+    if (a.waitT > 0) { a.waitT -= dt; if (e) g._personPhysics(e, dt); if (a.waitT <= 0) this._nextFoe(a); return; }
+    if (!e || e.state === 'dead') return;
+    const dx = p.pos.x - e.pos.x, dz = p.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1;
+    e.yaw = Math.atan2(-dx, -dz);
+    let sp = 0;
+    if (d > 1.5) { sp = 3.4; e.pos.x += dx / d * sp * dt; e.pos.z += dz / d * sp * dt; }
+    else if (d < 1.0) { e.pos.x -= dx / d * 1.5 * dt; e.pos.z -= dz / d * 1.5 * dt; }
+    const c = g.city.collide(e.pos.x, e.pos.z, 0.45, 0.3, 1.8); e.pos.x = c.x; e.pos.z = c.z;
+    // wind up, swing, hit if you're still in front
+    e.cool -= dt;
+    if (e.cool <= 0 && d < 2.0 && e.punchT <= 0) { e.punchT = 0.45; e.side = !e.side; }
+    if (e.punchT > 0) {
+      const before = e.punchT; e.punchT -= dt;
+      if (before > 0.18 && e.punchT <= 0.18 && d < 2.0) {
+        g.audio.play('punch'); g.hud.kick(6);
+        if (p.health - 7 < 12) { p.health = 50; g.hud.say('REFEREE', "You're down! Better luck next time.", '#ff8a5a'); this.fail('KNOCKED DOWN'); return; }
+        g.damagePlayer(7);
+      }
+      if (e.punchT <= 0) e.cool = 0.9 + Math.random() * 0.6;
+    }
+    const ext = e.punchT > 0 ? Math.sin(Math.min(1, 1 - e.punchT / 0.45) * Math.PI) : 0;
+    e.h.animate(dt, sp, { fists: true, punchR: e.side ? ext : 0, punchL: e.side ? 0 : ext });
+    e.root.position.copy(e.pos); e.root.rotation.set(e.hurtT > 0 ? -0.2 : 0, e.yaw, 0);
+    e.hurtT = (e.hurtT || 0) - dt;
+  }
+  // ---------- shooting gallery ----------
+  boltHit(a0, b0) {
+    const a = this.active; if (!a || !a.targets) return null;
+    for (const t of a.targets) {
+      const c = t.mesh.position, d = new THREE.Vector3().subVectors(b0, a0), l = d.length(); if (l < 1e-4) continue;
+      d.divideScalar(l);
+      const tt = Math.max(0, Math.min(l, new THREE.Vector3().subVectors(c, a0).dot(d)));
+      const q = a0.clone().addScaledVector(d, tt);
+      if (q.distanceTo(c) < 1.0) {
+        a.score++; t.life = -1; this.g.audio.play('pickup'); this.g.fx.sparks(c.clone(), 0x9fff3a, 14, 5);
+        return q;
+      }
+    }
+    return null;
+  }
+  _updateShooting(dt, a) {
+    const g = this.g, p = g.player, def = a.def;
+    if (Math.hypot(p.pos.x - a.spot.x, p.pos.z - a.spot.z) > 30) { this.fail('YOU LEFT THE RANGE'); return; }
+    a.left -= dt; a.spawnT -= dt;
+    if (a.spawnT <= 0 && a.targets.length < 3) {
+      a.spawnT = 0.6;
+      for (let k = 0; k < 10; k++) {
+        const ang = Math.random() * Math.PI * 2, r = 10 + Math.random() * 18, x = a.spot.x + Math.cos(ang) * r, z = a.spot.z + Math.sin(ang) * r, y = 2 + Math.random() * 9;
+        if (g.city.inside(x, y, z) || g.city.inside(x, 1, z)) continue;
+        const m = new THREE.Mesh(this.targetGeo, this.targetMat); m.position.set(x, y, z); g.scene.add(m);
+        a.targets.push({ mesh: m, life: 3.2 }); break;
+      }
+    }
+    for (let i = a.targets.length - 1; i >= 0; i--) {
+      const t = a.targets[i]; t.life -= dt;
+      t.mesh.lookAt(g.camera.position); t.mesh.scale.setScalar(Math.min(1, (3.2 - t.life) * 4) * (t.life < 0.4 ? t.life / 0.4 : 1) + 0.001);
+      if (t.life <= 0) { g.scene.remove(t.mesh); a.targets.splice(i, 1); }
+    }
+    if (a.left <= 0) {
+      for (const t of a.targets) g.scene.remove(t.mesh);
+      a.targets = [];
+      if (a.score >= def.need) { g.hud.say('RANGE MASTER', `${a.score} hits! Great shooting!`, '#9fff3a'); this.complete(Math.min(500, (a.score - def.need) * 25)); }
+      else this.fail(`ONLY ${a.score} OF ${def.need} HITS`);
+    }
+  }
+
   cancel(silent) {
     const a = this.active; if (!a) return;
     const g = this.g;
+    if (a.foe) { a.foe.dispose(); a.foe = null; }
+    if (a.targets) { for (const t of a.targets) g.scene.remove(t.mesh); a.targets = null; }
+    if (a.def.type === 'brawl') { const p = g.player; p.fists = false; g.selectWeapon(p.wi, true); this.ring.visible = false; }
     if (a.enemies) for (const e of a.enemies) {
       if (e.mesh) { if (!e.dead) { e.dead = true; e.fallV = 0; } continue; } // drones drop out of the sky
       if (e.state !== 'dead') { const i = g.gang.indexOf(e); if (i >= 0) g.gang.splice(i, 1); e.dispose(); }
@@ -451,6 +576,8 @@ export class Challenges {
       const b = left[0], away = b && b.ride;
       return { title: def.name, sub: away ? 'Stop the getaway car! Shoot it or ram it' : `Take down ${left.map(x => x.name).join(' and ')} · a quiet takedown pays a bonus`, target: b ? b.pos : startOf(def), boss: b && b.alert === COMBAT ? b : null };
     }
+    if (def.type === 'brawl') return { title: def.name, sub: a.foe && a.foe.state !== 'dead' ? `Round ${a.round + 1}/${def.foes.length}: ${a.foe.name} · left click to punch` : 'Next fighter coming…', target: a.spot, boss: a.foe && a.foe.state !== 'dead' ? a.foe : null };
+    if (def.type === 'shooting') return { title: def.name, sub: `Hits: ${a.score}/${def.need} · ${Math.max(0, Math.ceil(a.left))} s`, target: a.spot };
     if (def.type === 'crime') {
       const left = a.enemies.filter(e => e.state !== 'dead').length;
       return { title: def.name, sub: `Robbers left: ${left} · don't hit the ${def.victim.toLowerCase()}!`, target: startOf(def) };
@@ -550,6 +677,8 @@ export class Challenges {
         }
       }
       if (Math.hypot(wp.x - a.areaC.x, wp.z - a.areaC.z) > 650) { this.fail('YOU WENT TOO FAR AWAY'); return; }
+    } else if (def.type === 'brawl') { this._updateBrawl(dt, a); return;
+    } else if (def.type === 'shooting') { this._updateShooting(dt, a); return;
     } else if (def.type === 'bounty') {
       const b = a.bosses.find(x => x.state !== 'dead');
       if (b && b.ride && b.pos.distanceTo(wp) > 260) { this.fail(`${b.name.toUpperCase()} GOT AWAY`); return; }

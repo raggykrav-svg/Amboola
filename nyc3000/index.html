@@ -80,6 +80,7 @@
             <p><kbd>E</kbd> behind an enemy who hasn't seen you: quiet takedown</p>
             <p><kbd>Q</kbd> (hold) scanner: names of people, slows time</p>
             <p><kbd>Tab</kbd> map: click a place to get a GPS line to it</p>
+            <p><kbd>V</kbd> slow motion (TIME DILATOR implant)</p>
           </div>
           <div>
             <h3>Driving</h3>
@@ -101,7 +102,7 @@
     <div id="shop" class="screen panel-screen">
       <div class="panel wide">
         <div class="shop-head"><h2>SHOP</h2><div class="wallet"><b id="shopCash">$0</b><span id="shopCred"></span></div></div>
-        <div class="seg" id="shopTabs"><button data-tab="cars" class="on">CARS</button><button data-tab="guns">GUNS &amp; GEAR</button></div>
+        <div class="seg" id="shopTabs"><button data-tab="cars" class="on">CARS</button><button data-tab="guns">GUNS &amp; GEAR</button><button data-tab="cyber">CYBERWARE</button></div>
         <div id="shopGrid" class="shop-grid"></div>
         <div id="shopMsg" class="shop-msg"></div>
         <div class="panel-buttons"><button class="mbtn small" id="bShopBack">BACK</button></div>
@@ -175,6 +176,8 @@
       <div id="compass"><div id="compassStrip"></div><i class="compass-mark"></i></div>
       <div id="objective"><small>OBJECTIVE</small><img id="objPhoto" alt=""><div id="objText">-</div><div id="objDist"></div></div>
       <div id="say"></div>
+      <div id="hack"><div class="lift-title">CODE HACK · ATM</div><div class="hack-help">Pick codes to fill your buffer. Start in the top row, then go down the column you picked, then along that row… Make the target sequences to win cash.</div>
+        <div class="hack-body"><div id="hackGrid"></div><div class="hack-side"><div class="map-q">BUFFER</div><div id="hackBuf"></div><div class="map-q">TARGETS</div><div id="hackTargets"></div><div id="hackTime"></div><button class="mbtn small" id="hackQuit">STOP</button></div></div></div>
       <div id="lift"><div class="lift-title">LIFT · CHOOSE A FLOOR</div><div id="liftBtns"></div><div class="lift-help">Keys 1–9, 0 = floor 10</div></div>
       <div id="detect"><span id="detectText">?</span><div class="bar"><i id="detectFill"></i></div></div>
       <div id="scan"><div class="scan-title">SCANNER · hold Q</div><div id="scanLabels"></div></div>

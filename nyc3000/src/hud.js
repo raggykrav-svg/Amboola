@@ -2,7 +2,7 @@
 import { WEAPONS } from './models.js';
 import { TYPES, CHALLENGES } from './challenges.js';
 import { CITY } from './textures.js';
-import { roadC, GUN_SHOPS } from './city.js';
+import { roadC, GUN_SHOPS, CLINICS } from './city.js';
 import { HIGHWAYS } from './highway.js';
 import { FACTIONS, randomName } from './ai.js';
 
@@ -84,7 +84,7 @@ export class HUD {
     p.hurtT -= dt;
     if (!v) {
       const w = WEAPONS[p.wi], a = p.ammo[p.wi];
-      this.set('wName', w.name); this.set('ammoMag', String(a.mag)); this.set('ammoRes', String(a.res));
+      this.set('wName', p.fists ? 'FISTS' : w.name); this.set('ammoMag', String(a.mag)); this.set('ammoRes', String(a.res));
       $('ammo').classList.toggle('low', a.mag <= Math.ceil(w.mag * 0.25));
       // slots for the guns you own (bought guns get keys 4-6)
       const own = p.owned.map(o => (o ? 1 : 0)).join('');
@@ -215,13 +215,13 @@ export class HUD {
       if (Math.abs(x - pp.x) > range || Math.abs(z - pp.z) > range) continue;
       c.fillStyle = TYPES[def.type].color; c.fillRect(x - 5 / k, z - 5 / k, 10 / k, 10 / k);
     }
-    for (const e of g.gang) if (e.state !== 'dead' && (!e.neutral || e.alert === 2 || g.time - (e.scannedT || -99) < 20)) dot(e.pos.x, e.pos.z, 2.6, e.alert === 2 ? '#ff2040' : '#ffa43a');
+    for (const e of g.gang) if (e.state !== 'dead' && (!e.neutral || e.alert === 2 || g.implants.has('hawk') || g.time - (e.scannedT || -99) < 20)) dot(e.pos.x, e.pos.z, 2.6, e.alert === 2 ? '#ff2040' : '#ffa43a');
     for (const f of g.ai.friends) if (f.alive && f.state !== 'car' && f.kind !== 'npc') dot(f.pos.x, f.pos.z, 2.6, '#3aff9a');
     const A = g.ch.active;
     if (A && A.areaC && !A.found && A.friend && A.friend.state === 'wait') { c.strokeStyle = 'rgba(185,140,255,.8)'; c.lineWidth = 2 / k; c.fillStyle = 'rgba(185,140,255,.15)'; c.beginPath(); c.arc(A.areaC.x, A.areaC.z, A.r, 0, 7); c.fill(); c.stroke(); }
     // shops you can go into (green)
     for (const d of g.city.doors) if (d.kind === 'hotel' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 3.2, '#ffd27a');
-    for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) { const gun = GUN_SHOPS.has(d.name); dot(d.x, d.z, gun ? 3.4 : 2.2, gun ? '#ff7a2a' : '#3aff9a'); }
+    for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) { const gun = GUN_SHOPS.has(d.name), doc = CLINICS.has(d.name); dot(d.x, d.z, gun || doc ? 3.4 : 2.2, gun ? '#ff7a2a' : doc ? '#ffffff' : '#3aff9a'); }
     c.restore();
     // objective / challenge marker (clamped to edge)
     const t = target;
@@ -251,7 +251,7 @@ export function updateScanner(g, camera, on) {
   const list = [];
   const add = (pos, h, name, sub, color, hp, ref) => {
     const dx = pos.x - cam.x, dz = pos.z - cam.z, d = Math.hypot(dx, dz);
-    if (d > 65) return;
+    if (d > (g.implants.has('hawk') ? 100 : 65)) return;
     const p = camera.position.clone ? null : null; void p;
     const v = pos.clone().setY(pos.y + h + 0.35).project(camera);
     if (v.z > 1 || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05) return;

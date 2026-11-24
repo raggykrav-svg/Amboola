@@ -5,6 +5,7 @@ import { VEHICLE_TYPES, WEAPONS, makeVehicleMesh, makeGun } from './models.js';
 import { PRICES } from './game.js';
 import { TYPES, CRED_LEVELS } from './challenges.js';
 import { thumbnail } from './thumbs.js';
+import { IMPLANTS } from './activities.js';
 
 export const CAR_SHOP = [
   { type: 'sedan', price: 400, cred: 0, paint: '#1a6bd8' },
@@ -62,6 +63,21 @@ export function renderShop(ctx, tab = 'cars') {
         else say(r === 'cash' ? 'Not enough cash.' : 'Earn more Street Cred in challenges first.', false);
         renderShop(ctx, tab);
       }));
+    }
+  } else if (tab === 'cyber') {
+    // implants: you can look anywhere, but only a cyber clinic can put them in
+    if (!g.atClinic) say('Implants are installed at a CYBER CLINIC (white dots on the minimap, green cross sign).', false);
+    for (const it of IMPLANTS) {
+      const owned = g.implants.has(it.id), locked = !owned && g.credLevel < it.cred;
+      const text = owned ? 'INSTALLED' : locked ? `LOCKED · STREET CRED ${it.cred}` : !g.atClinic ? `${money(it.price)} · AT A CLINIC` : `INSTALL ${money(it.price)}`;
+      const el = card(null, `${it.name}`, `${it.slot} · ${it.text}`, text, owned || locked || !g.atClinic || g.cash < it.price, locked, owned, () => {
+        const r = g.acts.buyImplant(it.id);
+        say(r === 'ok' ? `${it.name} installed!` : r === 'cash' ? 'Not enough cash.' : r === 'clinic' ? 'Go to a cyber clinic.' : 'Earn more Street Cred first.', r === 'ok');
+        renderShop(ctx, tab);
+      });
+      el.querySelector('.pic').innerHTML = `<span style="color:${it.color};font-size:44px">${{ LEGS: '⚡', SKIN: '⬢', HEART: '♥', EYES: '◉', BRAIN: '⌛' }[it.slot]}</span>`;
+      el.classList.add('supply');
+      grid.appendChild(el);
     }
   } else {
     WEAPONS.forEach((w, i) => {

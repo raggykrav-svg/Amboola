@@ -35,8 +35,12 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Hotel room](screenshots/29-hotel-room.jpg) | ![King suite](screenshots/30-king-suite.jpg) |
 | **The map (Tab): pick where to go** | **GPS arrows on the road** |
 | ![Map](screenshots/31-map.jpg) | ![GPS on the road](screenshots/32-gps-road.jpg) |
-| **Flying: the line goes straight there** | |
-| ![GPS while flying](screenshots/33-gps-flying.jpg) | |
+| **Flying: the line goes straight there** | **A cyber clinic** |
+| ![GPS while flying](screenshots/33-gps-flying.jpg) | ![Cyber clinic](screenshots/34-cyber-clinic.jpg) |
+| **Implants (CYBERWARE)** | **Hacking an ATM** |
+| ![Cyberware](screenshots/35-cyberware.jpg) | ![ATM hack](screenshots/36-atm-hack.jpg) |
+| **A fist fight** | |
+| ![Fist fight](screenshots/37-fist-fight.jpg) | |
 
 ## Run it
 
@@ -86,6 +90,7 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | E behind an enemy who hasn't seen you | quiet takedown (knock-out) |
 | Q (hold) | scanner: names over people, who's a gang member, slows time |
 | Tab | the big map: click a place, SET DESTINATION, follow the arrows |
+| V | slow motion (with the TIME DILATOR implant) |
 
 | In a car | |
 |---|---|
@@ -118,6 +123,25 @@ Every building has 5 street doors: 2 shops and 3 flats (brick walk-ups have 1 sh
 - **Flats:** each flat has a TV, a kitchen, a sofa and a bed. Most flats hide one stash (cash, ammo or a medkit) that you can find once. Press **E** at the bed to sleep: it heals you, clears your wanted level and saves the game.
 - Your money is shown in the top right. You start with $200, and it's kept in your save.
 
+### Activities (like the side activities in Cyberpunk 2077)
+
+Our own versions, with made-up names:
+
+- **Cyber clinics** (CHROME CLINIC, CYBER DOC; white dots on the minimap, a green cross inside). Go in and press **E** at the counter to see the **CYBERWARE** page. Implants give you powers:
+  - **LEAP SPRINGS** $1,200: jump again in mid-air (double jump)
+  - **CAT FEET** $900: enemies notice you half as fast (sneaking)
+  - **HAWK EYES** $1,000: every bad guy nearby is on your minimap, and the scanner reaches further
+  - **TITAN SKIN** $1,500 (Street Cred 1): you take a third less damage
+  - **BIO REGEN** $1,800 (Street Cred 1): your health heals slowly by itself
+  - **TIME DILATOR** $2,500 (Street Cred 2): press **V** for 5 seconds of slow motion (recharges in 20)
+- **Hacking ATMs**: about 75 ATMs stand next to shops. Press **E** for the **CODE HACK** puzzle: a 5×5 grid of codes. Start in the top row, then pick in the column of your last pick, then the row, and so on. Your picks go into a 6-slot buffer; make the target sequences to win $150 and $450. The clock (25 s) starts with your first pick. Each ATM can be hacked once.
+- **Neon tags**: 24 glowing robot-face graffiti tags are hidden on walls around the city. Walk up to one to collect it: $50 each, plus bonuses at 8, 16 and all 24. They're saved.
+- **Street food**: at the night-market stalls (RAMEN, TACOS, SUSHI, BAO…) press **E** to eat for $15 and get 40 health back.
+- **Fist fights** (orange squares): FIGHT NIGHT AT THE DOCKS and ROOFTOP RUMBLE. No guns in the ring: **left click** throws punches, left and right. Beat each fighter in turn; if your health gets too low you're knocked down (you don't die) and can try again.
+- **Shooting galleries** (light-green squares): NEON RANGE and SKY TARGETS. Hologram targets pop up all around you for 40 seconds; hit enough to win, and every extra hit pays a bonus.
+
+Your implants and neon tags are saved with the game.
+
 ### The map and the GPS
 
 Press **Tab** (or **MAP** in the pause menu) for the big map of the whole city: shops (green), gun shops (orange), hotels (gold), the highways, challenges (coloured squares), your own cars and you. Scroll to zoom and drag to move it. **Click a place** and the side panel asks *Where do you want to go?* and names what you picked (a shop, a hotel, a challenge, or just a map marker); press **SET DESTINATION**. There are also quick buttons for the nearest shop, gun shop, hotel or challenge.
@@ -145,7 +169,7 @@ Press **Esc** and pick **SHOP** to spend your money. Every card shows the real 3
 
 ### Challenges
 
-Like the gigs and NCPD jobs in Cyberpunk 2077, there are 22 challenges around the city. They're the coloured squares on the minimap. Open **CHALLENGES** in the pause menu to see them all and **TRACK** one to get a marker on your compass and a light beam in the sky.
+Like the gigs and NCPD jobs in Cyberpunk 2077, there are 26 challenges around the city. They're the coloured squares on the minimap. Open **CHALLENGES** in the pause menu to see them all and **TRACK** one to get a marker on your compass and a light beam in the sky.
 
 - **Street races** (yellow): press **E** at the marker, a car is brought to you, then drive through every glowing ring before the timer runs out.
 - **Sky races** (cyan): the same, in a flying car, with rings high above the streets.
@@ -235,6 +259,7 @@ blender -b --factory-startup -P blender/build.py -- all
 
 - [three.js](https://threejs.org), [Vite](https://vitejs.dev) and [Blender](https://www.blender.org). Every model, texture and sound is generated by code: models by the Blender scripts above, canvas-drawn neon signs and windows, and Web Audio synths. There are no downloaded art or sound files. The fonts (Orbitron, Rajdhani) are SIL Open Font License, bundled through Fontsource.
 - `src/megacity.js`: the Night-City-style buildings (megabuildings, corporate towers, stacked towers, night markets, cables). `src/highway.js`: the elevated highways, their ramps and their traffic. `src/ads.js`: ad screens (one shared texture and shader) and the holograms.
+- `src/activities.js`: cyberware implants, the ATM code hack, neon tags and street food.
 - `src/mapscreen.js`: the big map. `src/gps.js`: the route along the roads (a search over the street crossings) and the arrow lines.
 - `src/ai.js`: the enemy brain (calm, searching, fighting; hearing, sight, squads, takedowns), street gangs and the people you rescue or chase.
 - `src/shop.js`: the pause-menu SHOP (with 3D pictures rendered from the real models) and the CHALLENGES board. `src/challenges.js`: the challenges, Street Cred and their markers.

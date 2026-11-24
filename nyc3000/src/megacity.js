@@ -340,13 +340,15 @@ const STALLS = [['RAMEN', '#ff2bd6'], ['NOODLES', '#ffa43a'], ['TACOS', '#3aff9a
 export function marketStreet(c, ch, r, bx0, bz0, BS) {
   const T = ch.trims, D = ch.details;
   const n = 3 + Math.floor(r() * 2);
-  for (let k = 0; k < n; k++) {
+  let placed = 0;
+  for (let k = 0; k < n * 4 && placed < n; k++) {
     const [fx, fz] = pick(r, FACES);
     const t = (r() - 0.5) * (BS - 20);
     // 3.6 m from the block edge: between the walking path and the shop fronts
     const x = fx ? (fx < 0 ? bx0 + 3.6 : bx0 + BS - 3.6) : bx0 + BS / 2 + t;
     const z = fz ? (fz < 0 ? bz0 + 3.6 : bz0 + BS - 3.6) : bz0 + BS / 2 + t;
-    if (c.doorNear(x, z, 4.5)) continue; // keep the doors free
+    if (c.doorNear(x, z, 3.0)) continue; // keep the doors free
+    placed++;
     const nx = fx ? -fx : 0, nz = fz ? -fz : 0; // the stall faces the street (away from the wall)
     const ry = fx ? Math.PI / 2 : 0;
     const [label, col] = pick(r, STALLS);
@@ -356,6 +358,7 @@ export function marketStreet(c, ch, r, bx0, bz0, BS) {
     D.add(new THREE.BoxGeometry(3.0, 0.12, 1.6), pick(r, ['#b02238', '#2a5aa8', '#228a70', '#b0701a', '#7a3ab0']), x + nx * 0.2, 2.45, z + nz * 0.2, fz ? -fz * 0.18 : 0, ry, fx ? fx * 0.18 : 0);
     for (let q = 0; q < 4; q++) T.add(new THREE.BoxGeometry(0.22, 0.3, 0.22), q % 2 ? '#ffb35a' : '#ff4a4a', x + (fx ? 0 : -1.1 + q * 0.73) + nx * 0.8, 2.15, z + (fx ? -1.1 + q * 0.73 : 0) + nz * 0.8);
     c._sign(label, col, x + nx * 0.52, 1.55, z + nz * 0.52, rotFor(nx, nz), 1.8, 0.45);
+    c.stalls.push({ x, z, nx, nz, label });
     c.addBox({ x0: x - (fx ? 0.5 : 1.3), x1: x + (fx ? 0.5 : 1.3), z0: z - (fx ? 1.3 : 0.5), z1: z + (fx ? 1.3 : 0.5), y0: 0, y1: 1.1 });
     c.decals.push([x + nx * 1.5, z + nz * 1.5, 3.5, new THREE.Color(col).multiplyScalar(0.5)]);
   }

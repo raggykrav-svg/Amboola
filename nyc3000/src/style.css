@@ -271,3 +271,22 @@ kbd { font-family: var(--font); font-size: 11px; padding: 2px 6px; border: 1px s
 #mapQuick { display: flex; flex-direction: column; gap: 6px; }
 .map-legend { margin-top: auto; font: 600 12px Rajdhani, Arial; color: #c8d0e8; line-height: 1.6; }
 @media (max-width: 760px) { .map-body { flex-direction: column; height: auto; } .map-wrap { height: 50vh; } .map-side { width: 100%; } }
+
+/* ---- code hack and slow motion ---- */
+#hack { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; padding: 16px 18px; background: rgba(6,16,14,.94);
+  border: 2px solid #3aff9a; border-radius: 10px; box-shadow: 0 0 30px rgba(58,255,154,.3); pointer-events: auto; width: min(620px, 94vw); }
+#hack.on { display: block; }
+#hack .lift-title { color: #3aff9a; }
+.hack-help { font: 600 13px Rajdhani, Arial; color: #c8e8d8; margin-bottom: 10px; }
+.hack-body { display: flex; gap: 16px; flex-wrap: wrap; }
+.hack-grid { display: grid; grid-template-columns: repeat(5, 54px); gap: 6px; }
+.hack-grid button { height: 44px; background: #0c1c18; border: 1px solid #1d4a3a; color: #6a9a88; font: 700 16px Orbitron, Arial; cursor: pointer; }
+.hack-grid button.ok { color: #d8ffe8; border-color: #3aff9a; background: #12302a; }
+.hack-grid button.ok:hover { background: #3aff9a; color: #06100e; }
+.hack-grid button.used { color: #2a4a40; cursor: default; }
+.hack-side { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 6px; }
+#hackBuf { display: flex; gap: 4px; } #hackBuf span { width: 30px; height: 26px; border: 1px solid #3aff9a; font: 700 12px Orbitron; color: #fff; display: flex; align-items: center; justify-content: center; }
+#hackTargets div { font: 700 14px Orbitron, Arial; color: #e8f6ff; } #hackTargets div.done { color: #3aff9a; } #hackTargets b { color: #ffd23a; font-size: 12px; }
+#hackTime { font: 600 13px Rajdhani; color: #ffd23a; }
+body.slowmo #game { filter: saturate(1.4) hue-rotate(-12deg) contrast(1.05); }
+body.slowmo #vignette { opacity: .6 !important; box-shadow: inset 0 0 160px rgba(255,210,58,.5); }

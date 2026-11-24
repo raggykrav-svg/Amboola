@@ -760,6 +760,65 @@ def shop_guns(P):
     return r.finish((0.2, 0.16, 0.18))
 
 
+def shop_cyberdoc(P):
+    """A cyber clinic: a surgery chair under a robot arm, screens with body scans, spare
+    cyber-arms and eyes in glowing cases, and a counter where you pick your implants."""
+    r = Room('room_shop_cyberdoc', 10.0, 8.0, 3.4)
+    r.P = P
+    W, D, H = r.W, r.D, r.H
+    r.floor(lambda x, y: P['tile_a'] if (int((x + 10) * 2) + int((y + 10) * 2)) % 2 else P['clinic_floor'])
+    r.walls(lambda h, z: P['clinic_wall'] if z > 0.3 else P['steel_dark'])
+    r.ceiling(P['ceil'])
+    for (p0, p1) in (((-W / 2 + 0.03, -D / 2, 2.8), (-W / 2 + 0.03, D / 2, 2.8)), ((-W / 2, D / 2 - 0.03, 2.8), (W / 2, D / 2 - 0.03, 2.8)),
+                     ((W / 2 - 0.03, -D / 2, 2.8), (W / 2 - 0.03, D / 2, 2.8))):
+        r.line(p0, p1, 0.025, P['neon_green'])
+    for x in (-2.5, 2.5):
+        r.box(1.6, 0.3, 0.05, P['lamp'], (x, 0, H - 0.03))
+        r.light((x, 0, H - 0.3), (0.85, 1.0, 0.95), 0.35, 3.0)
+    # the surgery chair (west) with a robot arm over it and a big lamp
+    cx, cy = -2.6, 1.6
+    r.box(0.8, 2.0, 0.12, P['clinic_white'], (cx, cy, 0.75), bevel=0.04)
+    r.box(0.8, 0.6, 0.12, P['clinic_white'], (cx, cy + 1.15, 1.0), (0.6, 0, 0), bevel=0.04)
+    r.cyl(0.12, 0.25, 0.7, P['steel'], (cx, cy, 0.35), seg=12)
+    r.cyl(0.04, 0.04, 1.2, P['steel'], (cx + 0.8, cy + 0.6, H - 0.6), seg=8)
+    r.box(0.08, 0.9, 0.08, P['steel'], (cx + 0.8, cy + 0.2, H - 1.2), (0.6, 0, 0))
+    r.box(0.08, 0.6, 0.08, P['steel'], (cx + 0.6, cy - 0.2, H - 1.55), (-0.5, 0, 0.4))
+    r.sphere(0.07, P['neon_green'], (cx + 0.4, cy - 0.35, H - 1.75), u=8, v=6)
+    r.cyl(0.4, 0.25, 0.15, P['lamp'], (cx, cy, H - 0.4), seg=16)
+    r.light((cx, cy, H - 0.7), (0.9, 1.0, 1.0), 0.45, 2.4)
+    r.col(cx - 0.5, cx + 0.5, cy - 1.05, cy + 1.45, 0, 1.1)
+    # screens with body scans
+    for k, m in enumerate((P['screen_green'], P['screen_cyan'], P['screen_green'])):
+        r.box(0.9, 0.05, 0.6, m, (-4.0 + k * 1.0, D / 2 - 0.06, 1.9))
+        r.box(0.98, 0.06, 0.68, P['dark'], (-4.0 + k * 1.0, D / 2 - 0.04, 1.9))
+    # glass cases with spare cyber-arms and eyes (east wall)
+    for k in range(3):
+        y = -2.6 + k * 1.5
+        r.box(0.6, 1.1, 2.0, P['glass_blue'], (W / 2 - 0.35, y, 1.2))
+        r.box(0.62, 1.12, 0.1, P['neon_green'], (W / 2 - 0.35, y, 0.25))
+        r.box(0.12, 0.12, 0.6, P['chrome'], (W / 2 - 0.35, y - 0.2, 1.4), (0, 0.3, 0))
+        r.box(0.1, 0.1, 0.4, P['chrome'], (W / 2 - 0.35, y - 0.05, 1.0), (0, -0.3, 0))
+        for q in range(3):
+            r.sphere(0.06, (P['neon_cyan'], P['neon_pink'], P['neon_green'])[q], (W / 2 - 0.35, y + 0.15 + q * 0.12, 1.85), u=8, v=6)
+        r.light((W / 2 - 0.9, y, 1.5), (0.4, 1.0, 0.7), 0.12, 1.2)
+    r.col(W / 2 - 0.7, W / 2, -3.2, 1.0, 0, 2.3)
+    # counter
+    counter_shop(r, P, 0.6, 3.4, 1.4, 2.1, 1.05, P['clinic_white'], P['glass_top'], None)
+    r.line((0.6, 1.38, 0.12), (3.4, 1.38, 0.12), 0.02, P['neon_green'])
+    r.box(0.4, 0.06, 0.3, P['screen_green'], (1.4, 1.75, 1.25), (0.4, 0, 0))
+    # a med cross sign over the counter
+    r.box(0.7, 0.05, 0.22, P['neon_green'], (2.0, D / 2 - 0.05, 2.8))
+    r.box(0.22, 0.05, 0.7, P['neon_green'], (2.0, D / 2 - 0.05, 2.8))
+    r.plant(P, -4.4, -3.3, 0.9)
+    r.door(-0.8, P, P['neon_green'], P['door_glass'])
+    r.mark('clerk', (2.0, 2.8, 0), **Room.facing(0, -1))
+    r.mark('counter', (2.0, 0.6, 0))
+    r.mark('cash', (2.6, 1.75, 1.1))
+    r.mark('sign', (2.0, D / 2 - 0.05, 2.25), w=2.6, h=0.6, **Room.facing(0, -1))
+    r.props = dict(payout_min=400, payout_max=900, stars=3, sells=1, cyber=1)
+    return r.finish((0.2, 0.24, 0.24))
+
+
 # ================================================================== FLATS
 def flat_studio(P):
     rnd = random.Random(11)
@@ -1437,6 +1496,7 @@ def pal():
         pipe=mat('pipe', '#8a6a4a', 0.8, 0.4), beam=mat('beam', '#2a2c32', 0.6, 0.5), leather=mat('leather', '#6a3a1e', 0.1, 0.45),
         rug_kilim=mat('rug_kilim', '#8a2a2a', 0, 0.9), rug_kilim2=mat('rug_kilim2', '#2a4a6a', 0, 0.9), butcher_block=mat('butcher_block', '#b08050', 0, 0.6),
         screen_paper=mat('screen_paper', '#e8dcc0', 0, 0.8),
+        clinic_floor=mat('clinic_floor', '#2a3a3a', 0.2, 0.4), clinic_wall=mat('clinic_wall', '#cfe0dc', 0.0, 0.6), clinic_white=mat('clinic_white', '#e8f0ee', 0.3, 0.3),
         # hotel rooms
         h_carpet_a=mat('h_carpet_a', '#5a2a34', 0, 0.95), h_carpet_b=mat('h_carpet_b', '#7a5a2a', 0, 0.95), wallpaper=mat('wallpaper', '#d8cdb4', 0, 0.8),
         wainscot=mat('wainscot', '#6a4a32', 0.1, 0.5), headboard=mat('headboard', '#3a2a24', 0.1, 0.6), duvet=mat('duvet', '#f4f2ec', 0, 0.85),
@@ -1448,7 +1508,7 @@ def pal():
     )
 
 
-ROOMS = [hotel_lobby, hotel_standard, hotel_king, shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, flat_studio, flat_penthouse, flat_gamer, flat_loft]
+ROOMS = [hotel_lobby, hotel_standard, hotel_king, shop_mart, shop_ramen, shop_diner, shop_bar, shop_bank, shop_arcade, shop_guns, shop_cyberdoc, flat_studio, flat_penthouse, flat_gamer, flat_loft]
 
 
 def build_all():
@@ -1467,7 +1527,7 @@ def previews(objs, out):
     views = {
         'room_shop_mart': ((-3.8, -3.6, 2.6), (1.5, 1.5, 1.0)), 'room_shop_ramen': ((-4.4, -3.0, 2.3), (1.0, 1.8, 1.1)),
         'room_shop_diner': ((-1.0, -3.6, 2.5), (1.0, 2.0, 0.9)), 'room_shop_bar': ((4.8, -4.0, 2.7), (-1.5, 1.5, 0.9)),
-        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)), 'room_hotel_lobby': ((-5.5, -4.2, 2.8), (1.5, 2.5, 1.2)), 'room_hotel_standard': ((3.3, -3.9, 2.4), (-1.5, 1.0, 0.8)), 'room_hotel_king': ((4.3, -3.9, 2.6), (-1.5, 1.0, 0.8)),
+        'room_shop_bank': ((-5.0, -4.5, 3.0), (1.0, 3.0, 1.4)), 'room_shop_arcade': ((-4.4, -3.6, 2.4), (2.0, 1.5, 1.0)), 'room_shop_guns': ((-4.0, -3.6, 2.4), (1.0, 1.5, 1.2)), 'room_shop_cyberdoc': ((3.8, -3.6, 2.4), (-1.5, 1.5, 1.0)), 'room_hotel_lobby': ((-5.5, -4.2, 2.8), (1.5, 2.5, 1.2)), 'room_hotel_standard': ((3.3, -3.9, 2.4), (-1.5, 1.0, 0.8)), 'room_hotel_king': ((4.3, -3.9, 2.6), (-1.5, 1.0, 0.8)),
         'room_flat_studio': ((-4.2, -3.9, 2.4), (2.0, 1.5, 0.9)), 'room_flat_penthouse': ((-5.2, -4.4, 2.8), (2.0, 2.0, 1.0)),
         'room_flat_gamer': ((-3.8, -3.6, 2.3), (1.5, 1.5, 0.9)), 'room_flat_loft': ((-4.8, -3.9, 3.2), (2.5, 2.0, 1.2)),
     }

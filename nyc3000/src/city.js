@@ -59,9 +59,10 @@ const SIGN_TEXTS = [
   ['SYNTH CITY', '#29f3ff'], ['ROBO TAXI', '#ffd23a'], ['CLUB 3000', '#ff1e3c'], ['QUANTUM BURGER', '#ffa43a'],
   ['CHROME DOLLS', '#ff2bd6'], ['NEURAL LINK BAR', '#3aff9a'], ['24/7 HOLOSHOW', '#29f3ff'], ['CYBER DELI', '#ff1e3c'],
   ['ARCADE 9', '#3aff9a'], ['NOODLE BOTS', '#ffa43a'], ['PLASMA PIZZA', '#ff2bd6'], ['NYC 3000', '#29f3ff'],
-  ['PLASMA ARMS', '#ff7a2a'], ['IRON & NEON GUNS', '#ff7a2a'],
+  ['PLASMA ARMS', '#ff7a2a'], ['IRON & NEON GUNS', '#ff7a2a'], ['CHROME CLINIC', '#3aff9a'], ['CYBER DOC', '#3aff9a'],
 ];
 export const GUN_SHOPS = new Set(['PLASMA ARMS', 'IRON & NEON GUNS']);
+export const CLINICS = new Set(['CHROME CLINIC', 'CYBER DOC']);
 const HOTEL_NAMES = ['HOTEL 3000', 'GRAND NEON HOTEL', 'SKYLINE HOTEL', 'HOTEL AURORA', 'THE MIDTOWN', 'HOTEL LUNA'];
 export const DOORS_PER_BUILDING = 5;
 const DOOR_W = 1.7;
@@ -103,6 +104,7 @@ export class City {
     this.decals = [];
     this.doors = []; this.doorGrid = new Map();
     // Night-City extras: ad screens, hologram spots, megabuildings, corporate towers, highway ramps
+    this.stalls = []; // night-market food stalls (activities.js)
     this.adSpots = []; this.holoSpots = []; this.megas = []; this.corps = []; this.ramps = [];
     this.blocked = new Set(); // road segments ground traffic must not use (under the highway ramps)
   }

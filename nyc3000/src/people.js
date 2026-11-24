@@ -289,6 +289,16 @@ export class Humanoid {
       b.uaR.rotation.set(0.1, 0, 1.98 - sh); b.faR.rotation.set(0, 0, 1.16 + sh);
       b.hdL.rotation.set(0, 0, 0); b.hdR.rotation.set(0, 0, 0);
       b.head.rotation.set(-0.15, 0, 0);
+    } else if (opts.fists) {
+      // boxing: fists up in a guard, punches shoot one arm straight out
+      for (const s of ['L', 'R']) {
+        const k = (s === 'R' ? opts.punchR : opts.punchL) || 0, sx = s === 'L' ? -1 : 1;
+        b['ua' + s].rotation.set(1.0 + 0.55 * k, 0, -sx * 0.2 * (1 - k));
+        b['fa' + s].rotation.set(1.95 - 1.8 * k, 0, 0);
+        b['hd' + s].rotation.set(0, 0, 0);
+      }
+      b.chest.rotation.set(0.05, ((opts.punchR || 0) - (opts.punchL || 0)) * 0.4, 0);
+      b.head.rotation.set(0.1, -((opts.punchR || 0) - (opts.punchL || 0)) * 0.3, 0);
     } else if (opts.dance) {
       // hands in the air, bouncing knees, swaying hips (the giant holograms)
       const t = this.phase * 5, beat = Math.sin(t), slow = Math.sin(t * 0.5), up = Math.max(0, beat), dn = Math.max(0, -beat);

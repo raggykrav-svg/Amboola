@@ -451,7 +451,7 @@ export class EnemyAI {
         let rate = 0;
         if (e.sees) {
           if (e.neutral) rate = this._aimedAt(e, dist) ? 0.8 : dist < 2.0 ? 0.3 : 0;
-          else rate = (dist < 6 ? 2.4 : dist < 14 ? 1.1 : 0.55) * (e.alert === SUSPICIOUS ? 1.7 : 1) * (inCar ? 0.6 : 1) * (running ? 1.3 : 1);
+          else rate = (dist < 6 ? 2.4 : dist < 14 ? 1.1 : 0.55) * (e.alert === SUSPICIOUS ? 1.7 : 1) * (inCar ? 0.6 : 1) * (running ? 1.3 : 1) * (g.implants && g.implants.has('cat') ? 0.5 : 1);
         }
         if (rate > 0) e.aware = Math.min(1, e.aware + rate * dt);
         else e.aware = Math.max(0, e.aware - dt * (e.alert === SUSPICIOUS ? 0.05 : 0.22));

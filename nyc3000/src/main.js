@@ -417,7 +417,7 @@ function frame(now) {
     const p = game.player, scanning = input.down('KeyQ') && p.alive && !p.vehicle && !game.interior;
     if (scanning && !wasScanning) audio.play('scan');
     wasScanning = scanning;
-    game.update(scanning ? dt * 0.4 : dt);
+    game.update(dt * (scanning ? 0.4 : game.acts.timeScale));
     hud.update(game, dt, settings.showFps, fpsSm);
     updateScanner(game, camera, scanning);
   } else if (inMenu) updateMenuCam(dt);
@@ -460,6 +460,7 @@ async function boot() {
     if (on) { wantLock = false; if (document.pointerLockElement) document.exitPointerLock(); }
     else if (state === 'play') { wantLock = true; lockPointer(); }
   };
+  game.onClinic = () => { openPause(); shopTab = 'cyber'; openShop(); };
   game.onGunShop = () => { openPause(); shopTab = 'guns'; openShop(); };
   game.onSave = () => { storage.set(SAVE_KEY, JSON.stringify(game.saveData())); return !!readSave(); };
   applySettings();

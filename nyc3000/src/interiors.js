@@ -11,7 +11,7 @@ const isGlow = m => m.emissive && m.emissive.r + m.emissive.g + m.emissive.b > 0
 const SHOP_TYPES = {
   'KAIJU RAMEN': 'ramen', 'NOODLE BOTS': 'ramen', 'QUANTUM BURGER': 'diner', 'PLASMA PIZZA': 'diner', 'CYBER DELI': 'diner',
   'HOLO-BANK': 'bank', 'NEO WALL ST': 'bank', 'NEURAL LINK BAR': 'bar', 'CHROME DOLLS': 'bar', 'CLUB 3000': 'bar',
-  'ARCADE 9': 'arcade', '24/7 HOLOSHOW': 'arcade', 'PLASMA ARMS': 'guns', 'IRON & NEON GUNS': 'guns',
+  'ARCADE 9': 'arcade', '24/7 HOLOSHOW': 'arcade', 'PLASMA ARMS': 'guns', 'IRON & NEON GUNS': 'guns', 'CHROME CLINIC': 'cyberdoc', 'CYBER DOC': 'cyberdoc',
 };
 // every door gets a lighting mood on top of its room
 const MOODS = [[1, 1, 1], [1.1, 0.95, 0.84], [0.86, 0.96, 1.12], [1.08, 0.86, 1.05], [0.9, 1.08, 0.95], [1.05, 1.0, 0.9]];

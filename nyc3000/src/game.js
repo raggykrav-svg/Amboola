@@ -6,6 +6,7 @@ import { Challenges, credLevel } from './challenges.js';
 import { EnemyAI, COMBAT } from './ai.js';
 import { SlidingDoors } from './doors.js';
 import { GPS } from './gps.js';
+import { Activities } from './activities.js';
 import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens, pedKindFor } from './models.js';
 
 const { CELL, ROAD, N, HALF } = CITY;
@@ -109,6 +110,8 @@ export class Game {
     this.ai = new EnemyAI(this); // gang members that notice gunfire, street gangs, people to rescue
     this.slide = new SlidingDoors(this.scene); // Cyberpunk-style doors that slide open
     this.gps = new GPS(this); // pick a destination on the map, follow the arrows
+    this.implants = new Set();
+    this.acts = new Activities(this); // cyberware, ATM hacking, neon tags, street food
     this._buildPlayer();
     // tall light beam that marks the objective in the world
     const bg = new THREE.CylinderGeometry(1.4, 1.4, 400, 16, 1, true); bg.translate(0, 200, 0);
@@ -151,6 +154,7 @@ export class Game {
     }
     if (!p.owned[p.wi]) p.wi = 0;
     this.ch.reset(save);
+    this.acts.reset(save);
     this._leaveInterior(); this.shops.clear();
     p.pitch = 0;
     this.selectWeapon(p.wi, true);
@@ -184,7 +188,7 @@ export class Game {
       if (Math.abs(x - rx) < Math.abs(z - rz)) x = rx; else z = rz;
     }
     return { v: 1, pos: [x, 0, z], yaw: v ? v.yaw : p.yaw, health: Math.round(p.health), shield: Math.round(p.shield), ammo: p.ammo.map(a => ({ ...a })), wi: p.wi, objective: this.objective < 0 ? this._objNext : this.objective, wave: this.wave, cash: this.cash, looted: [...this.looted],
-      guns: WEAPONS.filter((w, i) => p.owned[i] && w.price).map(w => w.id), garage: [...this.garage], cred: this.cred, done: [...this.ch.done], time: Date.now() };
+      guns: WEAPONS.filter((w, i) => p.owned[i] && w.price).map(w => w.id), garage: [...this.garage], cred: this.cred, done: [...this.ch.done], ...this.acts.save(), time: Date.now() };
   }
 
   // where the player is in the city: inside a shop or flat that's the street door they used
@@ -326,6 +330,7 @@ export class Game {
   // ---------- weapons ----------
   selectWeapon(i, silent) {
     const p = this.player; i = (i + WEAPONS.length) % WEAPONS.length;
+    if (p.fists) return; // no guns in the ring
     if (!p.owned[i]) return;
     if (p.wi === i && !silent) return;
     p.wi = i; p.reloadT = 0; p.fireCD = 0.2;
@@ -362,6 +367,14 @@ export class Game {
   firePlayer(dt) {
     const p = this.player, w = WEAPONS[p.wi], a = p.ammo[p.wi], inp = this.input;
     p.fireCD -= dt;
+    if (this.acts.hack.on) return;
+    if (p.fists) { // fist fight: left click punches, left and right
+      const before = p.punchT || 0;
+      p.punchT = before - dt;
+      if (before > 0.16 && p.punchT <= 0.16) this.ch.punch();
+      if (this.input.mouseClicked && p.punchT <= 0) { p.punchT = 0.32; p.punchSide = !p.punchSide; this.audio.play('switch'); }
+      return;
+    }
     if (p.reloadT > 0) {
       p.reloadT -= dt;
       if (p.reloadT <= 0) { const need = w.mag - a.mag, take = Math.min(need, a.res); a.mag += take; a.res -= take; }
@@ -438,6 +451,7 @@ export class Game {
       };
       if (b.owner === 'player') {
         this.ai.nearMiss(prev, b.pos);
+        if (!hit) { const th = this.ch.boltHit(prev, b.pos); if (th) hit = { pos: th }; }
         for (const f of this.ai.friends) { if (hit) break; if (!f.alive || f.state === 'car') continue; const h = segHit(f.pos, 0.45, f.pos.y, f.pos.y + (f.dog ? 1.1 : 1.9)); if (h) { hit = { pos: h }; f.hurt(b.dmg); } }
         for (const e of this.peds) { if (hit) break; if (e.state === 'gone' || e.state === 'dead') continue; const h = segHit(e.pos, 0.45, e.pos.y, e.pos.y + 1.9); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
         for (const e of this.cops) { if (hit) break; if (e.state === 'dead') continue; const h = segHit(e.pos, 0.5, e.pos.y, e.pos.y + 1.9); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
@@ -464,6 +478,7 @@ export class Game {
   // ---------- damage ----------
   damagePlayer(dmg) {
     const p = this.player; if (!p.alive) return;
+    if (this.implants.has('skin')) dmg *= 0.66; // TITAN SKIN
     p.shieldDelay = 4;
     const s = Math.min(p.shield, dmg * 0.7); p.shield -= s; dmg -= s;
     p.health -= dmg; p.hurtT = 0.4;
@@ -667,6 +682,9 @@ export class Game {
     }
     for (let k = 1; k <= 10; k++) if (this.input.pressed('Digit' + (k % 10))) { this.goFloor(k); return; }
   }
+  get atClinic() { return !!(this.interior && this.interior.room.props.cyber); }
+  // let the mouse go (lift panel, hacking puzzle) and take it back
+  freeMouse(on) { if (this.onLift) this.onLift(on); }
   openLift() { this.liftOpen = true; this.audio.play('ding'); this.hud.lift(true); if (this.onLift) this.onLift(true); }
   closeLift() { this.liftOpen = false; this.hud.lift(false); if (this.onLift) this.onLift(false); }
   // ride the lift up and walk into your room on that floor
@@ -771,6 +789,7 @@ export class Game {
       if (robbed) lines.push('“Take it and go!”');
       else if (R.props.sells) {
         if (R.props.guns) { lines.push('<kbd>E</kbd> Look at the guns'); if (inp.pressed('KeyE') && this.onGunShop) this.onGunShop(); }
+        if (R.props.cyber) { lines.push('<kbd>E</kbd> See the implants'); if (inp.pressed('KeyE') && this.onClinic) this.onClinic(); }
         lines.push(`<kbd>B</kbd> Ammo $${PRICES.ammo}`, `<kbd>H</kbd> Medkit $${PRICES.medkit}`);
         if (inp.pressed('KeyB')) this._buy('ammo');
         if (inp.pressed('KeyH')) this._buy('medkit');
@@ -906,6 +925,7 @@ export class Game {
     this.ai.update(dt);
     this.slide.update(dt, this);
     this.gps.update(dt);
+    this.acts.update(dt);
     this.updateDrones(dt);
     this.updateBolts(dt);
     this.updatePolice(dt);
@@ -933,8 +953,10 @@ export class Game {
     p.pitch = clamp(p.pitch + (p.recoil || 0) * dt * 8, -1.2, 1.25);
     // move
     let mx = 0, mz = 0;
+    if (!this.acts.hack.on) {
     if (inp.down('KeyW')) mz -= 1; if (inp.down('KeyS')) mz += 1;
     if (inp.down('KeyA')) mx -= 1; if (inp.down('KeyD')) mx += 1;
+    }
     const sprint = inp.down('ShiftLeft') || inp.down('ShiftRight');
     const len = Math.hypot(mx, mz) || 1;
     const sp = (sprint && mz < 0 ? 8.5 : 4.6) * (inp.mouseRight ? 0.6 : 1);
@@ -946,7 +968,9 @@ export class Game {
     p.pos.x += p.vel.x * dt; p.pos.z += p.vel.z * dt;
     // jump / gravity
     const g = this.city.groundAt(p.pos.x, p.pos.z, p.pos.y);
+    if (p.onGround) p.dj = false;
     if (p.onGround && inp.pressed('Space')) { p.vy = 7.5; p.onGround = false; }
+    else if (!p.onGround && !p.dj && inp.pressed('Space') && this.implants.has('leap')) { p.vy = 8.5; p.dj = true; this.audio.play('switch'); } // LEAP SPRINGS
     p.vy -= 22 * dt; p.pos.y += p.vy * dt;
     if (p.pos.y <= g) { p.pos.y = g; p.vy = 0; p.onGround = true; } else if (p.pos.y > g + 0.05) p.onGround = false;
     // collisions
@@ -983,7 +1007,10 @@ export class Game {
     const h = p.h;
     h.root.position.copy(p.pos);
     h.root.rotation.y = p.yaw;
-    h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { aim: p.pitch * 0.85, air: !p.onGround });
+    if (p.fists) {
+      const k = Math.max(0, p.punchT || 0) / 0.32, ext = Math.sin(Math.min(1, 1 - k) * Math.PI);
+      h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { fists: true, air: !p.onGround, punchR: p.punchSide ? ext : 0, punchL: p.punchSide ? 0 : ext });
+    } else h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { aim: p.pitch * 0.85, air: !p.onGround });
     // prompts: cars, street doors, things inside rooms
     if (this.interior) { this.updateInterior(dt); return; }
     const tk = this.ai.takedownTarget(), fr = tk ? '' : this.ai.friendPrompt();
@@ -994,6 +1021,7 @@ export class Game {
     if (door) lines.push(`<kbd>E</kbd> ${door.kind === 'shop' ? 'Go into ' + door.name : 'Go into the flat'}`);
     if (nv) lines.push(`<kbd>F</kbd> ${nv.hasDriver ? 'Jack' : 'Enter'} ${nv.def.name}`);
     const cp = !door && !tk && !fr && this.ch.prompt(); if (cp) lines.push(cp);
+    const ap = !door && !tk && !fr && !cp && this.acts.prompt(); if (ap) lines.push(ap);
     this.hud.prompt(lines.join(' &nbsp; '));
     if (door && this.input.pressed('KeyE')) this.enterDoor(door);
   }
