@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SUMER — Walk Limassol</title>
+<meta name="description" content="Sumer: a walking game in a 3D copy of Limassol, Cyprus, built from real map data.">
+<meta name="theme-color" content="#0b5f86">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='28' r='16' fill='%23ffb53d'/%3E%3Cpath d='M4 44q7-6 14 0t14 0 14 0 14 0v16H4z' fill='%230b7fb0'/%3E%3C/svg%3E">
+<style>
+:root{
+  --sea:#0b6e99; --sea2:#0b4f73; --turq:#3fc1c9; --sun:#ffb53d; --sunset:#ff7a45; --sand:#f4e6c8; --ink:#0e2433; --paper:#fffaf0;
+  --glass:rgba(10,32,48,.62); --glass2:rgba(10,32,48,.82); --line:rgba(255,255,255,.18);
+  --ui: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; --head: 'Fredoka', 'Nunito', system-ui, sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b2a3d;color:#fff;font-family:var(--ui);touch-action:none;user-select:none;-webkit-user-select:none}
+canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hide{display:none!important}
+button{font-family:var(--head);cursor:pointer;border:0}
+/* ---------- loading ---------- */
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(120% 90% at 50% 10%,#ffcf7a 0%,#ff8a52 30%,#2a7fa8 62%,#0b3550 100%);z-index:50}
+#loading .logo{font-size:clamp(64px,16vw,150px)}
+#loadbar{width:min(420px,80vw);height:12px;border-radius:8px;background:rgba(255,255,255,.25);overflow:hidden}
+#loadbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#fff6d8,#ffd37a);border-radius:8px;transition:width .2s}
+#loadtxt{font-weight:700;opacity:.92;min-height:1.3em;text-align:center;padding:0 16px}
+/* ---------- logo ---------- */
+.logo{font-family:var(--head);font-weight:700;letter-spacing:.06em;line-height:.9;position:relative;display:inline-block;color:#fff;
+  text-shadow:0 4px 0 rgba(0,0,0,.12),0 10px 30px rgba(0,40,70,.35)}
+.logo .sun{display:inline-block;width:.78em;height:.78em;border-radius:50%;vertical-align:-.04em;margin:0 .02em;
+  background:radial-gradient(circle at 40% 35%,#fff4c2 0,#ffcf4d 35%,#ff8f3d 80%);box-shadow:0 0 40px rgba(255,190,80,.8)}
+.waves{display:block;margin:6px auto 0;width:70%;height:14px}
+/* ---------- title ---------- */
+#title{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 16px calc(28px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(8,30,46,.0) 0%,rgba(8,30,46,.0) 35%,rgba(8,30,46,.55) 72%,rgba(8,30,46,.8) 100%)}
+#title .top{position:absolute;top:calc(6vh + env(safe-area-inset-top));left:0;right:0;text-align:center}
+#title .logo{font-size:clamp(72px,17vw,170px)}
+#title .sub{font-family:var(--head);font-size:clamp(17px,2.6vw,26px);margin-top:8px;opacity:.96;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+#title .menu{display:flex;flex-direction:column;gap:12px;width:min(360px,92vw)}
+.big{font-size:22px;font-weight:700;padding:15px 18px;border-radius:16px;background:var(--paper);color:var(--ink);box-shadow:0 6px 0 rgba(0,0,0,.18),0 10px 30px rgba(0,0,0,.25);transition:transform .08s}
+.big:active{transform:translateY(3px)}
+.big.go{background:linear-gradient(180deg,#ffd06a,#ff9a3d);color:#3a1c00}
+.big.alt{background:rgba(255,255,255,.14);color:#fff;border:2px solid rgba(255,255,255,.35);box-shadow:none;font-size:18px;padding:12px}
+#title .foot{margin-top:16px;font-size:12px;opacity:.75;text-align:center}
+#title .foot a,#mapui .attr a{color:#bfe9ff}
+#title .stats{font-size:14px;opacity:.9;margin-top:4px;text-align:center}
+/* ---------- panels ---------- */
+.panel{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(5,20,32,.55);padding:16px}
+.card{width:min(520px,100%);max-height:calc(100% - 20px);overflow:auto;background:var(--paper);color:var(--ink);border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.card h2{font-family:var(--head);margin:0 0 12px;font-size:28px;color:var(--sea2)}
+.card .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08);font-weight:700}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{padding:8px 12px;border-radius:10px;background:#eae3d2;color:var(--ink);font-size:15px}
+.seg button.on{background:var(--sea);color:#fff}
+.card .btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.card .btns .big{flex:1;font-size:18px;padding:12px}
+.card table{width:100%;border-collapse:collapse;font-size:15px}
+.card td{padding:6px 4px;border-bottom:1px solid rgba(0,0,0,.07)}
+.card td:first-child{font-weight:800;white-space:nowrap;color:var(--sea2)}
+.kbd{display:inline-block;background:#eae3d2;border-radius:6px;padding:1px 7px;font-weight:800;font-size:13px;margin:1px}
+input[type=range]{width:150px;accent-color:var(--sea)}
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#place{position:absolute;left:calc(14px + env(safe-area-inset-left));top:calc(14px + env(safe-area-inset-top));max-width:min(46vw,420px);background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(6px);border-radius:16px;padding:10px 14px}
+#street{font-family:var(--head);font-size:clamp(17px,2.1vw,23px);font-weight:600;line-height:1.15}
+#district{font-size:13px;opacity:.85;margin-top:2px;font-weight:700}
+#goal{position:absolute;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top));background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(6px);border-radius:999px;padding:7px 14px 7px 8px;display:flex;align-items:center;gap:10px;white-space:nowrap;font-weight:800;font-size:14px}
+#goal .arrow{width:30px;height:30px;border-radius:50%;background:var(--sun);display:flex;align-items:center;justify-content:center;color:#3a1c00;font-size:18px;transition:transform .12s linear}
+#goal .cnt{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:999px;font-size:13px}
+#miniwrap{position:absolute;right:calc(14px + env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));width:clamp(120px,19vw,196px);height:clamp(120px,19vw,196px);border-radius:50%;overflow:hidden;border:3px solid rgba(255,255,255,.85);box-shadow:0 6px 20px rgba(0,0,0,.35);background:#2a7fa8}
+#mini{width:100%;height:100%;display:block}
+#north{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#e8453c;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+#hint{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:8px 14px;font-size:13px;font-weight:700;text-align:center;transition:opacity 1s;max-width:92vw}
+#toast{position:absolute;left:50%;top:22%;transform:translate(-50%,-20px) scale(.96);opacity:0;transition:all .45s cubic-bezier(.2,1.4,.5,1);background:var(--paper);color:var(--ink);border-radius:22px;padding:18px 22px;width:min(440px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+#toast .ic{font-size:46px;line-height:1}
+#toast .k{font-family:var(--head);font-size:14px;color:var(--sunset);font-weight:700;letter-spacing:.08em;margin-top:6px}
+#toast .n{font-family:var(--head);font-size:28px;font-weight:700;color:var(--sea2);margin:2px 0 6px}
+#toast .d{font-size:15px;line-height:1.35}
+#msg{position:absolute;left:50%;top:44%;transform:translateX(-50%);font-family:var(--head);font-size:22px;font-weight:600;text-shadow:0 2px 10px rgba(0,0,0,.6);opacity:0;transition:opacity .4s;text-align:center}
+#fps{position:absolute;left:14px;bottom:10px;font:700 12px monospace;opacity:.8}
+#cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 0 1.5px rgba(0,0,0,.25)}
+#tools{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:8px;pointer-events:auto}
+.tb{width:52px;height:52px;border-radius:16px;background:var(--glass);border:1px solid var(--line);color:#fff;font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.tb small{font-family:var(--ui);font-size:9px;font-weight:800;opacity:.8;margin-top:2px}
+/* touch */
+#touch{position:fixed;inset:0;z-index:11;pointer-events:none}
+#stick{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(26px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);pointer-events:auto}
+#knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#tbtns{position:absolute;right:calc(18px + env(safe-area-inset-right));bottom:calc(84px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+#tbtns .tb{width:64px;height:64px;border-radius:50%;font-size:24px}
+#tbtns .tb.on{background:var(--sun);color:#3a1c00}
+/* map */
+#mapui{position:fixed;inset:0;z-index:35;background:#0b3550;display:flex}
+#mapc{flex:1;min-width:0;height:100%;display:block;touch-action:none;cursor:grab}
+#mapside{width:min(340px,42vw);height:100%;overflow:auto;background:var(--paper);color:var(--ink);padding:14px}
+#mapside h3{font-family:var(--head);margin:4px 0 8px;font-size:22px;color:var(--sea2)}
+.lm{display:flex;gap:10px;align-items:center;padding:8px;border-radius:12px;cursor:pointer;font-weight:700}
+.lm:hover,.lm.sel{background:#efe6cf}
+.lm .i{font-size:24px;width:32px;text-align:center}
+.lm .t{flex:1;font-size:15px;line-height:1.2}
+.lm .t small{display:block;font-weight:600;opacity:.7;font-size:12px}
+.lm .ok{color:#2c9a52;font-size:18px}
+#mapgo{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%)}
+#mapclose{position:absolute;left:14px;top:14px;background:var(--glass2);border-color:rgba(255,255,255,.5)}
+#maptip{position:absolute;left:14px;bottom:14px;font-size:12px;font-weight:700;max-width:46%;background:var(--glass2);padding:6px 10px;border-radius:10px}
+#mapui .attr{position:absolute;right:calc(min(340px,42vw) + 10px);bottom:8px;font-size:11px;background:rgba(255,255,255,.8);color:#333;padding:2px 6px;border-radius:6px}
+#mapui .attr a{color:#0b5f86}
+@media (max-width:640px){
+  #mapside{position:absolute;left:0;right:0;bottom:0;width:auto;height:38%;border-radius:18px 18px 0 0}
+  #mapui .attr{right:10px;bottom:calc(38% + 6px)}
+  #mapgo{bottom:calc(38% + 14px)} #maptip{display:none}
+  #goal{top:auto;bottom:calc(178px + env(safe-area-inset-bottom));font-size:13px}
+  #place{max-width:52vw;padding:8px 10px} #district{font-size:12px}
+  #tools{bottom:auto;top:calc(150px + env(safe-area-inset-top))} #tools .tb{width:44px;height:44px;font-size:19px}
+}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+  "earcut": "https://cdn.jsdelivr.net/npm/earcut@3.0.1/src/earcut.js"
+} }
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<div id="loading">
+  <div class="logo">S<span class="sun"></span>MER</div>
+  <div id="loadbar"><i></i></div>
+  <div id="loadtxt">Loading Limassol…</div>
+</div>
+
+<div id="title" class="hide">
+  <div class="top">
+    <div class="logo">S<span class="sun"></span>MER<svg class="waves" viewBox="0 0 200 14" preserveAspectRatio="none"><path d="M0 7 Q12.5 0 25 7 T50 7 T75 7 T100 7 T125 7 T150 7 T175 7 T200 7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></div>
+    <div class="sub">Walk the real streets of Limassol, Cyprus</div>
+    <div class="stats" id="tstats"></div>
+  </div>
+  <div class="menu">
+    <button class="big go" id="bPlay">▶ PLAY</button>
+    <button class="big" id="bPlaces">🗺️ CHOOSE A PLACE</button>
+    <div style="display:flex;gap:10px">
+      <button class="big alt" style="flex:1" id="bSet">⚙️ Settings</button>
+      <button class="big alt" style="flex:1" id="bHelp">❓ How to play</button>
+    </div>
+  </div>
+  <div class="foot">31,500 real buildings and every street from OpenStreetMap · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></div>
+</div>
+
+<div id="hud" class="hide">
+  <div id="place"><div id="street">Limassol</div><div id="district"></div></div>
+  <div id="goal"><span class="arrow" id="garrow">➤</span><span id="gtext">Find the places</span><span class="cnt" id="gcount">0/0</span></div>
+  <div id="miniwrap"><canvas id="mini" width="392" height="392"></canvas><div id="north">N</div></div>
+  <div id="cross"></div>
+  <div id="hint">Click to look around · <b>WASD</b> walk · <b>Shift</b> run · <b>Space</b> jump · <b>M</b> map · <b>C</b> camera · <b>T</b> time · <b>F</b> drone</div>
+  <div id="toast"><div class="ic" id="tic">🏰</div><div class="k">NEW PLACE FOUND</div><div class="n" id="tname"></div><div class="d" id="tdesc"></div></div>
+  <div id="msg"></div>
+  <div id="fps" class="hide"></div>
+  <div id="tools">
+    <button class="tb" id="tMap">🗺️<small>MAP</small></button>
+    <button class="tb" id="tCam">👁️<small>VIEW</small></button>
+    <button class="tb" id="tTime">🌅<small>TIME</small></button>
+    <button class="tb" id="tMenu">⏸<small>MENU</small></button>
+  </div>
+</div>
+
+<div id="touch" class="hide">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button class="tb" id="tRun">🏃</button>
+    <button class="tb" id="tJump">⤒</button>
+  </div>
+</div>
+
+<div id="mapui" class="hide">
+  <canvas id="mapc"></canvas>
+  <button class="big alt" id="mapclose">✕ Back</button>
+  <button class="big go hide" id="mapgo">🚶 Go here</button>
+  <div id="maptip">Drag to move · Scroll to zoom · Tap a place on the list, or anywhere on the map, then press “Go here”.</div>
+  <div class="attr">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a></div>
+  <div id="mapside"><h3>Places in Limassol</h3><div id="lmlist"></div></div>
+</div>
+
+<div id="pause" class="panel hide"><div class="card">
+  <h2>Paused</h2>
+  <table id="pstats"></table>
+  <div class="btns"><button class="big go" id="pResume">▶ Back to walking</button></div>
+  <div class="btns"><button class="big" id="pMap">🗺️ Map</button><button class="big" id="pSet">⚙️ Settings</button></div>
+  <div class="btns"><button class="big" id="pHelp">❓ Help</button><button class="big" id="pTitle">🏠 Title</button></div>
+</div></div>
+
+<div id="settings" class="panel hide"><div class="card">
+  <h2>Settings</h2>
+  <div class="row">Graphics<div class="seg" id="sQ"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high">High</button><button data-v="ultra">Ultra</button></div></div>
+  <div class="row">Sound<div class="seg" id="sSnd"><button data-v="1">On</button><button data-v="0">Off</button></div></div>
+  <div class="row">Volume<input type="range" id="sVol" min="0" max="1" step="0.05"></div>
+  <div class="row">Look speed<input type="range" id="sSens" min="0.3" max="2.5" step="0.1"></div>
+  <div class="row">Invert look up/down<div class="seg" id="sInv"><button data-v="0">No</button><button data-v="1">Yes</button></div></div>
+  <div class="row">Field of view<input type="range" id="sFov" min="55" max="95" step="1"></div>
+  <div class="row">Show FPS<div class="seg" id="sFps"><button data-v="0">No</button><button data-v="1">Yes</button></div></div>
+  <div class="row" style="border:0">Progress<button class="big alt" style="color:var(--ink);border-color:#ccc;font-size:14px;padding:8px 12px" id="sReset">Reset found places</button></div>
+  <div style="font-size:13px;opacity:.7;margin-top:6px" id="sNote">Changing graphics reloads the game.</div>
+  <div class="btns"><button class="big go" id="sClose">Done</button></div>
+</div></div>
+
+<div id="help" class="panel hide"><div class="card">
+  <h2>How to play</h2>
+  <p style="margin-top:0;line-height:1.45">Sumer is a walk through a 3D copy of <b>Limassol</b> in Cyprus, built from the real map: 31,500 buildings in their real places, every street and path, the parks, beaches, piers and the marina. Explore, swim in the sea, and find the <b>famous places</b>. The orange arrow at the top points to the next one.</p>
+  <table>
+    <tr><td>Look</td><td>Click the game, then move the mouse · phone: drag on the right side</td></tr>
+    <tr><td>Walk</td><td><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> or arrows · phone: the round stick</td></tr>
+    <tr><td>Run</td><td>hold <span class="kbd">Shift</span> · phone: 🏃</td></tr>
+    <tr><td>Jump</td><td><span class="kbd">Space</span> · phone: ⤒</td></tr>
+    <tr><td>Map</td><td><span class="kbd">M</span>: jump to any place in the city</td></tr>
+    <tr><td>View</td><td><span class="kbd">C</span>: your eyes / behind you</td></tr>
+    <tr><td>Drone</td><td><span class="kbd">F</span>: fly over the city (<span class="kbd">E</span> up, <span class="kbd">Q</span> down)</td></tr>
+    <tr><td>Time</td><td><span class="kbd">T</span>: morning, midday, sunset, night</td></tr>
+    <tr><td>Menu</td><td><span class="kbd">Esc</span> · <span class="kbd">H</span> hide the screen buttons</td></tr>
+    <tr><td>Gamepad</td><td>sticks to walk and look, A jump, B run, Y view, X map</td></tr>
+  </table>
+  <p style="font-size:13px;opacity:.75;line-height:1.4">Buildings, streets, trees and beaches come from OpenStreetMap. Most heights and colours are estimated from the type and size of each building, so a few houses will not look exactly like the real ones.</p>
+  <div class="btns"><button class="big go" id="hClose">OK</button></div>
+</div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
