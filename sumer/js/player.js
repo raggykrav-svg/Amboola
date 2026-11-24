@@ -79,6 +79,7 @@ export class Player {
         if (d < m && d > 1e-4) { p.x = tx + ex / d * m; p.z = tz + ez / d * m; moved = true; }
       };
       if (this.forest) this.forest.trunksNear(p.x, p.z, circle);
+      if (this.life) this.life.colliders(p.x, p.z, circle);
       const rs = this.city.rasters;
       for (const Rr of rs.values()) {
         if (!Rr.colliders) continue;

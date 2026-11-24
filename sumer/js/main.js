@@ -10,6 +10,7 @@ import { Forest } from './forest.js';
 import { Player } from './player.js';
 import { Sound } from './audio.js';
 import { MapPainter, Minimap, BigMap } from './ui.js';
+import { Life } from './life.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -20,10 +21,10 @@ const params = new URLSearchParams(location.search);
 const isTouch = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 
 const QUALITY = {
-  low: { pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 380, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7 },
-  medium: { pixelRatio: 1.25, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 650, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2 },
-  high: { pixelRatio: 1.5, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 950, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0 },
-  ultra: { pixelRatio: 2, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 1400, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8 },
+  low: { pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
+  medium: { pixelRatio: 1.25, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
+  high: { pixelRatio: 1.5, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
+  ultra: { pixelRatio: 2, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
 };
 const settings = Object.assign({ quality: isTouch ? 'low' : 'high', sound: true, vol: 0.8, sens: 1, invert: false, fov: 72, fps: false }, store.get('settings', {}));
 if (params.get('q') && QUALITY[params.get('q')]) settings.quality = params.get('q');
@@ -41,7 +42,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(settings.fov, innerWidth / innerHeight, 0.2, 60000);
 scene.add(camera);
 
-let data, city, env, mats, forest, player, painter, minimap, bigmap, props;
+let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life;
 const sound = new Sound(); sound.on = settings.sound; sound.vol = settings.vol;
 let state = 'loading';  // loading | title | play | menu | map
 let landmarks = [];
@@ -72,6 +73,8 @@ async function boot() {
     player = new Player(city, forest, camera, scene);
     player.onStep = (s, run) => sound.step(s, run);
     player.onLand = () => sound.land();
+    life = new Life(scene, city, data, mats, props, Q);
+    player.life = life;
     painter = new MapPainter(city);
     minimap = new Minimap($('mini'), painter, $('north'));
     bigmap = new BigMap($('mapui'), $('mapc'), painter, landmarks, { goBtn: $('mapgo'), listEl: $('lmlist') });
@@ -144,10 +147,12 @@ function startPlay(atX, atZ, yaw) {
   else if (!player.started) player.teleport(352, 196, -Math.PI / 4); // the Molos, looking along the sea front
   player.started = true;
   player.pitch = 0;
+  life.clear();
   warmUp();
   state = 'play';
   $('hud').classList.remove('hide');
   if (isTouch) $('touch').classList.remove('hide');
+  if (isTouch) $('hint').innerHTML = 'Drag on the right to look · use the stick to walk · 🏃 run · ⤒ jump';
   $('hint').style.opacity = 1; clearTimeout(hintT); hintT = setTimeout(() => { $('hint').style.opacity = 0; }, 9000);
   if (!isTouch) lockPointer();
 }
@@ -410,6 +415,7 @@ function tick(dt) {
     const before = player.walked;
     player.update(dt, inp);
     stats.walked += player.walked - before;
+    life.update(dt, player.pos.x, player.pos.z, player.mode !== 'drone');
     stats.played += dt;
     updateHud(dt);
   } else { mouseDX = mouseDY = 0; }
@@ -432,7 +438,7 @@ if (settings.fps) $('fps').classList.remove('hide');
 
 // debug / test handle
 window.sumer = {
-  get city() { return city; }, get player() { return player; }, get env() { return env; }, get forest() { return forest; },
+  get city() { return city; }, get player() { return player; }, get life() { return life; }, get env() { return env; }, get forest() { return forest; },
   scene, camera, renderer, setTime, startPlay, openMap, closeMap, pause, resume, found, stats,
   state: () => state, tick: (dt) => { tick(dt); renderer.render(scene, camera); }, step: (dt) => tick(dt), render: () => renderer.render(scene, camera),
   hud: () => { streetT = 0; hudT = 0; updateHud(0.01); },

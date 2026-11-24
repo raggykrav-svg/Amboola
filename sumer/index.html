@@ -113,9 +113,12 @@ input[type=range]{width:150px;accent-color:var(--sea)}
   #mapside{position:absolute;left:0;right:0;bottom:0;width:auto;height:38%;border-radius:18px 18px 0 0}
   #mapui .attr{right:10px;bottom:calc(38% + 6px)}
   #mapgo{bottom:calc(38% + 14px)} #maptip{display:none}
-  #goal{top:auto;bottom:calc(178px + env(safe-area-inset-bottom));font-size:13px}
+  #goal{top:calc(80px + env(safe-area-inset-top));left:14px;transform:none;font-size:12px;max-width:calc(100vw - 168px);padding:5px 10px 5px 5px;gap:6px}
+  #goal #gtext{overflow:hidden;text-overflow:ellipsis;min-width:0}
+  #goal .arrow{width:26px;height:26px;flex:none}
   #place{max-width:52vw;padding:8px 10px} #district{font-size:12px}
   #tools{bottom:auto;top:calc(150px + env(safe-area-inset-top))} #tools .tb{width:44px;height:44px;font-size:19px}
+  #hint{bottom:calc(186px + env(safe-area-inset-bottom))}
 }
 </style>
 <script type="importmap">
