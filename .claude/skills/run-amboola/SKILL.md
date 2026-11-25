@@ -838,6 +838,21 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - The road's heights (`prepTroodosRoad`) are box-smoothed three times (±12 samples, shrinking at the ends) after the 20 % clamps. `troLegsIn` splits stretches by index runs (sorted), and takes the place along the road from the 7 nearest samples.
 - Test: drive `TRO.Rd` with an autopilot through `simStep` and count `p.air` take-offs and the second difference of `p.y` per frame. Before: 127–200 take-offs and jolts up to 18 g. After: 0 take-offs at 15–70 m/s, and at most 0.5 g on the road.
 
+## 💥 Crash mode (Nov 2026)
+
+- **Switch:** `crashMode` (`amboola.crash`), toggled by the pause button `#bCrash` via `setCrashMode()`. When it is off, `dentsOf()` returns `[]` and `carHit` does no damage, so the game is exactly as before. Damage is saved in `amboola.damage2` (a new key: the old pre-switch-off dents stay gone).
+- **`carHit` → `realCrash(p, dvx, dvz, hit, zone)`:** player only, `hit` ≥ 6 m/s, `crashCool` .45 s.
+  - `brkBits` debris in the paint colour, glass and plastic, plus glass and crunch bursts.
+  - Hits over 12 m/s: `slowT` (the frame loop runs at 0.3× while it lasts) and a CRASH `stuntPop`.
+  - On a free surface at speed > 7: a side hit over 15 (|side| > .55), or any hit over 26, calls `takeoff()` with `airS.fall = true` (no auto-levelling, no score) and a roll rate `rr` or a pitch rate `pr`. A roof landing ends in the existing `wipeout`. Other hard hits add `yawRate`.
+- **Dents:** deeper than before (radius .35–.9, depth up to .32). A frontal or rear hit over 20 also dents L and R, and over 28 the roof.
+- **Power:** `dmgPower(id)` = 1 − .25·front − .15·total, or .2 when `dmgTotal > TOTALED` (.6). `totalCar()` shows the banner; a totaled car smokes every frame.
+- **R:** `resetToRoad()` on a totaled car calls `towRepair()` (free, clears `DMG[id]`).
+- **Test (Nov 2026):**
+  - 120 km/h into a building: CRASH 89 km/h impact, slow motion, totaled.
+  - An 86 km/h side slam: rolled 515°.
+  - The wreck limps at 30 km/h; the tow repairs it; turning the mode off restores the car.
+
 ## Glitch hunt: the sweep and the probes (Nov 2026)
 
 Two tools find "it froze / it broke" bugs that a single run misses. Both use the probe set-up: the game loaded with every model, high quality, 640×360, rendering stubbed by `window.__render`.

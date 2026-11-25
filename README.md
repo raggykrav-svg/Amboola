@@ -117,6 +117,19 @@ Press **⚡ SUPER UPGRADE · エンジン**, right under 🔧 UPGRADE in the gar
 
 The quarter-mile times come from the game's own physics (the same test the panel runs), with no 🔧 upgrades.
 
+## 💥 Crash mode
+
+Press **Esc** (pause), then **💥 CRASH: OFF** at the bottom of the menu to turn it **ON**. It stays on until you turn it off. With crash mode on, crashes are realistic:
+
+- **The car crumples where it hits.** Bigger crashes make deeper dents, and a hard head-on crash also buckles the doors and the roof. The dents stay until you repair the car.
+- **Pieces fly:** paint chips, glass and plastic bits, with a glass-and-metal crunch.
+- **Slow motion:** a crash over about 40 km/h plays in slow motion, with **💥 CRASH!** and the impact speed on screen.
+- **Rollovers:** a hard hit on the side of the car flips it into a roll. A huge head-on crash tumbles it over the nose. It can land on its roof, then it rolls back onto its wheels. Other hard hits spin the car round.
+- **A smashed car drives badly:** a crushed front loses power and smokes.
+- **TOTALED:** crash it badly enough (hitting a building at about 90 km/h is enough) and the car is totaled. It only has a fifth of its power and smokes even when it stands still. Press **R** and the tow truck takes it away and brings it back fixed, for free. You can also repair it in the garage.
+
+Turn crash mode **OFF** and the cars look brand new again, and nothing dents.
+
 ## Drag races
 
 **💀 Drag bosses:** three quarter-mile boss races against **fully upgraded** cars that react fast at the green. Each one unlocks after you beat the one before. A boss pays its big prize the first time you win, and 10% on rematches:

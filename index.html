@@ -9907,7 +9907,7 @@ const NO_DAMAGE = false;
 const dentsOf = id => crashMode && Array.isArray(DMG[id]) ? DMG[id] : [];        // [x, y, z (car space), radius, depth, zone]
 // how much of its power a damaged car still has (a smashed front most of all); a TOTALED wreck limps along at a fifth
 const dmgPower = id => { const t = dmgTotal(id); return t > TOTALED ? .2 : 1 - dmgZones(id).f * .25 - t * .15; };
-const TOTALED = .8;
+const TOTALED = .6;   // (dmgTotal: the zones' damage summed over 2.5; .6 is e.g. a crushed front plus one crushed side)
 function dmgZones(id) { const z = { f: 0, r: 0, L: 0, R: 0, t: 0 }; for (const d of dentsOf(id)) if (d[5] in z) z[d[5]] = Math.min(1, z[d[5]] + d[4] * 4); return z; }
 const dmgTotal = id => { const z = dmgZones(id); return Math.min(1, (z.f + z.r + z.L + z.R + z.t) / 2.5); };
 const repairCost = c => { const t = dmgTotal(c.id); return t ? Math.max(150, Math.round(t * Math.max(3000, (c.usd || 40000) * .06) / 50) * 50) : 0; };
@@ -9934,6 +9934,9 @@ function carHit(p, dvx, dvz, hit, zone) {
   if (!at) return;
   const id = p.spec.id, list = dentsOf(id).slice(-47);
   list.push([...at.map(v => +v.toFixed(3)), +(zone === 't' ? .85 : .35 + s * .55).toFixed(2), +(.06 + s * .26).toFixed(3), zone]);   // (crash mode: big hits crumple deep)
+  // a big crash crumples more than one panel: a hard frontal (or rear) buckles the doors and the roof too
+  if (crashMode && hit > 20 && (zone === 'f' || zone === 'r')) for (const [zz, xx] of [['L', xh], ['R', -xh]]) list.push([+xx.toFixed(3), +(G.y0 + H * .45).toFixed(3), +(G.mid + (zone === 'f' ? 1 : -1) * Math.abs(G.fz - G.mid) * .35).toFixed(3), .6, +(.04 + s * .12).toFixed(3), zz]);
+  if (crashMode && hit > 28) list.push([0, +G.y1.toFixed(3), +G.mid.toFixed(3), .8, +(.05 + s * .1).toFixed(3), 't']);
   DMG[id] = list; saveDmg(); dentCool = .35;
   dentCar(p.car, list); p.dmgK = dmgPower(id);
   if (p === player && !p.totaled && dmgTotal(id) > TOTALED) totalCar(p);
