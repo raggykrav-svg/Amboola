@@ -12,6 +12,12 @@ Free, in your browser: no download, no install, no account. It works on computer
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
+## 🌴 New: SUMER, a walking game in Limassol
+
+A separate game in the [`sumer/`](sumer/) folder: walk, run and swim through a 3D copy of **Limassol, Cyprus**, built from the real map (31,545 buildings, every street, the beaches, the Molos and the marina). Find 23 famous places, change the time of day, or fly the drone. It does not use any Amboola code. Read more in [sumer/README.md](sumer/README.md); on GitHub Pages it is at [raggykrav-svg.github.io/Amboola/sumer](https://raggykrav-svg.github.io/Amboola/sumer/) once this folder is on the Pages branch.
+
+[![Sumer: Limassol in 3D](sumer/media/sumer-collage.jpg)](sumer/README.md)
+
 ## The title screen 🏁
 
 ![The title screen, Settings and Challenges](media/title-screen.jpg)

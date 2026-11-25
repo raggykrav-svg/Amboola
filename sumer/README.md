@@ -4,6 +4,19 @@ A walking game in a 3D copy of **Limassol, Cyprus**, made from the real map. It 
 
 **Play:** open `sumer/index.html` from a web server (for example `npx http-server -p 8080 .` in the repo, then <http://localhost:8080/sumer/>), or on GitHub Pages at `…/Amboola/sumer/` once this folder is on the Pages branch.
 
+![The title screen: Limassol from the air](media/title.jpg)
+
+| | |
+|---|---|
+| ![The Molos promenade with palm trees and people walking](media/molos.jpg) | ![The beach in Neapoli with the ONE tower](media/one-tower.jpg) |
+| **The Molos** promenade: palms, lawns, paths and people walking | **The ONE tower** (170 m) behind the beach umbrellas |
+| ![Agia Napa Cathedral](media/cathedral.jpg) | ![The old town and Limassol Castle from the drone](media/old-town.jpg) |
+| **Agia Napa Cathedral** with its dome and bell towers | **The old town** with its red tile roofs, from the drone (the castle is the big stone block in the middle) |
+| ![Dasoudi beach from the drone](media/dasoudi-beach.jpg) | ![Sunset on the Molos](media/sunset.jpg) |
+| **Dasoudi beach**, the pine park and the rock breakwaters | **Sunset** on the Molos |
+| ![A street in the old town at night](media/night.jpg) | ![The map with the places to find](media/map.jpg) |
+| **Night**: lit windows, street lamps and stars | **The map**: pick a place and walk there |
+
 ## What is in the city
 
 - **31,545 buildings** in their real places and real shapes, from OpenStreetMap. Towers with a mapped height (the ONE tower at 170 m, the Trilogy towers and others) have their real height. For most other buildings the height, colour and roof are estimated from the building type, its size, and how close it is to the old town or the sea.

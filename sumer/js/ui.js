@@ -216,26 +216,40 @@ export class BigMap {
         }
       }
     }
-    // district names
+    // landmarks: icons always, names only where they do not overlap (the selected one first)
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    if (this.mpp > 2.5) {
-      ctx.font = '700 13px Nunito, system-ui, sans-serif';
-      for (const pl of this.p.city.h.places) {
-        if (pl.k !== 'suburb' && pl.k !== 'town' && pl.k !== 'village' && this.mpp > 5) continue;
-        const [sx, sy] = this.toScreen(pl.x, pl.z);
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(pl.n, sx, sy); ctx.fillStyle = '#5b4f42'; ctx.fillText(pl.n, sx, sy);
-      }
-    }
-    // landmarks
+    const order = this.L.slice().sort((a, b) => (this.sel && b.id === this.sel.id) - (this.sel && a.id === this.sel.id));
     for (const l of this.L) {
       const [sx, sy] = this.toScreen(l.x, l.z);
       const f = this.found.has(l.id);
       ctx.fillStyle = this.sel && this.sel.id === l.id ? '#ffb53d' : f ? 'rgba(255,255,255,.95)' : 'rgba(14,36,51,.85)';
       ctx.beginPath(); ctx.arc(sx, sy, 15, 0, Math.PI * 2); ctx.fill();
       ctx.font = '17px system-ui, sans-serif'; ctx.fillText(l.i, sx, sy + 1);
-      if (this.mpp < 4 || (this.sel && this.sel.id === l.id)) {
-        ctx.font = '800 12px Nunito, system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.9)';
-        ctx.strokeText(l.n, sx, sy + 25); ctx.fillStyle = '#0e2433'; ctx.fillText(l.n, sx, sy + 25);
+    }
+    const boxes = this.L.map((l) => { const [sx, sy] = this.toScreen(l.x, l.z); return [sx - 15, sy - 15, sx + 15, sy + 15]; });
+    ctx.font = '800 12px Nunito, system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.9)';
+    for (const l of order) {
+      const isSel = this.sel && this.sel.id === l.id;
+      if (this.mpp >= 4 && !isSel) continue;
+      const [sx, sy] = this.toScreen(l.x, l.z);
+      const w = ctx.measureText(l.n).width;
+      const r = [sx - w / 2 - 2, sy + 18, sx + w / 2 + 2, sy + 32];
+      const hit = !isSel && boxes.some((b) => b !== null && !(r[2] < b[0] || r[0] > b[2] || r[3] < b[1] || r[1] > b[3]) && !(b[0] === sx - 15 && b[1] === sy - 15));
+      if (hit) continue;
+      boxes.push(r);
+      ctx.strokeText(l.n, sx, sy + 25); ctx.fillStyle = '#0e2433'; ctx.fillText(l.n, sx, sy + 25);
+    }
+    // district names, where they do not cover a place
+    if (this.mpp > 2.5) {
+      ctx.font = '700 13px Nunito, system-ui, sans-serif';
+      for (const pl of this.p.city.h.places) {
+        if (pl.k !== 'suburb' && pl.k !== 'town' && pl.k !== 'village' && this.mpp > 5) continue;
+        const [sx, sy] = this.toScreen(pl.x, pl.z);
+        const w = ctx.measureText(pl.n).width;
+        const r = [sx - w / 2 - 2, sy - 9, sx + w / 2 + 2, sy + 9];
+        if (boxes.some((b) => !(r[2] < b[0] || r[0] > b[2] || r[3] < b[1] || r[1] > b[3]))) continue;
+        boxes.push(r);
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(pl.n, sx, sy); ctx.fillStyle = '#5b4f42'; ctx.fillText(pl.n, sx, sy);
       }
     }
     // selection pin
