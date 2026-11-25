@@ -48,7 +48,7 @@ window.__drone = (x, y, z, yaw, pitch) => {
   s.forest.update(x, z, true);
   for (let i = 0; i < 4; i++) s.step(1 / 30);
   s.player.drone.set(x, y, z); s.player.yaw = yaw; s.player.pitch = pitch; s.step(0.001);
-  s.render();
+  s.hud(); s.render();
   return { tris: s.renderer.info.render.triangles, calls: s.renderer.info.render.calls };
 };
 

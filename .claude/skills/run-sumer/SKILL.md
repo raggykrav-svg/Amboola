@@ -43,6 +43,7 @@ Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18
 
 - **The flat ground does not write depth.** Ground, markings, the sea, the far land, the sky and the stars are drawn in order (`renderOrder`), so anything transparent drawn after them shows on top of the ground. The stars must stay opaque.
 - **Big triangles lose precision.** The sea is a ring mesh centred on the camera. A single 240 km plane gave a grey sea.
+- **The sky is a full-screen quad, not three's sky box** (`screenSpaceSky` in `env.js`). The box's faces crossed behind the camera and SwiftShader drew one of them as a big flat white triangle in the sky.
 - **Things placed per chunk must stay inside their chunk.** Garden trees that landed past the chunk edge floated in the sea.
 - **Face winding.** `quad3(a, b, c, d)` uses the normal (b - a) x (d - a), so check new faces from both sides.
 

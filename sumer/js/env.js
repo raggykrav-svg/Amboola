@@ -16,10 +16,31 @@ export function dirFrom(elDeg, azDeg) {
   return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
 }
 
+// three's Sky is a big box around the camera. Its faces cross behind the camera, and some GPUs (and the
+// software renderer used for tests) then give one flat colour per face. Here the sky is a full-screen quad
+// instead, and each pixel's view direction comes from the camera, so nothing is ever clipped.
+function screenSpaceSky(sky, camera) {
+  const m = sky.material;
+  sky.geometry.dispose();
+  sky.geometry = new THREE.PlaneGeometry(2, 2);
+  m.uniforms.uInvProj = { value: camera.projectionMatrixInverse };
+  m.uniforms.uCamWorld = { value: camera.matrixWorld };
+  m.vertexShader = m.vertexShader
+    .replace('void main() {', 'uniform mat4 uInvProj; uniform mat4 uCamWorld;\nvoid main() {')
+    .replace(/vec4 worldPosition = modelMatrix \* vec4\( position, 1\.0 \);\s*vWorldPosition = worldPosition\.xyz;/,
+      'vec4 vp = uInvProj * vec4(position.xy, 1.0, 1.0); vp /= vp.w; vWorldPosition = cameraPosition + (uCamWorld * vec4(vp.xyz, 0.0)).xyz * 1000.0;')
+    .replace(/gl_Position = projectionMatrix \* modelViewMatrix \* vec4\( position, 1\.0 \);\s*gl_Position\.z = gl_Position\.w;[^\n]*/,
+      'gl_Position = vec4(position.xy, 0.9999, 1.0);');
+  m.side = THREE.FrontSide; // the box was seen from inside (BackSide); the quad faces the camera
+  m.depthTest = false; m.depthWrite = false;
+  m.needsUpdate = true;
+}
+
 export class Environment {
   constructor(renderer, scene, city, quality) {
     this.renderer = renderer; this.scene = scene; this.city = city;
-    this.sky = new Sky(); this.sky.scale.setScalar(400000); this.sky.frustumCulled = false;
+    this.sky = new Sky(); this.sky.frustumCulled = false;
+    screenSpaceSky(this.sky, scene.userData.camera);
     this.sky.renderOrder = -100; // drawn first: the flat ground does not write depth (painter's order)
     scene.add(this.sky);
     this.sun = new THREE.DirectionalLight(0xffffff, 3);
@@ -98,7 +119,6 @@ export class Environment {
     this.sun.target.position.set(fx, 0, fz);
     this.sun.position.set(fx + this.lightDir.x * 400, Math.max(30, this.lightDir.y * 400), fz + this.lightDir.z * 400);
     this.sun.target.updateMatrixWorld();
-    this.sky.position.copy(cam.position);
     this.stars.position.copy(cam.position);
     this.sea.position.set(cam.position.x, -0.32, cam.position.z);
   }

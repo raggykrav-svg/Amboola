@@ -93,8 +93,7 @@ export class Player {
 
   update(dt, inp) {
     dt = Math.min(dt, 0.05);
-    const look = this.mode === 'drone' ? 1 : 1;
-    this.yaw -= inp.lookX * look; this.pitch -= inp.lookY * look;
+    this.yaw -= inp.lookX; this.pitch -= inp.lookY;
     this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch));
     if (this.mode === 'drone') return this.updateDrone(dt, inp);
     const fwd = new THREE.Vector2(-Math.sin(this.yaw), -Math.cos(this.yaw));

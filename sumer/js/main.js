@@ -41,6 +41,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(settings.fov, innerWidth / innerHeight, 0.2, 60000);
 scene.add(camera);
+scene.userData.camera = camera;
 
 let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life;
 const sound = new Sound(); sound.on = settings.sound; sound.vol = settings.vol;
@@ -192,10 +193,10 @@ $('mapclose').onclick = closeMap;
 $('mapgo').onclick = () => {
   const s = bigmap.sel; if (!s) return;
   bigmap.hide();
-  let yaw;
-  if (s.id) { const ang = Math.atan2(s.z - 0, s.x - 0); yaw = undefined; }
-  const tx = s.id ? s.x + (s.r ? Math.min(s.r * 0.5, 25) : 0) : s.x, tz = s.id ? s.z + (s.r ? Math.min(s.r * 0.5, 25) : 0) : s.z;
-  if (s.id) yaw = Math.atan2(-(s.x - tx), -(s.z - tz));
+  // places: stand a little to the south-east, looking at the place
+  const off = s.id && s.r ? Math.min(s.r * 0.5, 25) : 0;
+  const tx = s.x + off, tz = s.z + off;
+  const yaw = s.id ? Math.atan2(-(s.x - tx), -(s.z - tz)) : undefined;
   startPlay(tx, tz, yaw);
   flash(s.n ? `${s.n}` : 'Here you are!');
 };

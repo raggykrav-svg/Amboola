@@ -232,7 +232,6 @@ export class City {
   buildGround(chunks) {
     const F = new GeoBuf(), Rz = new GeoBuf(), M = new GeoBuf();
     const CL = this.CL, cs = this.g.cs;
-    const up = [0, 1, 0];
     for (const ci of chunks) {
       const c = chunk(this.data, ci);
       const list = c.ground.slice().sort((a, b) => a.cls - b.cls);
@@ -806,7 +805,6 @@ class GeoBuf {
   awning(ax, az, bx, bz, nx, nz, depth, yTop, yLow, col) {
     const L = Math.hypot(bx - ax, bz - az);
     const pA = [ax, yTop, az], pB = [bx, yTop, bz], pC = [bx + nx * depth, yLow, bz + nz * depth], pD = [ax + nx * depth, yLow, az + nz * depth];
-    const up = [0, depth, yTop - yLow]; // approx
     this.quad3(pA, pB, pC, pD, col);
     this.quad3(pA, pD, pC, pB, col.clone().multiplyScalar(0.7)); // underside
     // valance
@@ -869,7 +867,7 @@ class BBuf {
     const L = Math.hypot(x2 - x1, z2 - z1);
     const nx = (z2 - z1) / L, nz = -(x2 - x1) / L;
     const info = [scol, grow, seed, kind];
-    const v0 = y0 / fh * 0 + 0, v1 = (y1 - y0) / fh;
+    const v0 = 0, v1 = (y1 - y0) / fh;
     const s = this.count;
     this.v(x1, y0, z1, nx, 0, nz, 0, v0, col, info);
     this.v(x2, y0, z2, nx, 0, nz, nMod, v0, col, info);
