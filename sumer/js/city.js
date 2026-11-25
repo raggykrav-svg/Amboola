@@ -17,7 +17,7 @@ function hash01(n) { n = (n ^ 61) ^ (n >>> 16); n = Math.imul(n, 9); n ^= n >>> 
 
 // ground look per class name
 const GSTYLE = {
-  LAND: [0xcfc2a8, 3, 9], FARM: [0xbba977, 2, 9], INDUSTRIAL: [0xbbb7af, 0, 8], INST: [0xcdc2aa, 3, 8], DIRT: [0xc4a982, 3, 7],
+  LAND: [0xcfc4ac, 3, 9], FARM: [0xbba977, 2, 9.5], INDUSTRIAL: [0xbbb7af, 0, 8], INST: [0xcdc2aa, 3, 8], DIRT: [0xc4a982, 3, 7],
   CEMETERY: [0xa8ae8b, 2, 7], SCRUB: [0xa69d6d, 2, 8], GRASS: [0x7ea34e, 2, 7], WOOD: [0x8f8c5c, 2, 8], SAND: [0xe4d5aa, 3, 6],
   PITCHGRASS: [0x5f9f45, 2, 6], PITCHHARD: [0x4f7f92, 0, 6], PITCHCLAY: [0xb6633f, 3, 5], TRACK: [0xb45441, 0, 6], PLAYGROUND: [0xc3735a, 0, 5],
   PARKING: [0x6d6e70, 0, 6], WATER: [0x3f88a3, 3, 8], POOL: [0x4fc2e0, 3, 5], PAVING: [0xd9cfbd, 1, 4], TRACKDIRT: [0xb89e78, 3, 6],

@@ -17,8 +17,15 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
       .replace('#include <common>', '#include <common>\nattribute vec2 aDet; varying vec2 vDet; varying vec2 vGXZ;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvDet = aDet; vGXZ = (modelMatrix * vec4(position, 1.0)).xz;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D uDetail; varying vec2 vDet; varying vec2 vGXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uDetail; varying vec2 vDet; varying vec2 vGXZ;\n' + NOISE)
       .replace('#include <color_fragment>', `#include <color_fragment>
+        if (abs(vDet.y - 9.0) < 0.01) {
+          // open ground between houses: patches of concrete, dirt and garden green
+          float n1 = snoise(vGXZ * 0.03) * 0.65 + snoise(vGXZ * 0.09 + 3.1) * 0.35;
+          float n2 = snoise(vGXZ * 0.07 + 11.7) * 0.7 + snoise(vGXZ * 0.23) * 0.3;
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.56, 0.55, 0.52), smoothstep(0.42, 0.7, n1) * 0.6);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.24, 0.32, 0.14), smoothstep(0.6, 0.85, n2) * 0.5);
+        }
         {
           vec2 tuv = vGXZ / max(vDet.y, 0.5);
           float t = floor(vDet.x + 0.5);
