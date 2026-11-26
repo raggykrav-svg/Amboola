@@ -97,9 +97,13 @@ export function makeFacadeAtlas(renderer) {
 
   // 0: apartment block (Cypriot "polykatoikia"): slab band, balcony door + window with roller shutter box
   at(0, 0); slab(0.92, 1.0); box(0, 0, 1, 0.04, '#f2f0ea', 200);
-  box(0.12, 0.16, 0.88, 0.26, '#e4ddcc', 128);                // roller shutter box
-  glass(0.14, 0.26, 0.86, 0.9); shutterRoll(0.14, 0.26, 0.86, 0.42);
-  frame(0.13, 0.25, 0.87, 0.9, '#cfd2d4', 0.016); box(0.495, 0.26, 0.505, 0.9, '#cfd2d4', 128);
+  // balcony door and a window, each with a roller-shutter box (the typical Cypriot flat)
+  box(0.08, 0.12, 0.44, 0.2, '#e4ddcc', 128);
+  glass(0.1, 0.2, 0.42, 0.92); shutterRoll(0.1, 0.2, 0.42, 0.4);
+  frame(0.09, 0.19, 0.43, 0.92, '#ecebe8', 0.018); box(0.255, 0.2, 0.265, 0.92, '#ecebe8', 128);
+  box(0.55, 0.2, 0.9, 0.27, '#e4ddcc', 128);
+  glass(0.57, 0.27, 0.88, 0.68); shutterRoll(0.57, 0.27, 0.88, 0.5);
+  frame(0.56, 0.26, 0.89, 0.69, '#ecebe8', 0.018); box(0.545, 0.68, 0.9, 0.71, '#ece6d8', 160);
   at(0, 1); slab(0.94, 1.0); door(0.1, 0.22, 0.42, 1.0, '#7c8a96', '#c6c9cc'); glass(0.12, 0.27, 0.40, 0.75); frame(0.1, 0.22, 0.42, 1, '#c6c9cc', 0.016);
   glass(0.55, 0.3, 0.9, 0.75); frame(0.54, 0.29, 0.91, 0.76, '#cfd2d4', 0.014);
   at(0, 2); slab(0.95, 1.0); shop(0.03, 0.06, 0.97, 1.0, '#3b4a5c');

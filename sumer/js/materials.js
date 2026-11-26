@@ -43,7 +43,7 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
   raised.customProgramCacheKey = () => 'sumer-ground';
   const marks = new THREE.MeshLambertMaterial({ vertexColors: true, depthWrite: false });
 
-  const building = new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0.0, envMapIntensity: 0.8 });
+  const building = new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0.0, envMapIntensity: 0.45 });
   building.onBeforeCompile = (sh) => {
     sh.uniforms.uFacade = { value: facadeTex };
     sh.uniforms.uNight = U.uNight;
@@ -72,7 +72,8 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
             vec4 t = textureGrad(uFacade, auv, dFdx(cell) * sc, dFdy(cell) * sc);
             float wallM = smoothstep(0.6, 0.95, t.a);
             glassAmt = 1.0 - smoothstep(0.05, 0.3, t.a);
-            diffuseColor.rgb = mix(t.rgb, t.rgb * vTint, wallM);
+            vec3 tint = clamp(mix(vec3(1.0), vTint, 1.45), 0.0, 1.0);
+            diffuseColor.rgb = mix(t.rgb, t.rgb * tint, wallM);
             float h = shash(vec2(floor(cell.x) + vInfo.z * 113.0, fl * 7.0 + vInfo.z * 57.0));
             litW = glassAmt * step(h, 0.4) * uNight * (0.6 + 0.4 * shash(vec2(fl, vInfo.z * 31.0)));
           } else if (kind < 1.5) {
@@ -89,7 +90,7 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
           }
         }`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-        roughnessFactor = mix(roughnessFactor, 0.06, glassAmt);`)
+        roughnessFactor = mix(roughnessFactor, 0.32, glassAmt);`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         totalEmissiveRadiance += vec3(1.0, 0.74, 0.42) * litW * 2.4;`);
   };

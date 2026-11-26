@@ -158,6 +158,19 @@ export function bigShip(len, colHull, colBox) {
   return b.geo();
 }
 
+function acUnit() { // outdoor AC box hanging on the wall; local +z points away from the wall
+  const b = new PB();
+  b.box(-0.4, 0, 0, 0.4, 0.55, 0.28, C(0xeceae4), C(0xf4f2ec));
+  b.quad([-0.3, 0.07, 0.281], [0.12, 0.07, 0.281], [0.12, 0.48, 0.281], [-0.3, 0.48, 0.281], C(0x5d6266));
+  b.box(-0.36, -0.06, 0.02, -0.33, 0.0, 0.25, C(0x8a8f94)); b.box(0.33, -0.06, 0.02, 0.36, 0.0, 0.25, C(0x8a8f94));
+  return b.geo();
+}
+function waterTank() {
+  const b = new PB();
+  b.box(-0.55, 0, -0.55, 0.55, 0.35, 0.55, C(0x9a9ea2));
+  b.cyl(0, 0.35, 0, 0.5, 0.5, 1.1, 10, C(0xffffff));
+  return b.geo();
+}
 export function makeProps(nightRef) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.05 });
   const headMat = new THREE.MeshStandardMaterial({ color: 0xfff6e0, emissive: 0xffcf8a, emissiveIntensity: 0, roughness: 0.4 });
@@ -169,6 +182,8 @@ export function makeProps(nightRef) {
     bed: { geo: sunbed(), mat },
     yacht: { geo: yacht(), mat },
     sail: { geo: sailboat(), mat },
+    ac: { geo: acUnit(), mat },
+    tank: { geo: waterTank(), mat },
   };
   P.headMat = headMat; P.mat = mat;
   return P;

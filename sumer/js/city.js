@@ -331,6 +331,30 @@ export class City {
     } else {
       B.pitched(ob, H, roof, roofCol, wall);
     }
+    // seafront towers: a white balcony band with glass rails on every floor
+    if (H > 35 && (style === 3 || style === 6) && base < 1) {
+      const white = lin(0xf3f3f0), glassC = lin(0x9fbccb), dep = 1.7;
+      const k = outer.length / 2;
+      for (let f = 2; f < lv; f++) {
+        const y = base + f * fh;
+        if (y > H - 2) break;
+        for (let i = 0; i < k; i++) {
+          const j = (i + 1) % k;
+          const x1 = outer[2 * i], z1 = outer[2 * i + 1], x2 = outer[2 * j], z2 = outer[2 * j + 1];
+          const L = Math.hypot(x2 - x1, z2 - z1); if (L < 3) continue;
+          const nx = (z2 - z1) / L, nz = -(x2 - x1) / L;
+          const A0 = [x1, y - 0.25, z1], B0 = [x2, y - 0.25, z2], A1 = [x1, y, z1], B1 = [x2, y, z2];
+          const FA0 = [x1 + nx * dep, y - 0.25, z1 + nz * dep], FB0 = [x2 + nx * dep, y - 0.25, z2 + nz * dep];
+          const FA1 = [x1 + nx * dep, y, z1 + nz * dep], FB1 = [x2 + nx * dep, y, z2 + nz * dep];
+          B.face([A1, B1, FB1, FA1], white, 3);
+          B.face([A0, FA0, FB0, B0], white.clone().multiplyScalar(0.8), 3);
+          B.face([FA1, FB1, FB0, FA0], white, 3);
+          const G0 = FA1, G1 = FB1, G2 = [FB1[0], y + 1.05, FB1[2]], G3 = [FA1[0], y + 1.05, FA1[2]];
+          B.face([G3, G2, G1, G0], glassC, 3);
+          B.face([G0, G1, G2, G3], glassC, 3);
+        }
+      }
+    }
     // landmarks
     if (style === 8) this.castleTop(B, outer, H, wall);
     if (style === 5 && ob) this.churchExtras(B, b, ob, H, wall, roofCol, seed, roof);
@@ -394,7 +418,7 @@ export class City {
     this.details.set(ci, grp);
     const D = new GeoBuf(true);
     const P = this.props;
-    const inst = { swh: [], lamp: [], car: [], umb: [], bed: [], yacht: [], sail: [] };
+    const inst = { swh: [], lamp: [], car: [], umb: [], bed: [], yacht: [], sail: [], ac: [], tank: [] };
     {
       const c = chunk(this.data, ci);
       const R = this.raster(ci);
@@ -470,26 +494,46 @@ export class City {
       const len = Math.hypot(x2 - x1, z2 - z1);
       edges.push({ x1, z1, x2, z2, len });
     }
-    // balconies
-    const apt = (style === 0 || style === 6) && (b.flags & 4) && lv >= 2 && H < 140;
+    // balconies: on most sides of a Cypriot apartment block, often wrapping round the corners
+    const tower = H > 35 && (style === 3 || style === 6);
+    const apt = (style === 0 || style === 6) && (b.flags & 4) && lv >= 2 && !tower;
     if (apt && this.q.balconies) {
-      const es = edges.filter((e) => e.len >= 5).sort((a, b2) => b2.len - a.len).slice(0, style === 6 ? 3 : 2);
-      const depth = style === 6 ? 1.7 : 1.25;
-      const railKind = style === 6 ? 2 : (seed < 0.5 ? 0 : 1);
+      const minLen = style === 6 ? 3 : 4;
+      const es = edges.filter((e) => e.len >= minLen).sort((a, b2) => b2.len - a.len).slice(0, style === 6 ? 6 : 4);
+      const depth = style === 6 ? 1.8 : 1.35;
+      const r = hash01(ci * 7 + b.idx * 13 + 5);
+      const railKind = style === 6 ? 2 : r < 0.55 ? 0 : r < 0.8 ? 1 : 2;
+      const wrap = style === 6 || seed < 0.4;
       const slabCol = style === 6 ? lin(0xf4f4f2) : wall.clone().multiplyScalar(1.02);
-      for (const e of es) {
+      es.forEach((e, ei) => {
+        if (!wrap && ei >= 2 && hash01(ci + b.idx * 3 + ei) < 0.4) return;
         const ux = (e.x2 - e.x1) / e.len, uz = (e.z2 - e.z1) / e.len, nx = uz, nz = -ux;
-        const t0 = style === 6 ? 0.04 : 0.12 + seed * 0.1, t1 = style === 6 ? 0.96 : 0.84 - seed * 0.08;
+        const t0 = wrap ? 0 : 0.1 + seed * 0.1, t1 = wrap ? 1 : 0.86 - seed * 0.08;
         const ax = e.x1 + ux * e.len * t0, az = e.z1 + uz * e.len * t0, bx = e.x1 + ux * e.len * t1, bz = e.z1 + uz * e.len * t1;
         for (let f = 1; f < lv; f++) {
           const y = base + f * fh;
           if (y > H - 1.5) break;
-          D.slab(ax, az, bx, bz, nx, nz, depth, y - 0.17, y, slabCol);
-          if (railKind === 0) D.rail(ax, az, bx, bz, nx, nz, depth, y, 0.95, wall.clone().multiplyScalar(0.97));
+          D.slab(ax, az, bx, bz, nx, nz, depth, y - 0.18, y, slabCol);
+          if (railKind === 0) D.rail(ax, az, bx, bz, nx, nz, depth, y, 1.0, wall.clone().multiplyScalar(0.98));
           else if (railKind === 1) D.rail(ax, az, bx, bz, nx, nz, depth, y, 1.0, lin(0x4a4d50));
-          else D.rail(ax, az, bx, bz, nx, nz, depth, y, 1.0, lin(0x9eb7c3));
+          else D.rail(ax, az, bx, bz, nx, nz, depth, y, 1.05, lin(0xa9c3cf));
         }
-      }
+      });
+    }
+    // air-conditioning units under the windows (everywhere in Cyprus)
+    if (this.q.balconies && (style === 0 || style === 1 || style === 2 || style === 6 || style === 7) && base < 0.5) {
+      let n = 0;
+      edges.forEach((e, ei) => {
+        if (e.len < 3) return;
+        const ux = (e.x2 - e.x1) / e.len, uz = (e.z2 - e.z1) / e.len, nx = uz, nz = -ux;
+        for (let f = (b.flags & 3) ? 1 : 0; f < Math.min(lv, 14) && n < 28; f++) {
+          const h = hash01(ci * 977 + b.idx * 31 + ei * 7 + f * 3);
+          if (h > (style === 1 || style === 2 ? 0.35 : 0.5)) continue;
+          const t = 0.15 + 0.7 * hash01(ci + b.idx * 5 + ei * 11 + f * 17);
+          inst.ac.push({ x: e.x1 + ux * e.len * t + nx * 0.02, y: base + f * fh + (f ? 0.25 : 2.3), z: e.z1 + uz * e.len * t + nz * 0.02, ry: Math.atan2(nx, nz) });
+          n++;
+        }
+      });
     }
     // shop awnings
     if ((b.flags & 1) && base < 0.5 && this.q.balconies) {
@@ -517,6 +561,17 @@ export class City {
           }
         }
         for (const [x, z] of pts) inst.swh.push({ x, y: H, z, ry: (hash01(Math.floor(x * 10) + Math.floor(z * 7)) - 0.5) * 0.3 });
+      }
+      if (this.q.roofProps && lv >= 3 && (style === 0 || style === 6 || style === 7)) {
+        const ob = obb(outer);
+        const u = ob.a - 2.0, cx = ob.cx + ob.ux * u, cz = ob.cz + ob.uz * u;
+        if (ob.a > 4 && ob.b > 2.6 && pointInRing(outer, cx, cz)) {
+          const w = 1.6, d = Math.min(2.0, ob.b - 0.6), vx = -ob.uz, vz = ob.ux;
+          const P = (a2, b2) => [cx + ob.ux * a2 + vx * b2, cz + ob.uz * a2 + vz * b2];
+          D.prism([P(-w, -d), P(w, -d), P(w, d), P(-w, d)], H, H + 2.7, wall.clone().multiplyScalar(0.97));
+          const nt = 1 + Math.floor(hash01(b.idx * 7 + ci) * 3);
+          for (let i = 0; i < nt; i++) { const q = P(-w - 0.9, -d + 0.4 + i * 1.15); inst.tank.push({ x: q[0], y: H, z: q[1], ry: 0, c: hash01(i + b.idx) < 0.6 ? 0xeeeeea : 0x2a2a2a }); }
+        }
       }
     }
   }

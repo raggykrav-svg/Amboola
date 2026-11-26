@@ -375,7 +375,7 @@ for i, b in enumerate(blds):
         ptile = 0.0
         if style in (STYLE['HOUSE'],): ptile = 0.78 if dold < 900 else 0.55
         if style == STYLE['STONE']: ptile = 0.85
-        if style == STYLE['APT'] and lv <= 3 and area < 500: ptile = 0.30 if dold < 1500 else 0.18
+        if style == STYLE['APT'] and lv <= 3 and area < 500: ptile = 0.45 if dold < 1500 else 0.22
         if style == STYLE['CHURCH']: ptile = 0.9
         if style in (STYLE['PLAIN'],) and typ in ('house', 'yes') and area < 200 : ptile = 0.3
         if rnd3 < ptile:
@@ -399,7 +399,7 @@ for i, b in enumerate(blds):
         elif style == STYLE['MODERN']: wall = [0, 16, 0, 17, 9][int(rnd * 5)]
         else:
             r = rnd
-            wall = 0 if r < .30 else 16 if r < .45 else 1 if r < .58 else 4 if r < .68 else 2 if r < .76 else 8 if r < .83 else 11 if r < .88 else 3 if r < .93 else 9 if r < .97 else 5
+            wall = 0 if r < .17 else 16 if r < .29 else 1 if r < .43 else 4 if r < .56 else 2 if r < .66 else 8 if r < .75 else 11 if r < .83 else 3 if r < .90 else 9 if r < .95 else 5
     rc = col_from_tag(t.get('roof:colour'))
     if roof in (ROOF['HIP'], ROOF['GABLE'], ROOF['PYR']):
         roofc = nearest_idx(ROOFC, rc) if rc and t.get('roof:colour') not in ('grey', 'gray') else int(rnd2 * 5) % 5

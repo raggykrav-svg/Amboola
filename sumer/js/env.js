@@ -4,8 +4,8 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import earcut from 'earcut';
 
 export const TIMES = {
-  morning: { label: 'Morning', el: 15, az: 100, turb: 3.5, ray: 1.4, mie: 0.004, mieG: 0.8, sun: 0xffe2b8, sunI: 2.6, sky: 0xbfd6ee, gnd: 0x8f8069, hemiI: 1.15, fog: 0xc8d6e3, fogD: 0.00016, exp: 0.62, night: 0 },
-  day: { label: 'Midday', el: 63, az: 195, turb: 2.6, ray: 1.0, mie: 0.003, mieG: 0.75, sun: 0xfff5e6, sunI: 3.1, sky: 0xc7dcf2, gnd: 0x9a8b74, hemiI: 1.2, fog: 0xc8d8e6, fogD: 0.00014, exp: 0.55, night: 0 },
+  morning: { label: 'Morning', el: 15, az: 100, turb: 3.5, ray: 1.4, mie: 0.004, mieG: 0.8, sun: 0xffe2b8, sunI: 2.6, sky: 0xd0d8e0, gnd: 0x8f8069, hemiI: 1.15, fog: 0xc8d6e3, fogD: 0.00016, exp: 0.62, night: 0 },
+  day: { label: 'Midday', el: 63, az: 195, turb: 2.6, ray: 1.0, mie: 0.003, mieG: 0.75, sun: 0xfff1dc, sunI: 3.1, sky: 0xd6dde2, gnd: 0xa8957a, hemiI: 1.15, fog: 0xc8d8e6, fogD: 0.00014, exp: 0.52, night: 0 },
   sunset: { label: 'Sunset', el: 5.5, az: 252, turb: 6, ray: 2.4, mie: 0.006, mieG: 0.86, sun: 0xffa868, sunI: 3.2, sky: 0xd7b7b0, gnd: 0x8a7060, hemiI: 1.7, fog: 0xd8ab92, fogD: 0.00017, exp: 0.78, night: 0.35 },
   night: { label: 'Night', el: -12, az: 285, moon: [38, 150], turb: 2, ray: 0.4, mie: 0.002, mieG: 0.8, sun: 0xa9bfff, sunI: 0.9, sky: 0x5d6f99, gnd: 0x2a2b33, hemiI: 1.6, fog: 0x1b2433, fogD: 0.00018, exp: 1.25, night: 1 },
 };
