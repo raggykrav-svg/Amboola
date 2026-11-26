@@ -20,6 +20,13 @@ export async function loadCity(url, onProgress) {
   let bytes = new Uint8Array(got);
   let o = 0;
   for (const p of parts) { bytes.set(p, o); o += p.length; }
+  // base64 text (hosts that only serve text): 'H4sI' is gzip in base64
+  if (bytes[0] === 0x48 && bytes[1] === 0x34 && bytes[2] === 0x73 && bytes[3] === 0x49) {
+    const bin = atob(new TextDecoder().decode(bytes).replace(/\s+/g, ''));
+    const b = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    bytes = b;
+  }
   // gzip magic: decompress here (servers that already sent Content-Encoding hand us raw bytes)
   if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
     const ds = new DecompressionStream('gzip');

@@ -59,7 +59,7 @@ const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
 async function boot() {
   try {
     setLoad(0.02, 'Loading Limassol…');
-    data = await loadCity('data/limassol.bin.gz', (f) => setLoad(0.03 + f * 0.47, `Downloading the city… ${Math.round(f * 100)}%`));
+    data = await loadCity(window.SUMER_DATA || 'data/limassol.bin.gz', (f) => setLoad(0.03 + f * 0.47, `Downloading the city… ${Math.round(f * 100)}%`));
     landmarks = data.header.landmarks || [];
     setLoad(0.52, 'Painting the buildings…'); await frame();
     const facade = makeFacadeAtlas(renderer), groundTex = makeGroundAtlas(renderer), glowTex = makeGlow();
