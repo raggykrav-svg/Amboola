@@ -78,7 +78,7 @@ async function boot() {
     player.life = life;
     painter = new MapPainter(city);
     minimap = new Minimap($('mini'), painter, $('north'));
-    bigmap = new BigMap($('mapui'), $('mapc'), painter, landmarks, { goBtn: $('mapgo'), listEl: $('lmlist') });
+    bigmap = new BigMap($('mapui'), $('mapc'), painter, landmarks, { goBtn: $('mapgo'), listEl: $('lmlist'), onGo: (s) => goTo(s) });
     addShips();
     setTime(timeKey);
     // build around the title view
@@ -190,8 +190,9 @@ function closeMap() {
   resume();
 }
 $('mapclose').onclick = closeMap;
-$('mapgo').onclick = () => {
-  const s = bigmap.sel; if (!s) return;
+$('mapgo').onclick = () => goTo(bigmap.sel);
+function goTo(s) {
+  if (!s) return;
   bigmap.hide();
   // places: stand a little to the south-east, looking at the place
   const off = s.id && s.r ? Math.min(s.r * 0.5, 25) : 0;
@@ -199,7 +200,7 @@ $('mapgo').onclick = () => {
   const yaw = s.id ? Math.atan2(-(s.x - tx), -(s.z - tz)) : undefined;
   startPlay(tx, tz, yaw);
   flash(s.n ? `${s.n}` : 'Here you are!');
-};
+}
 $('bPlay').onclick = () => startPlay();
 $('bPlaces').onclick = () => { sound.start(); openMap(); };
 $('bSet').onclick = () => openSettings();
@@ -210,7 +211,8 @@ $('pMap').onclick = openMap;
 $('pSet').onclick = () => { $('pause').classList.add('hide'); openSettings(); };
 $('pHelp').onclick = () => { $('pause').classList.add('hide'); $('help').classList.remove('hide'); };
 $('pTitle').onclick = () => { hidePanels(); savePos(); showTitle(); };
-$('tMap').onclick = openMap; $('tMenu').onclick = pause;
+$('tMap').onclick = openMap;
+$('miniwrap').style.pointerEvents = 'auto'; $('miniwrap').style.cursor = 'pointer'; $('miniwrap').onclick = openMap; $('tMenu').onclick = pause;
 $('tCam').onclick = () => cycleView();
 $('tTime').onclick = () => setTime(TIME_ORDER[(TIME_ORDER.indexOf(timeKey) + 1) % TIME_ORDER.length]);
 

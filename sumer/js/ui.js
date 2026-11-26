@@ -148,14 +148,20 @@ export class BigMap {
     const A = painter.city.h.area; this.A = A;
     let drag = null, pinch = null, moved = 0;
     const pt = (e) => { const r = this.cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-    this.cv.addEventListener('pointerdown', (e) => { this.cv.setPointerCapture(e.pointerId); drag = { p: pt(e), cx: this.cx, cz: this.cz, id: e.pointerId }; moved = 0; });
+    this.cv.addEventListener('pointerdown', (e) => { try { this.cv.setPointerCapture(e.pointerId); } catch { /* synthetic or lost pointer */ } drag = { p: pt(e), cx: this.cx, cz: this.cz, id: e.pointerId }; moved = 0; });
     this.cv.addEventListener('pointermove', (e) => {
       if (!drag || e.pointerId !== drag.id) return;
       const p = pt(e); const dx = p[0] - drag.p[0], dy = p[1] - drag.p[1]; moved = Math.max(moved, Math.hypot(dx, dy));
       this.cx = drag.cx - dx * this.mpp; this.cz = drag.cz - dy * this.mpp; this.clamp(); this.draw();
     });
     this.cv.addEventListener('pointerup', (e) => {
-      if (drag && moved < 6) { const p = pt(e); const [wx, wz] = this.toWorld(p[0], p[1]); this.select({ x: wx, z: wz, n: null }); }
+      if (drag && moved < 6) {
+        // a tap: go straight there (or to the place whose icon was tapped)
+        const p = pt(e); const [wx, wz] = this.toWorld(p[0], p[1]);
+        let hit = null;
+        for (const l of this.L) { const [sx, sy] = this.toScreen(l.x, l.z); if (Math.hypot(sx - p[0], sy - p[1]) < 18) hit = l; }
+        this.go(hit || { x: wx, z: wz, n: null });
+      }
       drag = null;
     });
     this.cv.addEventListener('wheel', (e) => {
@@ -189,10 +195,11 @@ export class BigMap {
       const d = document.createElement('div'); d.className = 'lm' + (this.sel && this.sel.id === l.id ? ' sel' : '');
       const km = Math.hypot(l.x - this.px, l.z - this.pz);
       d.innerHTML = `<span class="i">${l.i}</span><span class="t">${l.n}<small>${km < 1000 ? Math.round(km / 10) * 10 + ' m' : (km / 1000).toFixed(1) + ' km'} away</small></span>${this.found.has(l.id) ? '<span class="ok">✔</span>' : ''}`;
-      d.onclick = () => { this.cx = l.x; this.cz = l.z; this.mpp = Math.min(this.mpp, 1.6); this.select(l); };
+      d.onclick = () => this.go(l);
       el.appendChild(d);
     }
   }
+  go(s) { this.sel = s; this.draw(); if (this.o.onGo) this.o.onGo(s); else this.select(s); }
   select(s) { this.sel = s; this.o.goBtn.classList.remove('hide'); this.o.goBtn.textContent = s.n ? `🚶 Go to ${s.n}` : '🚶 Go here'; this.list(); this.draw(); }
   draw() {
     if (!this.open) return;
