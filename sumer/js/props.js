@@ -70,25 +70,6 @@ function lamp() {
   return b.geo();
 }
 function lampHead() { const b = new PB(); b.quad([1.0, 6.85, -0.1], [1.0, 6.85, 0.1], [1.5, 6.85, 0.1], [1.5, 6.85, -0.1], C(0xffffff)); return b.geo(); }
-function car() {
-  const b = new PB();
-  const body = C(0xffffff), glass = C(0x202830), tyre = C(0x161616), light = C(0xf4f1e0), rear = C(0xa8261e);
-  b.box(-2.15, 0.32, -0.88, 2.15, 0.98, 0.88, body);
-  const y0 = 0.98, y1 = 1.46;
-  const fb = [-1.2, 1.05], tb = [-0.95, 0.55], w0 = 0.82, w1 = 0.68;
-  const R = (a, b2, c, d, col) => b.quad(a, d, c, b2, col);
-  R([fb[1], y0, w0], [tb[1], y1, w1], [tb[1], y1, -w1], [fb[1], y0, -w0], glass);
-  R([fb[0], y0, -w0], [tb[0], y1, -w1], [tb[0], y1, w1], [fb[0], y0, w0], glass);
-  R([fb[0], y0, w0], [tb[0], y1, w1], [tb[1], y1, w1], [fb[1], y0, w0], glass);
-  R([fb[1], y0, -w0], [tb[1], y1, -w1], [tb[0], y1, -w1], [fb[0], y0, -w0], glass);
-  R([tb[0], y1, w1], [tb[0], y1, -w1], [tb[1], y1, -w1], [tb[1], y1, w1], body);
-  for (const [x, z] of [[1.35, 0.7], [-1.35, 0.7], [1.35, -0.92], [-1.35, -0.92]]) b.cyl(x, 0.33, z, 0.33, 0.33, 0.22, 6, tyre, 'z', false);
-  b.quad([2.151, 0.7, 0.45], [2.151, 0.7, 0.8], [2.151, 0.84, 0.8], [2.151, 0.84, 0.45], light);
-  b.quad([2.151, 0.7, -0.8], [2.151, 0.7, -0.45], [2.151, 0.84, -0.45], [2.151, 0.84, -0.8], light);
-  b.quad([-2.151, 0.72, 0.8], [-2.151, 0.72, 0.5], [-2.151, 0.86, 0.5], [-2.151, 0.86, 0.8], rear);
-  b.quad([-2.151, 0.72, -0.5], [-2.151, 0.72, -0.8], [-2.151, 0.86, -0.8], [-2.151, 0.86, -0.5], rear);
-  return b.geo();
-}
 function umbrella() {
   const b = new PB(); const pole = C(0xe8e4da), can = C(0xffffff);
   b.cyl(0, 0, 0, 0.03, 0.03, 2.3, 5, pole, 'y', false);
@@ -177,7 +158,6 @@ export function makeProps(nightRef) {
   const P = {
     swh: { geo: swh(), mat },
     lamp: { geo: lamp(), mat, geo2: lampHead(), mat2: headMat },
-    car: { geo: car(), mat },
     umb: { geo: umbrella(), mat },
     bed: { geo: sunbed(), mat },
     yacht: { geo: yacht(), mat },

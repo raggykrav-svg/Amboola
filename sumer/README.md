@@ -23,6 +23,7 @@ A walking game in a 3D copy of **Limassol, Cyprus**, made from the real map. It 
 - **Every street and path** (about 30,000 pieces): asphalt with markings, zebra crossings, raised sidewalks with kerbs, footpaths, cycle paths, the Molos promenade, piers and the rock breakwaters in the sea.
 - **Parks, beaches, pitches, pools, parking lots** and the coastline of the whole island.
 - **107,000 trees** from the map (single trees, tree rows, parks, pine woods, orchards) plus garden trees placed in the yards next to houses, as in the satellite view: palms on the seafront, Aleppo pines, ficus street trees, cypresses, olives and lemon trees.
+- **Cars** in five kinds seen all over Limassol (small hatchbacks, saloons, SUVs, double-cab pickups and vans): rounded bodies with glossy clear-coat paint that reflects the sky, dark glass, alloy wheels, mirrors, Cyprus plates (white in front, yellow at the back), and lights that come on at dusk on the cars that drive (on the left, as in Cyprus).
 - Limassol details seen in photos and Street View: red tile roofs in the old town, white and cream apartment blocks with long balconies, **solar water heaters on every flat roof**, wooden shutters, limestone walls, shop awnings, parked cars, street lamps, beach umbrellas, yachts in the marina, ships waiting off the coast and the hills of Troodos behind the city.
 - Landmarks with their own shapes: **Limassol Castle** (battlements), **Agia Napa Cathedral** (dome and bell towers), the **Grand Mosque** (minaret), and the other churches with domes and bell towers.
 

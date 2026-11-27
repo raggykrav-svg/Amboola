@@ -50,14 +50,14 @@ export function makeMaterials(facadeTex, groundTex, glowTex, leafTex = null, msa
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>
         attribute vec2 aFac; attribute vec3 aTint; attribute vec4 aInfo;
-        varying vec2 vFac; varying vec3 vTint; varying vec4 vInfo; varying vec3 vBW; varying vec3 vBN;`)
+        varying vec2 vFac; varying vec3 vTint; flat varying vec4 vInfo; varying vec3 vBW; varying vec3 vBN;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         vFac = aFac; vTint = aTint; vInfo = aInfo;
         vBW = (modelMatrix * vec4(position, 1.0)).xyz; vBN = normalize(mat3(modelMatrix) * normal);`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
         uniform sampler2D uFacade; uniform float uNight;
-        varying vec2 vFac; varying vec3 vTint; varying vec4 vInfo; varying vec3 vBW; varying vec3 vBN;
+        varying vec2 vFac; varying vec3 vTint; flat varying vec4 vInfo; varying vec3 vBW; varying vec3 vBN;
         ${NOISE}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float glassAmt = 0.0; float litW = 0.0;

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import earcut from 'earcut';
 import { chunk, chunkIndex } from './data.js';
+import { CAR_TYPES, CAR_COLOURS, pickCarType, carCircles } from './cars.js';
 
 export const SUP = 4;               // chunks per superchunk side (4 x 250 m = 1 km)
 const CURB = 0.12;                  // sidewalk height
@@ -37,6 +38,7 @@ export class City {
     this.supers = new Map();        // si -> {base: Group, detail: Group|null}
     this.queue = [];
     this.rasters = new Map();
+    this.detailVersion = 0;          // bumped when street details are built or dropped (parked cars follow it)
     this.allParsed = false;
   }
 
@@ -209,7 +211,7 @@ export class City {
   }
   dropDetail(ci) {
     const grp = this.details.get(ci); if (!grp) return;
-    this.scene.remove(grp); disposeGroup(grp); this.details.delete(ci);
+    this.scene.remove(grp); disposeGroup(grp); this.details.delete(ci); this.detailVersion++;
     const R = this.rasters.get(ci); if (R) R.colliders = null;
   }
 
@@ -420,7 +422,7 @@ export class City {
   // ---------------------------------------------------------------- details (balconies, roof heaters, awnings, props)
   buildDetail(ci) {
     const grp = new THREE.Group(); grp.name = 'detail' + ci;
-    this.details.set(ci, grp);
+    this.details.set(ci, grp); this.detailVersion++;
     const D = new GeoBuf(true);
     const P = this.props;
     const inst = { swh: [], lamp: [], car: [], umb: [], bed: [], yacht: [], sail: [], ac: [], tank: [] };
@@ -437,8 +439,9 @@ export class City {
       const m = new THREE.Mesh(D.geometry(), this.mats.detail);
       m.castShadow = true; m.receiveShadow = true; grp.add(m);
     }
+    grp.userData.parked = inst.car;
     for (const k in inst) {
-      const list = inst[k]; if (!list.length || !P[k]) continue;
+      const list = inst[k]; if (k === 'car' || !list.length || !P[k]) continue;
       const im = new THREE.InstancedMesh(P[k].geo, P[k].mat, list.length);
       const mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), p = new THREE.Vector3();
       const color = new THREE.Color();
@@ -586,7 +589,6 @@ export class City {
     const at = (x, z) => { const cx = Math.floor(x - R.ox), cz = Math.floor(z - R.oz); if (cx < 0 || cz < 0 || cx >= W || cz >= W) return -1; return ras[cz * W + cx]; };
     // OSM street lamps
     for (let i = 0; i < c.points.length; i += 3) if (c.points[i + 2] === 0) inst.lamp.push({ x: c.points[i], z: c.points[i + 1], ry: hash01(i) * 6.28 });
-    const carCols = [0xf2f2f0, 0xf2f2f0, 0xeeeeee, 0xbfc3c7, 0x9aa0a6, 0x55595e, 0x1e2023, 0x1e2023, 0x2b4c7e, 0x8e1c1c, 0x6d7a5a, 0xc9b38a, 0x3d6e9c];
     let li = 0;
     for (const rd of c.roads) {
       if (rd.path) continue;
@@ -612,19 +614,21 @@ export class City {
         }
         // parked cars along the kerb
         if (carRoad && this.q.cars) {
-          const step = 5.6;
+          const step = 6.2;
           for (let t = 4 + (acc % step); t < L - 4; t += step) {
             for (const side of [-1, 1]) {
               const hsh = hash01(Math.floor((x1 + ux * t) * 3) * 92821 + Math.floor((z1 + uz * t) * 3) * 68917 + side);
               if (hsh > (rd.cls === 6 ? 0.5 : 0.32)) continue;
-              const off = rd.w / 2 - 1.05;
+              const type = pickCarType(hash01(Math.floor((x1 + ux * t) * 5) * 7919 + Math.floor((z1 + uz * t) * 5) * 104729 + side * 3));
+              const T = CAR_TYPES[type], cc = carCircles(type);
+              const off = rd.w / 2 - T.W / 2 - 0.08;
               const x = x1 + ux * t + nx * off * side, z = z1 + uz * t + nz * off * side;
-              const sA = at(x + ux * 2.2, z + uz * 2.2), sB = at(x - ux * 2.2, z - uz * 2.2), sC = at(x, z);
+              const sA = at(x + ux * (T.L / 2), z + uz * (T.L / 2)), sB = at(x - ux * (T.L / 2), z - uz * (T.L / 2)), sC = at(x, z);
               if (sA !== 5 || sB !== 5 || sC !== 5) continue;
               const ry = Math.atan2(-uz, ux) + (side > 0 ? Math.PI : 0) * (hsh < 0.1 ? 1 : 0);
-              inst.car.push({ x, z, ry, c: carCols[Math.floor(hash01(Math.floor(x * 7) ^ Math.floor(z * 13)) * carCols.length)] });
+              inst.car.push({ x, z, ry, t: type, c: CAR_COLOURS[Math.floor(hash01(Math.floor(x * 7) ^ Math.floor(z * 13)) * CAR_COLOURS.length)] });
               R.colliders = R.colliders || [];
-              R.colliders.push(x + ux * 1.3, z + uz * 1.3, 0.95, x - ux * 1.3, z - uz * 1.3, 0.95);
+              R.colliders.push(x + ux * cc.off, z + uz * cc.off, cc.r, x - ux * cc.off, z - uz * cc.off, cc.r);
             }
           }
         }

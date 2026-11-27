@@ -12,6 +12,7 @@ import { Sound } from './audio.js';
 import { MapPainter, Minimap, BigMap } from './ui.js';
 import { Life } from './life.js';
 import { Post, postSupported } from './post.js';
+import { CarField } from './cars.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -22,10 +23,10 @@ const params = new URLSearchParams(location.search);
 const isTouch = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 
 const QUALITY = {
-  low: { post: false, ao: false, msaa: 0, leafy: false, pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
-  medium: { post: true, ao: true, aoScale: 0.5, aoSamples: 8, msaa: 2, leafy: true, pixelRatio: 1, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
-  high: { post: true, ao: true, aoScale: 0.5, aoSamples: 12, msaa: 4, leafy: true, pixelRatio: 1.25, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
-  ultra: { post: true, ao: true, aoScale: 0.75, aoSamples: 16, msaa: 4, leafy: true, pixelRatio: 1.5, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
+  low: { post: false, ao: false, msaa: 0, leafy: false, carNear: 0, carFar: 160, pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
+  medium: { post: true, ao: true, aoScale: 0.5, aoSamples: 8, msaa: 2, leafy: true, carNear: 55, carFar: 200, pixelRatio: 1, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
+  high: { post: true, ao: true, aoScale: 0.5, aoSamples: 12, msaa: 4, leafy: true, carNear: 75, carFar: 280, pixelRatio: 1.25, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
+  ultra: { post: true, ao: true, aoScale: 0.75, aoSamples: 16, msaa: 4, leafy: true, carNear: 110, carFar: 380, pixelRatio: 1.5, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
 };
 const settings = Object.assign({ quality: isTouch ? 'low' : 'high', sound: true, vol: 0.8, sens: 1, invert: false, fov: 72, fps: false }, store.get('settings', {}));
 if (params.get('q') && QUALITY[params.get('q')]) settings.quality = params.get('q');
@@ -53,7 +54,7 @@ const camera = new THREE.PerspectiveCamera(settings.fov, innerWidth / innerHeigh
 scene.add(camera);
 scene.userData.camera = camera;
 
-let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life;
+let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life, carField;
 const sound = new Sound(); sound.on = settings.sound; sound.vol = settings.vol;
 let state = 'loading';  // loading | title | play | menu | map
 let landmarks = [];
@@ -79,6 +80,7 @@ async function boot() {
     city = new City(data, scene, mats, Q);
     city.parseAll();
     props = makeProps(); city.props = props;
+    carField = new CarField(scene, city, mats.U, Q);
     env = new Environment(renderer, scene, data, Q);
     env.fogScale = Q.fog;
     env.neutral = !!Q.post;
@@ -103,6 +105,7 @@ async function boot() {
       if (!built || city.pending <= 0 || performance.now() - t0 > 20000) break;
     }
     forest.update(TITLE.cx, TITLE.cz, true);
+    carField.update(TITLE.cx, TITLE.cz, true);
     setLoad(1, 'Ready!');
     showTitle();
     $('loading').classList.add('hide');
@@ -177,6 +180,7 @@ function warmUp() {
   const t0 = performance.now();
   while (performance.now() - t0 < 1200) { if (!city.update(player.pos.x, player.pos.z, 120, player.pos.x, player.pos.z)) break; }
   forest.update(player.pos.x, player.pos.z, true);
+  carField.update(player.pos.x, player.pos.z, true);
 }
 
 // ---------------------------------------------------------------- panels
@@ -427,6 +431,7 @@ function tick(dt) {
     titleA += dt * 0.035;
     placeTitleCamera();
     city.update(TITLE.cx, TITLE.cz, 5);
+    carField.update(TITLE.cx, TITLE.cz);
     env.update(dt, camera, { x: TITLE.cx, z: TITLE.cz });
     return;
   }
@@ -442,6 +447,7 @@ function tick(dt) {
   const cx = camera.position.x, cz = camera.position.z;
   city.update(cx, cz, state === 'play' ? 7 : 3, player.mode === 'drone' ? cx : player.pos.x, player.mode === 'drone' ? cz : player.pos.z);
   if (player.mode === 'drone') forest.update(cx, cz); else forest.update(player.pos.x, player.pos.z);
+  if (player.mode === 'drone') carField.update(cx, cz); else carField.update(player.pos.x, player.pos.z);
   env.update(dt, camera, player.mode === 'drone' ? { x: cx, z: cz } : player.pos);
 }
 function loop() {
@@ -458,7 +464,7 @@ if (settings.fps) $('fps').classList.remove('hide');
 
 // debug / test handle
 window.sumer = {
-  get city() { return city; }, get player() { return player; }, get life() { return life; }, get env() { return env; }, get forest() { return forest; },
+  get city() { return city; }, get player() { return player; }, get life() { return life; }, get cars() { return carField; }, get env() { return env; }, get forest() { return forest; },
   scene, camera, renderer, setTime, startPlay, openMap, closeMap, pause, resume, found, stats,
   state: () => state, tick: (dt) => { tick(dt); draw(); }, step: (dt) => tick(dt), render: () => draw(), get post() { return post; },
   hud: () => { streetT = 0; hudT = 0; updateHud(0.01); },

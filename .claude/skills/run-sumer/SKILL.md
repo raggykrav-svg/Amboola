@@ -54,6 +54,8 @@ Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18
 - `sumer.post.debugAO(true)` shows the AO image alone. Dense leaf crowns over-darken with a large GTAO `thickness`; keep it small.
 - Trees on Medium+ come from `js/leafy.js`: alpha-tested cards with the painted atlas from `makeLeafAtlas()` (`textures.js`), round-crown normals tilted up, no normal flip on card backs, alpha boosted in small mipmaps (otherwise far trees thin out), `customDepthMaterial` for leaf-shaped shadows. Only trees inside the sun's shadow box are in the shadow-casting mesh (`forest.near`); the rest of the near ring is `forest.nearNS`.
 - Exposure per time of day: `exp` (ACES, Low) and `expN` (Neutral, post) in `TIMES` in `env.js`.
+- Cars (`js/cars.js`): bodies are lofted cross-sections; each triangle carries a surface kind (`aKind`: paint, glass, trim, chrome, tyre, head/tail light, white/yellow plate, grille) that one clear-coat material turns into the right look; paint comes from the instance colour. `buildCar(type, low)`: about 2,500 triangles near, about 190 far. Parked cars are placed per street piece (`grp.userData.parked` in `city.js`) and drawn by `CarField` (near/far by `carNear`, nothing beyond `carFar`, far ones cast no shadow); driving cars are in `life.js` (near/far too, lights on at dusk and night). Watch the triangle count after touching them: one early version drew 8.7 million triangles a frame.
+- Per-face values that feed a hash must be `flat varying` (facade `vInfo`, car `vKind`): interpolated equal values differ in the last bits, and the hash turned lit windows at night into white noise.
 
 ## Rebuilding the city data
 

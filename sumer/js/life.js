@@ -2,6 +2,7 @@
 // on the main roads (on the left, as in Cyprus). Instanced and kept around the player.
 import * as THREE from 'three';
 import { chunk, chunkIndex } from './data.js';
+import { CAR_TYPES, CAR_COLOURS, buildCar, makeCarMaterial, pickCarType, carCircles } from './cars.js';
 
 function rnd() { return Math.random(); }
 
@@ -135,13 +136,18 @@ export class Life {
       scene.add(this.pm);
     }
     if (this.nC) {
-      this.cm = new THREE.InstancedMesh(props.car.geo, props.mat, this.nC);
-      this.cm.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      this.cm.castShadow = q.shadows > 0; this.cm.frustumCulled = false; this.cm.count = 0;
-      const cols = [0xf2f2f0, 0xbfc3c7, 0x1e2023, 0x9aa0a6, 0x2b4c7e, 0x8e1c1c, 0xf2f2f0, 0x55595e, 0xc9b38a, 0x3d6e9c];
-      const col = new THREE.Color();
-      for (let i = 0; i < this.nC; i++) this.cm.setColorAt(i, col.set(cols[i % cols.length]));
-      scene.add(this.cm);
+      // driving cars: the detailed models, lights on at dusk and night
+      const mat = makeCarMaterial(mats.U, true);
+      const mk = (t, low) => {
+        const im = new THREE.InstancedMesh(buildCar(t, low), mat, this.nC);
+        im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        im.castShadow = !low && q.shadows > 0; im.receiveShadow = true; im.frustumCulled = false; im.count = 0;
+        im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(this.nC * 3), 3);
+        scene.add(im);
+        return im;
+      };
+      this.cms = CAR_TYPES.map((t) => mk(t, false)).concat(CAR_TYPES.map((t) => mk(t, true))); // near models, then far ones
+      this.col = new THREE.Color();
     }
     this.m = new THREE.Matrix4(); this.q4 = new THREE.Quaternion(); this.e = new THREE.Euler(); this.v = new THREE.Vector3(); this.sc = new THREE.Vector3(1, 1, 1);
     this.spawnT = 0;
@@ -155,7 +161,7 @@ export class Life {
     if (this.spawnT <= 0) {
       this.spawnT = 0.05;
       if (this.people.length < this.nP) { const r = pickRoute(this.city, this.data, px, pz, RP, false); if (r) this.people.push({ r, s: Math.random() * r.len, dir: Math.random() < 0.5 ? 1 : -1, v: 1.05 + Math.random() * 0.5, ph: Math.random() * 6.28, sc: 0.9 + Math.random() * 0.2, wait: 0 }); }
-      if (this.cars.length < this.nC) { const r = pickRoute(this.city, this.data, px, pz, RC, true); if (r) this.cars.push({ r, s: Math.random() * r.len * 0.5, v: 8 + Math.random() * 5, cur: 0 }); }
+      if (this.cars.length < this.nC) { const r = pickRoute(this.city, this.data, px, pz, RC, true); if (r) { const t = pickCarType(Math.random()); this.cars.push({ r, s: Math.random() * r.len * 0.5, v: 8 + Math.random() * 5, cur: 0, t, c: CAR_COLOURS[Math.floor(Math.random() * CAR_COLOURS.length)], cc: carCircles(t) }); } }
     }
     // people
     let k = 0;
@@ -183,7 +189,7 @@ export class Life {
     }
     if (this.pm) { this.pm.count = k; this.pm.instanceMatrix.needsUpdate = true; this.walk.needsUpdate = true; }
     // cars
-    let n = 0;
+    const nT = this.cms ? new Array(this.cms.length).fill(0) : null;
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i];
       const a = along(c.r, c.s);
@@ -201,17 +207,19 @@ export class Life {
       c.s += c.cur * dt;
       const b = along(c.r, c.s);
       this.e.set(0, Math.atan2(-uz, ux), 0); this.q4.setFromEuler(this.e); this.v.set(b[0], 0, b[1]); this.sc.setScalar(1);
-      this.m.compose(this.v, this.q4, this.sc); this.cm.setMatrixAt(n, this.m);
+      const slot = c.t + (Math.hypot(b[0] - px, b[1] - pz) < (this.q.carNear || 0) ? 0 : CAR_TYPES.length);
+      const im = this.cms[slot], k = nT[slot]++;
+      this.m.compose(this.v, this.q4, this.sc); im.setMatrixAt(k, this.m);
+      im.setColorAt(k, this.col.set(c.c));
       c.x = b[0]; c.z = b[1]; c.ux = ux; c.uz = uz;
-      n++;
     }
-    if (this.cm) { this.cm.count = n; this.cm.instanceMatrix.needsUpdate = true; }
+    if (this.cms) this.cms.forEach((im, t) => { im.count = nT[t]; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; });
   }
 
   // bodies the walker bumps into
   colliders(x, z, fn) {
     for (const p of this.people) if (p.x !== undefined && Math.abs(p.x - x) < 1.5 && Math.abs(p.z - z) < 1.5) fn(p.x, p.z, 0.28);
-    for (const c of this.cars) if (c.x !== undefined && Math.abs(c.x - x) < 4 && Math.abs(c.z - z) < 4) { fn(c.x + c.ux * 1.3, c.z + c.uz * 1.3, 0.95); fn(c.x - c.ux * 1.3, c.z - c.uz * 1.3, 0.95); }
+    for (const c of this.cars) if (c.x !== undefined && Math.abs(c.x - x) < 4.5 && Math.abs(c.z - z) < 4.5) { fn(c.x + c.ux * c.cc.off, c.z + c.uz * c.cc.off, c.cc.r); fn(c.x - c.ux * c.cc.off, c.z - c.uz * c.cc.off, c.cc.r); }
   }
   clear() { this.people.length = 0; this.cars.length = 0; }
 }
