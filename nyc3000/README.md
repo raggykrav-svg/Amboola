@@ -41,6 +41,20 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Cyberware](screenshots/35-cyberware.jpg) | ![ATM hack](screenshots/36-atm-hack.jpg) |
 | **A fist fight** | **Riding a motorbike** |
 | ![Fist fight](screenshots/37-fist-fight.jpg) | ![Motorbike](screenshots/38-motorbike.jpg) |
+| **Boss fight: the giant mech TITAN-0** | **The ending: you saved NYC 3000!** |
+| ![Boss mech](screenshots/40-boss-mech.jpg) | ![Ending](screenshots/41-ending.jpg) |
+| **Story mission: the sky chase** | **A street race against 3 rivals** |
+| ![Sky chase](screenshots/42-sky-chase.jpg) | ![Race rivals](screenshots/43-race-rivals.jpg) |
+| **The grappling hook** | **Daytime** |
+| ![Grappling hook](screenshots/44-grappling-hook.jpg) | ![Daytime](screenshots/45-daytime.jpg) |
+| **Sunset** | **Surprise event: a meteor** |
+| ![Sunset](screenshots/46-sunset.jpg) | ![Meteor](screenshots/47-meteor.jpg) |
+| **Surprise event: the neon parade** | **Sparky, your robot dog** |
+| ![Parade](screenshots/48-parade.jpg) | ![Robot dog](screenshots/49-robot-dog.jpg) |
+| **Your own apartment** | **Car and gun upgrades** |
+| ![Apartment](screenshots/50-apartment.jpg) | ![Upgrades](screenshots/51-upgrades.jpg) |
+| **Home & pets shop** | **Medals** |
+| ![Home and pets](screenshots/52-home-and-pets.jpg) | ![Medals](screenshots/53-medals.jpg) |
 
 ## Run it
 
@@ -91,6 +105,8 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | Q (hold) | scanner: names over people, who's a gang member, slows time |
 | Tab | the big map: click a place, SET DESTINATION, follow the arrows |
 | V | slow motion (with the TIME DILATOR implant) |
+| G | grappling hook: shoot it at a building to fly there (aim near the top to land on the roof) |
+| Shift + W next to a wall, in the air | wall-run (Space jumps off the wall) |
 
 | In a car | |
 |---|---|
@@ -99,10 +115,11 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 | Space | handbrake (ground cars) |
 | Space / Shift | fly up / down (flying cars) |
 | Left click | plasma cannon (hover cars) |
+| Shift (cars, bikes) / N (flying cars) | nitro boost (once you buy NITRO in UPGRADES) |
 | Mouse | look around (the camera swings back by itself) |
 | F | get out (flying cars land by themselves first) |
 
-**Esc** pauses (Resume, Shop, Challenges, Options, Save, Controls, Quit to menu). **M** mutes the sound.
+**Esc** pauses (Resume, Shop, Map, Challenges, Skills & Medals, Options, Save, Controls, Quit to menu). **M** mutes the sound.
 
 ### Missions
 
@@ -110,7 +127,63 @@ Upload the `dist/` folder anywhere (GitHub Pages, Netlify, itch.io) to share it.
 2. Steal a car: walk up to one and press **F**.
 3. Steal a flying car at **Hover Pad 06** (the orange light beam).
 4. Fly through the **SKYLANE A5** gate.
-5. Then free roam with drone waves that keep getting bigger.
+5. Then **the story** starts (see below). When you've finished it, drone waves keep coming in free roam.
+
+### The story: Overlord Zero and the giant mech
+
+**OVERLORD ZERO** and his robot gang, the **CHROME CROWN** (orange headbands), have taken over the city. **JUNO**, a hacker, calls you for help. The story box in the top left always says what to do, and the orange beam and the compass show where.
+
+1. **THE SIGNAL**: smash the Chrome Crown's jammer tower (shoot it; its guards fight back).
+2. **DATA HEIST**: grab Zero's data chip, then get it to Juno's hideout in the west while drones chase you.
+3. **FREE THE ENGINEER**: find Dr. Tess Volta, talk to her (**E**) and take her to the hideout (she rides in your car).
+4. **SKY CHASE**: you get a flying car. Chase Zero's courier through the sky and shoot it down, then pick up the power core.
+5. **TOWER TOP**: reach the roof of Zero's tower (fly up or use the grappling hook) and destroy his drones.
+6. **BOSS: TITAN-0**: a 19 m giant mech stomps around Times Square. It has a gatling gun, rockets that follow you (shoot them down or run) and, once it's damaged, a **stomp**: jump over the shockwave ring! Shoot the glowing **blue core** on its chest for double damage, and triple once its chest armour breaks open.
+
+When TITAN-0 falls, Zero gives up, fireworks go off over Times Square and you get **$10,000**, 1000 XP and the MECH BREAKER medal. If you get knocked out, the mission starts again. The story saves itself after every mission.
+
+### Races
+
+Street races, sky races and a motorbike race (**NEON BIKE DASH**) are challenges. There's no clock any more: you race against **3 rivals** and have to come **first** (the box shows your position). Second, third and fourth still pay a little. Some races win you a **car**: CROSSTOWN DASH gives the LUMEN GT, NEON BIKE DASH the NEON CHOPPER, and the new **TOWER TOP GRAND PRIX** sky race (210 m up) the NYPD SKY CRUISER. Prize cars go to your garage (SHOP → CARS → DELIVER).
+
+### Grappling hook and wall-running
+
+Press **G** to shoot the grappling hook where you aim. It pulls you there. Aim near the top of a building (up to 30 m above where it hits) and it pulls you up onto the roof. If it hits a wall, you hang there: press **G** again to hook higher, or **Space** to jump off. While you fly on the rope, **Space** lets go with a jump.
+
+**Wall-running**: jump next to a wall while sprinting forward (**Shift + W**) and you run along it. **Space** jumps off; you can jump from wall to wall.
+
+### Day and night
+
+A full day takes 20 minutes, and the clock is under the district name. In the day the sky is blue, the sun casts the shadows and the neon is dim. At sunset and sunrise the sky turns orange and pink. At night the neon glows brightest, and sometimes there are fireworks. **Options → Time of day** can keep it always day or always night. A new game starts at sunset.
+
+### Surprise events
+
+Every minute or two (during free roam, after the first steps), something happens nearby. You can go there (the box and the compass show it) or ignore it:
+- **ARMORED TRUCK ROBBERY**: beat the robbers and the cash bags are yours.
+- **METEOR STRIKE**: a meteor crashes into the street; grab the glowing space crystal.
+- **GANG WAR**: two gangs shoot at each other; when you come close they turn on you. Stop them both.
+- **NEON PARADE**: dancers and balloon floats march down the street. Walk along with them for 20 seconds to join the party.
+- **FIREWORKS SHOW** (at night): watch it in Times Square.
+
+### Levels, skills and medals
+
+Everything gives **XP**: challenges, beating bad guys, story missions, events, golden robots, neon tags, ATM hacks. Each level gives a **skill point** (the XP bar and level are under your money). Spend points in the pause menu under **SKILLS & MEDALS**. Each skill goes up to rank 3:
+- **RUNNER**: run faster. **TOUGH AS STEEL**: take less damage. **SHARPSHOOTER**: guns hit harder. **BRAWLER**: harder punches.
+- **SPEED DEMON**: faster cars and bikes. **GRAPPLER**: longer, faster grappling hook. **LUCKY**: more cash from everything.
+
+There are **22 medals** for cool things, like driving faster than 200 km/h, flying higher than 300 m, winning every race, wall-running, staying out until midnight or seeing the sun come up. **20 golden robot statues** are hidden around the city (they glow gold: look on low rooftops, in side streets and near the highway). Each one is worth $250 and XP.
+
+### Sparky, your robot dog
+
+Adopt **SPARKY** in the shop (**HOME & PETS**, $800). He follows you everywhere and hops in your car with you. He runs at bad guys who are fighting you and bites them, and he fetches ammo, health and cash lying nearby and drops them at your feet. He's the green dot on the minimap.
+
+### Your own apartment
+
+Buy the **penthouse** in **HOME & PETS** ($3,000). It's the flat door closest to where you start (a gold house icon on the map and the minimap). Inside: a city view, a hot tub, a bar and a bed (sleep to save). Then buy things to put in it: a neon sign, lava lamps, a **trophy case** (it fills with a gold cup for each medal), hologram fish, a jukebox, an aquarium, an **arcade machine**, a gaming setup and a giant golden robot. Up to four of your own cars wait in your **garage** on the street outside.
+
+### Upgrades
+
+**SHOP → UPGRADES**: **ENGINE TUNE** (faster), **ARMOR PLATING** (tougher), **NITRO BOOST** (Shift, or N in a flying car, with a NITRO bar), **NEON UNDERGLOW** in six colours, a **PAINT JOB** for all your own cars, and for every gun you own: more **DAMAGE** and a **BIG MAGAZINE**.
 
 ### Shops, flats and money
 

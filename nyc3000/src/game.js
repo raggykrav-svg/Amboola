@@ -696,7 +696,7 @@ export class Game {
     this.city.ground.visible = false;
     this.rooms.show(R.key);
     R.setMood(d.id);
-    if (d.isHome) { this.interior.home = true; R.setChannel(5); this.home.furnish(R); this.hud.toast('HOME SWEET HOME'); return; }
+    if (d.isHome) { if (this.gps.label === 'YOUR APARTMENT') this.gps.clear(); this.interior.home = true; R.setChannel(5); this.home.furnish(R); this.hud.toast('HOME SWEET HOME'); return; }
     if (R.kind === 'shop') this._openShop(d); else if (R.kind === 'hotel') this._openHotel(d); else this._openFlat(d);
   }
   _leaveInterior() {

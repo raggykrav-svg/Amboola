@@ -33,6 +33,7 @@ export class Story {
 
   // ---------- the HUD box ----------
   text() {
+    if (this.ending) return ['YOU SAVED NYC 3000!', 'Watch the fireworks over Times Square'];
     const m = this.m, M = MISSIONS[this.step];
     if (!M) return null;
     if (!m) return [`STORY ${this.step + 1}/6: ${M.name}`, 'Juno is calling…'];
@@ -201,7 +202,7 @@ export class Story {
           m.mech = new Mech(g, m.arena.x + 20, m.arena.z - 30);
           g.audio.play('alert'); g.camState.shake = 0.8;
           g.hud.say('OVERLORD ZERO', 'HA HA HA! TITAN-0 IS UNBEATABLE!', ZERO, 4);
-          setTimeout(() => g.hud.say('JUNO', 'Shoot the glowing BLUE CORE on its chest for double damage! Jump over the stomp shockwaves!', JUNO, 6), 4200);
+          setTimeout(() => this.boss && g.hud.say('JUNO', 'Shoot the glowing BLUE CORE on its chest for double damage! Jump over the stomp shockwaves!', JUNO, 6), 4200);
           m.sub = 'Defeat TITAN-0 · aim for the blue core';
         }
         return;
