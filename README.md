@@ -12,6 +12,20 @@ Free, in your browser: no download, no install, no account. It works on computer
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
+## 🏡 New: Villa Oliva, a house to walk through
+
+A separate game in this repo (the racing game is unchanged): walk through a white Mediterranean villa and its olive garden.
+
+**▶ Play: [raggykrav-svg.github.io/Amboola/villa/](https://raggykrav-svg.github.io/Amboola/villa/)** · the whole game is [`villa/index.html`](villa/index.html)
+
+![Villa Oliva living room](media/villa-living.jpg)
+![Aerial by day, plunge pool at dusk, lap pool at night, aerial at night](media/villa-views.jpg)
+
+- **The house:** round entrance atrium under a glass dome, living room with folding glass doors, dining room, kitchen with island, study, floating oak stairs, master bedroom with balcony, bathroom with a freestanding tub, children's room and a roof terrace.
+- **The garden:** lap pool, plunge pool, swimming pond with a pool house, citrus walk, tennis court, giant chess, greenhouse, swing, sandbox, play tower with slide, fire pit, dining deck with string lights, guest house, gym and garage, parking with four cars, olive trees, cypresses, lavender and 3D grass.
+- **Controls:** W A S D walk, mouse looks (click to lock), Shift runs, Space jumps, E sits (sofas, benches, the swing), N changes the time of day, M opens the map (tap a place to go there), V flies the drone. On phones: left thumb walks, right thumb looks.
+- **Graphics:** Low, Medium, High and Ultra in ⚙ Settings. At dusk the lamps, pool lights, path lights, string lights and the fire come on.
+
 ## The title screen 🏁
 
 ![The title screen, Settings and Challenges](media/title-screen.jpg)
