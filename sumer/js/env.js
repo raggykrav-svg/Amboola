@@ -4,10 +4,10 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import earcut from 'earcut';
 
 export const TIMES = {
-  morning: { label: 'Morning', el: 15, az: 100, turb: 3.5, ray: 1.4, mie: 0.004, mieG: 0.8, sun: 0xffe2b8, sunI: 2.6, sky: 0xd0d8e0, gnd: 0x8f8069, hemiI: 1.15, fog: 0xc8d6e3, fogD: 0.00016, exp: 0.62, night: 0 },
-  day: { label: 'Midday', el: 63, az: 195, turb: 2.6, ray: 1.0, mie: 0.003, mieG: 0.75, sun: 0xfff1dc, sunI: 3.1, sky: 0xd6dde2, gnd: 0xa8957a, hemiI: 1.15, fog: 0xc8d8e6, fogD: 0.00014, exp: 0.52, night: 0 },
-  sunset: { label: 'Sunset', el: 5.5, az: 252, turb: 6, ray: 2.4, mie: 0.006, mieG: 0.86, sun: 0xffa868, sunI: 3.2, sky: 0xd7b7b0, gnd: 0x8a7060, hemiI: 1.7, fog: 0xd8ab92, fogD: 0.00017, exp: 0.78, night: 0.35 },
-  night: { label: 'Night', el: -12, az: 285, moon: [38, 150], turb: 2, ray: 0.4, mie: 0.002, mieG: 0.8, sun: 0xa9bfff, sunI: 0.9, sky: 0x5d6f99, gnd: 0x2a2b33, hemiI: 1.6, fog: 0x1b2433, fogD: 0.00018, exp: 1.25, night: 1 },
+  morning: { label: 'Morning', expN: 0.92, el: 15, az: 100, turb: 4.5, ray: 1.5, mie: 0.005, mieG: 0.8, sun: 0xffe2b8, sunI: 2.5, sky: 0xd0d8e0, gnd: 0x9a8a72, hemiI: 1.5, fog: 0xc8d6e3, fogD: 0.00016, exp: 0.62, night: 0 },
+  day: { label: 'Midday', expN: 0.8, el: 63, az: 195, turb: 4.2, ray: 1.15, mie: 0.0045, mieG: 0.78, sun: 0xfff1dc, sunI: 2.8, sky: 0xd6dde2, gnd: 0xb09c80, hemiI: 1.55, fog: 0xc8d8e6, fogD: 0.00014, exp: 0.52, night: 0 },
+  sunset: { label: 'Sunset', expN: 1.12, el: 5.5, az: 252, turb: 6, ray: 2.4, mie: 0.006, mieG: 0.86, sun: 0xffa868, sunI: 3.2, sky: 0xd7b7b0, gnd: 0x8a7060, hemiI: 1.7, fog: 0xd8ab92, fogD: 0.00017, exp: 0.78, night: 0.35 },
+  night: { label: 'Night', expN: 1.9, el: -12, az: 285, moon: [38, 150], turb: 2, ray: 0.4, mie: 0.002, mieG: 0.8, sun: 0xa9bfff, sunI: 0.9, sky: 0x5d6f99, gnd: 0x2a2b33, hemiI: 1.6, fog: 0x1b2433, fogD: 0.00018, exp: 1.25, night: 1 },
 };
 export const TIME_ORDER = ['morning', 'day', 'sunset', 'night'];
 
@@ -31,6 +31,9 @@ function screenSpaceSky(sky, camera) {
       'vec4 vp = uInvProj * vec4(position.xy, 1.0, 1.0); vp /= vp.w; vWorldPosition = cameraPosition + (uCamWorld * vec4(vp.xyz, 0.0)).xyz * 1000.0;')
     .replace(/gl_Position = projectionMatrix \* modelViewMatrix \* vec4\( position, 1\.0 \);\s*gl_Position\.z = gl_Position\.w;[^\n]*/,
       'gl_Position = vec4(position.xy, 0.9999, 1.0);');
+  // a paler, hazier Mediterranean sky
+  m.fragmentShader = m.fragmentShader.replace('gl_FragColor = vec4( retColor, 1.0 );',
+    'retColor = mix(retColor, vec3(dot(retColor, vec3(0.2126, 0.7152, 0.0722))), 0.32);\n\t\t\tgl_FragColor = vec4( retColor, 1.0 );');
   m.side = THREE.FrontSide; // the box was seen from inside (BackSide); the quad faces the camera
   m.depthTest = false; m.depthWrite = false;
   m.needsUpdate = true;
@@ -75,7 +78,7 @@ export class Environment {
     this.sun.color.set(T.sun); this.sun.intensity = T.sunI;
     this.hemi.color.set(T.sky); this.hemi.groundColor.set(T.gnd); this.hemi.intensity = T.hemiI;
     this.scene.fog.color.set(T.fog); this.scene.fog.density = T.fogD * (this.fogScale || 1);
-    this.renderer.toneMappingExposure = T.exp;
+    this.renderer.toneMappingExposure = this.neutral ? T.expN : T.exp;
     this.night = T.night;
     // environment map from the sky (reflections in glass and water)
     const envScene = new THREE.Scene();

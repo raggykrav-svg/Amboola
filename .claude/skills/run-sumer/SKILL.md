@@ -47,6 +47,14 @@ Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18
 - **Things placed per chunk must stay inside their chunk.** Garden trees that landed past the chunk edge floated in the sea.
 - **Face winding.** `quad3(a, b, c, d)` uses the normal (b - a) x (d - a), so check new faces from both sides.
 
+## Graphics pipeline (Medium and up)
+
+- `js/post.js`: the scene renders into an MSAA half-float target with a float `DepthTexture`; three's `GTAOPass` makes ambient occlusion from that depth alone (`setGBuffer(depth)`, normals rebuilt from depth, no second scene pass); one full-screen pass multiplies AO, a slight warm grade, desaturation and vignette, then tone maps (Neutral) to the screen. Low skips all of it (ACES, direct render). Everything renders through `draw()` in `main.js` (`sumer.render()` in tests); `renderer.info` is reset per frame so the triangle count covers all passes (shadows included).
+- The flat ground does not write depth, so `city.js` adds a depth-only copy of each ground mesh (`mats.groundDepth`, renderOrder -4.5) when AO is on; without it there is no AO where walls meet the street. Road markings use polygonOffset to stay above it.
+- `sumer.post.debugAO(true)` shows the AO image alone. Dense leaf crowns over-darken with a large GTAO `thickness`; keep it small.
+- Trees on Medium+ come from `js/leafy.js`: alpha-tested cards with the painted atlas from `makeLeafAtlas()` (`textures.js`), round-crown normals tilted up, no normal flip on card backs, alpha boosted in small mipmaps (otherwise far trees thin out), `customDepthMaterial` for leaf-shaped shadows. Only trees inside the sun's shadow box are in the shadow-casting mesh (`forest.near`); the rest of the near ring is `forest.nearNS`.
+- Exposure per time of day: `exp` (ACES, Low) and `expN` (Neutral, post) in `TIMES` in `env.js`.
+
 ## Rebuilding the city data
 
 See `sumer/README.md` → *Rebuilding the city data*. The Python tools are in `sumer/tools/`: `extract.py`, then `build_data.py`, then `pack.py`; the places to find are in `landmarks.json`. The OSM extract of Cyprus from geo2day.com works from the cloud container (Geofabrik and overpass-api.de were blocked there).

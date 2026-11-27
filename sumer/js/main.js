@@ -1,7 +1,7 @@
 // SUMER — walk the real streets of Limassol. Main loop, menus, input, progress.
 import * as THREE from 'three';
 import { loadCity, chunk, chunkIndex, shoreAt } from './data.js';
-import { makeFacadeAtlas, makeGroundAtlas, makeGlow } from './textures.js';
+import { makeFacadeAtlas, makeGroundAtlas, makeGlow, makeLeafAtlas } from './textures.js';
 import { Environment, TIMES, TIME_ORDER } from './env.js';
 import { City } from './city.js';
 import { makeMaterials } from './materials.js';
@@ -11,6 +11,7 @@ import { Player } from './player.js';
 import { Sound } from './audio.js';
 import { MapPainter, Minimap, BigMap } from './ui.js';
 import { Life } from './life.js';
+import { Post, postSupported } from './post.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -21,10 +22,10 @@ const params = new URLSearchParams(location.search);
 const isTouch = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 
 const QUALITY = {
-  low: { pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
-  medium: { pixelRatio: 1.25, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
-  high: { pixelRatio: 1.5, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
-  ultra: { pixelRatio: 2, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
+  low: { post: false, ao: false, msaa: 0, leafy: false, pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
+  medium: { post: true, ao: true, aoScale: 0.5, aoSamples: 8, msaa: 2, leafy: true, pixelRatio: 1, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
+  high: { post: true, ao: true, aoScale: 0.5, aoSamples: 12, msaa: 4, leafy: true, pixelRatio: 1.25, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
+  ultra: { post: true, ao: true, aoScale: 0.75, aoSamples: 16, msaa: 4, leafy: true, pixelRatio: 1.5, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
 };
 const settings = Object.assign({ quality: isTouch ? 'low' : 'high', sound: true, vol: 0.8, sens: 1, invert: false, fov: 72, fps: false }, store.get('settings', {}));
 if (params.get('q') && QUALITY[params.get('q')]) settings.quality = params.get('q');
@@ -32,10 +33,19 @@ const Q = QUALITY[settings.quality] || QUALITY.high;
 
 // ---------------------------------------------------------------- renderer
 const canvas = $('view');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: settings.quality !== 'low', powerPreference: 'high-performance', preserveDrawingBuffer: params.has('shots') });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: settings.quality !== 'low' && !Q.post, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('shots') });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, Q.pixelRatio));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.info.autoReset = false;
+// post-processing (Medium and up) when the GPU can render to half-float images
+if (Q.post && !postSupported(renderer)) { Q.post = false; Q.ao = false; Q.msaa = 0; }
+if (Q.post) renderer.toneMapping = THREE.NeutralToneMapping;
+let post = null;
+function draw() {
+  renderer.info.reset();
+  if (post) post.render(); else renderer.render(scene, camera);
+}
 renderer.shadowMap.enabled = Q.shadows > 0;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
@@ -63,14 +73,16 @@ async function boot() {
     landmarks = data.header.landmarks || [];
     setLoad(0.52, 'Painting the buildings…'); await frame();
     const facade = makeFacadeAtlas(renderer), groundTex = makeGroundAtlas(renderer), glowTex = makeGlow();
-    mats = makeMaterials(facade, groundTex, glowTex);
+    mats = makeMaterials(facade, groundTex, glowTex, Q.leafy ? makeLeafAtlas(renderer) : null, Q.post ? Q.msaa : 0);
+    if (Q.post) post = new Post(renderer, scene, camera, Q);
     setLoad(0.6, 'Reading 31,500 buildings…'); await frame();
     city = new City(data, scene, mats, Q);
     city.parseAll();
     props = makeProps(); city.props = props;
     env = new Environment(renderer, scene, data, Q);
     env.fogScale = Q.fog;
-    forest = new Forest(scene, mats.tree, city, Q);
+    env.neutral = !!Q.post;
+    forest = new Forest(scene, mats, city, Q);
     player = new Player(city, forest, camera, scene);
     player.onStep = (s, run) => sound.step(s, run);
     player.onLand = () => sound.land();
@@ -118,6 +130,7 @@ function addShips() {
 function setTime(k) {
   timeKey = k; store.set('time', k);
   env.setTime(k);
+  if (post) post.setNight(env.night);
   const night = env.night;
   mats.U.uNight.value = night >= 1 ? 1 : night > 0.3 ? 0.35 : 0;
   props.headMat.emissiveIntensity = night >= 1 ? 3.5 : night > 0.3 ? 1.2 : 0;
@@ -133,6 +146,7 @@ function setTime(k) {
 const TITLE = { cx: 40, cz: 260, r: 360, h: 150, a: 0.6 };
 function showTitle() {
   state = 'title';
+  placeTitleCamera();
   $('title').classList.remove('hide'); $('hud').classList.add('hide'); $('touch').classList.add('hide');
   const nf = found.size;
   $('tstats').textContent = nf || stats.walked > 50 ? `Found ${nf} of ${landmarks.length} places · walked ${(stats.walked / 1000).toFixed(1)} km` : '';
@@ -403,12 +417,15 @@ function discover(L) {
 // ---------------------------------------------------------------- loop
 const clock = new THREE.Clock();
 let titleA = TITLE.a;
+function placeTitleCamera() {
+  camera.position.set(TITLE.cx + Math.cos(titleA) * TITLE.r, TITLE.h, TITLE.cz + Math.sin(titleA) * TITLE.r);
+  camera.lookAt(TITLE.cx, 12, TITLE.cz);
+}
 function tick(dt) {
   mats.U.uTime.value += dt;
   if (state === 'title' || (state === 'map' && bigmap.from === 'title')) {
     titleA += dt * 0.035;
-    camera.position.set(TITLE.cx + Math.cos(titleA) * TITLE.r, TITLE.h, TITLE.cz + Math.sin(titleA) * TITLE.r);
-    camera.lookAt(TITLE.cx, 12, TITLE.cz);
+    placeTitleCamera();
     city.update(TITLE.cx, TITLE.cz, 5);
     env.update(dt, camera, { x: TITLE.cx, z: TITLE.cz });
     return;
@@ -433,17 +450,17 @@ function loop() {
   const dt = Math.min(0.1, clock.getDelta());
   if (state === 'loading') return;
   tick(dt);
-  renderer.render(scene, camera);
+  draw();
   if (settings.fps) { fpsN++; fpsT += dt; if (fpsT > 0.5) { $('fps').textContent = `${Math.round(fpsN / fpsT)} fps · ${renderer.info.render.triangles.toLocaleString()} tris · ${renderer.info.render.calls} calls`; fpsN = 0; fpsT = 0; } }
 }
-addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (post) post.setSize(); });
 if (settings.fps) $('fps').classList.remove('hide');
 
 // debug / test handle
 window.sumer = {
   get city() { return city; }, get player() { return player; }, get life() { return life; }, get env() { return env; }, get forest() { return forest; },
   scene, camera, renderer, setTime, startPlay, openMap, closeMap, pause, resume, found, stats,
-  state: () => state, tick: (dt) => { tick(dt); renderer.render(scene, camera); }, step: (dt) => tick(dt), render: () => renderer.render(scene, camera),
+  state: () => state, tick: (dt) => { tick(dt); draw(); }, step: (dt) => tick(dt), render: () => draw(), get post() { return post; },
   hud: () => { streetT = 0; hudT = 0; updateHud(0.01); },
   warm: () => warmUp(), bigmap: () => bigmap, landmarks: () => landmarks,
 };

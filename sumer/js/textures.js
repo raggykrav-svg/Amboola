@@ -289,3 +289,94 @@ export function makeGlow() {
   c.fillStyle = g; c.fillRect(0, 0, 64, 64);
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
+
+// ------------------------------------------------------------------ leaf atlas (2 x 2 cells of 512 px)
+// 0 olive spray (narrow silver-green leaves), 1 broad leaves (ficus, carob, citrus), 2 pine needles,
+// 3 palm frond (rib from the bottom of the cell to the top, leaflets both sides).
+// The 64 px block at the bottom-right corner is opaque white: trunks and branches sample it.
+export const LEAF_S = 1024;
+export function leafCell(i) {
+  const cx = (i % 2) * 512, cy = Math.floor(i / 2) * 512, S = LEAF_S, pad = 6;
+  return { u0: (cx + pad) / S, u1: (cx + 512 - pad) / S, v0: 1 - (cy + 512 - pad) / S, v1: 1 - (cy + pad) / S };
+}
+export const WHITE_UV = [1 - 32 / 1024, 32 / 1024];
+
+export function makeLeafAtlas(renderer) {
+  const S = LEAF_S;
+  const cv = document.createElement('canvas'); cv.width = cv.height = S;
+  const c = cv.getContext('2d');
+  const R = rng(1234);
+  const hsl = (h, s, l) => `hsl(${h.toFixed(0)},${s.toFixed(0)}%,${l.toFixed(0)}%)`;
+  const leaf = (x, y, len, wid, ang, col, rib = 0.14) => {
+    c.save(); c.translate(x, y); c.rotate(ang);
+    c.beginPath(); c.moveTo(0, 0);
+    c.quadraticCurveTo(len * 0.45, -wid, len, 0);
+    c.quadraticCurveTo(len * 0.45, wid, 0, 0);
+    c.fillStyle = col; c.fill();
+    if (rib) { c.strokeStyle = `rgba(255,255,240,${rib})`; c.lineWidth = Math.max(0.8, wid * 0.12); c.beginPath(); c.moveTo(len * 0.06, 0); c.lineTo(len * 0.86, 0); c.stroke(); }
+    c.restore();
+  };
+  // a spray: twigs from the middle outwards, leaves along them (a roughly round, ragged cluster)
+  const spray = (ox, oy, opt) => {
+    const cx = ox + 256, cy = oy + 270;
+    for (let k = 0; k < opt.twigs; k++) {
+      const a = (k / opt.twigs) * Math.PI * 2 + (R() - 0.5) * 0.5;
+      const L = opt.reach * (0.6 + 0.4 * R()) * (Math.sin(a) > 0.3 ? 0.85 : 1);
+      const bend = (R() - 0.5) * 0.6;
+      c.strokeStyle = opt.twig; c.lineWidth = 2.2;
+      c.beginPath(); c.moveTo(cx, cy);
+      const ex = cx + Math.cos(a) * L, ey = cy + Math.sin(a) * L;
+      const mx = cx + Math.cos(a + bend) * L * 0.55, my = cy + Math.sin(a + bend) * L * 0.55;
+      c.quadraticCurveTo(mx, my, ex, ey); c.stroke();
+      for (let t = 0.18; t <= 1.0; t += opt.step / L) {
+        const it = 1 - t, bx = it * it * cx + 2 * it * t * mx + t * t * ex, by = it * it * cy + 2 * it * t * my + t * t * ey;
+        const tx = 2 * it * (mx - cx) + 2 * t * (ex - mx), ty = 2 * it * (my - cy) + 2 * t * (ey - my);
+        const ta = Math.atan2(ty, tx);
+        for (const sd of [-1, 1]) {
+          const la = ta + sd * (opt.spread + (R() - 0.5) * 0.4);
+          const col = opt.color(R());
+          leaf(bx, by, opt.len * (0.8 + 0.4 * R()) * (1 - 0.25 * t), opt.wid * (0.85 + 0.3 * R()), la, col, opt.rib);
+        }
+      }
+      leaf(ex, ey, opt.len, opt.wid, a, opt.color(R()), opt.rib); // tip leaf
+    }
+  };
+  // 0: olive
+  spray(0, 0, { twigs: 22, reach: 215, step: 11, len: 44, wid: 6.5, spread: 0.55, rib: 0.1, twig: '#5d5446',
+    color: (r) => r < 0.4 ? hsl(78, 14, 60 + r * 14) : hsl(82 + r * 10, 20, 36 + r * 16) });
+  // 1: broad leaves
+  spray(512, 0, { twigs: 20, reach: 205, step: 13, len: 40, wid: 15, spread: 0.7, rib: 0.16, twig: '#4b3f30',
+    color: (r) => r < 0.2 ? hsl(88, 40, 50) : hsl(98 + r * 14, 34, 27 + r * 20) });
+  // 2: pine needles: tufts
+  for (let k = 0; k < 30; k++) {
+    const a = R() * Math.PI * 2, d = Math.sqrt(R()) * 170;
+    const tx = 256 + Math.cos(a) * d, ty = 512 + 266 + Math.sin(a) * d;
+    const n = 26 + Math.floor(R() * 16);
+    for (let i = 0; i < n; i++) {
+      const b = R() * Math.PI * 2, L = 28 + R() * 46;
+      c.strokeStyle = hsl(95 + R() * 15, 28 + R() * 10, 18 + R() * 20); c.lineWidth = 2 + R() * 1.4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + Math.cos(b) * L, ty + Math.sin(b) * L); c.stroke();
+    }
+  }
+  // 3: palm frond (base at the bottom of the cell)
+  {
+    const ox = 512, oy = 512, cx = ox + 235;
+    c.strokeStyle = '#8c8650'; c.lineWidth = 7; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(cx, oy + 506); c.quadraticCurveTo(cx + 10, oy + 260, cx - 4, oy + 8); c.stroke();
+    for (let y = oy + 490; y > oy + 14; y -= 6.5) {
+      const t = (oy + 506 - y) / 492;
+      const L = 175 * Math.sin(Math.PI * Math.min(1, t * 1.15 + 0.08)) * (1 - 0.35 * t) + 12;
+      const x = cx + 10 * Math.sin(t * Math.PI) - 4 * t;
+      for (const sd of [-1, 1]) {
+        const ang = -Math.PI / 2 + sd * (Math.PI / 2 - 0.62) + (R() - 0.5) * 0.12;
+        leaf(x, y, L, 5.5 + R() * 2, ang, hsl(84 + R() * 16, 36, 26 + R() * 16), 0.12);
+      }
+    }
+  }
+  // opaque white block for trunks
+  c.fillStyle = '#ffffff'; c.fillRect(S - 64, S - 64, 64, 64);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  return tex;
+}

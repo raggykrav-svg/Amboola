@@ -2,6 +2,7 @@
 // in yards next to houses (like the satellite view). Instanced, rebuilt as the player walks.
 import * as THREE from 'three';
 import { makeTreeGeometries, NTYPES, TREE, TRUNK_R } from './trees.js';
+import { makeLeafyTrees } from './leafy.js';
 import { chunk, chunkIndex } from './data.js';
 
 function mulberry(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -11,13 +12,18 @@ const GARDEN_TYPES = [TREE.FICUS, TREE.BROAD, TREE.CITRUS, TREE.OLIVE, TREE.PALM
 const GARDEN_W = [22, 20, 18, 12, 11, 11, 6];
 
 export class Forest {
-  constructor(scene, mat, city, q) {
+  constructor(scene, mats, city, q) {
     this.scene = scene; this.city = city; this.data = city.data; this.q = q;
-    const { near, far } = makeTreeGeometries();
+    const leafy = !!(q.leafy && mats.leaf);
+    const { near, far } = leafy ? makeLeafyTrees() : makeTreeGeometries();
+    const mat = leafy ? mats.leaf : mats.tree;
     const dyn = (m) => { m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.count = 0; m.frustumCulled = false; scene.add(m); return m; };
-    this.near = near.map((g) => { const m = dyn(new THREE.InstancedMesh(g, mat, q.treeCapNear)); m.castShadow = q.shadows > 0; m.receiveShadow = true; return m; });
+    this.near = near.map((g) => { const m = dyn(new THREE.InstancedMesh(g, mat, q.treeCapNear)); m.castShadow = q.shadows > 0; m.receiveShadow = true; if (leafy) m.customDepthMaterial = mats.leafDepth; return m; });
+    // near trees outside the sun's shadow box do not need to be drawn into the shadow map
+    this.nearNS = near.map((g) => { const m = dyn(new THREE.InstancedMesh(g, mat, q.treeCapNear)); m.castShadow = false; m.receiveShadow = true; return m; });
+    this.shadowR = q.shadows > 0 ? (q.shadowSize || 90) * 1.2 : 0;
     this.far = far.map((g) => { const m = dyn(new THREE.InstancedMesh(g, mat, q.treeCapFar)); m.receiveShadow = false; return m; });
-    for (const m of [...this.near, ...this.far]) { m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(m.instanceMatrix.count * 3), 3); m.instanceColor.setUsage(THREE.DynamicDrawUsage); }
+    for (const m of [...this.near, ...this.nearNS, ...this.far]) { m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(m.instanceMatrix.count * 3), 3); m.instanceColor.setUsage(THREE.DynamicDrawUsage); }
     this.garden = new Map();
     this.lastX = 1e9; this.lastZ = 1e9;
     this.wsum = GARDEN_W.reduce((a, b) => a + b, 0);
@@ -69,7 +75,8 @@ export class Forest {
     const g = this.city.g;
     const ix0 = Math.floor((x - R - g.x0) / g.cs), ix1 = Math.floor((x + R - g.x0) / g.cs);
     const iz0 = Math.floor((z - R - g.z0) / g.cs), iz1 = Math.floor((z + R - g.z0) / g.cs);
-    const nN = new Array(NTYPES).fill(0), nF = new Array(NTYPES).fill(0);
+    const nN = new Array(NTYPES).fill(0), nS = new Array(NTYPES).fill(0), nF = new Array(NTYPES).fill(0);
+    const RS = this.shadowR;
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
     const capN = this.q.treeCapNear, capF = this.q.treeCapFar;
     for (let iz = iz0; iz <= iz1; iz++) for (let ix = ix0; ix <= ix1; ix++) {
@@ -82,10 +89,10 @@ export class Forest {
         const d = Math.hypot(tx - x, tz - z);
         if (d > R) return;
         const hh = h2(tx, tz);
-        const near = d < RN;
-        const arr = near ? nN : nF;
+        const near = d < RN, cast = near && d < RS;
+        const arr = cast ? nN : near ? nS : nF;
         if (arr[ty] >= (near ? capN : capF)) return;
-        const mesh = (near ? this.near : this.far)[ty];
+        const mesh = (cast ? this.near : near ? this.nearNS : this.far)[ty];
         let k = sc * (0.85 + 0.3 * hh);
         if (ty === TREE.PALM) k *= 0.8 + 0.5 * h2(tz, tx);
         q.setFromAxisAngle(up, hh * Math.PI * 2);
@@ -100,9 +107,8 @@ export class Forest {
       }, dch < RG);
     }
     for (let t = 0; t < NTYPES; t++) {
-      this.near[t].count = nN[t]; this.far[t].count = nF[t];
-      this.near[t].instanceMatrix.needsUpdate = true; this.far[t].instanceMatrix.needsUpdate = true;
-      this.near[t].instanceColor.needsUpdate = true; this.far[t].instanceColor.needsUpdate = true;
+      this.near[t].count = nN[t]; this.nearNS[t].count = nS[t]; this.far[t].count = nF[t];
+      for (const mm of [this.near[t], this.nearNS[t], this.far[t]]) { mm.instanceMatrix.needsUpdate = true; mm.instanceColor.needsUpdate = true; }
     }
   }
 

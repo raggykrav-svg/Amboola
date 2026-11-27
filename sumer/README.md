@@ -48,7 +48,7 @@ A walking game in a 3D copy of **Limassol, Cyprus**, made from the real map. It 
 | Time of day | T | 🌅 | Back |
 | Menu | Esc | ⏸ | Start |
 
-Graphics: Low, Medium, High or Ultra in Settings (phones start on Low).
+Graphics: Low, Medium, High or Ultra in Settings (phones start on Low). From Medium up the game draws soft contact shadows (ambient occlusion) in corners, under balconies and where walls meet the street, leafy trees with leaf-shaped shadows (olive, ficus, carob, Aleppo pine, cypress, lemon and palm fronds), softer, brighter light and antialiased edges.
 
 ## How it is made
 

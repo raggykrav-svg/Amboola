@@ -8,7 +8,7 @@ float snoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2
   return mix(mix(shash(i), shash(i + vec2(1.0, 0.0)), u.x), mix(shash(i + vec2(0.0, 1.0)), shash(i + vec2(1.0, 1.0)), u.x), u.y); }
 `;
 
-export function makeMaterials(facadeTex, groundTex, glowTex) {
+export function makeMaterials(facadeTex, groundTex, glowTex, leafTex = null, msaa = 0) {
   const U = { uNight: { value: 0 }, uTime: { value: 0 } };
 
   const groundPatch = (sh) => {
@@ -41,7 +41,7 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
   const raised = new THREE.MeshLambertMaterial({ vertexColors: true });
   raised.onBeforeCompile = groundPatch;
   raised.customProgramCacheKey = () => 'sumer-ground';
-  const marks = new THREE.MeshLambertMaterial({ vertexColors: true, depthWrite: false });
+  const marks = new THREE.MeshLambertMaterial({ vertexColors: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
 
   const building = new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0.0, envMapIntensity: 0.45 });
   building.onBeforeCompile = (sh) => {
@@ -72,7 +72,7 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
             vec4 t = textureGrad(uFacade, auv, dFdx(cell) * sc, dFdy(cell) * sc);
             float wallM = smoothstep(0.6, 0.95, t.a);
             glassAmt = 1.0 - smoothstep(0.05, 0.3, t.a);
-            vec3 tint = clamp(mix(vec3(1.0), vTint, 1.45), 0.0, 1.0);
+            vec3 tint = mix(vec3(1.0), vTint, 0.85);
             diffuseColor.rgb = mix(t.rgb, t.rgb * tint, wallM);
             float h = shash(vec2(floor(cell.x) + vInfo.z * 113.0, fl * 7.0 + vInfo.z * 57.0));
             litW = glassAmt * step(h, 0.4) * uNight * (0.6 + 0.4 * shash(vec2(fl, vInfo.z * 31.0)));
@@ -116,9 +116,35 @@ export function makeMaterials(facadeTex, groundTex, glowTex) {
   };
   tree.customProgramCacheKey = () => 'sumer-tree';
 
+  // leafy trees: alpha-tested leaf cards with the same wind
+  let leaf = null, leafDepth = null;
+  if (leafTex) {
+    leaf = new THREE.MeshLambertMaterial({ vertexColors: true, map: leafTex, alphaTest: 0.5, side: THREE.DoubleSide });
+    leaf.alphaToCoverage = msaa > 0;
+    leaf.onBeforeCompile = (sh) => {
+      tree.onBeforeCompile(sh);
+      sh.fragmentShader = sh.fragmentShader
+        // keep the round-crown normal on both sides of a card (no dark backs)
+        .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n  normal = normalize( vNormal );')
+        // leaves thin out in small mipmaps: give alpha back as the texture gets smaller
+        .replace('#include <alphatest_fragment>', `{
+            vec2 tsz = vec2(textureSize(map, 0));
+            vec2 ddx = dFdx(vMapUv * tsz), ddy = dFdy(vMapUv * tsz);
+            float lod = 0.5 * log2(max(dot(ddx, ddx), dot(ddy, ddy)));
+            diffuseColor.a = min(1.0, diffuseColor.a * (1.0 + max(lod, 0.0) * 0.3));
+          }
+          #include <alphatest_fragment>`);
+    };
+    leaf.customProgramCacheKey = () => 'sumer-leaf' + (msaa > 0 ? '-a2c' : '');
+    leafDepth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: leafTex, alphaTest: 0.5, side: THREE.DoubleSide });
+  }
+  // the flat ground does not write depth (its layers are drawn in order); this copy writes only depth
+  // after them, so ambient occlusion sees the ground where walls meet the street
+  const groundDepth = new THREE.MeshBasicMaterial({ colorWrite: false });
+
   const glow = new THREE.PointsMaterial({ map: glowTex, size: 5.5, sizeAttenuation: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xffd9a0, fog: true });
   glow.userData.on = false;
   const pool = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffa860, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false });
 
-  return { U, ground, raised, marks, building, detail, tree, glow, pool };
+  return { U, ground, raised, marks, building, detail, tree, glow, pool, leaf, leafDepth, groundDepth };
 }

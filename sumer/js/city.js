@@ -220,6 +220,7 @@ export class City {
     const chunks = this.superChunks(si);
     const gm = this.buildGround(chunks);
     if (gm.flat) grp.add(gm.flat);
+    if (gm.flatDepth) grp.add(gm.flatDepth);
     if (gm.raised) grp.add(gm.raised);
     if (gm.marks) grp.add(gm.marks);
     const bm = this.buildBuildings(chunks);
@@ -256,6 +257,10 @@ export class City {
     if (F.count) {
       out.flat = new THREE.Mesh(F.geometry(), this.mats.ground);
       out.flat.renderOrder = -5; out.flat.receiveShadow = true;
+      if (this.q.ao) {
+        out.flatDepth = new THREE.Mesh(out.flat.geometry, this.mats.groundDepth);
+        out.flatDepth.renderOrder = -4.5; out.flatDepth.userData.sharedGeo = true;
+      }
     }
     if (Rz.count) {
       out.raised = new THREE.Mesh(Rz.geometry(), this.mats.raised);
