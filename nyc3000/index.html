@@ -102,7 +102,7 @@
     <div id="shop" class="screen panel-screen">
       <div class="panel wide">
         <div class="shop-head"><h2>SHOP</h2><div class="wallet"><b id="shopCash">$0</b><span id="shopCred"></span></div></div>
-        <div class="seg" id="shopTabs"><button data-tab="cars" class="on">CARS</button><button data-tab="guns">GUNS &amp; GEAR</button><button data-tab="cyber">CYBERWARE</button></div>
+        <div class="seg" id="shopTabs"><button data-tab="cars" class="on">CARS</button><button data-tab="guns">GUNS &amp; GEAR</button><button data-tab="cyber">CYBERWARE</button><button data-tab="upgrades">UPGRADES</button><button data-tab="home">HOME &amp; PETS</button></div>
         <div id="shopGrid" class="shop-grid"></div>
         <div id="shopMsg" class="shop-msg"></div>
         <div class="panel-buttons"><button class="mbtn small" id="bShopBack">BACK</button></div>
@@ -117,6 +117,18 @@
         <p class="ch-help">Races, gang hideouts, cyberpsychos, deliveries and drone nests are marked on the minimap with coloured squares. Drive or walk to one: fights start by themselves, races and deliveries start with <kbd>E</kbd>. Rewards are cash and Street Cred, and Street Cred unlocks cars and guns in the shop. <b>TRACK</b> puts a marker on your compass.</p>
         <div id="chList" class="ch-list"></div>
         <div class="panel-buttons"><button class="mbtn small" id="bChBack">BACK</button></div>
+      </div>
+    </div>
+
+    <!-- SKILLS & MEDALS (pause menu) -->
+    <div id="profile" class="screen panel-screen">
+      <div class="panel wide">
+        <div class="shop-head"><h2>SKILLS &amp; MEDALS</h2><div class="wallet"><b id="pfLevel"></b><span id="pfXP"></span></div></div>
+        <div class="cred-bar"><i id="pfFill"></i></div>
+        <div class="seg" id="pfTabs"><button data-tab="skills" class="on">SKILLS</button><button data-tab="medals">MEDALS</button></div>
+        <p class="ch-help" id="pfHelp"></p>
+        <div id="pfGrid" class="pf-grid"></div>
+        <div class="panel-buttons"><button class="mbtn small" id="bPfBack">BACK</button></div>
       </div>
     </div>
 
@@ -165,6 +177,7 @@
         <button class="mbtn" id="bShop">SHOP</button>
         <button class="mbtn" id="bMap">MAP</button>
         <button class="mbtn" id="bChallenges">CHALLENGES</button>
+        <button class="mbtn" id="bProfile">SKILLS &amp; MEDALS</button>
         <button class="mbtn" id="bPOptions">OPTIONS</button>
         <button class="mbtn" id="bSave">SAVE GAME</button>
         <button class="mbtn" id="bPControls">CONTROLS</button>
@@ -192,7 +205,10 @@
       <div id="lift"><div class="lift-title">LIFT · CHOOSE A FLOOR</div><div id="liftBtns"></div><div class="lift-help">Keys 1–9, 0 = floor 10</div></div>
       <div id="detect"><span id="detectText">?</span><div class="bar"><i id="detectFill"></i></div></div>
       <div id="scan"><div class="scan-title">SCANNER · hold Q</div><div id="scanLabels"></div></div>
-      <div id="wanted"><div id="stars"></div><div id="wantedLabel"></div><div id="cash">$ 0</div><div id="credLabel"></div></div>
+      <div id="wanted"><div id="stars"></div><div id="wantedLabel"></div><div id="cash">$ 0</div><div id="credLabel"></div><div id="lvlRow"><b id="lvlNum">LV 1</b><div class="bar xp"><i id="xpFill"></i></div><em id="lvlPts"></em></div><div id="xpPop"></div></div>
+      <div id="medalPop"><div class="mp-icon" id="mpIcon"></div><div><small>MEDAL UNLOCKED</small><b id="mpName"></b><span id="mpText"></span></div></div>
+      <div id="clock"></div>
+      <div id="ending"><small>MISSION COMPLETE</small><h1>YOU SAVED NYC 3000!</h1><p>Overlord Zero gave up, the Chrome Crown is finished and the city is free.<br>Juno, Tess and everyone in New York say: THANK YOU, HERO!</p><b>+$10,000 · +1000 XP · MEDAL: MECH BREAKER</b><em>The city is still yours: races, challenges, surprise events, golden robots…</em></div>
       <div id="bossBar"><div id="bossName"></div><div class="bar"><i id="bossFill"></i></div></div>
       <div id="robBar"><span>ROBBING THE SHOP · KEEP AIMING</span><div class="bar"><i id="robFill"></i></div></div>
       <div id="fps"></div>
@@ -222,6 +238,7 @@
         <div id="vName">HOVER CAR</div>
         <div class="speedo"><b id="speed">0</b><span>KM/H</span></div>
         <div id="altRow">ALT <b id="alt">0</b> m</div>
+        <div class="bar-row" id="nitroRow"><span>NITRO</span><div class="bar ni"><i id="niFill"></i></div></div>
         <div class="bar-row"><span>INTEGRITY</span><div class="bar vi"><i id="viFill"></i></div></div>
         <div class="bar-row" id="cannonRow"><span>PLASMA CANNON</span><div class="bar en"><i id="enFill"></i></div></div>
       </div>

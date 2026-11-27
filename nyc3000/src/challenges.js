@@ -35,9 +35,11 @@ export const TYPES = {
 export const CHALLENGES = [
   { id: 'race1', type: 'race', name: 'MIDTOWN SPRINT', path: [[6, 4], [6, 2], [8, 2], [8, 6], [6, 6], [6, 4]], cash: 600, cred: 150 },
   { id: 'race2', type: 'race', name: 'HARBOR RUN', path: [[1, 7], [1, 9], [4, 9], [4, 6], [2, 6], [2, 7]], cash: 700, cred: 170 },
-  { id: 'race3', type: 'race', name: 'CROSSTOWN DASH', path: [[9, 8], [9, 3], [7, 3], [7, 8], [9, 8]], cash: 800, cred: 200 },
+  { id: 'race3', type: 'race', name: 'CROSSTOWN DASH', path: [[9, 8], [9, 3], [7, 3], [7, 8], [9, 8]], cash: 800, cred: 200, prize: 'super' },
+  { id: 'race4', type: 'race', vehicle: 'bike', name: 'NEON BIKE DASH', path: [[1, 10], [1, 8], [5, 8], [5, 10], [1, 10]], cash: 750, cred: 190, prize: 'chopper' },
   { id: 'sky1', type: 'sky', name: 'SPIRE HOPPER', path: [[3, 7], [3, 3], [7, 3], [7, 7], [3, 7]], alt: 120, cash: 900, cred: 220 },
   { id: 'sky2', type: 'sky', name: 'SKYLANE LOOP', path: [[1, 1], [1, 5], [5, 5], [5, 9], [9, 9], [9, 1], [1, 1]], alt: 160, cash: 1200, cred: 280 },
+  { id: 'sky3', type: 'sky', name: 'TOWER TOP GRAND PRIX', path: [[2, 2], [2, 8], [8, 8], [8, 2], [2, 2]], alt: 210, cash: 1500, cred: 320, prize: 'flypolice' },
   { id: 'gang1', type: 'gang', name: 'CHROME SKULLS HIDEOUT', at: [2, 8], n: 6, faction: 'skulls', cash: 700, cred: 200 },
   { id: 'gang2', type: 'gang', name: 'NEON VIPERS DEN', at: [8, 1], n: 7, faction: 'vipers', cash: 800, cred: 230 },
   { id: 'gang3', type: 'gang', name: 'DATA RATS NEST', at: [5, 9], n: 5, faction: 'rats', cash: 600, cred: 180 },
@@ -198,9 +200,9 @@ export class Challenges {
     if (def.type === 'race' || def.type === 'sky') {
       const flying = def.type === 'sky';
       // no car (or the wrong kind)? one gets delivered and you hop in
-      if (!p.vehicle || p.vehicle.flying !== flying) {
+      if (!p.vehicle || p.vehicle.flying !== flying || (def.vehicle && p.vehicle.type !== def.vehicle && p.vehicle.type !== 'chopper')) {
         if (p.vehicle) g.exitVehicle(true);
-        const v = g.deliverCar(flying ? 'hover' : 'muscle', true);
+        const v = g.deliverCar(def.vehicle || (flying ? 'hover' : 'muscle'), true);
         v.raceCar = true;
         g.enterVehicle(v);
       }
@@ -210,8 +212,9 @@ export class Challenges {
       const s0 = startOf(def), c0 = a.cps[0];
       p.vehicle.yaw = Math.atan2(-(c0.x - s0.x), -(c0.z - s0.z)); p.vehicle.speed = 0;
       a.limit = Math.round(a.cps.length * (flying ? 7.5 : 6.5) + 12);
-      a.left = a.limit; a.countdown = 3.2;
-      g.hud.toast(`${def.name} · ${a.cps.length} CHECKPOINTS`);
+      a.countdown = 3.2;
+      this._rivals(def, a);
+      g.hud.toast(`${def.name} · ${a.cps.length} CHECKPOINTS · BEAT 3 RIVALS!`);
     } else if (def.type === 'delivery') {
       const [i, j] = def.to;
       a.dest = new THREE.Vector3(R(i), 0, R(j)); a.left = def.time;
@@ -255,6 +258,51 @@ export class Challenges {
     this.active = a;
     this.tracked = def.id;
     g.audio.play('objective');
+  }
+
+  // three rivals line up next to you; they fly or drive from checkpoint to checkpoint
+  _rivals(def, a) {
+    const g = this.g, v = g.player.vehicle, sky = def.type === 'sky';
+    const types = sky ? ['hover', 'taxi', 'hover'] : def.vehicle === 'bike' ? ['bike', 'chopper', 'bike'] : ['super', 'muscle', 'sedan'];
+    const f = v.fwd, rx = Math.cos(v.yaw), rz = -Math.sin(v.yaw);
+    a.rivals = types.map((t, k) => {
+      const side = [-4.5, 4.5, -9][k], back = k === 2 ? 3 : 0;
+      const r = g._addVehicle(t, v.pos.x + rx * side - f.x * back, v.pos.z + rz * side - f.z * back, v.yaw, 'racer');
+      r.pos.y = v.pos.y; r.keep = true; r.hasDriver = true;
+      r.race = { step: 0, skill: [0.8, 0.86, 0.92][k] * (sky ? 0.72 : 1), done: false };
+      if (r.def.bike) { // a rider on the rival bikes
+        const h = new Humanoid(pedKindFor(k * 3 + 1)), seat = r.mesh.userData.seat || new THREE.Vector3(0, 0.9, 0.3);
+        r.body.add(h.root); h.root.position.set(seat.x, seat.y - 0.93, seat.z); h.animate(0, 0, { ride: t === 'bike' ? 'sport' : 'chopper' });
+      }
+      return r;
+    });
+  }
+  _updateRivals(dt, a) {
+    const g = this.g, sky = a.def.type === 'sky', p = g.player, pv = p.vehicle;
+    const prog = (step, pos) => { const c = a.cps[Math.min(step, a.cps.length - 1)]; return step * 1000 - (step >= a.cps.length ? 0 : (sky ? pos.distanceTo(c) : Math.hypot(pos.x - c.x, pos.z - c.z))); };
+    const mine = prog(a.step, pv ? pv.pos : p.pos);
+    let place = 1;
+    for (const r of a.rivals) {
+      const R = r.race;
+      if (r.mode === 'wreck') continue;
+      if (!R.done) {
+        const c = a.cps[R.step], dx = c.x - r.pos.x, dz = c.z - r.pos.z, dy = (sky ? c.y : r.pos.y) - r.pos.y;
+        const d = Math.hypot(dx, dz), want = Math.atan2(-dx, -dz);
+        let diff = want - r.yaw; while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+        r.yaw += Math.max(-1, Math.min(1, diff)) * Math.min(1, dt * (sky ? 2 : 3));
+        // fast on the straights, slower in the corners, and they wait a bit for you (or speed up)
+        const mineGap = prog(R.step, r.pos) - mine;
+        let top = r.def.maxSpeed * R.skill * (mineGap > 600 ? 0.82 : mineGap < -600 ? 1.08 : 1);
+        if (!sky && Math.abs(diff) > 0.45) top = Math.min(top, 16);
+        r.speed += Math.max(-30 * dt, Math.min(r.def.accel * dt, top - r.speed));
+        r.pos.addScaledVector(r.fwd, r.speed * dt);
+        if (sky) { r.pos.y += Math.max(-30 * dt, Math.min(30 * dt, dy)); r.bob += dt * 2; r.roll = -Math.max(-0.4, Math.min(0.4, diff)) * 0.6; }
+        else { g._groundY(r, dt, false); g._vehCollide(r, dt, false); r.roll = -Math.max(-0.4, Math.min(0.4, diff)) * (r.def.bike ? 0.8 : 0.1); }
+        if ((sky ? r.pos.distanceTo(c) : d) < 12) { R.step++; if (R.step >= a.cps.length) { R.done = true; R.place = 1 + a.rivals.filter(o => o.race.done && o !== r).length; } }
+      } else { r.speed *= Math.exp(-dt * 1.5); r.pos.addScaledVector(r.fwd, r.speed * dt); if (!sky) g._groundY(r, dt, false); }
+      if (R.done || prog(R.step, r.pos) > mine) place++;
+    }
+    a.place = place;
   }
 
   // a free sidewalk spot near the crossing at c (corners first)
@@ -411,7 +459,7 @@ export class Challenges {
     const e = a.foe, dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz);
     const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
     if (d > 2.3 || (dx * fx + dz * fz) / Math.max(d, 1e-3) < 0.35) { g.audio.play('empty'); return; }
-    e.health -= 12 + Math.random() * 6; e.hurtT = 0.25;
+    e.health -= (12 + Math.random() * 6) * (1 + 0.4 * g.prog.rank('brawler')); e.hurtT = 0.25;
     e.pos.x += dx / d * 0.6; e.pos.z += dz / d * 0.6;
     g.audio.play('punch'); g.hud.hitmark(); g.hud.kick(3);
     if (e.health <= 0) {
@@ -495,6 +543,7 @@ export class Challenges {
     const a = this.active; if (!a) return;
     const g = this.g;
     if (a.foe) { a.foe.dispose(); a.foe = null; }
+    if (a.rivals) { for (const r of a.rivals) { const i = g.vehicles.indexOf(r); if (i >= 0) g.vehicles.splice(i, 1); r.dispose(); } a.rivals = null; }
     if (a.targets) { for (const t of a.targets) g.scene.remove(t.mesh); a.targets = null; }
     if (a.def.type === 'brawl') { const p = g.player; p.fists = false; g.selectWeapon(p.wi, true); this.ring.visible = false; }
     if (a.enemies) for (const e of a.enemies) {
@@ -524,13 +573,17 @@ export class Challenges {
   complete(bonus = 0) {
     const g = this.g, a = this.active, def = a.def;
     const before = credLevel(g.cred);
-    g.cash += def.cash + bonus; g.cred += def.cred;
+    const pay = g.prog.cash(def.cash + bonus);
+    g.cash += pay; g.cred += def.cred;
     this.done.add(def.id);
+    g.prog.addXP(def.cred, 'CHALLENGE');
+    if (def.prize && !g.garage.has(def.prize)) { g.garage.add(def.prize); setTimeout(() => g.hud.say('PRIZE', `You won a car! It's in your garage: SHOP → CARS → DELIVER (FREE).`, '#ffd23a', 6), 2500); }
+    if (def.type === 'race' || def.type === 'sky') { g.prog.medal('race'); if (CHALLENGES.every(c => (c.type !== 'race' && c.type !== 'sky') || this.done.has(c.id))) g.prog.medal('champ'); }
     for (const f of [a.friend, a.lily]) if (f && f.alive) f.state = 'done';
     this.cancel(true);
     if (this.tracked === def.id) this.tracked = null;
     g.audio.play('objective'); g.audio.play('cash');
-    const lvl = credLevel(g.cred), money = `+$${def.cash + bonus}${bonus ? ` (INCL. $${bonus} BONUS)` : ''}`;
+    const lvl = credLevel(g.cred), money = `+$${pay}${bonus ? ` (INCL. $${bonus} BONUS)` : ''}`;
     g.hud.toast(lvl > before ? `CHALLENGE COMPLETE · ${money} · STREET CRED ${lvl}! NEW SHOP ITEMS` : `CHALLENGE COMPLETE · ${money} · +${def.cred} STREET CRED`);
   }
   onKill(e) {
@@ -562,7 +615,7 @@ export class Challenges {
       return def && !this.done.has(def.id) ? { title: `${TYPES[def.type].label}: ${def.name}`, sub: `Go to the marker · reward $${def.cash}`, target: startOf(def) } : null;
     }
     const def = a.def, tl = a.left !== undefined ? ` · ${Math.max(0, Math.ceil(a.left))} s` : '';
-    if (a.cps) return { title: def.name, sub: a.countdown > 0 ? 'Get ready…' : `Checkpoint ${a.step + 1}/${a.cps.length}${tl}`, target: a.cps[a.step] };
+    if (a.cps) return { title: def.name, sub: a.countdown > 0 ? 'Get ready…' : `POSITION ${a.place || 1}/${(a.rivals ? a.rivals.length : 0) + 1} · checkpoint ${a.step + 1}/${a.cps.length}`, target: a.cps[a.step] };
     if (def.type === 'delivery') return { title: def.name, sub: `Deliver the package to the green marker${tl}`, target: a.dest };
     if (def.type === 'find') {
       const f = a.friend;
@@ -632,14 +685,18 @@ export class Challenges {
         const now = Math.ceil(a.countdown);
         if (now !== before) { g.hud.toast(now > 0 ? String(now) : 'GO!'); g.audio.play(now > 0 ? 'switch' : 'objective'); }
       } else {
-        a.left -= dt;
-        if (a.left <= 0) { this.fail('OUT OF TIME'); return; }
+        this._updateRivals(dt, a);
         if (!v || (def.type === 'sky') !== v.flying) { a.away = (a.away || 0) + dt; if (a.away > 6) { this.fail('YOU LEFT YOUR RIDE'); return; } } else a.away = 0;
         const cp = a.cps[a.step], pos = v ? v.pos : p.pos;
         const d = def.type === 'sky' ? pos.distanceTo(cp) : Math.hypot(pos.x - cp.x, pos.z - cp.z);
         if (d < (def.type === 'sky' ? 11 : 10)) {
-          a.step++; a.left += 2; g.audio.play('pickup');
-          if (a.step >= a.cps.length) { this.complete(); return; }
+          a.step++; g.audio.play('pickup');
+          if (a.step >= a.cps.length) {
+            const place = 1 + a.rivals.filter(r => r.race.done).length;
+            if (place === 1) { g.hud.say('RACE', 'FIRST PLACE! You won the race!', '#ffd23a'); this.complete(); }
+            else { const c = g.prog.cash(100 * (4 - place)); g.cash += c; this.fail(`YOU CAME ${place === 2 ? '2ND' : place === 3 ? '3RD' : '4TH'} (+$${c}) · WIN TO GET THE PRIZE`); }
+            return;
+          }
         }
       }
       // rings: upright, facing along the route

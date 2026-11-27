@@ -66,10 +66,10 @@ class CodeHack {
   finish(quit) {
     if (!this.on) return;
     this.on = false; this.el.classList.remove('on'); this.g.freeMouse(false);
-    const won = this.targets.filter(t => t.done), cash = won.reduce((a, t) => a + t.cash, 0);
+    const won = this.targets.filter(t => t.done); let cash = won.reduce((a, t) => a + t.cash, 0);
     this.atm.hacked = true;
     if (quit && !won.length) { this.atm.hacked = false; return; }
-    if (cash) { this.g.cash += cash; this.g.audio.play('cash'); this.g.hud.toast(`HACK SUCCESS · THE ATM PAID $${cash}`); this.g.acts.stats.hacks++; }
+    if (cash) { cash = this.g.prog.cash(cash); this.g.prog.addXP(40, 'HACK'); this.g.cash += cash; this.g.audio.play('cash'); this.g.hud.toast(`HACK SUCCESS · THE ATM PAID $${cash}`); this.g.acts.stats.hacks++; }
     else { this.g.audio.play('alarm'); this.g.hud.toast('HACK FAILED · THE ATM LOCKED UP'); }
   }
   render() {
@@ -212,7 +212,7 @@ export class Activities {
         if (this.found.has(i) || Math.hypot(t.x - wp.x, t.z - wp.z) > 4 || wp.y > 6) return;
         this.found.add(i); this._placeTags();
         const n = this.found.size, bonus = n === 8 ? 500 : n === 16 ? 1000 : n === this.tags.length ? 2500 : 0;
-        g.cash += 50 + bonus; g.audio.play('cash');
+        g.cash += g.prog.cash(50 + bonus); g.prog.addXP(25, 'NEON TAG'); g.audio.play('cash');
         g.hud.toast(bonus ? `ALL ${n === this.tags.length ? '' : n + ' '}NEON TAGS! BONUS $${bonus}` : `NEON TAG ${n}/${this.tags.length} · +$50`);
       });
     }

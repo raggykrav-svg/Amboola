@@ -92,7 +92,8 @@ export class MapScreen {
   // the district a point is in (our own districts of NYC 3000)
   static district(x, z) {
     const bi = Math.floor((x + HALF) / CELL), bj = Math.floor((z + HALF) / CELL);
-    if ((bi === 4 || bi === 5) && (bj === 4 || bj === 5)) return 'TIMES SQUARE';
+    const P = MapScreen.plaza;
+    if (P ? Math.hypot(x - P.x, z - P.z) < 110 : (bi === 4 || bi === 5) && (bj === 4 || bj === 5)) return 'TIMES SQUARE';
     if (bi >= 3 && bi <= 6 && bj >= 3 && bj <= 6) return 'MIDTOWN SPIRES';
     if (bi <= 2 && bj >= 3 && bj <= 6) return 'NEON MARKET';
     if (bi >= 7 && bj >= 3 && bj <= 6) return 'HARBOR SIDE';
@@ -142,7 +143,7 @@ export class MapScreen {
     // district names
     c.font = `900 ${Math.round(9 + 4 * this.zoom)}px Orbitron, Arial Black`; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
-    for (const [name, x, z] of [['TIMES SQUARE', 0, 30], ['MIDTOWN SPIRES', 0, -128], ['NEON MARKET', -330, 40], ['HARBOR SIDE', 300, -40], ['NORTH YARDS', 0, -300], ['SOUTH BAY', 0, 300]]) {
+    for (const [name, x, z] of [['TIMES SQUARE', (MapScreen.plaza || { x: 0 }).x, (MapScreen.plaza || { z: 30 }).z], ['MIDTOWN SPIRES', 0, -128], ['NEON MARKET', -330, 40], ['HARBOR SIDE', 300, -40], ['NORTH YARDS', 0, -300], ['SOUTH BAY', 0, 300]]) {
       const [px, py] = this._toPx(x, z);
       c.fillStyle = 'rgba(246,226,74,.3)'; c.fillText(name.split('').join(' '), px, py);
     }
@@ -166,6 +167,7 @@ export class MapScreen {
       else if (kind === 'food') { c.beginPath(); c.arc(0, 0, 4, 0, Math.PI); c.fill(); c.fillRect(-1, -5, 1, 4); c.fillRect(1.5, -5, 1, 4); }
       else if (kind === 'atm') { c.font = '900 10px Orbitron, Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('$', 0, 1); }
       else if (kind === 'tag') { c.beginPath(); c.arc(-1.8, -1, 1.2, 0, 7); c.arc(1.8, -1, 1.2, 0, 7); c.fill(); c.beginPath(); c.arc(0, 1, 2.5, 0.2, Math.PI - 0.2); c.stroke(); }
+      else if (kind === 'home') { c.beginPath(); c.moveTo(0, -6); c.lineTo(6, 0); c.lineTo(-6, 0); c.closePath(); c.fill(); c.fillRect(-4, 0, 8, 5); }
       else if (kind === 'car') { c.fillRect(-4, -1, 8, 3); c.fillRect(-2.5, -3.5, 5, 3); }
       else if (kind === 'diamond') { c.font = '13px "Segoe UI Emoji", "Noto Color Emoji", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label.icon, 0, 1); }
       c.restore();
@@ -180,6 +182,7 @@ export class MapScreen {
     if (F.food && this.zoom >= 2.3) for (const s of g.city.stalls) if (s.label !== 'ROBO PARTS') glyph(s.x, s.z, 'food', `FOOD: ${s.label}`, '#ff9ad8');
     if (F.atm && zoomed) for (const a of g.acts.atms) if (!a.hacked) glyph(a.x, a.z, 'atm', 'ATM (hack it!)', '#3aff9a');
     if (F.tags) g.acts.tags.forEach((t, i) => { if (g.acts.found.has(i)) glyph(t.x, t.z, 'tag', 'NEON TAG (found)', '#ff2bd6'); });
+    if (g.home.owned && g.home.door) glyph(g.home.door.x, g.home.door.z, 'home', 'YOUR APARTMENT', '#ffd23a', true);
     if (F.cars) for (const v of g.vehicles) if (v.owned) glyph(v.pos.x, v.pos.z, 'car', `YOUR ${v.def.name}`, '#3aff9a');
     if (F.challenges) for (const def of CHALLENGES) {
       if (g.ch.done.has(def.id)) continue;

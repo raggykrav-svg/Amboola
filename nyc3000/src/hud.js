@@ -6,6 +6,9 @@ import { roadC, GUN_SHOPS, CLINICS } from './city.js';
 import { HIGHWAYS } from './highway.js';
 import { FACTIONS, randomName } from './ai.js';
 import { MapScreen } from './mapscreen.js';
+import { xpFor } from './progress.js';
+import { magSize } from './upgrades.js';
+import { clockText } from './daynight.js';
 
 const $ = id => document.getElementById(id);
 const { CELL, ROAD, N, HALF } = CITY;
@@ -54,6 +57,15 @@ export class HUD {
     }
     el.classList.toggle('on', on);
   }
+  // little "+25 XP" popping up under your money
+  xpPop(n, why) {
+    const el = $('xpPop'); el.textContent = `+${n} XP${why ? ' · ' + why : ''}`;
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  }
+  medal(m) {
+    $('mpIcon').textContent = m.icon; $('mpName').textContent = m.name; $('mpText').textContent = m.text;
+    const el = $('medalPop'); el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  }
   toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; this.toastT = 2.2; }
   kick(a) { this.spread = Math.min(30, this.spread + a); }
   hitmark() { this.hitT = 0.15; }
@@ -86,7 +98,7 @@ export class HUD {
     if (!v) {
       const w = WEAPONS[p.wi], a = p.ammo[p.wi];
       this.set('wName', p.fists ? 'FISTS' : w.name); this.set('ammoMag', String(a.mag)); this.set('ammoRes', String(a.res));
-      $('ammo').classList.toggle('low', a.mag <= Math.ceil(w.mag * 0.25));
+      $('ammo').classList.toggle('low', a.mag <= Math.ceil(magSize(g, p.wi) * 0.25));
       // slots for the guns you own (bought guns get keys 4-6)
       const own = p.owned.map(o => (o ? 1 : 0)).join('');
       if (this.slots !== own) { this.slots = own; this.cache.wi = -1; $('wSlots').innerHTML = WEAPONS.map((w, i) => (p.owned[i] ? `<span data-i="${i}">${i + 1} ${w.id.toUpperCase()}</span>` : '')).join(''); }
@@ -103,6 +115,8 @@ export class HUD {
       this.set('viFill', Math.max(0, v.health / v.maxHealth * 100) + '%', 'width');
       $('cannonRow').style.display = v.def.cannon ? 'flex' : 'none';
       this.set('enFill', p.cannon + '%', 'width');
+      $('nitroRow').style.display = g.upg.nitro ? 'flex' : 'none';
+      this.set('niFill', Math.max(0, p.nitro ?? 100) + '%', 'width');
     }
     // crosshair spread
     this.spread += (6 - this.spread) * (1 - Math.exp(-dt * 10));
@@ -127,6 +141,15 @@ export class HUD {
       $('credLabel').textContent = 'STREET CRED ' + g.credLevel;
       if (up) { const c = $('cash'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
     }
+    this.set('clock', clockText(g.clock));
+    // level and XP
+    const P = g.prog, lk = P.level + '|' + P.xp + '|' + P.points;
+    if (this.cache.lvl !== lk) {
+      this.cache.lvl = lk;
+      $('lvlNum').textContent = 'LV ' + P.level;
+      $('xpFill').style.width = (P.level >= 30 ? 100 : Math.min(100, P.xp / xpFor(P.level) * 100)) + '%';
+      $('lvlPts').textContent = P.points ? `${P.points} SKILL POINT${P.points > 1 ? 'S' : ''}!` : '';
+    }
     // wanted
     const st = g.stars;
     const sk = st + '|' + (g.policeSeen ? 1 : 0);
@@ -138,7 +161,7 @@ export class HUD {
     }
     // objective (an active or tracked challenge takes over the box)
     const [txt, sub] = g.objectiveText();
-    let chi = g.ch.hud();
+    let chi = g.ch.hud() || g.events.hud();
     if (g.gps.dest && !(chi && g.ch.active)) chi = { title: `GPS: ${g.gps.label}`, sub: 'Follow the arrows on the road', target: g.gps.dest };
     const tgt = chi ? chi.target : g.objTarget, pp = g.wpos();
     let ot = st > 0 ? 'Escape NYPD pursuit' : txt, dist = '';
@@ -152,9 +175,9 @@ export class HUD {
     this.set('objText', ot);
     this.set('objDist', dist);
     // boss health
-    const boss = chi && chi.boss;
+    const sb = !(chi && chi.boss) && g.story.boss, boss = (chi && chi.boss) || sb;
     $('bossBar').style.display = boss && boss.state !== 'dead' ? 'block' : 'none';
-    if (boss) { this.set('bossName', chi.title); this.set('bossFill', Math.max(0, boss.health / boss.maxHealth * 100) + '%', 'width'); }
+    if (boss) { this.set('bossName', sb ? 'TITAN-0 · OVERLORD ZERO\'S MECH' : chi.title); this.set('bossFill', Math.max(0, boss.health / boss.maxHealth * 100) + '%', 'width'); }
     // compass
     const yaw = v ? v.yaw + g.camState.yawOff : p.yaw;
     const heading = ((-yaw * 180 / Math.PI) % 360 + 360) % 360;
@@ -166,6 +189,7 @@ export class HUD {
       this.cObj.style.display = 'block'; this.cObj.style.left = (rel * 3) + 'px'; this.cObj.style.color = chi ? '#ffd23a' : '';
     } else this.cObj.style.display = 'none';
     // the district you're in (it pops when it changes, like in Cyberpunk)
+    MapScreen.plaza = g.city.plaza;
     const dn = MapScreen.district(pp.x, pp.z);
     if (this.cache.district !== dn) { if (this.cache.district && g.active && !g.interior) this.toast(dn); this.cache.district = dn; $('hudDistrict').textContent = dn; }
     // fps
@@ -226,6 +250,10 @@ export class HUD {
     // shops you can go into (green)
     for (const d of g.city.doors) if (d.kind === 'hotel' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) dot(d.x, d.z, 3.2, '#ffd27a');
     for (const d of g.city.doors) if (d.kind === 'shop' && Math.abs(d.x - pp.x) < range && Math.abs(d.z - pp.z) < range) { const gun = GUN_SHOPS.has(d.name), doc = CLINICS.has(d.name); dot(d.x, d.z, gun || doc ? 3.4 : 2.2, gun ? '#ff7a2a' : doc ? '#ffffff' : '#3aff9a'); }
+    // your home (a little house) and Sparky
+    const hd = g.home.owned && g.home.door;
+    if (hd && Math.abs(hd.x - pp.x) < range && Math.abs(hd.z - pp.z) < range) { const s = 6 / k; c.fillStyle = '#ffd23a'; c.beginPath(); c.moveTo(hd.x, hd.z - s); c.lineTo(hd.x + s, hd.z); c.lineTo(hd.x - s, hd.z); c.closePath(); c.fill(); c.fillRect(hd.x - s * 0.7, hd.z, s * 1.4, s * 0.9); }
+    if (g.buddy.owned && g.buddy.root.visible) dot(g.buddy.pos.x, g.buddy.pos.z, 2.4, '#3aff9a');
     c.restore();
     // objective / challenge marker (clamped to edge)
     const t = target;

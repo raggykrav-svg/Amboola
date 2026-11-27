@@ -24,6 +24,7 @@ export const FACTIONS = {
   vipers: { name: 'NEON VIPERS', one: 'NEON VIPER', color: '#3aff9a' },
   rats: { name: 'DATA RATS', one: 'DATA RAT', color: '#b98cff' },
   volts: { name: 'VOLT KINGS', one: 'VOLT KING', color: '#ffd23a' },
+  crown: { name: 'CHROME CROWN', one: 'CROWN BOT', color: '#ff7a1a' },
   psycho: { name: 'CYBERPSYCHO', one: 'CYBERPSYCHO', color: '#ff2bd6' },
 };
 const LINES = {
@@ -367,7 +368,7 @@ export class EnemyAI {
         if (fx * to.x + fz * to.z > 0.3 && this._los(m, e.pos)) { this.combat(m, g.wpos(), 'ally'); this.squadAlert(m, COMBAT, g.wpos()); }
       }
     }
-    g.ch.onKill(e);
+    g.killed(e);
   }
 
   // the key E near someone you rescue / find: returns a prompt line and handles the key

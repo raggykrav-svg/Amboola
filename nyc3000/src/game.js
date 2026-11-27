@@ -7,6 +7,14 @@ import { EnemyAI, COMBAT } from './ai.js';
 import { SlidingDoors } from './doors.js';
 import { GPS } from './gps.js';
 import { Activities } from './activities.js';
+import { Progress } from './progress.js';
+import { Moves } from './moves.js';
+import { Story } from './story.js';
+import { CityEvents } from './events.js';
+import { Buddy } from './buddy.js';
+import { Home } from './home.js';
+import { newUpgrades, applyToCar, magSize } from './upgrades.js';
+import { DAY_LENGTH } from './daynight.js';
 import { Humanoid, makeGun, WEAPONS, makeVehicleMesh, VEHICLE_TYPES, PAINTS, makeDrone, makePickup, flashSirens, pedKindFor } from './models.js';
 
 const { CELL, ROAD, N, HALF } = CITY;
@@ -93,9 +101,10 @@ class Drone {
 export class Game {
   constructor(ctx) {
     Object.assign(this, ctx); // scene, camera, city, fx, audio, settings, hud, input
-    this.time = 0;
+    this.time = 0; this.clock = 19;
     this.player = null;
     this.vehicles = []; this.peds = []; this.cops = []; this.drones = []; this.pickups = []; this.runners = [];
+    this.targets = []; // extra things bullets can hit (the boss mech, the story's jammer…)
     this.wanted = 0; this.evadeT = 0; this.seenT = 0;
     this.objective = 0; this.objCount = 0; this.wave = 1;
     this.active = false;
@@ -112,6 +121,13 @@ export class Game {
     this.gps = new GPS(this); // pick a destination on the map, follow the arrows
     this.implants = new Set();
     this.acts = new Activities(this); // cyberware, ATM hacking, neon tags, street food
+    this.prog = new Progress(this); // XP, levels, skills, medals, golden robot statues
+    this.moves = new Moves(this); // grappling hook and wall-running
+    this.story = new Story(this); // Juno, Overlord Zero and the giant mech
+    this.events = new CityEvents(this); // surprise events around the city
+    this.buddy = new Buddy(this); // Sparky the robot dog
+    this.home = new Home(this); // your apartment
+    this.upg = newUpgrades(null); // car and gun upgrades
     this._buildPlayer();
     // tall light beam that marks the objective in the world
     const bg = new THREE.CylinderGeometry(1.4, 1.4, 400, 16, 1, true); bg.translate(0, 200, 0);
@@ -156,6 +172,13 @@ export class Game {
     if (!p.owned[p.wi]) p.wi = 0;
     this.ch.reset(save);
     this.acts.reset(save);
+    this.prog.reset(save); this.prog.build(this.city); this.moves.reset();
+    this.story.reset(save); this.story.waitT = 3;
+    this.events.reset();
+    this.upg = newUpgrades(save);
+    this.home.reset(save);
+    this.buddy.remove(); if (save && save.dog) this.buddy.adopt(true);
+    this.clock = save && save.clock !== undefined ? save.clock : 19; // a new game starts at sunset
     this._leaveInterior(); this.shops.clear();
     p.pitch = 0;
     this.selectWeapon(p.wi, true);
@@ -171,6 +194,8 @@ export class Game {
   newPerson(kind) { return new Person(this, kind); }
   clearWorld() {
     if (this.ch) this.ch.cancel(true);
+    if (this.story) { this.story.cleanup(); this.story.ending = null; }
+    if (this.events) this.events.end(true);
     if (this.ai) this.ai.clear();
     if (this.gps) this.gps.clear();
     for (const a of [this.vehicles, this.peds, this.cops, this.drones, this.runners, this.gang]) { a.forEach(e => e.dispose()); a.length = 0; }
@@ -189,7 +214,7 @@ export class Game {
       if (Math.abs(x - rx) < Math.abs(z - rz)) x = rx; else z = rz;
     }
     return { v: 1, pos: [x, 0, z], yaw: v ? v.yaw : p.yaw, health: Math.round(p.health), shield: Math.round(p.shield), ammo: p.ammo.map(a => ({ ...a })), wi: p.wi, objective: this.objective < 0 ? this._objNext : this.objective, wave: this.wave, cash: this.cash, looted: [...this.looted],
-      guns: WEAPONS.filter((w, i) => p.owned[i] && w.price).map(w => w.id), garage: [...this.garage], cred: this.cred, done: [...this.ch.done], ...this.acts.save(), time: Date.now() };
+      guns: WEAPONS.filter((w, i) => p.owned[i] && w.price).map(w => w.id), garage: [...this.garage], cred: this.cred, done: [...this.ch.done], ...this.acts.save(), ...this.prog.save(), ...this.story.save(), ...this.home.save(), upg: this.upg, dog: this.buddy.owned, clock: this.clock, time: Date.now() };
   }
 
   // where the player is in the city: inside a shop or flat that's the street door they used
@@ -206,6 +231,7 @@ export class Game {
     if (i === 0) {
       for (let k = 0; k < 4; k++) this.drones.push(new Drone(this, rand(-30, 30), rand(10, 18), rand(-30, 30), false));
       this.objTarget = new V3(0, 0, 0);
+    } else if (i >= 4 && !this.story.done) { this.objTarget = null; return; // the story missions take over
     } else if (i === 1) this.objTarget = null;
     else if (i === 2) this.objTarget = new V3(ts.x, 0, ts.z);
     else if (i === 3) this.objTarget = new V3(roadC(9), 90, 0);
@@ -222,6 +248,7 @@ export class Game {
   objectiveText() {
     const i = this.objective;
     if (i < 0) return ['Objective complete!', 'Next objective incoming…'];
+    if (i >= 4 && !this.story.done) return this.story.text() || ['', ''];
     if (i === 0) return [`Destroy the rogue drones over Times Square (${this.objCount}/4)`, 'Shoot them with your plasma rifle'];
     if (i === 1) return ['Steal a car: walk up to one and press F', 'Ground cars drive on the roads'];
     if (i === 2) return ['Steal a flying car at Hover Pad 06', 'Space = up, Shift = down'];
@@ -346,7 +373,7 @@ export class Game {
   }
   reload() {
     const p = this.player, w = WEAPONS[p.wi], a = p.ammo[p.wi];
-    if (p.reloadT > 0 || a.mag >= w.mag || a.res <= 0) return;
+    if (p.reloadT > 0 || a.mag >= magSize(this, p.wi) || a.res <= 0) return;
     p.reloadT = w.reload; this.audio.play('reload');
   }
   // camera ray -> world aim point
@@ -365,6 +392,7 @@ export class Game {
     for (const f of this.ai.friends) if (f.alive && f.state !== 'car') test(f.pos, 0.45, f.pos.y, f.pos.y + (f.dog ? 1.1 : 1.9));
     for (const d of this.drones) if (!d.dead) test(d.pos, 1.0, d.pos.y - 0.8, d.pos.y + 0.8);
     for (const v of this.vehicles) if (v !== ignore) test(v.pos, 2.2, v.pos.y, v.pos.y + 1.7);
+    for (const t of this.targets) if (t.aimTest) t.aimTest(test);
     return out.copy(cam.position).addScaledVector(tmp2, best);
   }
   firePlayer(dt) {
@@ -380,7 +408,7 @@ export class Game {
     }
     if (p.reloadT > 0) {
       p.reloadT -= dt;
-      if (p.reloadT <= 0) { const need = w.mag - a.mag, take = Math.min(need, a.res); a.mag += take; a.res -= take; }
+      if (p.reloadT <= 0) { const need = magSize(this, p.wi) - a.mag, take = Math.min(need, a.res); a.mag += take; a.res -= take; }
       return;
     }
     const want = w.auto ? inp.mouseDown : inp.mouseClicked;
@@ -393,7 +421,7 @@ export class Game {
     for (let k = 0; k < w.pellets; k++) {
       const d = dir.clone();
       d.x += (Math.random() - 0.5) * w.spread * 2; d.y += (Math.random() - 0.5) * w.spread * 2; d.z += (Math.random() - 0.5) * w.spread * 2; d.normalize();
-      const b = this.fx.bolt(muzzle, d, w.speed, w.color, 'player', w.dmg);
+      const b = this.fx.bolt(muzzle, d, w.speed, w.color, 'player', w.dmg * this.gunMult(p.wi));
       if (w.explode) b.explode = w.explode;
     }
     this.fx.muzzle(muzzle, w.color, this.settings.preset !== 'low');
@@ -405,6 +433,8 @@ export class Game {
     for (const e of this.peds) if (e.state === 'walk' && e.pos.distanceTo(p.pos) < 35) { e.state = 'flee'; e.t = rand(6, 10); }
     this.ai.noise(p.pos, w.noise || 50);
   }
+  // how hard a gun hits: SHARPSHOOTER skill and gun upgrades
+  gunMult(wi) { return (1 + 0.12 * this.prog.rank('gunner')) * (1 + 0.15 * ((this.upg && this.upg.gun[WEAPONS[wi].id]?.dmg) || 0)); }
   fireCannon(dt) {
     const p = this.player, v = p.vehicle;
     p.cannonCD = (p.cannonCD || 0) - dt;
@@ -455,6 +485,7 @@ export class Game {
       if (b.owner === 'player') {
         this.ai.nearMiss(prev, b.pos);
         if (!hit) { const th = this.ch.boltHit(prev, b.pos); if (th) hit = { pos: th }; }
+        for (const t of this.targets) { if (hit) break; const h = t.boltHit(prev, b.pos, b.dmg, segHit); if (h) hit = { pos: h }; }
         for (const f of this.ai.friends) { if (hit) break; if (!f.alive || f.state === 'car') continue; const h = segHit(f.pos, 0.45, f.pos.y, f.pos.y + (f.dog ? 1.1 : 1.9)); if (h) { hit = { pos: h }; f.hurt(b.dmg); } }
         for (const e of this.peds) { if (hit) break; if (e.state === 'gone' || e.state === 'dead') continue; const h = segHit(e.pos, 0.45, e.pos.y, e.pos.y + 1.9); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
         for (const e of this.cops) { if (hit) break; if (e.state === 'dead') continue; const h = segHit(e.pos, 0.5, e.pos.y, e.pos.y + 1.9); if (h) { hit = { pos: h }; this.damagePerson(e, b.dmg, b.vel); } }
@@ -462,7 +493,7 @@ export class Game {
         for (const d of this.drones) { if (hit) break; if (d.dead) continue; const h = segHit(d.pos, 1.0, d.pos.y - 0.7, d.pos.y + 0.7); if (h) { hit = { pos: h }; this.damageDrone(d, b.dmg); } }
         for (const v of this.vehicles) { if (hit) break; if (v === p.vehicle || v.mode === 'wreck') continue; const h = segHit(v.pos, 2.0, v.pos.y, v.pos.y + 1.6); if (h) { hit = { pos: h }; this.damageVehicle(v, b.dmg, true); } }
         if (hit && !hit.wall) this.hud.hitmark();
-      } else {
+      } else if (b.owner === 'enemy') {
         const target = p.vehicle ? p.vehicle.pos : p.pos;
         const r = p.vehicle ? 2.2 : 0.55, y1 = p.vehicle ? 1.8 : 1.9;
         const h = p.alive && segHit(target, r, target.y, target.y + y1);
@@ -482,6 +513,7 @@ export class Game {
   damagePlayer(dmg) {
     const p = this.player; if (!p.alive) return;
     if (this.implants.has('skin')) dmg *= 0.66; // TITAN SKIN
+    dmg *= 1 - 0.12 * this.prog.rank('tough'); // TOUGH AS STEEL
     p.shieldDelay = 4;
     const s = Math.min(p.shield, dmg * 0.7); p.shield -= s; dmg -= s;
     p.health -= dmg; p.hurtT = 0.4;
@@ -496,11 +528,13 @@ export class Game {
     const hurt = (e, k = 1) => { const d = e.pos.distanceTo(pos); if (d < radius) this.damagePerson(e, dmg * 2 * k * (1 - d / radius) + 20, tmp.subVectors(e.pos, pos)); };
     for (const e of [...this.peds, ...this.cops, ...this.gang]) if (e.state !== 'dead' && e.state !== 'gone') hurt(e);
     for (const d of this.drones) if (!d.dead && d.pos.distanceTo(pos) < radius) this.damageDrone(d, dmg * 2);
+    for (const t of this.targets) if (t.blast) t.blast(pos, radius, dmg);
     for (const v of this.vehicles) if (v !== this.player.vehicle && v.mode !== 'wreck' && v.pos.distanceTo(pos) < radius + 1.5) this.damageVehicle(v, dmg * 2.5, true);
   }
   killPlayer() {
     const p = this.player; p.health = 0; p.alive = false; p.deadT = 3.2;
     this.ch.onPlayerDeath();
+    this.story.onPlayerDeath();
     if (p.vehicle) this.exitVehicle(true);
     this.hud.dead(true);
   }
@@ -530,7 +564,7 @@ export class Game {
         this.ai.killed(e);
         // street gangs sometimes drop a bit of cash
         if (e.neutral && Math.random() < 0.6) { const m = makePickup('cash'); m.position.set(e.pos.x, 0.6, e.pos.z); this.scene.add(m); this.pickups.push({ mesh: m, kind: 'cash', fixed: false, t: 0, respawn: 0, cash: 20 + Math.floor(Math.random() * 5) * 10 }); }
-        this.ch.onKill(e);
+        this.killed(e);
         return;
       }
       e.vel.copy(vel ? vel.clone().setY(0).normalize().multiplyScalar(3) : new V3()); e.vel.y = 2.5;
@@ -539,13 +573,21 @@ export class Game {
       for (const o of this.peds) if (o !== e && o.state === 'walk' && o.pos.distanceTo(e.pos) < 40) { o.state = 'flee'; o.t = 10; }
     } else if (e.kind === 'ped') { e.state = 'flee'; e.t = 10; }
   }
+  // a bad guy (or a challenge/story drone) is down: tell everyone who cares
+  killed(e) {
+    this.ch.onKill(e);
+    if (this.story) this.story.onKill(e);
+    if (this.events) this.events.onKill(e);
+    if (!e.mesh) { this.prog.stat('kills'); this.prog.addXP(e.isBoss ? 60 : 15); }
+  }
   damageDrone(d, dmg) {
     d.health -= dmg;
     if (d.health <= 0 && !d.dead) {
       d.dead = true; d.fallV = 0;
+      if (!d.police) this.prog.addXP(10);
       this.fx.explosion(d.pos.clone()); this.audio.play('explode', d.pos.distanceTo(this.camera.position));
       if (d.police) this.crime(0.6);
-      if (d.challenge) this.ch.onKill(d);
+      if (d.challenge) this.killed(d);
       if (d.rogue && (this.objective === 0 || this.objective === 4)) {
         this.objCount++;
         const need = this.objective === 0 ? 4 : 3 + this.wave * 2;
@@ -631,6 +673,8 @@ export class Game {
     this.fx.flash(v.pos.clone().setY(v.pos.y + 1), 0x3aff9a, 6, 0.4);
     return v;
   }
+  // a vehicle the story moves by itself (the courier)
+  spawnStoryVehicle(type, x, y, z) { const v = this._addVehicle(type, x, z, 0, 'courier'); v.pos.y = y; return v; }
   spawnChallengeDrone(x, y, z) {
     const d = new Drone(this, x, y, z, false);
     d.rogue = false; d.challenge = true;
@@ -642,7 +686,7 @@ export class Game {
   doorLocked(d) { return d.kind === 'shop' && this._shop(d).robbedUntil > this.time; }
   enterDoor(d) {
     if (this.doorLocked(d)) { this.hud.toast('LOCKED · THEY REMEMBER YOU ROBBED THEM'); this.audio.play('empty'); return; }
-    const R = this.rooms && this.rooms.forDoor(d);
+    const R = this.rooms && (d.isHome && this.rooms.flat_penthouse ? this.rooms.flat_penthouse : this.rooms.forDoor(d));
     if (!R) { this.hud.toast(d.kind === 'shop' ? 'CLOSED' : 'NOBODY HOME'); return; }
     const p = this.player;
     this.interior = { door: d, kind: R.kind, room: R, outside: new V3(d.x + d.nx * 1.2, 0, d.z + d.nz * 1.2), mood: 'idle', rob: 0, calmT: 0, items: [] };
@@ -652,6 +696,7 @@ export class Game {
     this.city.ground.visible = false;
     this.rooms.show(R.key);
     R.setMood(d.id);
+    if (d.isHome) { this.interior.home = true; R.setChannel(5); this.home.furnish(R); this.hud.toast('HOME SWEET HOME'); return; }
     if (R.kind === 'shop') this._openShop(d); else if (R.kind === 'hotel') this._openHotel(d); else this._openFlat(d);
   }
   _leaveInterior() {
@@ -757,6 +802,7 @@ export class Game {
   }
   updateInterior(dt) {
     const I = this.interior, R = I.room, p = this.player;
+    if (I.home) this.home.updateInside(dt);
     const near = (q, r) => q && Math.hypot(p.pos.x - q.x, p.pos.z - q.z) < r;
     const lines = [];
     if (near(R.exit, 1.7)) {
@@ -871,6 +917,7 @@ export class Game {
     }
     this.audio.play('door');
     p.vehicle = v; v.mode = 'player'; v.lane = null;
+    applyToCar(this, v);
     p.h.root.visible = false; p.reloadT = 0;
     if (v.def.bike) { // you sit on a motorbike, so you stay visible
       const seat = v.mesh.userData.seat || new V3(0, 0.9, 0.3);
@@ -905,6 +952,12 @@ export class Game {
   update(dt) {
     if (!this.active) return;
     this.time += dt;
+    // the clock: 24 game hours in 20 minutes
+    const mode = this.settings.daytime || 'cycle', before = this.clock;
+    if (mode === 'day') this.clock = 13; else if (mode === 'night') this.clock = 22;
+    else this.clock = (this.clock + dt * 24 / DAY_LENGTH) % 24;
+    if (mode === 'cycle' && before > 23.5 && this.clock < 0.5) this.prog.medal('night');
+    if (mode === 'cycle' && before < 6.5 && this.clock >= 6.5) this.prog.medal('sunrise');
     const p = this.player, inp = this.input;
     flashSirens(this.time);
     if (!p.alive) {
@@ -928,6 +981,10 @@ export class Game {
     }
 
     this.ch.update(dt);
+    this.story.update(dt);
+    this.events.update(dt);
+    this.buddy.update(dt);
+    this.home.updateGarage();
     if (this.city.hwTraffic) this.city.hwTraffic.update(dt, this);
     this.updateVehicles(dt);
     this.updatePeople(dt);
@@ -935,6 +992,7 @@ export class Game {
     this.slide.update(dt, this);
     this.gps.update(dt);
     this.acts.update(dt);
+    this.prog.update(dt);
     this.updateDrones(dt);
     this.updateBolts(dt);
     this.updatePolice(dt);
@@ -967,20 +1025,26 @@ export class Game {
     if (inp.down('KeyA')) mx -= 1; if (inp.down('KeyD')) mx += 1;
     }
     const sprint = inp.down('ShiftLeft') || inp.down('ShiftRight');
-    const len = Math.hypot(mx, mz) || 1;
-    const sp = (sprint && mz < 0 ? 8.5 : 4.6) * (inp.mouseRight ? 0.6 : 1);
-    const sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
-    const wx = (mx * cy + mz * sy) / len * sp, wz = (-mx * sy + mz * cy) / len * sp;
-    const k = 1 - Math.exp(-dt * (p.onGround ? 14 : 3));
-    p.vel.x += (wx * (mx || mz ? 1 : 0) - p.vel.x) * k;
-    p.vel.z += (wz * (mx || mz ? 1 : 0) - p.vel.z) * k;
-    p.pos.x += p.vel.x * dt; p.pos.z += p.vel.z * dt;
+    // grappling hook and wall-running take over the movement while they're on
+    const mv = this.moves.update(dt, mx, mz, sprint);
+    if (!mv) {
+      const len = Math.hypot(mx, mz) || 1;
+      const sp = (sprint && mz < 0 ? 8.5 : 4.6) * (inp.mouseRight ? 0.6 : 1) * (1 + 0.1 * this.prog.rank('runner'));
+      const sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
+      const wx = (mx * cy + mz * sy) / len * sp, wz = (-mx * sy + mz * cy) / len * sp;
+      const k = 1 - Math.exp(-dt * (p.onGround ? 14 : this.moves.fling > 0 ? 0.8 : 3));
+      const keep = this.moves.fling > 0 && !(mx || mz); // flying off the rope or a wall: keep going
+      if (!keep) { p.vel.x += (wx * (mx || mz ? 1 : 0) - p.vel.x) * k; p.vel.z += (wz * (mx || mz ? 1 : 0) - p.vel.z) * k; }
+      p.pos.x += p.vel.x * dt; p.pos.z += p.vel.z * dt;
+    }
     // jump / gravity
     const g = this.city.groundAt(p.pos.x, p.pos.z, p.pos.y);
-    if (p.onGround) p.dj = false;
-    if (p.onGround && inp.pressed('Space')) { p.vy = 7.5; p.onGround = false; }
-    else if (!p.onGround && !p.dj && inp.pressed('Space') && this.implants.has('leap')) { p.vy = 8.5; p.dj = true; this.audio.play('switch'); } // LEAP SPRINGS
-    p.vy -= 22 * dt; p.pos.y += p.vy * dt;
+    if (!mv) {
+      if (p.onGround) p.dj = false;
+      if (p.onGround && inp.pressed('Space')) { p.vy = 7.5; p.onGround = false; }
+      else if (!p.onGround && !p.dj && inp.pressed('Space') && this.implants.has('leap')) { p.vy = 8.5; p.dj = true; this.audio.play('switch'); } // LEAP SPRINGS
+      p.vy -= 22 * dt; p.pos.y += p.vy * dt;
+    }
     if (p.pos.y <= g) { p.pos.y = g; p.vy = 0; p.onGround = true; } else if (p.pos.y > g + 0.05) p.onGround = false;
     // collisions
     const c = this.city.collide(p.pos.x, p.pos.z, 0.45, p.pos.y + 0.3, p.pos.y + 1.8);
@@ -1019,7 +1083,8 @@ export class Game {
     if (p.fists) {
       const k = Math.max(0, p.punchT || 0) / 0.32, ext = Math.sin(Math.min(1, 1 - k) * Math.PI);
       h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { fists: true, air: !p.onGround, punchR: p.punchSide ? ext : 0, punchL: p.punchSide ? 0 : ext });
-    } else h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { aim: p.pitch * 0.85, air: !p.onGround });
+    } else h.animate(dt, Math.hypot(p.vel.x, p.vel.z), { aim: p.pitch * 0.85, air: !p.onGround && this.moves.mode !== 'wall' });
+    h.root.rotation.z = this.moves.mode === 'wall' ? this.moves.wallSide * -0.35 : h.root.rotation.z * 0.8;
     // prompts: cars, street doors, things inside rooms
     if (this.interior) { this.updateInterior(dt); return; }
     const tk = this.ai.takedownTarget(), fr = tk ? '' : this.ai.friendPrompt();
@@ -1027,7 +1092,7 @@ export class Game {
     const lines = [];
     if (tk) { lines.push('<kbd>E</kbd> Takedown (quiet knock-out)'); if (this.input.pressed('KeyE')) { this.ai.takedown(tk); this.hud.prompt(''); return; } }
     if (fr) lines.push(fr);
-    if (door) lines.push(`<kbd>E</kbd> ${door.kind === 'shop' ? 'Go into ' + door.name : 'Go into the flat'}`);
+    if (door) lines.push(`<kbd>E</kbd> ${door.isHome ? 'Go home' : door.kind === 'shop' ? 'Go into ' + door.name : 'Go into the flat'}`);
     if (nv) lines.push(`<kbd>F</kbd> ${nv.hasDriver ? 'Jack' : 'Enter'} ${nv.def.name}`);
     const cp = !door && !tk && !fr && this.ch.prompt(); if (cp) lines.push(cp);
     const ap = !door && !tk && !fr && !cp && this.acts.prompt(); if (ap) lines.push(ap);
@@ -1035,8 +1100,15 @@ export class Game {
     if (door && this.input.pressed('KeyE')) this.enterDoor(door);
   }
 
+  // top speed: SPEED DEMON skill, engine upgrade and nitro
+  topSpeed(v) { return v.def.maxSpeed * (1 + 0.07 * this.prog.rank('driver')) * (1 + 0.1 * ((this.upg && this.upg.engine) || 0)) * (v.nitro > 0 ? 1.35 : 1); }
   updateDriving(dt) {
     const p = this.player, v = p.vehicle, inp = this.input;
+    // NITRO: Shift in a car or on a bike, N in a flying car
+    p.nitro = Math.min(100, (p.nitro ?? 100) + dt * 12);
+    const boost = this.upg.nitro && p.nitro > 2 && (inp.down('KeyN') || (!v.flying && (inp.down('ShiftLeft') || inp.down('ShiftRight'))));
+    v.nitro = boost ? 0.1 : 0;
+    if (boost) { p.nitro -= dt * 34; v.speed += v.def.accel * dt * 1.2; if (Math.random() < dt * 30) this.fx.sparks(v.pos.clone().addScaledVector(v.fwd, -2.6).setY(v.pos.y + 0.5), 0x29f3ff, 2, 2); }
     this.hud.prompt(this.ch.prompt() || '');
     const def = v.def;
     let thr = (inp.down('KeyW') ? 1 : 0) - (inp.down('KeyS') ? 1 : 0);
@@ -1050,7 +1122,7 @@ export class Game {
       else if (thr < 0) v.speed -= (v.speed > 0 ? 30 : def.accel * 0.6) * dt;
       else v.speed *= Math.exp(-dt * 0.5);
       if (p.pendingExit || hb) v.speed *= Math.exp(-dt * (hb ? 1.6 : 3));
-      v.speed = clamp(v.speed, -14, def.maxSpeed);
+      v.speed = clamp(v.speed, -14, this.topSpeed(v));
       const maxSteer = (def.bike ? 0.7 : 0.55) / (1 + Math.abs(v.speed) / (def.bike ? 32 : 25));
       v.steer += (steer * maxSteer - v.steer) * (1 - Math.exp(-dt * 8));
       v.yaw += v.speed / 2.8 * Math.tan(v.steer) * dt * (hb ? 1.7 : 1);
@@ -1067,7 +1139,7 @@ export class Game {
       const gnd = this.city.groundAt(v.pos.x, v.pos.z, v.pos.y) + 0.7;
       if (p.pendingExit) { up = -1; thr = 0; }
       if (thr > 0) v.speed += def.accel * dt; else if (thr < 0) v.speed -= def.accel * 1.4 * dt; else v.speed *= Math.exp(-dt * 0.6);
-      v.speed = clamp(v.speed, -20, def.maxSpeed);
+      v.speed = clamp(v.speed, -20, this.topSpeed(v));
       v.steer += (steer - v.steer) * (1 - Math.exp(-dt * 5));
       v.yaw += v.steer * 1.5 * dt;
       v.vel.y += (up * 20 - v.vel.y) * (1 - Math.exp(-dt * 3));
@@ -1569,10 +1641,11 @@ export class Game {
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const k = this.pickups[i];
       if (k.respawn > 0) { k.respawn -= dt; k.mesh.visible = k.respawn <= 0; continue; }
+      if (k.carried) continue; // Sparky has it in his mouth
       k.t += dt; k.mesh.rotation.y += dt * 1.5; k.mesh.position.y = (k.baseY ?? 0.6) + Math.sin(k.t * 3) * 0.12;
       if (!p.vehicle && p.alive && Math.hypot(p.pos.x - k.mesh.position.x, p.pos.z - k.mesh.position.z) < 1.6 && Math.abs(p.pos.y - k.mesh.position.y) < 2) {
         if (k.kind === 'ammo') { p.ammo.forEach((a, j) => { a.res = Math.min(WEAPONS[j].reserve * 2, a.res + Math.ceil(WEAPONS[j].reserve * 0.5)); }); this.hud.toast('+ AMMO'); }
-        else if (k.kind === 'cash') { this.cash += k.cash || 50; this.hud.toast(`+ $${k.cash || 50}`); this.audio.play('cash'); }
+        else if (k.kind === 'cash') { const c = this.prog.cash(k.cash || 50); this.cash += c; this.hud.toast(`+ $${c}`); this.audio.play('cash'); }
         else { p.health = Math.min(100, p.health + 40); p.shield = 100; this.hud.toast('+ HEALTH'); }
         if (k.flat !== undefined) this.looted.add(k.flat);
         this.audio.play('pickup');
@@ -1626,6 +1699,9 @@ export class Game {
       cam.rotation.set(0, 0, 0); cam.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
       cam.fov += (70 - this.aimZoom * (WEAPONS[p.wi].zoom ? 50 : 18) - cam.fov) * (1 - Math.exp(-dt * 12));
     }
+    // shake (the mech's footsteps, explosions)
+    const sh = this.camState.shake || 0;
+    if (sh > 0) { cam.position.x += (Math.random() - 0.5) * sh; cam.position.y += (Math.random() - 0.5) * sh; cam.position.z += (Math.random() - 0.5) * sh; this.camState.shake = Math.max(0, sh - dt * 1.5); }
     cam.updateProjectionMatrix();
   }
   _camCollide(from, to) {

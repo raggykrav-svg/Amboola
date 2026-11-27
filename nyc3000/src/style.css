@@ -311,3 +311,62 @@ body.slowmo #vignette { opacity: .6 !important; box-shadow: inset 0 0 160px rgba
 #map .panel.map-panel { width: 98vw; max-height: 96vh; padding: 18px 22px; }
 #map .map-body { height: min(74vh, 860px); }
 #map .map-side { width: 250px; }
+
+/* ---- level, XP and medals ---- */
+#lvlRow { display: flex; align-items: center; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+#lvlNum { font: 900 13px Orbitron, Arial; color: #ffd23a; text-shadow: 0 0 8px rgba(255,210,58,.6); }
+#lvlRow .bar.xp { width: 110px; height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
+#lvlRow .bar.xp i { display: block; height: 100%; background: linear-gradient(90deg, #ffa43a, #ffd23a); box-shadow: 0 0 8px #ffd23a; transition: width .3s; }
+#lvlPts { font: 700 11px Rajdhani, Arial; color: #3aff9a; font-style: normal; animation: blink 1s infinite alternate; }
+@keyframes blink { from { opacity: .45 } to { opacity: 1 } }
+#xpPop { font: 700 13px Rajdhani, Arial; color: #ffd23a; text-align: right; opacity: 0; height: 16px; }
+#xpPop.pop { animation: xppop 1.6s ease-out; }
+@keyframes xppop { 0% { opacity: 0; transform: translateY(6px) } 15% { opacity: 1; transform: none } 75% { opacity: 1 } 100% { opacity: 0; transform: translateY(-6px) } }
+#medalPop { position: absolute; left: 50%; top: 110px; transform: translateX(-50%) scale(.8); display: flex; gap: 12px; align-items: center; padding: 10px 18px 10px 12px;
+  background: linear-gradient(90deg, rgba(40,26,4,.92), rgba(12,8,2,.9)); border: 1px solid #ffd23a; box-shadow: 0 0 24px rgba(255,210,58,.4); opacity: 0; pointer-events: none; }
+#medalPop.show { animation: medalpop 3.4s ease-out; }
+@keyframes medalpop { 0% { opacity: 0; transform: translateX(-50%) scale(.6) } 10% { opacity: 1; transform: translateX(-50%) scale(1.05) } 15% { transform: translateX(-50%) scale(1) } 85% { opacity: 1 } 100% { opacity: 0; transform: translateX(-50%) scale(1) } }
+#medalPop .mp-icon { font-size: 34px; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(#ffe68a, #b8860b); box-shadow: 0 0 14px #ffd23a; }
+#medalPop small { display: block; font: 700 10px Orbitron, Arial; letter-spacing: 2px; color: #ffd23a; }
+#medalPop b { display: block; font: 900 17px Orbitron, Arial; color: #fff; }
+#medalPop span { font: 600 13px Rajdhani, Arial; color: #e8d8b0; }
+#clock { position: absolute; left: 20px; bottom: 246px; font: 900 14px Orbitron, Arial; color: #e8ecff; text-shadow: 0 0 6px #000; letter-spacing: 2px; }
+@media (max-width: 760px) { #clock { bottom: 170px; } }
+
+/* ---- skills & medals page ---- */
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.pf-card { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(20,24,48,.7); border: 1px solid rgba(41,243,255,.25); border-radius: 6px; }
+.pf-card.max { border-color: #ffd23a; }
+.pf-icon { font-size: 30px; width: 44px; text-align: center; font-weight: 900; }
+.pf-text { flex: 1; min-width: 0; }
+.pf-text b { display: block; font: 900 14px Orbitron, Arial; color: #fff; }
+.pf-text span { font: 600 13px Rajdhani, Arial; color: #a8b4d8; }
+.pips { display: flex; gap: 4px; margin-top: 5px; }
+.pips i { width: 22px; height: 6px; background: rgba(255,255,255,.15); border-radius: 2px; }
+.pips i.on { background: #ffd23a; box-shadow: 0 0 6px #ffd23a; }
+.pf-medal { display: grid; grid-template-columns: 44px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 8px 12px; background: rgba(20,20,30,.6); border: 1px solid rgba(255,255,255,.1); border-radius: 6px; opacity: .55; }
+.pf-medal .pf-icon { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; background: #2a2a3a; color: #777; }
+.pf-medal.got { opacity: 1; border-color: rgba(255,210,58,.6); }
+.pf-medal.got .pf-icon { background: radial-gradient(#ffe68a, #b8860b); box-shadow: 0 0 10px #ffd23a; }
+.pf-medal b { font: 900 13px Orbitron, Arial; color: #fff; }
+.pf-medal span { font: 600 13px Rajdhani, Arial; color: #a8b4d8; }
+
+/* ---- the ending ---- */
+#ending { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(10,4,20,.55), rgba(10,4,20,.1) 70%); }
+#ending.show { display: flex; animation: endfade 12s ease-out forwards; }
+@keyframes endfade { 0% { opacity: 0 } 8% { opacity: 1 } 85% { opacity: 1 } 100% { opacity: 0 } }
+#ending small { font: 700 14px Orbitron, Arial; letter-spacing: 6px; color: #3aff9a; }
+#ending h1 { font: 900 clamp(32px, 6vw, 72px) Orbitron, Arial; margin: 8px 0 14px; color: #ffd23a; text-shadow: 0 0 24px #ff7a1a, 0 0 4px #000; letter-spacing: 3px; }
+#ending p { font: 600 20px Rajdhani, Arial; color: #fff; text-shadow: 0 0 6px #000; max-width: 720px; }
+#ending b { font: 700 16px Orbitron, Arial; color: #29f3ff; margin-top: 10px; }
+#ending em { font: 600 16px Rajdhani, Arial; color: #c8d0e8; margin-top: 16px; }
+
+#nitroRow { display: none; }
+.bar.ni i { background: linear-gradient(90deg, #29f3ff, #b98cff); box-shadow: 0 0 8px #29f3ff; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 6px 8px 10px; }
+.swatches button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; padding: 0; }
+.swatches button.on { border-color: #fff; box-shadow: 0 0 10px #fff; }
+.swatches button:disabled { opacity: .35; cursor: default; }
+#shopTabs { flex-wrap: wrap; }

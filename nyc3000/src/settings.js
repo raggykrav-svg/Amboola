@@ -14,6 +14,7 @@ const DEFAULTS = {
   sensitivity: 1.0,
   invertY: false,
   volume: 0.7,
+  daytime: 'cycle',
 };
 
 function safeGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
@@ -49,6 +50,7 @@ export const OPTION_DEFS = [
   { key: 'bloom', label: 'Neon glow (bloom)', type: 'seg', options: [[false, 'OFF'], [true, 'ON']] },
   { key: 'viewDist', label: 'View distance', type: 'range', min: 250, max: 1200, step: 50, fmt: v => v + ' m' },
   { key: 'rain', label: 'Rain', type: 'seg', options: [[0, 'OFF'], [1, 'LIGHT'], [2, 'MEDIUM'], [3, 'STORM']] },
+  { key: 'daytime', label: 'Time of day', type: 'seg', options: [['cycle', 'DAY + NIGHT'], ['day', 'ALWAYS DAY'], ['night', 'ALWAYS NIGHT']], hint: 'A full day takes 20 minutes.' },
   { key: 'crowd', label: 'Traffic & crowds', type: 'seg', options: [[1, 'LOW'], [2, 'MEDIUM'], [3, 'HIGH']] },
   { key: 'fpsCap', label: 'Frame rate cap', type: 'seg', options: [[0, 'VSYNC'], [60, '60'], [30, '30']] },
   { key: 'showFps', label: 'Show FPS counter', type: 'seg', options: [[false, 'OFF'], [true, 'ON']] },

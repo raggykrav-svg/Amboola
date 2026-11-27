@@ -6,6 +6,10 @@ import { PRICES } from './game.js';
 import { TYPES, CRED_LEVELS } from './challenges.js';
 import { thumbnail } from './thumbs.js';
 import { IMPLANTS } from './activities.js';
+import { SKILLS, MEDALS, MAX_RANK, xpFor } from './progress.js';
+import { CAR_UPGRADES, GUN_UPGRADES, GLOWS, PAINT_JOBS, GLOW_PRICE, PAINT_PRICE, buyCarUpgrade, buyGunUpgrade, setGlow, setPaint } from './upgrades.js';
+import { DECOR, HOME_PRICE } from './home.js';
+export const DOG_PRICE = 800;
 
 export const CAR_SHOP = [
   { type: 'sedan', price: 400, cred: 0, paint: '#1a6bd8' },
@@ -65,6 +69,52 @@ export function renderShop(ctx, tab = 'cars') {
         else say(r === 'cash' ? 'Not enough cash.' : 'Earn more Street Cred in challenges first.', false);
         renderShop(ctx, tab);
       }));
+    }
+  } else if (tab === 'upgrades') {
+    const res = (r, okText) => say(r === 'ok' ? okText : r === 'cash' ? 'Not enough cash.' : 'Already at the top level.', r === 'ok');
+    const icon = (el, ch, col) => { el.querySelector('.pic').innerHTML = `<span style="color:${col};font-size:42px">${ch}</span>`; el.classList.add('supply'); };
+    for (const U of CAR_UPGRADES) {
+      const lvl = g.upg[U.id] || 0, max = lvl >= U.prices.length;
+      const lv = U.prices.length > 1 ? ` · LEVEL ${lvl}/${U.prices.length}` : lvl ? ' · INSTALLED' : '';
+      const el = card(null, U.name, U.text + lv, max ? (U.prices.length > 1 ? 'MAX LEVEL' : 'INSTALLED') : `BUY ${money(U.prices[lvl])}`, max || g.cash < U.prices[lvl], false, max, () => { res(buyCarUpgrade(g, U.id), `${U.name} installed on all your rides!`); renderShop(ctx, tab); });
+      icon(el, U.icon, U.color); grid.appendChild(el);
+    }
+    // colour pickers: underglow and paint
+    const swatches = (name, text, list, cur, price, onPick) => {
+      const el = card(null, name, text, '', true, false, false, () => {});
+      el.classList.add('supply');
+      const b = el.querySelector('.buy'); b.remove();
+      const row = document.createElement('div'); row.className = 'swatches';
+      for (const c of list) { const s = document.createElement('button'); s.style.background = c; s.className = cur === c ? 'on' : ''; s.title = c; s.disabled = g.cash < price && cur !== c; s.onclick = () => { onPick(c); ctx.audio.play('ui'); renderShop(ctx, tab); }; row.appendChild(s); }
+      el.appendChild(row);
+      return el;
+    };
+    const gl = swatches('NEON UNDERGLOW', g.upg.glow ? 'Pick a colour (free to change)' : `Glowing lights under your car · ${money(GLOW_PRICE)}`, GLOWS, g.upg.glow, g.upg.glow ? 0 : GLOW_PRICE, c => res(setGlow(g, c), 'Underglow on! Get in a car to see it.'));
+    gl.querySelector('.pic').innerHTML = `<span style="color:${g.upg.glow || '#29f3ff'};font-size:42px">▂▂</span>`; grid.appendChild(gl);
+    const pj = swatches('PAINT JOB', `A new colour for all your own cars · ${money(PAINT_PRICE)}`, PAINT_JOBS, g.upg.paint, PAINT_PRICE, c => res(setPaint(g, c), 'Fresh paint on all your cars!'));
+    pj.querySelector('.pic').innerHTML = `<span style="color:${g.upg.paint || '#c01848'};font-size:42px">🖌</span>`; grid.appendChild(pj);
+    // guns you own
+    WEAPONS.forEach((w, i) => {
+      if (!g.player.owned[i]) return;
+      for (const U of GUN_UPGRADES) {
+        const lvl = (g.upg.gun[w.id] && g.upg.gun[w.id][U.id]) || 0, max = lvl >= U.prices.length;
+        const img = thumbnail(ctx, 'gun-' + w.id, () => makeGun(w.id), [1.0, 0.25, 0.35]);
+        grid.appendChild(card(img, `${w.name}: ${U.name}`, `${U.text} · LEVEL ${lvl}/${U.prices.length}`, max ? 'MAX LEVEL' : `BUY ${money(U.prices[lvl])}`, max || g.cash < U.prices[lvl], false, max, () => { res(buyGunUpgrade(g, i, U.id), `${w.name} upgraded!`); renderShop(ctx, tab); }));
+      }
+    });
+  } else if (tab === 'home') {
+    const H = g.home, res = (r, okText) => say(r === 'ok' ? okText : r === 'cash' ? 'Not enough cash.' : r === 'home' ? 'Buy the apartment first!' : 'You already have it.', r === 'ok');
+    const icon = (el, ch, col) => { el.querySelector('.pic').innerHTML = `<span style="color:${col};font-size:42px">${ch}</span>`; el.classList.add('supply'); };
+    const ap = card(null, 'YOUR OWN APARTMENT', 'A penthouse near Times Square with a view, a hot tub and a garage for 4 of your cars. Sleep in the bed to save.', H.owned ? 'YOURS! (HOUSE ICON ON THE MAP)' : `BUY ${money(HOME_PRICE)}`, H.owned || g.cash < HOME_PRICE, false, H.owned, () => { res(H.buy(), 'The apartment is yours! The GPS shows you the way home.'); renderShop(ctx, tab); });
+    icon(ap, '🏠', '#ffd23a'); grid.appendChild(ap);
+    const dog = card(null, 'ROBOT DOG: SPARKY', 'Follows you, fights bad guys and fetches ammo, health and cash for you.', g.buddy.owned ? 'YOUR BEST FRIEND' : `ADOPT ${money(DOG_PRICE)}`, g.buddy.owned || g.cash < DOG_PRICE, false, g.buddy.owned, () => {
+      if (g.cash >= DOG_PRICE && !g.buddy.owned) { g.cash -= DOG_PRICE; g.buddy.adopt(); ctx.audio.play('cash'); say('Sparky is waiting for you! WOOF!', true); } renderShop(ctx, tab);
+    });
+    icon(dog, '🐕', '#3aff9a'); grid.appendChild(dog);
+    for (const it of DECOR) {
+      const own = H.items.has(it.id), locked = !H.owned;
+      const el = card(null, it.name, it.text, own ? 'IN YOUR HOME' : locked ? `${money(it.price)} · BUY THE APARTMENT FIRST` : `BUY ${money(it.price)}`, own || locked || g.cash < it.price, locked, own, () => { res(H.buyItem(it.id), `${it.name} is in your apartment now!`); renderShop(ctx, tab); });
+      icon(el, it.icon, it.color); grid.appendChild(el);
     }
   } else if (tab === 'cyber') {
     // implants: you can look anywhere, but only a cyber clinic can put them in
@@ -136,3 +186,37 @@ export function renderChallenges(ctx) {
 }
 
 export { TYPES };
+
+// SKILLS & MEDALS: spend skill points, see the medals you've won
+export function renderProfile(ctx, tab = 'skills') {
+  const g = ctx.game, P = g.prog;
+  $('pfLevel').textContent = `LEVEL ${P.level}`;
+  $('pfXP').textContent = P.level >= 30 ? 'MAX LEVEL' : `${P.xp} / ${xpFor(P.level)} XP to level ${P.level + 1}`;
+  $('pfFill').style.width = (P.level >= 30 ? 100 : P.xp / xpFor(P.level) * 100) + '%';
+  document.querySelectorAll('#pfTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const grid = $('pfGrid'); grid.innerHTML = '';
+  if (tab === 'skills') {
+    $('pfHelp').innerHTML = `You get XP for everything: challenges, beating bad guys, races, story missions, golden robots, neon tags… Every level gives a <b>skill point</b>. You have <b style="color:#3aff9a">${P.points} skill point${P.points === 1 ? '' : 's'}</b>.`;
+    for (const sk of SKILLS) {
+      const r = P.rank(sk.id), el = document.createElement('div');
+      el.className = 'pf-card' + (r >= MAX_RANK ? ' max' : '');
+      el.innerHTML = `<div class="pf-icon"></div><div class="pf-text"><b></b><span></span><div class="pips">${[0, 1, 2].map(i => `<i class="${i < r ? 'on' : ''}"></i>`).join('')}</div></div><button class="mbtn small"></button>`;
+      el.querySelector('.pf-icon').textContent = sk.icon; el.querySelector('.pf-icon').style.color = sk.color;
+      el.querySelector('b').textContent = sk.name; el.querySelector('span').textContent = sk.text;
+      const b = el.querySelector('button');
+      b.textContent = r >= MAX_RANK ? 'MAX' : `RANK ${r + 1}`; b.disabled = r >= MAX_RANK || P.points <= 0;
+      b.onclick = () => { if (P.buySkill(sk.id)) ctx.audio.play('objective'); renderProfile(ctx, tab); };
+      grid.appendChild(el);
+    }
+  } else {
+    $('pfHelp').innerHTML = `<b>${P.medals.size} / ${MEDALS.length}</b> medals · golden robot statues found: <b style="color:#ffd23a">${P.statues.size} / ${P.spots.length || 20}</b> (they glow gold: look on rooftops, in alleys and on the highway)`;
+    for (const m of MEDALS) {
+      const got = P.medals.has(m.id), el = document.createElement('div');
+      el.className = 'pf-medal' + (got ? ' got' : '');
+      el.innerHTML = `<div class="pf-icon"></div><b></b><span></span>`;
+      el.querySelector('.pf-icon').textContent = got ? m.icon : '?';
+      el.querySelector('b').textContent = m.name; el.querySelector('span').textContent = m.text;
+      grid.appendChild(el);
+    }
+  }
+}

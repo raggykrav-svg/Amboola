@@ -19,8 +19,9 @@ import { buildTitleScene } from './title.js';
 import { Humanoid, makeGun, makeVehicleMesh } from './models.js';
 import { loadModels } from './assets.js';
 import { buildRooms } from './interiors.js';
-import { renderShop, renderChallenges } from './shop.js';
+import { renderShop, renderChallenges, renderProfile } from './shop.js';
 import { MapScreen } from './mapscreen.js';
+import { DayNight } from './daynight.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -40,8 +41,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x24123f, 0.003);
 const camera = new THREE.PerspectiveCamera(70, 1, 0.2, 800);
-scene.add(new THREE.HemisphereLight(0x6a5aff, 0x2a1030, 1.1));
-scene.add(new THREE.AmbientLight(0x30284a, 0.6));
+const hemi = new THREE.HemisphereLight(0x6a5aff, 0x2a1030, 1.1); scene.add(hemi);
+const amb = new THREE.AmbientLight(0x30284a, 0.6); scene.add(amb);
 const moon = new THREE.DirectionalLight(0xa89aff, 1.1);
 moon.shadow.camera.left = -55; moon.shadow.camera.right = 55; moon.shadow.camera.top = 55; moon.shadow.camera.bottom = -55;
 moon.shadow.camera.near = 1; moon.shadow.camera.far = 400;
@@ -83,7 +84,8 @@ composer.addPass(renderPass); composer.addPass(bloom); composer.addPass(new Outp
 
 const title = buildTitleScene();
 const rain = new Rain(scene);
-let city, fx, game, hud;
+let city, fx, game, hud, dayNight = null;
+const _lastDir = new THREE.Vector3();
 
 // ---------- input ----------
 const input = {
@@ -139,7 +141,7 @@ document.addEventListener('pointerlockchange', () => {
 // ---------- screens ----------
 let state = 'loading', optionsReturn = 'menu';
 function showScreen(id) {
-  for (const s of ['loading', 'title', 'menu', 'options', 'controls', 'pause', 'shop', 'challenges', 'map']) $(s).classList.toggle('show', s === id);
+  for (const s of ['loading', 'title', 'menu', 'options', 'controls', 'pause', 'shop', 'challenges', 'profile', 'map']) $(s).classList.toggle('show', s === id);
 }
 function setState(s) {
   state = s;
@@ -153,7 +155,7 @@ function onKey(e) {
   else if (state === 'play' && e.code === 'Escape') openPause();
   else if (state === 'pause' && e.code === 'Escape' && performance.now() - pausedAt > 400) resume();
   else if ((state === 'options' || state === 'controls') && e.code === 'Escape') backFromOptions();
-  else if ((state === 'shop' || state === 'challenges') && e.code === 'Escape') backToPause();
+  else if ((state === 'shop' || state === 'challenges' || state === 'profile') && e.code === 'Escape') backToPause();
   else if (state === 'play' && e.code === 'Tab' && !e.repeat) openMap('play');
   else if (state === 'map' && (e.code === 'Escape' || e.code === 'Tab') && !e.repeat) closeMap();
   if (e.code === 'KeyM') { const m = audio.toggleMute(); hud && hud.toast(m ? 'SOUND OFF' : 'SOUND ON'); }
@@ -221,6 +223,11 @@ function openChallenges() { renderChallenges(menuCtx()); showScreen('challenges'
 function backToPause() { showScreen('pause'); setState('pause'); }
 $('bShop').onclick = openShop;
 $('bChallenges').onclick = openChallenges;
+let pfTab = 'skills';
+function openProfile() { renderProfile(menuCtx(), pfTab); showScreen('profile'); setState('profile'); }
+$('bProfile').onclick = openProfile;
+$('bPfBack').onclick = backToPause;
+document.querySelectorAll('#pfTabs button').forEach(b => { b.onclick = () => { pfTab = b.dataset.tab; renderProfile(menuCtx(), pfTab); audio.play('ui'); }; });
 // the big map
 let mapScreen = null, mapFrom = 'pause';
 function openMap(from) {
@@ -379,10 +386,15 @@ tryBg('menu-bg.jpg', 'menu', 'has-img');
 
 // Shadow camera follows the player, snapped to whole shadow-map texels so shadows don't shimmer.
 const moonOff = new THREE.Vector3(60, 140, 50);
-const lightRot = new THREE.Matrix4().lookAt(moonOff, new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
-const lightRotInv = lightRot.clone().invert();
+let lightRot = new THREE.Matrix4().lookAt(moonOff, new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+let lightRotInv = lightRot.clone().invert();
 const _lp = new THREE.Vector3();
 function placeMoon(focus) {
+  // the shadow light comes from the sun in the day and the moon at night
+  if (dayNight && dayNight.dir.distanceToSquared(_lastDir) > 1e-5) {
+    _lastDir.copy(dayNight.dir); moonOff.copy(dayNight.dir).multiplyScalar(160);
+    lightRot = new THREE.Matrix4().lookAt(moonOff, new THREE.Vector3(), new THREE.Vector3(0, 1, 0)); lightRotInv = lightRot.clone().invert();
+  }
   const texel = 110 / moon.shadow.mapSize.x;
   _lp.copy(focus).applyMatrix4(lightRotInv);
   _lp.x = Math.round(_lp.x / texel) * texel; _lp.y = Math.round(_lp.y / texel) * texel;
@@ -424,6 +436,7 @@ function frame(now) {
   input.endFrame();
   // world updates
   const focus = state === 'play' || state === 'pause' ? (game.player.vehicle ? game.player.vehicle.pos : game.player.pos) : camera.position;
+  if (dayNight) dayNight.update(game && (state === 'play' || state === 'pause' || state === 'map' || state === 'shop' || state === 'challenges' || state === 'profile') ? game.clock : 21, camera);
   placeMoon(focus);
   playerLight.position.set(focus.x, focus.y + 3, focus.z);
   playerLight.intensity = state === 'play' || state === 'pause' ? (game.player.vehicle ? 6 : game.interior ? 4 : 18) : 0;
@@ -448,6 +461,7 @@ async function boot() {
   await step(0.15, 'Building Manhattan 3000…');
   city = new City(scene);
   city.build();
+  dayNight = new DayNight({ scene, renderer, bloom, hemi, amb, sun: moon }); dayNight.attach(city);
   await step(0.7, 'Spawning traffic & neon…');
   fx = new Effects(scene, city.glowTex);
   hud = new HUD();
@@ -460,6 +474,8 @@ async function boot() {
     if (on) { wantLock = false; if (document.pointerLockElement) document.exitPointerLock(); }
     else if (state === 'play') { wantLock = true; lockPointer(); }
   };
+  game.story.onEnding = () => { const e = $('ending'); e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); };
+  game.story.onSave = () => game.onSave && game.onSave(); // story progress saves by itself
   game.onClinic = () => { openPause(); shopTab = 'cyber'; openShop(); };
   game.onGunShop = () => { openPause(); shopTab = 'guns'; openShop(); };
   game.onSave = () => { storage.set(SAVE_KEY, JSON.stringify(game.saveData())); return !!readSave(); };
