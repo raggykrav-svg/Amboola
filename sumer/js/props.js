@@ -70,6 +70,15 @@ function lamp() {
   return b.geo();
 }
 function lampHead() { const b = new PB(); b.quad([1.0, 6.85, -0.1], [1.0, 6.85, 0.1], [1.5, 6.85, 0.1], [1.5, 6.85, -0.1], C(0xffffff)); return b.geo(); }
+function speedCam() { // grey box on a pole, dark lens and flash facing local +x
+  const b = new PB(); const g = C(0x8f969c), d = C(0x1a1d20), y = C(0xe8c23a);
+  b.cyl(0, 0, 0, 0.08, 0.07, 3.3, 6, g, 'y', false);
+  b.box(-0.35, 3.1, -0.22, 0.35, 3.75, 0.22, C(0x9aa1a7), C(0xb0b6bb));
+  b.box(0.35, 3.22, -0.12, 0.38, 3.44, 0.12, d);                 // lens
+  b.box(0.35, 3.52, -0.15, 0.37, 3.66, 0.15, C(0xf0f0ea));        // flash
+  b.box(-0.36, 3.1, -0.23, 0.36, 3.16, 0.23, y);                  // yellow band
+  return b.geo();
+}
 function umbrella() {
   const b = new PB(); const pole = C(0xe8e4da), can = C(0xffffff);
   b.cyl(0, 0, 0, 0.03, 0.03, 2.3, 5, pole, 'y', false);
@@ -164,6 +173,7 @@ export function makeProps(nightRef) {
     sail: { geo: sailboat(), mat },
     ac: { geo: acUnit(), mat },
     tank: { geo: waterTank(), mat },
+    speedcam: { geo: speedCam(), mat },
   };
   P.headMat = headMat; P.mat = mat;
   return P;

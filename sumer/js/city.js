@@ -425,7 +425,7 @@ export class City {
     this.details.set(ci, grp); this.detailVersion++;
     const D = new GeoBuf(true);
     const P = this.props;
-    const inst = { swh: [], lamp: [], car: [], umb: [], bed: [], yacht: [], sail: [], ac: [], tank: [] };
+    const inst = { swh: [], lamp: [], car: [], umb: [], bed: [], yacht: [], sail: [], ac: [], tank: [], speedcam: [] };
     {
       const c = chunk(this.data, ci);
       const R = this.raster(ci);
@@ -589,6 +589,22 @@ export class City {
     const at = (x, z) => { const cx = Math.floor(x - R.ox), cz = Math.floor(z - R.oz); if (cx < 0 || cz < 0 || cx >= W || cz >= W) return -1; return ras[cz * W + cx]; };
     // OSM street lamps
     for (let i = 0; i < c.points.length; i += 3) if (c.points[i + 2] === 0) inst.lamp.push({ x: c.points[i], z: c.points[i + 1], ry: hash01(i) * 6.28 });
+    // speed cameras (real ones from the map), facing along the nearest street
+    for (let i = 0; i < c.points.length; i += 3) {
+      if (c.points[i + 2] !== 7) continue;
+      const x = c.points[i], z = c.points[i + 1];
+      let ry = 0, bd = 40;
+      for (const rd of c.roads) {
+        if (rd.path) continue;
+        const p = rd.pts;
+        for (let k = 0; k + 3 < p.length; k += 2) {
+          const ax = p[k], az = p[k + 1], dx = p[k + 2] - ax, dz = p[k + 3] - az, l2 = dx * dx + dz * dz || 1;
+          const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), d = Math.hypot(x - ax - dx * t, z - az - dz * t);
+          if (d < bd) { bd = d; ry = Math.atan2(-dz, dx); }
+        }
+      }
+      inst.speedcam.push({ x, z, ry });
+    }
     let li = 0;
     for (const rd of c.roads) {
       if (rd.path) continue;

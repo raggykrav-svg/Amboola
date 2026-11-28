@@ -101,7 +101,7 @@ export class Minimap {
     this.cv = canvas; this.ctx = canvas.getContext('2d'); this.p = painter; this.north = north;
     this.range = 120; // metres from centre to edge
   }
-  draw(x, z, yaw, landmarks, found, target) {
+  draw(x, z, yaw, landmarks, found, target, extra = null) {
     const ctx = this.ctx, W = this.cv.width, H = this.cv.height, cx = W / 2, cy = H / 2;
     const g = this.p.city.g, s = (W / 2) / this.range;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -115,6 +115,13 @@ export class Minimap {
       if (ix < 0 || iz < 0 || ix >= g.nx || iz >= g.nz) continue;
       const t = this.p.tile(iz * g.nx + ix);
       ctx.drawImage(t, g.x0 + ix * g.cs, g.z0 + iz * g.cs, g.cs + 0.4, g.cs + 0.4);
+    }
+    if (extra && extra.route && extra.route.length > 1) { // GPS line
+      ctx.lineJoin = ctx.lineCap = 'round';
+      for (const [w, c] of [[12, 'rgba(20,30,40,.55)'], [7, '#ffb53d']]) {
+        ctx.strokeStyle = c; ctx.lineWidth = w / s * (W / 392) * 2.2; ctx.beginPath();
+        extra.route.forEach(([rx, rz], i) => (i ? ctx.lineTo(rx, rz) : ctx.moveTo(rx, rz))); ctx.stroke();
+      }
     }
     ctx.restore();
     // landmarks (upright icons)
@@ -130,6 +137,20 @@ export class Minimap {
       if (isT) { ctx.fillStyle = 'rgba(255,181,61,.9)'; ctx.beginPath(); ctx.arc(cx + px, cy + py, W * 0.055, 0, Math.PI * 2); ctx.fill(); }
       ctx.fillText(L.i, cx + px, cy + py);
       ctx.globalAlpha = 1;
+    }
+    // job markers and the job's goal
+    if (extra) {
+      const pts = (extra.markers || []).map((m) => [m.x, m.z, m.i, false]);
+      if (extra.goal) pts.push([extra.goal.x, extra.goal.z, '📍', true]);
+      for (const [mx, mz, ic, isGoal] of pts) {
+        const dx = (mx - x) * s, dz = (mz - z) * s;
+        let px = dx * c - dz * sn, py = dx * sn + dz * c;
+        const d = Math.hypot(px, py), lim = W / 2 - W * 0.06;
+        if (d > lim) { if (!isGoal) continue; px *= lim / d; py *= lim / d; }
+        ctx.fillStyle = isGoal ? 'rgba(255,181,61,.95)' : 'rgba(14,36,51,.85)';
+        ctx.beginPath(); ctx.arc(cx + px, cy + py, W * 0.055, 0, Math.PI * 2); ctx.fill();
+        ctx.fillText(ic, cx + px, cy + py);
+      }
     }
     // player arrow
     ctx.fillStyle = '#e8453c'; ctx.strokeStyle = '#fff'; ctx.lineWidth = W * 0.012;
@@ -258,6 +279,20 @@ export class BigMap {
         boxes.push(r);
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(pl.n, sx, sy); ctx.fillStyle = '#5b4f42'; ctx.fillText(pl.n, sx, sy);
       }
+    }
+    // GPS route and job markers
+    const ex = this.o.extras ? this.o.extras() : null;
+    if (ex && ex.route && ex.route.length > 1) {
+      ctx.lineJoin = ctx.lineCap = 'round';
+      for (const [w, c] of [[9, 'rgba(20,30,40,.5)'], [5, '#ffb53d']]) {
+        ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath();
+        ex.route.forEach(([rx, rz], i) => { const [sx, sy] = this.toScreen(rx, rz); if (i) ctx.lineTo(sx, sy); else ctx.moveTo(sx, sy); }); ctx.stroke();
+      }
+    }
+    if (ex) for (const m of [...(ex.markers || []), ...(ex.goal ? [{ ...ex.goal, i: '📍' }] : [])]) {
+      const [sx, sy] = this.toScreen(m.x, m.z);
+      ctx.fillStyle = m.i === '📍' ? '#ffb53d' : 'rgba(255,181,61,.95)'; ctx.beginPath(); ctx.arc(sx, sy, 15, 0, Math.PI * 2); ctx.fill();
+      ctx.font = '17px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0e2433'; ctx.fillText(m.i, sx, sy + 1);
     }
     // selection pin
     if (this.sel && !this.sel.id) {

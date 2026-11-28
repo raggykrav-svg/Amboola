@@ -86,6 +86,22 @@ input[type=range]{width:150px;accent-color:var(--sea)}
 #tools{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:8px;pointer-events:auto}
 .tb{width:52px;height:52px;border-radius:16px;background:var(--glass);border:1px solid var(--line);color:#fff;font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .tb small{font-family:var(--ui);font-size:9px;font-weight:800;opacity:.8;margin-top:2px}
+/* driving & jobs */
+#money{position:absolute;right:calc(14px + env(safe-area-inset-right));top:calc(222px + env(safe-area-inset-top));font-family:var(--head);font-weight:700;font-size:22px;background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-variant-numeric:tabular-nums}
+#money .plus{position:absolute;right:8px;top:100%;margin-top:6px;font-size:18px;white-space:nowrap;opacity:0;transition:all .9s ease-out}
+#money .plus.on{opacity:1;transform:translateY(6px)}
+#speedo{position:absolute;right:calc(18px + env(safe-area-inset-right));bottom:calc(86px + env(safe-area-inset-bottom));text-align:right;font-family:var(--head);text-shadow:0 2px 10px rgba(0,0,0,.5)}
+#speedo b{display:block;font-size:54px;line-height:1;font-variant-numeric:tabular-nums}
+#speedo span{font-size:14px;font-weight:600;opacity:.85;letter-spacing:.08em}
+#prompt{position:absolute;left:50%;bottom:calc(70px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--glass2);border:1px solid var(--line);border-radius:14px;padding:9px 16px;font-weight:800;font-size:15px;white-space:nowrap}
+#prompt .key{display:inline-block;background:#fff;color:var(--ink);border-radius:6px;padding:0 8px;margin-right:8px;font-weight:900}
+#job{position:absolute;left:calc(14px + env(safe-area-inset-left));top:calc(92px + env(safe-area-inset-top));width:min(380px,60vw);background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(6px);border-radius:14px;padding:9px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+#job .jt{font-family:var(--head);font-weight:600;font-size:16px}
+#job .jr{font-family:var(--head);font-weight:700;font-size:18px;color:var(--sun);font-variant-numeric:tabular-nums;grid-row:span 2}
+#job .jx{font-size:13px;font-weight:700;opacity:.9;min-width:0}
+#camflash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:12;transition:opacity .5s}
+#camflash.on{opacity:.85;transition:none}
+#tAct{position:absolute;right:calc(96px + env(safe-area-inset-right));bottom:calc(150px + env(safe-area-inset-bottom));pointer-events:auto;width:72px;height:72px;border-radius:50%;font-size:30px}
 /* touch */
 #touch{position:fixed;inset:0;z-index:11;pointer-events:none}
 #stick{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(26px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);pointer-events:auto}
@@ -119,6 +135,10 @@ input[type=range]{width:150px;accent-color:var(--sea)}
   #place{max-width:52vw;padding:8px 10px} #district{font-size:12px}
   #tools{bottom:auto;top:calc(150px + env(safe-area-inset-top))} #tools .tb{width:44px;height:44px;font-size:19px}
   #hint{bottom:calc(186px + env(safe-area-inset-bottom))}
+  #money{top:calc(118px + env(safe-area-inset-top));font-size:17px}
+  #job{top:calc(124px + env(safe-area-inset-top));width:calc(100vw - 28px)}
+  #speedo{bottom:calc(250px + env(safe-area-inset-bottom))} #speedo b{font-size:40px}
+  #prompt{bottom:calc(300px + env(safe-area-inset-bottom));font-size:13px;white-space:normal;max-width:calc(100vw - 32px);text-align:center}
 }
 </style>
 <script type="importmap">
@@ -141,7 +161,7 @@ input[type=range]{width:150px;accent-color:var(--sea)}
 <div id="title" class="hide">
   <div class="top">
     <div class="logo">S<span class="sun"></span>MER<svg class="waves" viewBox="0 0 200 14" preserveAspectRatio="none"><path d="M0 7 Q12.5 0 25 7 T50 7 T75 7 T100 7 T125 7 T150 7 T175 7 T200 7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></div>
-    <div class="sub">Walk the real streets of Limassol, Cyprus</div>
+    <div class="sub">Walk, drive and work in the real Limassol, Cyprus</div>
     <div class="stats" id="tstats"></div>
   </div>
   <div class="menu">
@@ -159,8 +179,12 @@ input[type=range]{width:150px;accent-color:var(--sea)}
   <div id="place"><div id="street">Limassol</div><div id="district"></div></div>
   <div id="goal"><span class="arrow" id="garrow">➤</span><span id="gtext">Find the places</span><span class="cnt" id="gcount">0/0</span></div>
   <div id="miniwrap"><canvas id="mini" width="392" height="392"></canvas><div id="north">N</div></div>
+  <div id="money">€0<span class="plus" id="plus"></span></div>
+  <div id="job" class="hide"><div class="jt" id="jt"></div><div class="jr" id="jr"></div><div class="jx" id="jx"></div></div>
+  <div id="speedo" class="hide"><b id="kmh">0</b><span>KM/H</span></div>
+  <div id="prompt" class="hide"></div>
   <div id="cross"></div>
-  <div id="hint">Click to look around · <b>WASD</b> walk · <b>Shift</b> run · <b>Space</b> jump · <b>M</b> map · <b>C</b> camera · <b>T</b> time · <b>F</b> drone</div>
+  <div id="hint">Click to look around · <b>WASD</b> walk · <b>E</b> get in a car · <b>Shift</b> run · <b>M</b> map · <b>C</b> camera · <b>T</b> time · <b>F</b> drone</div>
   <div id="toast"><div class="ic" id="tic">🏰</div><div class="k">NEW PLACE FOUND</div><div class="n" id="tname"></div><div class="d" id="tdesc"></div></div>
   <div id="msg"></div>
   <div id="fps" class="hide"></div>
@@ -172,12 +196,14 @@ input[type=range]{width:150px;accent-color:var(--sea)}
   </div>
 </div>
 
+<div id="camflash"></div>
 <div id="touch" class="hide">
   <div id="stick"><div id="knob"></div></div>
   <div id="tbtns">
     <button class="tb" id="tRun">🏃</button>
     <button class="tb" id="tJump">⤒</button>
   </div>
+  <button class="tb hide" id="tAct">🚗</button>
 </div>
 
 <div id="mapui" class="hide">
@@ -192,7 +218,8 @@ input[type=range]{width:150px;accent-color:var(--sea)}
 <div id="pause" class="panel hide"><div class="card">
   <h2>Paused</h2>
   <table id="pstats"></table>
-  <div class="btns"><button class="big go" id="pResume">▶ Back to walking</button></div>
+  <div class="btns"><button class="big go" id="pResume">▶ Back to the game</button></div>
+  <div class="btns hide" id="pJobRow"><button class="big" id="pJob">✋ Stop the job</button></div>
   <div class="btns"><button class="big" id="pMap">🗺️ Map</button><button class="big" id="pSet">⚙️ Settings</button></div>
   <div class="btns"><button class="big" id="pHelp">❓ Help</button><button class="big" id="pTitle">🏠 Title</button></div>
 </div></div>
@@ -213,12 +240,15 @@ input[type=range]{width:150px;accent-color:var(--sea)}
 
 <div id="help" class="panel hide"><div class="card">
   <h2>How to play</h2>
-  <p style="margin-top:0;line-height:1.45">Sumer is a walk through a 3D copy of <b>Limassol</b> in Cyprus, built from the real map: 31,500 buildings in their real places, every street and path, the parks, beaches, piers and the marina. Explore, swim in the sea, and find the <b>famous places</b>. The orange arrow at the top points to the next one.</p>
+  <p style="margin-top:0;line-height:1.45">Sumer is an open-world game in a 3D copy of <b>Limassol</b> in Cyprus: walk, drive, do jobs for money, built from the real map: 31,500 buildings in their real places, every street and path, the parks, beaches, piers and the marina. Explore, swim in the sea, and find the <b>famous places</b>. The orange arrow at the top points to the next one.</p>
   <table>
     <tr><td>Look</td><td>Click the game, then move the mouse · phone: drag on the right side</td></tr>
     <tr><td>Walk</td><td><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> or arrows · phone: the round stick</td></tr>
     <tr><td>Run</td><td>hold <span class="kbd">Shift</span> · phone: 🏃</td></tr>
     <tr><td>Jump</td><td><span class="kbd">Space</span> · phone: ⤒</td></tr>
+    <tr><td>Cars</td><td><span class="kbd">E</span> next to a parked car: get in or out · drive with <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> · <span class="kbd">Space</span> handbrake · <span class="kbd">G</span> horn · <span class="kbd">C</span> driver's seat · phone: 🚗</td></tr>
+    <tr><td>Jobs</td><td>Walk or drive into a glowing marker (🚕 taxi, 🥙 souvlaki, 🏁 race) and press <span class="kbd">E</span>. The GPS line on the map shows the way. <span class="kbd">J</span> stops a job</td></tr>
+    <tr><td>Money</td><td>Jobs and new places pay euros. Speed cameras (real ones) fine you above 70 km/h</td></tr>
     <tr><td>Map</td><td><span class="kbd">M</span>: jump to any place in the city</td></tr>
     <tr><td>View</td><td><span class="kbd">C</span>: your eyes / behind you</td></tr>
     <tr><td>Drone</td><td><span class="kbd">F</span>: fly over the city (<span class="kbd">E</span> up, <span class="kbd">Q</span> down)</td></tr>

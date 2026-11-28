@@ -73,4 +73,58 @@ window.__tris = () => {
   });
   return Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, v]) => `${k}: ${Math.round(v / 1000)}k`);
 };
+
+// ---- driving and jobs
+// helpers for driving tests
+window.__nearCar = (x, z) => {
+  const s = window.sumer; let best = null, bd = 1e9;
+  for (const grp of s.city.details.values()) for (const c of (grp.userData.parked || [])) { const d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = c; } }
+  return best;
+};
+window.__getIn = (x, z) => {
+  const s = window.sumer, c = window.__nearCar(x, z); if (!c) return 'no car';
+  const fx = Math.cos(c.ry), fz = -Math.sin(c.ry), rx = -fz, rz = fx;
+  s.player.teleport(c.x + rx * 2.0, c.z + rz * 2.0);
+  s.step(1 / 30);
+  s.interact();
+  for (let i = 0; i < 4; i++) s.step(1 / 30);
+  s.hud(); s.render();
+  const d = s.driving.car;
+  return d ? { in: true, type: d.t, x: +d.x.toFixed(1), z: +d.z.toFixed(1), prompt: document.getElementById('prompt').className } : { in: false, near: [c.x, c.z], p: [s.player.pos.x, s.player.pos.z] };
+};
+window.__drive = (codes, secs) => {
+  const s = window.sumer;
+  for (const c of codes) dispatchEvent(new KeyboardEvent('keydown', { code: c }));
+  let maxK = 0;
+  for (let i = 0; i < Math.round(secs * 30); i++) { s.step(1 / 30); maxK = Math.max(maxK, s.driving.speedKmh()); }
+  for (const c of codes) dispatchEvent(new KeyboardEvent('keyup', { code: c }));
+  s.hud(); s.render();
+  const d = s.driving.car;
+  return d ? { kmh: Math.round(s.driving.speedKmh()), maxK: Math.round(maxK), x: +d.x.toFixed(1), z: +d.z.toFixed(1), ry: +d.ry.toFixed(2), street: document.getElementById('street').textContent } : 'not driving';
+};
+// job tests: walk to a marker, press E, then put the car at each stop
+window.__startJob = (id) => {
+  const s = window.sumer, g = s.jobs.givers.find((q) => q.id === id);
+  if (s.state() !== 'play') s.startPlay(g.x, g.z);
+  const car = s.driving.car;
+  if (car) { car.x = g.x + 1.5; car.z = g.z + 1.5; car.vx = car.vz = car.vF = 0; } // drive into the marker
+  else s.player.teleport(g.x + 1.5, g.z + 1.5);
+  for (let i = 0; i < 3; i++) s.step(1 / 30);
+  const near = !!s.jobs.giverNear();
+  s.interact();
+  for (let i = 0; i < 10; i++) s.step(1 / 30);
+  s.hud(); s.render();
+  const j = s.jobs.job;
+  return { near, job: j && j.id, step: j && j.step, inCar: !!s.driving.car, target: s.jobs.target && s.jobs.target.label, route: s.jobs.route && s.jobs.route.length, panel: document.getElementById('jt').textContent, money: s.wallet.money };
+};
+// put the car at (x, z), stopped, and run the game for a moment
+window.__carAt = (x, z, secs = 0.6) => {
+  const s = window.sumer, c = s.driving.car; if (!c) return 'no car';
+  c.x = x; c.z = z; c.vx = c.vz = c.vF = 0;
+  for (let i = 0; i < Math.round(secs * 30); i++) { c.vx = c.vz = c.vF = 0; s.step(1 / 30); }
+  s.hud(); s.render();
+  const j = s.jobs.job;
+  return { job: j && j.id, step: j && j.step, target: s.jobs.target && s.jobs.target.label, money: s.wallet.money, panel: document.getElementById('jt').textContent + ' | ' + document.getElementById('jx').textContent + ' | ' + document.getElementById('jr').textContent };
+};
+window.__jobGoal = () => { const t = window.sumer.jobs.target; return t ? [t.x, t.z] : null; };
 1;

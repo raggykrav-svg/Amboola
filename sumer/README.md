@@ -27,6 +27,18 @@ A walking game in a 3D copy of **Limassol, Cyprus**, made from the real map. It 
 - Limassol details seen in photos and Street View: red tile roofs in the old town, white and cream apartment blocks with long balconies, **solar water heaters on every flat roof**, wooden shutters, limestone walls, shop awnings, parked cars, street lamps, beach umbrellas, yachts in the marina, ships waiting off the coast and the hills of Troodos behind the city.
 - Landmarks with their own shapes: **Limassol Castle** (battlements), **Agia Napa Cathedral** (dome and bell towers), the **Grand Mosque** (minaret), and the other churches with domes and bell towers.
 
+## Drive, work, earn
+
+- **Any parked car is yours to drive:** walk up to it and press **E**. Drive on the left like in Cyprus, drift with the handbrake (**Space**), honk (**G**), look from behind the car or from the driver's seat (on the right, **C**). Crash into walls and it stops; people and traffic wait for you. Press **E** again to get out: the car stays where you left it.
+- **GPS:** a jobs' goal gets an orange route along the real streets on the minimap and the big map.
+- **Jobs that pay euros** (glowing markers in the city, start with **E**):
+  - 🚕 **Taxi** (rank by the Old Port): pick people up and drive them across town; 5 fares and a shift bonus.
+  - 🥙 **Souvlaki to go** (old town): 4 deliveries; the faster, the bigger the tip.
+  - 🏁 **Seafront race**: from the Molos to the ONE tower through the checkpoints; beat the par time.
+- Finding a new place pays €25 too. The **36 real speed cameras** of Limassol (from OpenStreetMap) flash and fine you above 70 km/h.
+
+![Driving the taxi in the Old Port](media/taxi.jpg)
+
 ## The game
 
 - Find **23 famous places** (castle, cathedral, Old Port, Marina, Molos, Agora, ONE tower, Dasoudi beach, ancient Amathus, and more). The orange arrow at the top points to the nearest one you have not found yet. Your progress is saved in the browser.

@@ -153,7 +153,7 @@ export class Life {
     this.spawnT = 0;
   }
 
-  update(dt, px, pz, active) {
+  update(dt, px, pz, active, inCar = false) {
     if (!this.nP && !this.nC) return;
     this.spawnT -= dt;
     const RP = this.q.peopleDist || 140, RC = this.q.trafficDist || 260;
@@ -173,7 +173,7 @@ export class Life {
     for (const p of this.people) {
       let [x, z] = along(p.r, p.s);
       const dp = Math.hypot(x - px, z - pz);
-      const stop = active && dp < 1.3;
+      const stop = active && dp < (inCar ? 4.5 : 1.3); // people wait for your car
       if (!stop) {
         p.s += p.dir * p.v * dt;
         if (p.s > p.r.len) { p.s = p.r.len; p.dir = -1; } else if (p.s < 0) { p.s = 0; p.dir = 1; }
@@ -201,7 +201,7 @@ export class Life {
       // brake for the walker in front
       const fx = px - a[0], fz = pz - a[1];
       const ahead = fx * ux + fz * uz, side = Math.abs(fx * uz - fz * ux);
-      const block = active && ahead > 0 && ahead < 9 && side < 1.8;
+      const block = active && ahead > 0 && ahead < (inCar ? 15 : 9) && side < (inCar ? 2.4 : 1.8);
       const target = block ? 0 : c.v;
       c.cur += (target - c.cur) * Math.min(1, dt * (block ? 4 : 1.2));
       c.s += c.cur * dt;

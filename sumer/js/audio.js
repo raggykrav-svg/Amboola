@@ -77,6 +77,74 @@ export class Sound {
   splash() { this.burst(700, 0.6, 0.7, 0.3, 'lowpass'); this.burst(2500, 1, 0.4, 0.08); }
   land() { this.burst(300, 1, 0.12, 0.18, 'lowpass'); }
 
+  // ---------------------------------------------------------------- cars
+  engineOn() {
+    if (!this.ctx || this.eng) return;
+    const ctx = this.ctx;
+    const g = ctx.createGain(); g.gain.value = 0;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500; lp.Q.value = 1.4;
+    const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 36;
+    const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = 18;
+    const o2g = ctx.createGain(); o2g.gain.value = 0.4;
+    o1.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(g); g.connect(this.master);
+    o1.start(); o2.start();
+    const sk = ctx.createBufferSource(); sk.buffer = this.white; sk.loop = true;
+    const sbp = ctx.createBiquadFilter(); sbp.type = 'bandpass'; sbp.frequency.value = 1700; sbp.Q.value = 1.3;
+    const sg = ctx.createGain(); sg.gain.value = 0;
+    sk.connect(sbp); sbp.connect(sg); sg.connect(this.master); sk.start();
+    this.eng = { g, lp, o1, o2, sg, sk };
+    this.burst(240, 2.5, 0.45, 0.1, 'bandpass', 0.6); // starter
+  }
+  engineOff() {
+    const e = this.eng; if (!e) return;
+    const t = this.ctx.currentTime;
+    e.g.gain.setTargetAtTime(0, t, 0.08); e.sg.gain.setTargetAtTime(0, t, 0.05);
+    setTimeout(() => { try { e.o1.stop(); e.o2.stop(); e.sk.stop(); } catch { /* already stopped */ } }, 700);
+    this.eng = null;
+  }
+  // speed m/s, throttle 0..1, sideways slip m/s, top speed: five gears, a low growl
+  engine(v, thr, slip, vmax) {
+    const e = this.eng; if (!e) return;
+    const t = this.ctx.currentTime;
+    const gears = [0, 0.16, 0.34, 0.54, 0.76, 1.01];
+    const f = Math.min(1, v / vmax);
+    let gi = 0; while (gi < 4 && f > gears[gi + 1]) gi++;
+    const rpm = (f - gears[gi]) / (gears[gi + 1] - gears[gi]);
+    const hz = 32 + rpm * 62 + gi * 5 + thr * 5;
+    e.o1.frequency.setTargetAtTime(hz, t, 0.05); e.o2.frequency.setTargetAtTime(hz * 0.5, t, 0.05);
+    e.lp.frequency.setTargetAtTime(320 + thr * 850 + rpm * 350, t, 0.08);
+    e.g.gain.setTargetAtTime(0.045 + thr * 0.05 + rpm * 0.02, t, 0.08);
+    e.sg.gain.setTargetAtTime(Math.min(0.11, Math.max(0, slip - 2.5) * 0.028), t, 0.05);
+  }
+  door() { this.burst(260, 1.5, 0.18, 0.25, 'lowpass'); this.burst(1300, 3, 0.05, 0.06); }
+  crash(k) { this.burst(130, 0.8, 0.55, 0.12 + 0.5 * k, 'lowpass'); this.burst(2600, 1, 0.3, 0.05 + 0.15 * k); }
+  horn(on) {
+    const ctx = this.ctx; if (!ctx) return;
+    if (on && !this.hornN) {
+      const g = ctx.createGain(); g.gain.value = 0; g.connect(this.master);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800; lp.connect(g);
+      const os = [392, 494].map((f) => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(lp); o.start(); return o; });
+      g.gain.setTargetAtTime(0.07, ctx.currentTime, 0.01);
+      this.hornN = { g, os };
+    } else if (!on && this.hornN) {
+      const h = this.hornN; this.hornN = null;
+      h.g.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+      setTimeout(() => h.os.forEach((o) => { try { o.stop(); } catch { /* stopped */ } }), 200);
+    }
+  }
+  tone(f, dur, gain = 0.12, type = 'sine', at = 0) {
+    const ctx = this.ctx; if (!ctx) return;
+    const t = ctx.currentTime + at;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  beep(high) { this.tone(high ? 1046 : 523, high ? 0.5 : 0.22, 0.14, 'square'); }
+  ding() { this.tone(1318, 0.35, 0.12); this.tone(1760, 0.5, 0.08, 'sine', 0.06); }
+  cash() { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, 0.25, 0.1, 'triangle', i * 0.07)); this.burst(5000, 2, 0.12, 0.05); }
+  shutter() { this.burst(3000, 2, 0.04, 0.2); this.burst(1500, 2, 0.06, 0.12); }
+  sad() { this.tone(392, 0.3, 0.1, 'triangle'); this.tone(330, 0.45, 0.1, 'triangle', 0.25); }
+
   chime() {
     const ctx = this.ctx; if (!ctx) return;
     const t0 = ctx.currentTime;

@@ -623,7 +623,7 @@ for (x, z), t in d['points']:
     hw = t.get('highway'); am = t.get('amenity')
     if hw == 'street_lamp': lamps.append((x, z))
     elif am == 'bench': benches.append((x, z))
-PT = dict(LAMP=0, BENCH=1, CROSSING=2, SIGNAL=3, BUSSTOP=4, FOUNTAIN=5, ARTWORK=6)
+PT = dict(LAMP=0, BENCH=1, CROSSING=2, SIGNAL=3, BUSSTOP=4, FOUNTAIN=5, ARTWORK=6, SPEEDCAM=7)
 points = []
 for (x, z), t in d['points']:
     hw = t.get('highway'); am = t.get('amenity')
@@ -633,6 +633,7 @@ for (x, z), t in d['points']:
     elif hw == 'crossing': ty = 'CROSSING'
     elif hw == 'traffic_signals': ty = 'SIGNAL'
     elif hw == 'bus_stop': ty = 'BUSSTOP'
+    elif hw == 'speed_camera' or t.get('enforcement') == 'maxspeed': ty = 'SPEEDCAM'
     elif am == 'fountain': ty = 'FOUNTAIN'
     elif t.get('tourism') == 'artwork': ty = 'ARTWORK'
     if ty: points.append((x, z, PT[ty]))

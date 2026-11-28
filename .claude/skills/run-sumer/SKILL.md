@@ -26,6 +26,10 @@ Custom steps: pass a JSON list as the 2nd argument. Each step can have `eval` (J
 | `__drone(x, y, z, yaw, pitch)` | drone camera |
 | `__click('tMenu')` | press a button by id and return which panels are open (Playwright `page.click` times out under SwiftShader) |
 | `__tris()` | triangles per kind of object |
+| `__getIn(x, z)` | walk to the parked car nearest (x, z) and press E; returns the car |
+| `__drive(['KeyW', 'KeyA'], secs)` | hold driving keys; returns km/h, the top speed reached, position, street |
+| `__startJob('taxi' \| 'food' \| 'race')` | walk into a job marker and press E |
+| `__carAt(...__jobGoal())` | put the car, stopped, at the job's current goal: steps a job forward (pickup, drop, delivery, checkpoint) |
 
 Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18`; the beach under the ONE tower `1990, -1180, -0.75, 0.42`; Dasoudi beach `3990, -1930, -2.0`; old town street at night `46, -277, 0` with `sumer.setTime('night')`.
 
@@ -56,6 +60,14 @@ Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18
 - Exposure per time of day: `exp` (ACES, Low) and `expN` (Neutral, post) in `TIMES` in `env.js`.
 - Cars (`js/cars.js`): bodies are lofted cross-sections; each triangle carries a surface kind (`aKind`: paint, glass, trim, chrome, tyre, head/tail light, white/yellow plate, grille) that one clear-coat material turns into the right look; paint comes from the instance colour. `buildCar(type, low)`: about 2,500 triangles near, about 190 far. Parked cars are placed per street piece (`grp.userData.parked` in `city.js`) and drawn by `CarField` (near/far by `carNear`, nothing beyond `carFar`, far ones cast no shadow); driving cars are in `life.js` (near/far too, lights on at dusk and night). Watch the triangle count after touching them: one early version drew 8.7 million triangles a frame.
 - Per-face values that feed a hash must be `flat varying` (facade `vInfo`, car `vKind`): interpolated equal values differ in the last bits, and the hash turned lit windows at night into white noise.
+
+## Driving, GPS, jobs (the open-world part)
+
+- `js/drive.js` (`Driving`): E next to a parked car takes it out of its street piece (`grp.userData.parked`, colliders removed, `city.detailVersion++`) and gives you a real mesh; arcade physics (steer, throttle, brake, handbrake drift, three collision circles pushed out of building edges, trunks, parked/left/traffic cars and people; the sea, ponds, piers and rocks stop it); chase camera on an arc (never lerp the camera position: it cut through buildings) or the driver's seat on the right. Cars you get out of stay (`left`, up to 6).
+- `js/route.js` (`Router`): an 8 m grid of the streets (bit 1 roads, bit 2 footpaths) and A* with a bounding window; a 2.5 km route takes about 3 ms.
+- `js/jobs.js` (`Jobs`): markers (taxi near the Old Port, souvlaki in the old town, race on the seafront), job states, payments to `wallet` (localStorage `sumer.money`), the GPS route (refreshed when you are 25 m off it), and the 36 real speed cameras (point type 7 in the city file): above 70 km/h within 22 m, one fine per pass.
+- E (or the phone's 🚗 button, or gamepad Y) does the first of: start the job at a marker, get out, get into the nearest car. Map teleport stops a job and leaves the car.
+- People wait and traffic brakes when you drive at them (`life.update(..., inCar)`); people are solid for the car (no running anyone over).
 
 ## Rebuilding the city data
 

@@ -12,7 +12,10 @@ import { Sound } from './audio.js';
 import { MapPainter, Minimap, BigMap } from './ui.js';
 import { Life } from './life.js';
 import { Post, postSupported } from './post.js';
-import { CarField } from './cars.js';
+import { CarField, CAR_TYPES } from './cars.js';
+import { Router } from './route.js';
+import { Driving } from './drive.js';
+import { Jobs } from './jobs.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -54,12 +57,24 @@ const camera = new THREE.PerspectiveCamera(settings.fov, innerWidth / innerHeigh
 scene.add(camera);
 scene.userData.camera = camera;
 
-let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life, carField;
+let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life, carField, router, driving, jobs;
 const sound = new Sound(); sound.on = settings.sound; sound.vol = settings.vol;
 let state = 'loading';  // loading | title | play | menu | map
 let landmarks = [];
 const found = new Set(store.get('found', []));
-const stats = Object.assign({ walked: 0, swims: 0, played: 0 }, store.get('stats', {}));
+const stats = Object.assign({ walked: 0, swims: 0, played: 0, driven: 0 }, store.get('stats', {}));
+// euros: from jobs and new places; speed cameras take some away
+const wallet = {
+  money: store.get('money', 0),
+  add(n, why) {
+    this.money = Math.max(0, this.money + n); store.set('money', this.money);
+    $('money').firstChild.textContent = '€' + this.money.toLocaleString('en');
+    const pl = $('plus'); pl.textContent = `${n >= 0 ? '+' : '−'}€${Math.abs(n)}${why ? ' · ' + why : ''}`;
+    pl.style.color = n >= 0 ? '#9dffb0' : '#ff9d9d';
+    pl.classList.remove('on'); void pl.offsetWidth; pl.classList.add('on'); clearTimeout(this.t); this.t = setTimeout(() => pl.classList.remove('on'), 2600);
+    if (n > 0) sound.cash(); else if (n < 0) sound.sad();
+  },
+};
 let timeKey = store.get('time', 'day');
 if (params.get('time') && TIMES[params.get('time')]) timeKey = params.get('time');
 
@@ -90,9 +105,15 @@ async function boot() {
     player.onLand = () => sound.land();
     life = new Life(scene, city, data, mats, props, Q);
     player.life = life;
+    setLoad(0.63, 'Planning the roads…'); await frame();
+    router = new Router(city);
+    driving = new Driving(scene, city, carField, life, forest, mats.U, sound);
+    player.extra = (x, z, fn) => driving.leftColliders(x, z, fn);
+    jobs = new Jobs({ scene, city, router, driving, player, sound, wallet, store, ui: { toast: showToast, flash, cameraFlash } });
+    $('money').firstChild.textContent = '€' + wallet.money.toLocaleString('en');
     painter = new MapPainter(city);
     minimap = new Minimap($('mini'), painter, $('north'));
-    bigmap = new BigMap($('mapui'), $('mapc'), painter, landmarks, { goBtn: $('mapgo'), listEl: $('lmlist'), onGo: (s) => goTo(s) });
+    bigmap = new BigMap($('mapui'), $('mapc'), painter, landmarks, { goBtn: $('mapgo'), listEl: $('lmlist'), onGo: (s) => goTo(s), extras: () => mapExtras() });
     addShips();
     setTime(timeKey);
     // build around the title view
@@ -190,6 +211,7 @@ function pause() {
   state = 'menu';
   const t = $('pstats');
   t.innerHTML = `<tr><td>Places found</td><td>${found.size} of ${landmarks.length}</td></tr><tr><td>Walked</td><td>${(stats.walked / 1000).toFixed(2)} km</td></tr><tr><td>Swims in the sea</td><td>${stats.swims}</td></tr><tr><td>Where you are</td><td>${$('street').textContent}${$('district').textContent ? ', ' + $('district').textContent : ''}</td></tr>`;
+  $('pJobRow').classList.toggle('hide', !(jobs && jobs.job));
   $('pause').classList.remove('hide');
   if (document.pointerLockElement) document.exitPointerLock();
 }
@@ -212,6 +234,8 @@ $('mapgo').onclick = () => goTo(bigmap.sel);
 function goTo(s) {
   if (!s) return;
   bigmap.hide();
+  if (jobs && jobs.job) jobs.stop('Job stopped: you used the map');
+  if (driving && driving.car) driving.exit(player, true);
   // places: stand a little to the south-east, looking at the place
   const off = s.id && s.r ? Math.min(s.r * 0.5, 25) : 0;
   const tx = s.x + off, tz = s.z + off;
@@ -225,6 +249,7 @@ $('bSet').onclick = () => openSettings();
 $('bHelp').onclick = () => $('help').classList.remove('hide');
 $('hClose').onclick = () => { $('help').classList.add('hide'); if (state === 'menu') $('pause').classList.remove('hide'); };
 $('pResume').onclick = resume;
+$('pJob').onclick = () => { jobs.stop('Job stopped'); resume(); };
 $('pMap').onclick = openMap;
 $('pSet').onclick = () => { $('pause').classList.add('hide'); openSettings(); };
 $('pHelp').onclick = () => { $('pause').classList.add('hide'); $('help').classList.remove('hide'); };
@@ -271,6 +296,10 @@ addEventListener('keydown', (e) => {
   if (state === 'menu' && e.code === 'Escape') { resume(); return; }
   if (state !== 'play') return;
   if (e.code === 'KeyC') cycleView();
+  if (e.code === 'KeyE' && player.mode !== 'drone') interact();
+  if (e.code === 'KeyG' && driving.car) sound.horn(true);
+  if (e.code === 'KeyJ' && jobs.job) jobs.stop('Job stopped');
+  if (e.code === 'KeyF' && driving.car) { flash('Get out of the car first (E)'); return; }
   if (e.code === 'KeyF') { player.setMode(player.mode === 'drone' ? 'first' : 'drone'); flash(player.mode === 'drone' ? 'Drone view: fly with WASD, E up, Q down' : 'Walking'); }
   if (e.code === 'KeyM') openMap();
   if (e.code === 'KeyT') $('tTime').onclick();
@@ -278,9 +307,10 @@ addEventListener('keydown', (e) => {
   if (e.code === 'Escape') pause();
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
 });
-addEventListener('keyup', (e) => keys.delete(e.code));
+addEventListener('keyup', (e) => { keys.delete(e.code); if (e.code === 'KeyG') sound.horn(false); });
 addEventListener('blur', () => keys.clear());
 function cycleView() {
+  if (driving && driving.car) { driving.view = driving.view === 'chase' ? 'seat' : 'chase'; flash(driving.view === 'seat' ? 'Driver’s seat (on the right, as in Cyprus)' : 'Behind the car'); return; }
   if (player.mode === 'drone') player.setMode('first');
   else player.setMode(player.mode === 'first' ? 'third' : 'first');
   flash(player.mode === 'first' ? 'Your eyes' : 'Behind you');
@@ -305,7 +335,9 @@ function cycleView() {
   const lend = (e) => { if (e.pointerId === lid) lid = null; };
   canvas.addEventListener('pointerup', lend); canvas.addEventListener('pointercancel', lend);
   $('tRun').addEventListener('pointerdown', (e) => { touchIn.run = !touchIn.run; $('tRun').classList.toggle('on', touchIn.run); e.preventDefault(); });
-  $('tJump').addEventListener('pointerdown', (e) => { touchIn.jump = true; e.preventDefault(); });
+  $('tJump').addEventListener('pointerdown', (e) => { touchIn.jump = true; touchIn.hold = true; e.preventDefault(); });
+  $('tJump').addEventListener('pointerup', () => { touchIn.hold = false; });
+  $('tAct').addEventListener('pointerdown', (e) => { interact(); e.preventDefault(); });
 })();
 
 let padPrev = [];
@@ -314,7 +346,7 @@ function readInput(dt) {
   let x = (k('KeyD') || k('ArrowRight') ? 1 : 0) - (k('KeyA') || k('ArrowLeft') ? 1 : 0);
   let y = (k('KeyW') || k('ArrowUp') ? 1 : 0) - (k('KeyS') || k('ArrowDown') ? 1 : 0);
   let run = k('ShiftLeft') || k('ShiftRight') || touchIn.run;
-  let jump = k('Space') || touchIn.jump; touchIn.jump = false;
+  let jump = k('Space') || touchIn.jump || (driving && driving.car && touchIn.hold); touchIn.jump = false;
   const sens = settings.sens, inv = settings.invert ? -1 : 1;
   let lookX = mouseDX * 0.0022 * sens + touchIn.lookX * 0.006 * sens;
   let lookY = (mouseDY * 0.0022 * sens + touchIn.lookY * 0.006 * sens) * inv;
@@ -330,7 +362,8 @@ function readInput(dt) {
     const b = (i) => p.buttons[i] && p.buttons[i].pressed;
     if (b(0)) jump = true; if (b(1) || b(10)) run = true; if (b(5)) up = true; if (b(4)) down = true;
     const press = (i) => b(i) && !padPrev[i];
-    if (press(3)) cycleView(); if (press(2)) openMap(); if (press(9)) pause(); if (press(8)) $('tTime').onclick();
+    y += ((p.buttons[7] && p.buttons[7].value) || 0) - ((p.buttons[6] && p.buttons[6].value) || 0);
+    if (press(3)) interact(); if (press(11)) cycleView(); if (press(2)) openMap(); if (press(9)) pause(); if (press(8)) $('tTime').onclick();
     padPrev = p.buttons.map((q) => q.pressed);
   }
   const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
@@ -389,8 +422,10 @@ function updateHud(dt) {
         if (Math.hypot(L.x - player.pos.x, L.z - player.pos.z) < (L.r || 40)) discover(L);
       }
     }
-    const T = targetLandmark();
-    $('gcount').textContent = `${found.size}/${landmarks.length}`;
+    const jt = jobs.target;
+    const T = jt ? { x: jt.x, z: jt.z, i: '📍', n: jt.label } : targetLandmark();
+    $('gcount').textContent = jt ? '€' + wallet.money : `${found.size}/${landmarks.length}`;
+    jobHud();
     if (T) {
       const d = Math.hypot(T.x - px, T.z - pz);
       $('gtext').textContent = `${T.i} ${T.n} · ${d < 1000 ? Math.round(d / 5) * 5 + ' m' : (d / 1000).toFixed(1) + ' km'}`;
@@ -407,12 +442,49 @@ function updateHud(dt) {
     sound.update(0.2, { sea: sea < 0 ? -sea : 0, trees: Math.min(1, trees / 10), night: env.night >= 1 ? 1 : 0, city: sea < -150 ? 1 : 0.4, swim: player.swim, drone: player.mode === 'drone' });
     minimap.range = player.mode === 'drone' ? 420 : 120;
   }
-  minimap.draw(px, pz, player.yaw, landmarks, found, targetLandmark());
+  minimap.draw(px, pz, player.yaw, landmarks, found, targetLandmark(), mapExtras());
+  if (driving.car) $('kmh').textContent = Math.round(driving.speedKmh());
 }
+// what can be done here: get in/out of a car, start a job
+function interact() {
+  if (state !== 'play' || !driving) return;
+  const g = jobs.giverNear(); if (g) { jobs.start(g); return; } // walking or driving into a job marker
+  if (driving.car) { driving.exit(player); flash('Out of the car'); return; }
+  const f = driving.findCar(player.pos.x, player.pos.z);
+  if (f) { driving.enter(f, player); flash(`${['Hatchback', 'Saloon', 'SUV', 'Pickup', 'Van'][f.o.t]} · ` + (isTouch ? 'stick to drive · hold ⤒ to drift · 🚶 get out' : 'W drive · Space handbrake · E get out')); }
+}
+function jobHud() {
+  const st = jobs.status();
+  $('job').classList.toggle('hide', !st);
+  if (st) { $('jt').textContent = st.title; $('jx').textContent = st.text; $('jr').textContent = st.right; }
+  // the prompt
+  let pr = null;
+  if (player.mode !== 'drone') {
+    const g = jobs.giverNear();
+    if (g) pr = `${g.i} Start: ${g.n}`;
+    else if (!driving.car && driving.findCar(player.pos.x, player.pos.z)) pr = '🚗 Drive this car';
+  }
+  $('prompt').classList.toggle('hide', !pr);
+  if (pr) $('prompt').innerHTML = isTouch ? `${pr} · tap ${driving.car ? '🚶' : '🚗'}` : `<span class="key">E</span>${pr}`;
+  if (pr && isTouch) $('hint').style.opacity = 0;
+  $('speedo').classList.toggle('hide', !driving.car);
+  if (isTouch) { $('tAct').classList.toggle('hide', !pr && !driving.car); $('tAct').textContent = driving.car ? '🚶' : '🚗'; }
+}
+function mapExtras() {
+  if (!jobs) return null;
+  return { route: jobs.route, goal: jobs.target, markers: jobs.job ? [] : jobs.givers };
+}
+function showToast(icon, kind, name, desc) {
+  $('tic').textContent = icon; $('toast').querySelector('.k').textContent = kind; $('tname').textContent = name; $('tdesc').textContent = desc;
+  const t = $('toast'); t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 5000);
+}
+function cameraFlash() { const f = $('camflash'); f.classList.add('on'); setTimeout(() => f.classList.remove('on'), 80); }
 let toastT = 0;
 function discover(L) {
+  $('toast').querySelector('.k').textContent = 'NEW PLACE FOUND';
   found.add(L.id); store.set('found', [...found]);
   sound.chime();
+  setTimeout(() => wallet.add(25, 'new place'), 900);
   $('tic').textContent = L.i; $('tname').textContent = L.n; $('tdesc').textContent = L.d;
   const t = $('toast'); t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 6500);
   if (found.size === landmarks.length) setTimeout(() => flash('You found all the places of Limassol! 🎉'), 7000);
@@ -437,10 +509,11 @@ function tick(dt) {
   }
   if (state === 'play') {
     const inp = readInput(dt);
-    const before = player.walked;
-    player.update(dt, inp);
-    stats.walked += player.walked - before;
-    life.update(dt, player.pos.x, player.pos.z, player.mode !== 'drone');
+    const before = player.walked, bx = player.pos.x, bz = player.pos.z;
+    if (driving.car) { driving.update(dt, inp, player, camera); stats.driven += Math.hypot(player.pos.x - bx, player.pos.z - bz); }
+    else { player.update(dt, inp); stats.walked += player.walked - before; }
+    life.update(dt, player.pos.x, player.pos.z, player.mode !== 'drone', !!driving.car);
+    jobs.update(dt);
     stats.played += dt;
     updateHud(dt);
   } else { mouseDX = mouseDY = 0; }
@@ -464,7 +537,7 @@ if (settings.fps) $('fps').classList.remove('hide');
 
 // debug / test handle
 window.sumer = {
-  get city() { return city; }, get player() { return player; }, get life() { return life; }, get cars() { return carField; }, get env() { return env; }, get forest() { return forest; },
+  get city() { return city; }, get player() { return player; }, get life() { return life; }, get cars() { return carField; }, get driving() { return driving; }, get jobs() { return jobs; }, get router() { return router; }, wallet, interact: () => interact(), get env() { return env; }, get forest() { return forest; },
   scene, camera, renderer, setTime, startPlay, openMap, closeMap, pause, resume, found, stats,
   state: () => state, tick: (dt) => { tick(dt); draw(); }, step: (dt) => tick(dt), render: () => draw(), get post() { return post; },
   hud: () => { streetT = 0; hudT = 0; updateHud(0.01); },

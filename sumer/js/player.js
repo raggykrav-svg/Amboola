@@ -80,6 +80,7 @@ export class Player {
       };
       if (this.forest) this.forest.trunksNear(p.x, p.z, circle);
       if (this.life) this.life.colliders(p.x, p.z, circle);
+      if (this.extra) this.extra(p.x, p.z, circle); // cars you parked
       const rs = this.city.rasters;
       for (const Rr of rs.values()) {
         if (!Rr.colliders) continue;
