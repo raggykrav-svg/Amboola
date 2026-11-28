@@ -159,6 +159,13 @@ Press **Esc** (pause), then **💥 CRASH: OFF** at the bottom of the menu to tur
 
 - **The car crumples where it hits.** Bigger crashes make deeper dents, and a hard head-on crash also buckles the doors and the roof. The dents stay until you repair the car.
 - **Pieces fly:** paint chips, glass and plastic bits, with a glass-and-metal crunch.
+- **Parts fall off:**
+  - A hard crash knocks the **front or rear bumper** off, grille and lamps included.
+  - A big head-on crash throws the **hood** into the air.
+  - A hard side hit tears a **door** off, and you can see into the car.
+  - A really big hit at a corner rips a **wheel** off. It bounces and rolls away, while the car drops onto that corner, pulls to that side and scrapes sparks from the hub.
+  - The parts lie on the road for about a minute.
+  - Lost parts stay lost until the car is repaired, even if you change cars and come back.
 - **Slow motion:** a crash over about 40 km/h plays in slow motion, with **💥 CRASH!** and the impact speed on screen.
 - **Rollovers:** a hard hit on the side of the car flips it into a roll. A huge head-on crash tumbles it over the nose. It can land on its roof, then it rolls back onto its wheels. Other hard hits spin the car round.
 - **A smashed car drives badly:** a crushed front loses power and smokes.
