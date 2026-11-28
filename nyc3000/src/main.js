@@ -22,6 +22,7 @@ import { buildRooms } from './interiors.js';
 import { renderShop, renderChallenges, renderProfile } from './shop.js';
 import { MapScreen } from './mapscreen.js';
 import { DayNight } from './daynight.js';
+import { Graphics } from './gfx.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -77,10 +78,12 @@ function makeEnvironment() {
 }
 scene.environment = makeEnvironment();
 
-const composer = new EffectComposer(renderer);
+// multisampled, so edges stay smooth when the post effects are on
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: 4 }));
 const renderPass = new RenderPass(scene, camera);
 const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.5, 0.62);
 composer.addPass(renderPass); composer.addPass(bloom); composer.addPass(new OutputPass());
+const gfx = new Graphics({ renderer, scene, camera, composer }); // wet reflections, lamp beams, stars, film look
 
 const title = buildTitleScene();
 const rain = new Rain(scene);
@@ -318,6 +321,7 @@ function applySettings() {
   audio.setVolume(settings.volume);
   audio.setRain && audio.setRain(settings.rain);
   if (city) city.bbInterval = settings.preset === 'low' ? 0.5 : 0.12;
+  gfx.apply(settings);
   fpsInterval = settings.fpsCap ? 1000 / settings.fpsCap : 0;
 }
 function resize() {
@@ -325,6 +329,7 @@ function resize() {
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
+  if (typeof gfx !== 'undefined') gfx.resize();
   title.camera.aspect = w / h; title.camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
@@ -446,6 +451,7 @@ function frame(now) {
     rain.update(dt, camera.position);
   }
   if (rain.mesh) rain.mesh.visible = !(game && game.interior); // no rain indoors
+  if (dayNight && dayNight.cur.hemi !== undefined) gfx.update(dt, { night: 1 - dayNight.daylight, rain: settings.rain > 0, inside: !!(game && game.interior), fog: scene.fog.density });
   if (bgFlags.menu && inMenu) { renderer.setClearColor(0x000000); renderer.clear(); return; }
   if (useBloom) { renderPass.scene = scene; renderPass.camera = camera; composer.render(dt); }
   else renderer.render(scene, camera);
@@ -462,6 +468,7 @@ async function boot() {
   city = new City(scene);
   city.build();
   dayNight = new DayNight({ scene, renderer, bloom, hemi, amb, sun: moon }); dayNight.attach(city);
+  gfx.attach(city); gfx.apply(settings);
   await step(0.7, 'Spawning traffic & neon…');
   fx = new Effects(scene, city.glowTex);
   hud = new HUD();

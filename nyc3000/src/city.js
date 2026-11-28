@@ -876,6 +876,7 @@ export class City {
             poles.box(0.12, 0.12, 2.2, '#2a2d3a', x + ax * 1.0, 6.9, z + az * 1.0, 0, ax ? Math.PI / 2 : 0);
             const col = ((i + j) % 2) ? '#9fe9ff' : '#ff9ae6';
             heads.box(0.5, 0.15, 0.8, col, x + ax * 2.0, 6.82, z + az * 2.0, 0, ax ? Math.PI / 2 : 0);
+            (this.lampHeads || (this.lampHeads = [])).push([x + ax * 2.0, 6.75, z + az * 2.0, col]);
             this.decals.push([x + ax * 2.2, z + az * 2.2, 6, new THREE.Color(col).multiplyScalar(0.55)]);
           }
         }

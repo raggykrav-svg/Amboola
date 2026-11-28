@@ -2,9 +2,9 @@
 const KEY = 'nyc3000.settings';
 
 export const PRESETS = {
-  low: { resScale: 0.6, shadows: false, bloom: false, viewDist: 380, fpsCap: 60, rain: 1, crowd: 1 },
-  medium: { resScale: 0.85, shadows: true, bloom: true, viewDist: 650, fpsCap: 0, rain: 2, crowd: 2 },
-  high: { resScale: 1.0, shadows: true, bloom: true, viewDist: 1000, fpsCap: 0, rain: 3, crowd: 3 },
+  low: { resScale: 0.6, shadows: false, bloom: false, viewDist: 380, fpsCap: 60, rain: 1, crowd: 1, post: false, reflections: false },
+  medium: { resScale: 0.85, shadows: true, bloom: true, viewDist: 650, fpsCap: 0, rain: 2, crowd: 2, post: true, reflections: false },
+  high: { resScale: 1.0, shadows: true, bloom: true, viewDist: 1000, fpsCap: 0, rain: 3, crowd: 3, post: true, reflections: true },
 };
 
 const DEFAULTS = {
@@ -48,6 +48,8 @@ export const OPTION_DEFS = [
   { key: 'resScale', label: 'Resolution scale', type: 'range', min: 0.4, max: 1, step: 0.05, fmt: v => Math.round(v * 100) + '%' },
   { key: 'shadows', label: 'Shadows', type: 'seg', options: [[false, 'OFF'], [true, 'ON']] },
   { key: 'bloom', label: 'Neon glow (bloom)', type: 'seg', options: [[false, 'OFF'], [true, 'ON']] },
+  { key: 'reflections', label: 'Wet street reflections', type: 'seg', options: [[false, 'OFF'], [true, 'ON']], hint: 'Neon and cars shine in the wet road. Looks great, needs a good graphics card.' },
+  { key: 'post', label: 'Extra effects', type: 'seg', options: [[false, 'OFF'], [true, 'ON']], hint: 'Film look, smooth edges and lamp light beams (needs Neon glow ON).' },
   { key: 'viewDist', label: 'View distance', type: 'range', min: 250, max: 1200, step: 50, fmt: v => v + ' m' },
   { key: 'rain', label: 'Rain', type: 'seg', options: [[0, 'OFF'], [1, 'LIGHT'], [2, 'MEDIUM'], [3, 'STORM']] },
   { key: 'daytime', label: 'Time of day', type: 'seg', options: [['cycle', 'DAY + NIGHT'], ['day', 'ALWAYS DAY'], ['night', 'ALWAYS NIGHT']], hint: 'A full day takes 20 minutes.' },
