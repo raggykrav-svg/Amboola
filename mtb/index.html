@@ -682,14 +682,14 @@ const VENUES = [
     pts: [[0, -26], [0, 0], [4, 40], [-6, 95], [-24, 150], [-30, 210], [-14, 270], [12, 325], [30, 385], [32, 450], [16, 515], [-6, 575], [-14, 640], [-4, 705], [16, 765], [28, 825], [30, 885], [30, 950], [30, 1010], [30, 1075]],
     feats: [
       { t: 'start', s: 0, len: 12, h: 3.2, roll: 16 },
-      { t: 'kick', s: 74, lip: 1.4, ang: 22, vmax: 12.5, name: 'Warm-up kicker' },
-      { t: 'drop', s: 150, ang: 4, vmax: 9, spend: 3, name: 'First drop' },
-      { t: 'kick', s: 238, lip: 1.8, ang: 22, vmax: 13, spend: 3, name: 'Ridge step-down' },
-      { t: 'kick', s: 336, lip: 2.2, ang: 25, vmax: 15, canyon: { depth: 26 }, name: 'Canyon gap', crowd: 1 },
-      { t: 'kick', s: 446, lip: 2.4, ang: 26, vmax: 14.5, wood: true, spend: 4, name: 'The Sender', crowd: 1 },
-      { t: 'drop', s: 562, ang: 4, vmax: 10, spend: 7, name: 'The Big One' },
-      { t: 'kick', s: 660, lip: 1.5, ang: 22, vmax: 12.5, name: 'Spine kicker' },
-      { t: 'drop', s: 745, ang: 6, vmax: 9.5, spend: 2.5, name: 'Ledge drop' },
+      { t: 'kick', s: 74, lip: 1.4, ang: 27, vmax: 15.5, name: 'Warm-up kicker' },
+      { t: 'drop', s: 150, ang: 4, vmax: 11, spend: 5, name: 'First drop' },
+      { t: 'kick', s: 238, lip: 1.8, ang: 27, vmax: 16, spend: 3, name: 'Ridge step-down' },
+      { t: 'kick', s: 336, lip: 2.2, ang: 25, vmax: 13.7, canyon: { depth: 26 }, name: 'Canyon gap', crowd: 1 },
+      { t: 'kick', s: 446, lip: 2.4, ang: 31, vmax: 11.4, wood: true, spend: 4, name: 'The Sender', crowd: 1 },
+      { t: 'drop', s: 562, ang: 4, vmax: 12, spend: 9, name: 'The Big One' },
+      { t: 'kick', s: 660, lip: 1.5, ang: 22, vmax: 10.5, name: 'Spine kicker' },
+      { t: 'drop', s: 745, ang: 6, vmax: 11.5, spend: 4.5, name: 'Ledge drop' },
       { t: 'kick', s: 880, lip: 2.6, ang: 33, vmax: 16, land: 1.6, spend: 3, name: 'Flip jump', crowd: 2 },
       { t: 'finish', s: 1e9, end: 64 },
     ],
@@ -720,18 +720,18 @@ const VENUES = [
     feats: [
       { t: 'start', s: 0, len: 10, h: 2.6, roll: 14 },
       { t: 'rock', s: 50, len: 42, amp: 0.13 },
-      { t: 'kick', s: 125, lip: 1.4, ang: 20, vmax: 13, name: 'First hit' },
+      { t: 'kick', s: 125, lip: 1.4, ang: 24, vmax: 13, name: 'First hit' },
       { t: 'drop', s: 205, ang: 4, vmax: 9, spend: 2.5, name: 'Rock drop' },
       { t: 'roots', s: 300, len: 40 },
-      { t: 'kick', s: 395, lip: 1.8, ang: 22, vmax: 12.5, spend: 2.5, name: 'Step-down' },
+      { t: 'kick', s: 395, lip: 1.8, ang: 27, vmax: 15.5, spend: 2.5, name: 'Step-down' },
       { t: 'rock', s: 500, len: 52, amp: 0.17 },
-      { t: 'kick', s: 640, lip: 2.2, ang: 24, vmax: 14, road: true, name: 'Road gap', crowd: 2 },
+      { t: 'kick', s: 640, lip: 2.2, ang: 29, vmax: 15.1, road: true, name: 'Road gap', crowd: 2 },
       { t: 'kick', s: 760, lip: 2.4, ang: 25, vmax: 10.6, wood: true, name: 'The Big Hit', crowd: 1 },
-      { t: 'drop', s: 852, ang: 5, vmax: 9.5, spend: 4, name: 'Cliff drop' },
+      { t: 'drop', s: 852, ang: 5, vmax: 11.5, spend: 6, name: 'Cliff drop' },
       { t: 'roots', s: 930, len: 35 },
       { t: 'rock', s: 975, len: 40, amp: 0.15 },
-      { t: 'kick', s: 1045, lip: 2, ang: 22, vmax: 13.5, name: 'Tabletop' },
-      { t: 'kick', s: 1150, lip: 2.6, ang: 26, vmax: 16, spend: 0.5, name: 'Finish jump', crowd: 2 },
+      { t: 'kick', s: 1045, lip: 2, ang: 27, vmax: 15.4, name: 'Tabletop' },
+      { t: 'kick', s: 1150, lip: 2.6, ang: 31, vmax: 14.4, spend: 0.5, name: 'Finish jump', crowd: 2 },
       { t: 'finish', s: 1e9, end: 70 },
     ],
     veg: 'forest', tape: true,
@@ -760,16 +760,16 @@ const VENUES = [
     pts: [[0, -26], [0, 0], [18, 60], [56, 108], [106, 140], [156, 176], [182, 232], [172, 296], [134, 346], [80, 382], [32, 422], [2, 476], [-8, 540], [10, 602], [48, 650], [92, 690], [118, 746], [114, 810], [86, 860], [42, 900], [8, 950], [-6, 1010], [6, 1074], [38, 1120], [66, 1170], [76, 1234], [66, 1298], [48, 1348], [40, 1400], [40, 1460], [40, 1530], [40, 1600], [40, 1680]],
     feats: [
       { t: 'start', s: 0, len: 12, h: 3, roll: 16 },
-      { t: 'kick', s: 138, lip: 1.4, ang: 20, vmax: 13.5, name: 'Alp kicker' },
+      { t: 'kick', s: 138, lip: 1.4, ang: 25, vmax: 15.6, name: 'Alp kicker' },
       { t: 'roots', s: 230, len: 40 },
-      { t: 'kick', s: 330, lip: 1.8, ang: 22, vmax: 13.5, spend: 2.5, name: 'Step-down' },
+      { t: 'kick', s: 330, lip: 1.8, ang: 27, vmax: 16.5, spend: 2.5, name: 'Step-down' },
       { t: 'rock', s: 420, len: 50, amp: 0.15 },
-      { t: 'drop', s: 560, ang: 5, vmax: 10, spend: 4, name: 'Glacier drop' },
-      { t: 'kick', s: 700, lip: 2.2, ang: 24, vmax: 15.5, road: true, name: 'Ski road gap', crowd: 2 },
+      { t: 'drop', s: 560, ang: 5, vmax: 12, spend: 6, name: 'Glacier drop' },
+      { t: 'kick', s: 700, lip: 2.2, ang: 29, vmax: 14.5, road: true, name: 'Ski road gap', crowd: 2 },
       { t: 'roots', s: 820, len: 40 },
-      { t: 'kick', s: 950, lip: 2, ang: 24, vmax: 14.5, wood: true, spend: 2.5, name: 'Wooden step-down', crowd: 1 },
+      { t: 'kick', s: 950, lip: 2, ang: 29, vmax: 15.1, wood: true, spend: 2.5, name: 'Wooden step-down', crowd: 1 },
       { t: 'rock', s: 1060, len: 40, amp: 0.13 },
-      { t: 'kick', s: 1250, lip: 2.4, ang: 25, vmax: 16, name: 'Final jump 1', crowd: 2 },
+      { t: 'kick', s: 1250, lip: 2.4, ang: 30, vmax: 14.8, name: 'Final jump 1', crowd: 2 },
       { t: 'finish', s: 1e9, end: 70 },
     ],
     veg: 'alpine', tape: true,
@@ -800,12 +800,12 @@ const VENUES = [
     pts: [[0, -26], [0, 0], [-6, 50], [8, 110], [26, 170], [30, 235], [12, 300], [-14, 360], [-26, 425], [-16, 490], [8, 550], [24, 615], [20, 680], [2, 745], [-8, 810], [0, 870], [6, 930], [6, 990], [6, 1060]],
     feats: [
       { t: 'start', s: 0, len: 12, h: 3.4, roll: 18 },
-      { t: 'kick', s: 80, lip: 1.6, ang: 26, vmax: 14, name: 'Lava kicker' },
-      { t: 'drop', s: 170, ang: 5, vmax: 11, spend: 4, name: 'Obsidian drop' },
-      { t: 'kick', s: 265, lip: 2.4, ang: 30, vmax: 14, canyon: { depth: 32 }, name: 'Crater gap', crowd: 1 },
+      { t: 'kick', s: 80, lip: 1.6, ang: 31, vmax: 15, name: 'Lava kicker' },
+      { t: 'drop', s: 170, ang: 5, vmax: 9, spend: 4, name: 'Obsidian drop' },
+      { t: 'kick', s: 265, lip: 2.4, ang: 35, vmax: 12, canyon: { depth: 32 }, name: 'Crater gap', crowd: 1 },
       { t: 'kick', s: 385, lip: 2.6, ang: 26, vmax: 10, spend: 6, name: 'Mega Sender', crowd: 1 },
-      { t: 'drop', s: 480, ang: 4, vmax: 12, spend: 8, name: 'The Abyss' },
-      { t: 'kick', s: 690, lip: 2.6, ang: 32, vmax: 14, land: 1.8, spend: 4, name: 'Volcano flip', crowd: 2 },
+      { t: 'drop', s: 480, ang: 4, vmax: 13, spend: 9, name: 'The Abyss' },
+      { t: 'kick', s: 690, lip: 2.6, ang: 36, vmax: 13.6, land: 1.8, spend: 4, name: 'Volcano flip', crowd: 2 },
       { t: 'finish', s: 1e9, end: 64 },
     ],
     veg: 'desert', tape: false,
@@ -832,12 +832,12 @@ const VENUES = [
     pts: [[0, -26], [0, 0], [-18, 60], [-56, 108], [-104, 142], [-150, 182], [-172, 240], [-160, 302], [-120, 350], [-66, 386], [-22, 428], [4, 482], [10, 546], [-8, 606], [-46, 652], [-88, 694], [-112, 750], [-106, 814], [-76, 862], [-34, 902], [-2, 952], [10, 1012], [-4, 1076], [-34, 1122], [-60, 1172], [-68, 1236], [-58, 1300], [-44, 1350], [-40, 1400], [-40, 1460], [-40, 1530], [-40, 1600], [-40, 1680]],
     feats: [
       { t: 'start', s: 0, len: 12, h: 3, roll: 16 },
-      { t: 'kick', s: 140, lip: 1.6, ang: 24, vmax: 14, name: 'Ice kicker' },
+      { t: 'kick', s: 140, lip: 1.6, ang: 29, vmax: 15.2, name: 'Ice kicker' },
       { t: 'rock', s: 230, len: 40, amp: 0.12 },
-      { t: 'kick', s: 335, lip: 2, ang: 28, vmax: 15, spend: 3, name: 'Cornice step-down' },
+      { t: 'kick', s: 335, lip: 2, ang: 33, vmax: 13.5, spend: 3, name: 'Cornice step-down' },
       { t: 'drop', s: 560, ang: 6, vmax: 12, spend: 5, name: 'Cornice drop' },
-      { t: 'kick', s: 700, lip: 2.4, ang: 28, vmax: 16, road: true, name: 'Piste gap', crowd: 2 },
-      { t: 'kick', s: 950, lip: 2.4, ang: 28, vmax: 15, wood: true, spend: 3, name: 'Snow Sender', crowd: 1 },
+      { t: 'kick', s: 700, lip: 2.4, ang: 33, vmax: 13.1, road: true, name: 'Piste gap', crowd: 2 },
+      { t: 'kick', s: 950, lip: 2.4, ang: 33, vmax: 14, wood: true, spend: 3, name: 'Snow Sender', crowd: 1 },
       { t: 'kick', s: 1250, lip: 2.8, ang: 30, vmax: 9.5, spend: 1.5, name: 'Big Air finale', crowd: 2 },
       { t: 'finish', s: 1e9, end: 70 },
     ],
@@ -1090,7 +1090,7 @@ function sim1D(P, i0, v0, i1, opt = {}) {
     }
     const cs = 1 / Math.sqrt(1 + m1 * m1), sn = m1 * cs, Ls = DS / cs;
     let a = -GRAV * sn - SIM.crr * GRAV * cs - SIM.kd * v * v;
-    if (opt.pedal && v < 11 && sn > -0.12) a += 260 / (95 * Math.max(v, 2));
+    if (opt.pedal && v < 15 && sn > -0.12) a += 560 / (95 * Math.max(v, 2));   // the bike pedals hard (conservative)
     v = Math.sqrt(Math.max(0.3, v * v + 2 * a * Ls));
     const k = Math.abs(T.K[i]); if (k > 1e-4) v = Math.min(v, Math.sqrt(SIM.alat / k));
     if (opt.cap && opt.cap[i] > 0) v = Math.min(v, opt.cap[i]);
@@ -4314,15 +4314,24 @@ function calibrate(iters = 2) {
   for (let it = 0; it < iters; it++) {
     RIDE.bot = true; RIDE.botAim = 0.5; RIDE.active = true; RIDE.landLog = []; RIDE.crashLog = [];
     placeOnTrack(2, 0);
-    const want = T.feats.filter(F => F.vD), got = new Map();
+    const want = T.feats.filter(F => F.vD), got = new Map(), lip = new Map();
     let t = 0;
-    while (t < 400 && B.s < T.finishS) { rideTick(1 / 60); t += 1 / 60; for (const F of want) if (!got.has(F) && B.s >= F.sR) got.set(F, speedNow()); }
+    while (t < 400 && B.s < T.finishS) {
+      rideTick(1 / 60); t += 1 / 60;
+      for (const F of want) {
+        if (!got.has(F) && B.s >= F.sR) got.set(F, speedNow());
+        if (!lip.has(F) && B.s >= F.sL - 0.6) lip.set(F, speedNow());
+      }
+    }
     RIDE.bot = false;
     let changed = 0;
     for (const F of want) {
       const v = got.get(F); if (v === undefined) continue;
       const f = VEN.feats.find(x => x.name === F.name);
       if (v < F.lo - 0.15) { f._vcap = Math.round(Math.sqrt(Math.max(30, v * v - (F.vA * F.vA - F.vD * F.vD))) * 0.97 * 10) / 10; changed++; out.push(`${F.name}: ramp ${v.toFixed(1)} < lo ${F.lo.toFixed(1)} -> vmax ${f._vcap}`); }
+      else if (F.t === 'kick' && lip.has(F) && lip.get(F) < F.vD * 0.97) {   // big ramps lose more speed than the model thinks
+        const vl = lip.get(F); f._vcap = Math.round(Math.min(f._vcap || 99, F.vD - 0.6, vl * 1.0) * 10) / 10; changed++; out.push(`${F.name}: lip ${vl.toFixed(1)} < vD ${F.vD.toFixed(1)} -> vmax ${f._vcap}`);
+      }
     }
     if (!changed) break;
     buildTrack(VEN);
