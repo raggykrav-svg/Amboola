@@ -804,7 +804,7 @@ const VENUES = [
       { t: 'drop', s: 170, ang: 5, vmax: 9, spend: 4, name: 'Obsidian drop' },
       { t: 'kick', s: 265, lip: 2.4, ang: 35, vmax: 12, canyon: { depth: 32 }, name: 'Crater gap', crowd: 1 },
       { t: 'kick', s: 385, lip: 2.6, ang: 26, vmax: 10, spend: 6, name: 'Mega Sender', crowd: 1 },
-      { t: 'drop', s: 480, ang: 4, vmax: 13, spend: 9, name: 'The Abyss' },
+      { t: 'drop', s: 480, ang: 4, vmax: 12, spend: 9, name: 'The Abyss' },
       { t: 'kick', s: 690, lip: 2.6, ang: 36, vmax: 13.6, land: 1.8, spend: 4, name: 'Volcano flip', crowd: 2 },
       { t: 'finish', s: 1e9, end: 64 },
     ],
@@ -2577,7 +2577,14 @@ function bikeStep(h, inp) {
     const vt = _vc.dot(_t), vl = _vc.dot(_l);
     const lim = BK.mu * SURF_MU[GW.surf] * Fs;
     let Fl = 0;
-    if (w === 0 && inp.pedal > 0) Fl += inp.pedal * Math.min(BK.pmax * (0.5 + 0.5 * smooth(8, 14, Math.abs(vt))) / Math.max(2.5, vt), 650);   // full power only at speed (no loop-outs at the start)
+    if (w === 0 && inp.pedal > 0) {
+      // full power only at speed (no loop-outs at the start), and a big push at high speed so you can reach 120 km/h
+      const av = Math.abs(vt), base = Math.min(BK.pmax * (0.5 + 0.5 * smooth(8, 14, av)) / Math.max(2.5, vt), 650);
+      Fl += inp.pedal * base;
+      // the extra push acts through the bike's centre (no wheelies or loop-outs at high speed)
+      const boost = Math.max(0, 720 * smooth(13, 19, av) * (1 - smooth(33.5, 36.5, av)) - base);
+      if (boost > 0 && vt > 0 && inp.boost) _F.addScaledVector(_t, inp.pedal * boost);
+    }
     if (inp.brake > 0) { const bf = Math.min(inp.brake * (w === 1 ? 0.42 : 0.52) * 1.1 * Fs, inp.brake * BK.m * GRAV * (w === 1 ? 0.26 : 0.34)); Fl -= Math.sign(vt) * Math.min(bf, Math.abs(vt) * BK.m * 0.5 / h); }
     Fl -= BK.crr * Fs * Math.tanh(vt / 0.4);
     Fl = clamp(Fl, -lim, lim);
@@ -2728,18 +2735,45 @@ function prepareControls(dt) {
   CTL.brake = grounded ? back : 0;
   CTL.lean = B.air ? (TR.lockLean ? 0 : fwd) - back : 0;
   CTL.tuck = INP.tuck;
+  // the high-speed push: not on or just before a jump (jumps are built for normal pedalling)
+  { const F = nextFeature(B.s), k = Math.round(B.s / DS); CTL.boost = !(F && F.sR - B.s < 70) && !(T.FEAT[k] >= 0); }
   // speed help: brake to the speed window before a jump, and never above a safe top speed (strong)
-  if (ASSIST.level > 0 && grounded && !RIDE.bot) {
+  if (ASSIST.level > 0 && grounded && (!RIDE.bot || RIDE.botFlat)) {
     const F = nextFeature(B.s);
-    if (F && F.sR - B.s < 60 && F.sR - B.s > -2) {
+    if (F && F.sR - B.s < 60 && B.s < F.sL) {          // from 60 m out right up to the lip
       const hold = holdSpeed(F, lerp(F.lo, F.hi, 0.45)), holdLo = holdSpeed(F, F.lo + 0.2);
       if (sp > hold + 0.3) CTL.brake = Math.max(CTL.brake, clamp((sp - hold) * 0.8, 0, 1));
       if (ASSIST.level === 2 && sp < holdLo && F.sR - B.s > 3) CTL.pedal = Math.max(CTL.pedal, 1);
-    } else if (F && F.sR - B.s < 110 && sp > F.hi + 3) CTL.brake = Math.max(CTL.brake, clamp((sp - F.hi - 3) * 0.4, 0, 1));
-    const top = ASSIST.level === 2 ? 20 : 26;
+      if (sp > hold) CTL.pedal = 0;
+    }
+    // look ahead: the speed you can still brake down from for corners, rock gardens, crests and the next jump
+    { const Fc = featAt(B.s);                         // on a take-off ramp: pedal only if you are slower than that jump needs
+      if (Fc && Fc.vD && B.s < Fc.sL && sp > lerp(Fc.lo, Fc.hi, 0.45) - 0.4) CTL.pedal = 0; }
+    const allow = assistAllow(F);
+    if (sp > allow - 1) CTL.pedal = 0;
+    if (sp > allow) CTL.brake = Math.max(CTL.brake, clamp((sp - allow) * 0.5 + 0.3, 0, 1));
+    const top = 36.5;                                  // about 130 km/h
     if (sp > top) CTL.brake = Math.max(CTL.brake, clamp((sp - top) * 0.5, 0, 1));
   }
-  // pop: hold to load the suspension, let go to jump
+  // riding help at high speed: the fastest you may go now and still slow down in time (about 4 m/s² of braking)
+function assistAllow(F) {
+  const k0 = Math.round(B.s / DS), DEC = 4;
+  let allow = 99;
+  const lim = (x, c) => { allow = Math.min(allow, Math.sqrt(c * c + 2 * DEC * Math.max(0, x))); };
+  for (let x = 4; x <= 170; x += 2) {
+    const i = k0 + Math.round(x / DS); if (i < 2 || i >= T.n - 2) break;
+    const kk = Math.abs(T.K[i]); if (kk > 1e-4) lim(x, Math.sqrt(5 / kk) + 1);           // corners
+    if (T.FL[i] & (F_ROUGH | F_ROOTS)) lim(x, 18);                                       // rock gardens and roots
+    if (T.FEAT[i] < 0) {                                                                // crests that would throw you off
+      const kv = (T.P[i + 4] - 2 * T.P[i] + T.P[i - 4]) / (4 * DS * 4 * DS);
+      if (kv < -0.004) lim(x, Math.sqrt(GRAV * 0.85 / -kv));
+    }
+  }
+  if (F && F.sR - B.s > 0) lim(F.sR - B.s - 55, F.hi + 1);                               // the next jump
+  if (B.dTrack > 2.5) allow = Math.min(allow, lerp(30, 20, smooth(2.5, 5, B.dTrack)));     // drifting off the line
+  return allow;
+}
+// pop: hold to load the suspension, let go to jump
   if (INP.pop && !B.air) { B.preload = Math.min(1, B.preload + dt * 3.2); B.popHeld = true; }
   else if (B.popHeld && !INP.pop) {
     B.popHeld = false;
@@ -3024,6 +3058,7 @@ function botControls() {
   else if (F && F.sR - B.s < 110) target = Math.min(target, F.hi + 3);   // don't arrive far too fast
   const k = Math.round(B.s / DS);
   const ka = Math.min(T.n - 1, k + Math.round(la / DS)), kk = Math.abs(T.K[ka]); if (kk > 1e-3 && T.FEAT[ka] < 0) target = Math.min(target, Math.sqrt(8 / kk));
+  if (RIDE.botFlat) return { steer, fwd: 1, back: 0 };
   return { steer, fwd: v < target - 0.4 ? 1 : 0, back: v > target + 0.3 ? clamp((v - target) * 0.6, 0.2, 1) : 0 };
 }
 
@@ -4201,7 +4236,7 @@ function openSettings() {
   p.innerHTML = `<header><h2>Settings</h2><button class="btn icon" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
     <div class="field"><div class="lab"><span>Graphics</span><b>${qName}</b></div>${segHTML('q', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['ultra', 'Ultra']], qName)}<p class="note">Changing graphics reloads the game.</p></div>
     <div class="field"><div class="lab"><span>Riding help</span></div>${segHTML('assist', [[0, 'Off'], [1, 'Light'], [2, 'Strong']], ASSIST.level)}
-      <p class="note">Light: steers along the line when you let go, brakes to the right speed before jumps and levels the bike in the air. Strong: also pedals for you and holds a safer top speed.</p></div>
+      <p class="note">Light: steers along the line when you let go, brakes to the right speed before jumps and levels the bike in the air. Strong: also pedals for you before jumps.</p></div>
     <div class="field"><div class="lab"><span>Camera</span></div>${segHTML('cam', [[0, 'Chase'], [1, 'Close'], [2, 'Helmet'], [3, 'TV']], CAM.mode)}</div>
     <div class="field"><div class="lab"><span>Speed in</span></div>${segHTML('units', [['kmh', 'km/h'], ['mph', 'mph']], UNITS.mph ? 'mph' : 'kmh')}</div>
     <div class="field"><div class="lab"><span>Sound</span><b>${Math.round(AU.vol * 100)}%</b></div><input type="range" min="0" max="1" step="0.05" value="${AU.vol}" data-vol></div>
@@ -4416,6 +4451,16 @@ function frame(t) {
 }
 
 // ---------------------------------------------------------------- test tools (headless driver)
+// flat out: pedal all the way and never brake yourself (riding help still slows you for jumps), the bot only steers
+function flatOut(maxT = 400, assist = 1) {
+  const keep = GAME.mode, kA = ASSIST.level; GAME.mode = 'test'; ASSIST.level = assist;
+  RIDE.bot = true; RIDE.botFlat = true; RIDE.active = true; RIDE.landLog = []; RIDE.crashLog = [];
+  placeOnTrack(2, 0);
+  let t = 0, top = 0, at = 0;
+  while (t < maxT && B.s < T.finishS && !RIDE.crashLog.length) { rideTick(1 / 60); t += 1 / 60; const v = speedNow(); if (v > top) { top = v; at = B.s; } }
+  RIDE.bot = false; RIDE.botFlat = false; GAME.mode = keep; ASSIST.level = kA;
+  return { kmh: Math.round(top * 3.6), at: Math.round(at), t: +t.toFixed(1), crash: RIDE.crashLog[0] ? `${RIDE.crashLog[0].type} s${RIDE.crashLog[0].s}` : null };
+}
 function botRun(maxT = 400, aim = 0.5) {
   const keep = GAME.mode; GAME.mode = 'test';
   RIDE.bot = true; RIDE.botAim = aim; RIDE.active = true; RIDE.landLog = []; RIDE.crashLog = [];
@@ -4493,7 +4538,7 @@ async function boot() {
   }
 }
 window.mtb = { THREE, scene, camera, renderer, B, RIDE, TR, CR, CAM, INP, CTL, keys, ASSIST, GAME, HOSP, HELI, RAG, PDMG, STATS, get T() { return T; }, get VEN() { return VEN; },
-  heightAt, groundAt, speedLines, tq, trackPoint, loadVenue, sim1D, botRun, calibrate, placeOnTrack, tick, rideTick, buildTrack, testCrash, crashUntilCard, crashTick, heliStart,
+  heightAt, groundAt, speedLines, flatOut, tq, trackPoint, loadVenue, sim1D, botRun, calibrate, placeOnTrack, tick, rideTick, buildTrack, testCrash, crashUntilCard, crashTick, heliStart,
   selectVenue, startCountdown, toTitle, openVenues, openSettings, openRider, openHelp, showResults, finishRun, goHeli, leaveHospitalTo, respawnHere,
   loadVenueUI: v => loadVenue(v).then(() => { applyDustColor(); toTitle(); window.mtb.ready = true; }),
   pause: v => (paused = v), step: (dt = 1 / 60, n = 1) => { for (let i = 0; i < n; i++) tick(dt); },

@@ -31,6 +31,7 @@ In `?test=1` the page's own loop is paused; `mtb.step(dt, n)` ticks the game and
 ```js
 mtb.botRun(400)          // the test pilot rides the current track: time, every landing (quality, vn, pitch error), every crash
 mtb.calibrate(3)         // ride with the real physics; jumps you cannot reach at their speed, or whose lip you reach slower than designed, get a lower vmax (prints what changed; bake the values into `feats`, it must return [])
+mtb.flatOut(400)          // pedal all the way, never brake (light riding help, the bot only steers): must reach 120+ km/h and finish on every track
 mtb.testCrash('otb', 14, 400); mtb.crashUntilCard()   // a forced crash: tier, type, peak impact, injuries
 mtb.selectVenue('forest', 'final')   // menus: then mtb.startCountdown(), tick, ride with mtb.RIDE.bot = true
 ```
