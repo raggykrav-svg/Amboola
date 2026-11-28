@@ -848,6 +848,14 @@ $B -b ... -- --car sf90 --photo /tmp/p --looks sunset --samples 16 --size 960x54
 - **Dents:** deeper than before (radius .35–.9, depth up to .32). A frontal or rear hit over 20 also dents L and R, and over 28 the roof.
 - **Power:** `dmgPower(id)` = 1 − .25·front − .15·total, or .2 when `dmgTotal > TOTALED` (.6). `totalCar()` shows the banner; a totaled car smokes every frame.
 - **R:** `resetToRoad()` on a totaled car calls `towRepair()` (free, clears `DMG[id]`).
+- **Parts falling off:** `breakParts()` runs in `carHit` after the dents, crash mode only, at `hit` ≥ 11.
+  - **What comes off:** `fb`/`rb` (front/rear bumper), `hood` (zone `f`, `hit` > 23), `dL`/`dR` (doors, side `hit` > 15), and `w0`–`w3` (`hit` > 21, 65% chance, at the hit corner).
+  - **Body parts:** `PART_BOX` gives each a box in the undented car space (`dentData.cp`; +Z front, +Y up, +X left; `paint: true` takes only paint meshes). `partTris()` finds the triangles inside it. `loosePart()` copies them, with all their attributes in world space, into a new mesh with the car's own materials, then collapses them in the car's index. `D.idx0` keeps the original index, so `applyParts(p, [])` restores everything.
+  - **Wheels:** the wheel's `spin` group is cloned and thrown, and its `pivot` hides. `applyParts` sets `tiltP`/`tiltR`/`drop`, which `sync()` adds while on the ground.
+  - **Driving on a lost wheel:** `updatePieces()` adds a yaw pull to that side and `crashSparks()` from the hub, and `dmgPower` loses 30% per wheel.
+  - **Saved:** `DMG[id + ':parts']`, re-applied by the Player constructor and the garage car, cleared by the tow, `repairCar` and turning the mode off.
+  - **Loose pieces:** `PIECES` (at most 28; each lasts 70 s or until it is 700 m away; they bounce off buildings and settle flat).
+  - **Test (M5):** the bumper (7,228 triangles), hood (5,891), left door (2,394) and front-left wheel come off, lie in the road and show as gaps. They persist after a car change, and the tow restores them.
 - **Test (Nov 2026):**
   - 120 km/h into a building: CRASH 89 km/h impact, slow motion, totaled.
   - An 86 km/h side slam: rolled 515°.
