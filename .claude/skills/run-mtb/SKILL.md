@@ -15,14 +15,14 @@ It prints `loaded in N s: Ready`, one line per step and the page errors at the e
 
 | step | effect |
 |---|---|
-| `venue: "forest"` | load another venue (desert, forest, alpine) and go to the title |
+| `venue: "forest"` | load another venue (desert, forest, alpine, volcano, snow) and go to the title |
 | `eval: "js"` / `"@file.js"` | run JS in the page (awaits promises); `window.mtb` is the debug handle |
 | `frames: n` | simulate n frames of 1/60 s (game ticks, no rendering) |
 | `shot: "name"` | render and save `<outDir>/name.png` |
 
-Env: `MTB_Q` (low/medium/high/ultra, default low), `MTB_VENUE` (desert/forest/alpine), `MTB_VIEWPORT=1280x720`, `MTB_MOBILE=1` (touch phone: joystick and buttons; with `MTB_VIEWPORT=844x390` or `390x844`), `MTB_LOG=1` (echo the page console).
+Env: `MTB_Q` (low/medium/high/ultra, default low), `MTB_VENUE` (desert/forest/alpine/volcano/snow), `MTB_VIEWPORT=1280x720`, `MTB_MOBILE=1` (touch phone: joystick and buttons; with `MTB_VIEWPORT=844x390` or `390x844`), `MTB_LOG=1` (echo the page console).
 
-Timing in SwiftShader: load about 1.3 s (all three tracks are built at boot for the menu cards). A Low frame is about 1 s, High 2-5 s, but a High frame inside a loop that renders every few ticks adds up: keep High renders few, and run long ones in the background.
+Timing in SwiftShader: load about 1.3 s (all five tracks are built at boot for the menu cards). A Low frame is about 1 s, High 2-5 s, but a High frame inside a loop that renders every few ticks adds up: keep High renders few, and run long ones in the background.
 
 In `?test=1` the page's own loop is paused; `mtb.step(dt, n)` ticks the game and `mtb.render()` draws one frame. DOM timers (callout fades, the hint fade) do not run during a synchronous eval, so old callouts stay on screen in test shots; clear `#callouts` before a picture.
 
@@ -35,7 +35,7 @@ mtb.testCrash('otb', 14, 400); mtb.crashUntilCard()   // a forced crash: tier, t
 mtb.selectVenue('forest', 'final')   // menus: then mtb.startCountdown(), tick, ride with mtb.RIDE.bot = true
 ```
 
-`botRun` must report `crashes: []` on all three venues after any track or physics change. Crash severity tiers come from per-body-part impacts: 0 clean bail, 1 scrapes (ride on), 2 sprain (medics; DNF in a final), 3 fracture or concussion (helicopter, hospital, X-ray).
+`botRun` must report `crashes: []` on all five venues after any track or physics change. Crash severity tiers come from per-body-part impacts: 0 clean bail, 1 scrapes (ride on), 2 sprain (medics; DNF in a final), 3 fracture or concussion (helicopter, hospital, X-ray).
 
 To ride the menus end to end: click `[data-act=finals]`, click a `.card`, wait for `GAME.mode === 'intro'`, `mtb.startCountdown()`, tick until `ride`, set `mtb.RIDE.bot = true`, tick until `GAME.mode === 'results'`.
 
