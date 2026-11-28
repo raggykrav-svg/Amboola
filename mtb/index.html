@@ -295,7 +295,7 @@
   <div class="titleL">
     <div class="logo big"><span>Amboola</span><b>MTB</b></div>
     <div class="tag">Big Mountain Finals</div>
-    <p class="lede">Five finals on five mountains: a red desert ridge, a steep pine forest, the Alps, a smoking volcano and a frozen peak. Huge jumps, cliff drops and tricks. Land it clean, or the helicopter takes you to the hospital.</p>
+    <p class="lede">Seven finals on seven mountains: a red desert ridge, a steep pine forest, the Alps, a smoking volcano, a frozen peak, a green gorge and a pink mesa at dusk. Huge jumps, cliff drops and tricks. Land it clean, or the helicopter takes you to the hospital.</p>
     <div class="menu">
       <button class="btn primary big" data-act="finals">Finals</button>
       <button class="btn big" data-act="free">Free ride</button>
@@ -842,6 +842,83 @@ const VENUES = [
       { t: 'finish', s: 1e9, end: 70 },
     ],
     veg: 'alpine', tape: true,
+  },
+  {
+    id: 'gorge', name: 'Emerald Gorge', kind: 'freeride', short: 'Gorge freeride final', seed: 10427,
+    blurb: 'Green cliffs and misty pine slopes above a deep river gorge. The Gorge gap, a bridge gap, the Mist drop and the Emerald Sender.',
+    look: { sunEl: 34, sunAz: 120, turb: 4, ray: 1.6, mie: 0.006, mieG: 0.82, cloud: 0.55, cloudTint: '#f2f6f8', exposure: 0.86,
+      fog: '#a9c0b4', fogD: 0.0011, hemiSky: '#cfe2ee', hemiGround: '#3d5a2a', hemiI: 0.75, sunI: 2.8, sunCol: '#fff4e0', envGround: '#2f4424' },
+    pal: { g1: '#4f7a32', g2: '#6f9a44', r1: '#62665e', r2: '#868a80', r3: '#b4b6a6', d1: '#5a4230', d2: '#7a5a3e', strata: 0.55, snow: 0, flowers: 0.6 },
+    knots: [[-600, 124], [-170, 256], [-60, 278], [0, 270], [160, 224], [320, 176], [480, 128], [620, 82], [740, 42], [840, 15], [905, 3], [960, 0], [2600, 0]],
+    terrain(x, z) {
+      const N = this.N; let h = this.macro(z);
+      const mount = smooth(985, 850, z);
+      h += mount * N.fbm(x / 400 + 5.3, 0.4, 2) * 38;
+      h += mount * (N.ridge(x / 110 + N(z / 260, 2.4) * 0.6, z / 400, 2) - 0.55) * 40;
+      h += mount * N.fbm(x / 34, z / 34, 3) * 4;
+      const st = 7, tf = h / st, fl = Math.floor(tf);
+      h = lerp(h, (fl + smooth(0.62, 0.95, tf - fl)) * st, 0.45 * mount);
+      h += (1 - mount) * N(x / 60, z / 60) * 1.2;
+      h += smooth(320, 650, Math.abs(x - 10)) * (120 + N.ridge(z / 420, x / 500, 2) * 150);
+      h += smooth(1350, 1800, z) * (140 + N(x / 400, 4.4) * 70);
+      return h;
+    },
+    hw: 3.0, mg: 8, spur: [[24, 330, 12], [380, 760, 10]],
+    pts: [[0, -26], [0, 0], [6, 50], [-8, 110], [-26, 170], [-30, 235], [-12, 300], [14, 360], [26, 425], [16, 490], [-8, 550], [-24, 615], [-20, 680], [-2, 745], [8, 810], [0, 870], [-6, 930], [-6, 990], [-6, 1060]],
+    feats: [
+      { t: 'start', s: 0, len: 12, h: 3.4, roll: 18 },
+      { t: 'kick', s: 80, lip: 1.6, ang: 28, vmax: 13.7, name: 'Moss kicker' },
+      { t: 'drop', s: 170, ang: 4, vmax: 10, spend: 5, name: 'Waterfall drop' },
+      { t: 'kick', s: 265, lip: 2.4, ang: 30, vmax: 14, canyon: { depth: 34 }, name: 'Gorge gap', crowd: 1 },
+      { t: 'kick', s: 390, lip: 2, ang: 28, vmax: 14, spend: 4, name: 'Fern step-down' },
+      { t: 'kick', s: 500, lip: 2.2, ang: 29, vmax: 14, road: true, name: 'Bridge gap', crowd: 2 },
+      { t: 'drop', s: 620, ang: 4, vmax: 11, spend: 7, name: 'Mist drop' },
+      { t: 'kick', s: 720, lip: 2.6, ang: 32, vmax: 14, wood: true, spend: 3, name: 'Emerald Sender', crowd: 1 },
+      { t: 'kick', s: 870, lip: 2.6, ang: 34, vmax: 13.8, land: 1.8, spend: 3, name: 'Gorge flip', crowd: 2 },
+      { t: 'finish', s: 1e9, end: 64 },
+    ],
+    veg: 'forest', tape: false,
+  },
+  {
+    id: 'mesa', name: 'Moon Mesa', kind: 'freeride', short: 'Dusk freeride final', seed: 11519,
+    blurb: 'Pink sandstone towers in the dusk light. The Moon gap, the Giant step-down, the Star drop and the Moon Sender.',
+    look: { sunEl: 9, sunAz: 275, turb: 3, ray: 3.0, mie: 0.009, mieG: 0.88, cloud: 0.3, cloudTint: '#ffc2d6', exposure: 1.0,
+      fog: '#b89cb6', fogD: 0.00045, hemiSky: '#cdb8ff', hemiGround: '#7a4a5a', hemiI: 0.72, sunI: 2.5, sunCol: '#ffb88e', envGround: '#5a3a44' },
+    pal: { g1: '#c48a78', g2: '#ddb09a', r1: '#a3645e', r2: '#cf9886', r3: '#f2dac8', d1: '#b47862', d2: '#d29a7e', strata: 1, snow: 0, flowers: 0 },
+    knots: [[-600, 130], [-170, 262], [-60, 284], [0, 276], [160, 228], [320, 178], [480, 128], [620, 80], [740, 41], [840, 14], [905, 3], [960, 0], [2600, 0]],
+    terrain(x, z) {
+      const N = this.N; let h = this.macro(z);
+      const mount = smooth(985, 850, z);
+      h += mount * N.fbm(x / 480 + 2.2, 0.9, 2) * 42;
+      h += mount * (N.ridge(x / 92 + N(z / 280, 0.7) * 0.7, z / 400, 2) - 0.55) * 46;
+      h += mount * N.fbm(x / 36, z / 36, 3) * 4;
+      const st = 9, tf = h / st, fl = Math.floor(tf);
+      h = lerp(h, (fl + smooth(0.7, 0.95, tf - fl)) * st, 0.65 * mount);
+      h += (1 - mount) * N(x / 70, z / 70) * 1.1;
+      const side = Math.min(1, smooth(300, 560, Math.abs(x - 10)) + smooth(1350, 1750, z));
+      if (side > 0.001) {
+        const m = N(x / 480 + 3.3, z / 480 - 5.1);
+        let mh = smooth(0.05, 0.15, m) * (150 + 80 * N(x / 300, z / 300)) + N.fbm(x / 60, z / 60, 2) * 5;
+        const t2 = mh / 12, f2 = Math.floor(t2); mh = (f2 + smooth(0.6, 0.92, t2 - f2)) * 12 * 0.75 + mh * 0.25;
+        h = Math.max(h, lerp(h, mh, side));
+      }
+      return h;
+    },
+    hw: 3.0, mg: 8, spur: [[24, 330, 12], [380, 760, 10]],
+    pts: [[0, -26], [0, 0], [-4, 40], [6, 95], [24, 150], [30, 210], [14, 270], [-12, 325], [-30, 385], [-32, 450], [-16, 515], [6, 575], [14, 640], [4, 705], [-16, 765], [-28, 825], [-30, 885], [-30, 950], [-30, 1010], [-30, 1075]],
+    feats: [
+      { t: 'start', s: 0, len: 12, h: 3.4, roll: 18 },
+      { t: 'kick', s: 80, lip: 1.6, ang: 28, vmax: 13.5, name: 'Dust kicker' },
+      { t: 'drop', s: 165, ang: 4, vmax: 10, spend: 5, name: 'Mesa drop' },
+      { t: 'kick', s: 260, lip: 2.4, ang: 32, vmax: 14, canyon: { depth: 36 }, name: 'Moon gap', crowd: 1 },
+      { t: 'kick', s: 380, lip: 2.6, ang: 30, vmax: 14, spend: 7, name: 'Giant step-down', crowd: 1 },
+      { t: 'drop', s: 500, ang: 4, vmax: 12, spend: 9, name: 'Star drop' },
+      { t: 'kick', s: 590, lip: 2, ang: 28, vmax: 14, name: 'Double up' },
+      { t: 'kick', s: 700, lip: 2.8, ang: 34, vmax: 14.3, wood: true, spend: 4, name: 'Moon Sender', crowd: 1 },
+      { t: 'kick', s: 860, lip: 2.6, ang: 35, vmax: 12.9, land: 1.8, spend: 3, name: 'Big Moon flip', crowd: 2 },
+      { t: 'finish', s: 1e9, end: 64 },
+    ],
+    veg: 'desert', tape: false,
   },
 ];
 const VBY = Object.fromEntries(VENUES.map(v => [v.id, v]));
