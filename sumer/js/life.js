@@ -201,12 +201,21 @@ export class Life {
       // brake for the walker in front
       const fx = px - a[0], fz = pz - a[1];
       const ahead = fx * ux + fz * uz, side = Math.abs(fx * uz - fz * ux);
-      const block = active && ahead > 0 && ahead < (inCar ? 15 : 9) && side < (inCar ? 2.4 : 1.8);
+      let block = active && ahead > 0 && ahead < (inCar ? 15 : 9) && side < (inCar ? 2.4 : 1.8);
+      let pull = false;
+      if (this.blockers) for (const o of this.blockers) {
+        const bx = o.x - a[0], bz = o.z - a[1], ah = bx * ux + bz * uz, sd = Math.abs(bx * uz - bz * ux);
+        if (!block && ah > 0 && ah < 14 && sd < 2.6) block = true;
+        if (o.lit && ah < 0 && ah > -45 && sd < 5) pull = true; // sirens behind: pull over
+      }
+      c.pull = Math.max(0, Math.min(1, (c.pull || 0) + (pull ? dt * 1.2 : -dt * 0.5)));
+      if (c.pull > 0.05) block = true;
       const target = block ? 0 : c.v;
       c.cur += (target - c.cur) * Math.min(1, dt * (block ? 4 : 1.2));
       c.s += c.cur * dt;
       const b = along(c.r, c.s);
-      this.e.set(0, Math.atan2(-uz, ux), 0); this.q4.setFromEuler(this.e); this.v.set(b[0], 0, b[1]); this.sc.setScalar(1);
+      if (c.pull) { b[0] += uz * 2.4 * c.pull; b[1] -= ux * 2.4 * c.pull; } // over to the left kerb
+      this.e.set(0, Math.atan2(-uz, ux) + (c.pull || 0) * 0.15, 0); this.q4.setFromEuler(this.e); this.v.set(b[0], 0, b[1]); this.sc.setScalar(1);
       const slot = c.t + (Math.hypot(b[0] - px, b[1] - pz) < (this.q.carNear || 0) ? 0 : CAR_TYPES.length);
       const im = this.cms[slot], k = nT[slot]++;
       this.m.compose(this.v, this.q4, this.sc); im.setMatrixAt(k, this.m);
@@ -218,8 +227,8 @@ export class Life {
 
   // bodies the walker bumps into
   colliders(x, z, fn) {
-    for (const p of this.people) if (p.x !== undefined && Math.abs(p.x - x) < 1.5 && Math.abs(p.z - z) < 1.5) fn(p.x, p.z, 0.28);
-    for (const c of this.cars) if (c.x !== undefined && Math.abs(c.x - x) < 4.5 && Math.abs(c.z - z) < 4.5) { fn(c.x + c.ux * c.cc.off, c.z + c.uz * c.cc.off, c.cc.r); fn(c.x - c.ux * c.cc.off, c.z - c.uz * c.cc.off, c.cc.r); }
+    for (const p of this.people) if (p.x !== undefined && Math.abs(p.x - x) < 1.5 && Math.abs(p.z - z) < 1.5) fn(p.x, p.z, 0.28, 'person');
+    for (const c of this.cars) if (c.x !== undefined && Math.abs(c.x - x) < 4.5 && Math.abs(c.z - z) < 4.5) { fn(c.x + c.ux * c.cc.off, c.z + c.uz * c.cc.off, c.cc.r, 'car'); fn(c.x - c.ux * c.cc.off, c.z - c.uz * c.cc.off, c.cc.r, 'car'); }
   }
   clear() { this.people.length = 0; this.cars.length = 0; }
 }

@@ -606,6 +606,18 @@ export class City {
       inst.speedcam.push({ x, z, ry });
     }
     let li = 0;
+    // street centre lines of this chunk, to keep junctions free of parked cars
+    const segs = [];
+    for (const rd of c.roads) { if (rd.path) continue; const p = rd.pts; for (let i = 0; i + 3 < p.length; i += 2) segs.push([rd, p[i], p[i + 1], p[i + 2], p[i + 3], rd.w / 2]); }
+    const nearOtherRoad = (rd0, x, z, margin) => {
+      for (const [rd, ax, az, bx, bz, hw] of segs) {
+        if (rd === rd0) continue;
+        const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+        if (Math.hypot(x - ax - dx * t, z - az - dz * t) < hw + margin) return true;
+      }
+      return false;
+    };
     for (const rd of c.roads) {
       if (rd.path) continue;
       const lampRoad = rd.cls >= 3 && rd.cls <= 6;
@@ -641,6 +653,7 @@ export class City {
               const x = x1 + ux * t + nx * off * side, z = z1 + uz * t + nz * off * side;
               const sA = at(x + ux * (T.L / 2), z + uz * (T.L / 2)), sB = at(x - ux * (T.L / 2), z - uz * (T.L / 2)), sC = at(x, z);
               if (sA !== 5 || sB !== 5 || sC !== 5) continue;
+              if (nearOtherRoad(rd, x + ux * (T.L / 2), z + uz * (T.L / 2), 4) || nearOtherRoad(rd, x - ux * (T.L / 2), z - uz * (T.L / 2), 4)) continue; // not at a junction
               const ry = Math.atan2(-uz, ux) + (side > 0 ? Math.PI : 0) * (hsh < 0.1 ? 1 : 0);
               inst.car.push({ x, z, ry, t: type, c: CAR_COLOURS[Math.floor(hash01(Math.floor(x * 7) ^ Math.floor(z * 13)) * CAR_COLOURS.length)] });
               R.colliders = R.colliders || [];

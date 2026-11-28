@@ -138,6 +138,18 @@ export class Minimap {
       ctx.fillText(L.i, cx + px, cy + py);
       ctx.globalAlpha = 1;
     }
+    // police cars: flashing blue/red dots when they chase you, dark blue on patrol
+    if (extra && extra.police) {
+      const blink = Math.floor(performance.now() / 250) % 2;
+      for (const pp of extra.police) {
+        const dx = (pp.x - x) * s, dz = (pp.z - z) * s;
+        const px = dx * c - dz * sn, py = dx * sn + dz * c;
+        if (Math.hypot(px, py) > W / 2 - 6) continue;
+        ctx.fillStyle = pp.chase ? (blink ? '#3f74ff' : '#ff3b3b') : '#1c3f9c';
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = W * 0.008;
+        ctx.beginPath(); ctx.arc(cx + px, cy + py, W * 0.024, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+    }
     // job markers and the job's goal
     if (extra) {
       const pts = (extra.markers || []).map((m) => [m.x, m.z, m.i, false]);

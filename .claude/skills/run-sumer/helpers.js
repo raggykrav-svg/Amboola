@@ -127,4 +127,9 @@ window.__carAt = (x, z, secs = 0.6) => {
   return { job: j && j.id, step: j && j.step, target: s.jobs.target && s.jobs.target.label, money: s.wallet.money, panel: document.getElementById('jt').textContent + ' | ' + document.getElementById('jx').textContent + ' | ' + document.getElementById('jr').textContent };
 };
 window.__jobGoal = () => { const t = window.sumer.jobs.target; return t ? [t.x, t.z] : null; };
+
+// ---- police
+window.__pol = () => { const P = window.sumer.police, p = window.sumer.player.pos; return { wanted: P.wanted, seen: P.seen, lostT: +P.lostT.toFixed(1), bustT: +P.bustT.toFixed(1), cars: P.cars.map((c) => [c.mode[0], Math.round(Math.hypot(c.c.x - p.x, c.c.z - p.z)), Math.round(Math.abs(c.c.vF) * 3.6)]) }; };
+// run the game for game seconds, printing the police state every `every` seconds
+window.__run = (secs, every = 1) => { const s = window.sumer, out = []; for (let i = 0; i < Math.round(secs * 30); i++) { s.step(1 / 30); if (i % Math.round(every * 30) === 0) out.push(window.__pol()); } return out; };
 1;

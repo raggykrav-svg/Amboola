@@ -6,6 +6,7 @@ const ROAD = 1, PATH = 2;
 
 export class Router {
   constructor(city) {
+    this.city = city; this.segCache = new Map();
     const A = city.h.area;
     this.x0 = A[0] - 20; this.z0 = A[1] - 20;
     this.w = Math.ceil((A[2] - A[0] + 40) / CELL); this.h = Math.ceil((A[3] - A[1] + 40) / CELL);
@@ -86,7 +87,53 @@ export class Router {
     for (let i = ti; i >= 0; i = from[i]) pts.push([this.x0 + (i % bw + bc0 + 0.5) * CELL, this.z0 + (Math.floor(i / bw) + br0 + 0.5) * CELL]);
     pts.reverse();
     pts[0] = [x0, z0]; pts.push([x1, z1]);
-    return simplify(pts, 5);
+    return this.onRoads(simplify(pts, 3), mask);
+  }
+
+  // the street centre-line segments of one chunk (car roads, or also paths), cached
+  segs(ci, paths) {
+    const key = ci * 2 + (paths ? 1 : 0);
+    let a = this.segCache.get(key);
+    if (a) return a;
+    const out = [];
+    for (const rd of chunk(this.city.data, ci).roads) {
+      if (rd.path && !paths) continue;
+      const p = rd.pts;
+      for (let i = 0; i + 3 < p.length; i += 2) out.push(p[i], p[i + 1], p[i + 2], p[i + 3]);
+    }
+    a = new Float32Array(out);
+    this.segCache.set(key, a);
+    if (this.segCache.size > 400) this.segCache.delete(this.segCache.keys().next().value);
+    return a;
+  }
+  nearestRoad(x, z, maxD, paths) {
+    const g = this.city.g;
+    const ix = Math.floor((x - g.x0) / g.cs), iz = Math.floor((z - g.z0) / g.cs);
+    let bx = 0, bz = 0, bd = maxD * maxD, hit = false;
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const jx = ix + dx, jz = iz + dz; if (jx < 0 || jz < 0 || jx >= g.nx || jz >= g.nz) continue;
+      const cx0 = g.x0 + jx * g.cs, cz0 = g.z0 + jz * g.cs;
+      if (x < cx0 - maxD || x > cx0 + g.cs + maxD || z < cz0 - maxD || z > cz0 + g.cs + maxD) continue;
+      const a = this.segs(jz * g.nx + jx, paths);
+      for (let i = 0; i < a.length; i += 4) {
+        const ax = a[i], az = a[i + 1], ddx = a[i + 2] - ax, ddz = a[i + 3] - az, l2 = ddx * ddx + ddz * ddz || 1;
+        const t = Math.max(0, Math.min(1, ((x - ax) * ddx + (z - az) * ddz) / l2));
+        const qx = ax + ddx * t, qz = az + ddz * t, d = (qx - x) ** 2 + (qz - z) ** 2;
+        if (d < bd) { bd = d; bx = qx; bz = qz; hit = true; }
+      }
+    }
+    return hit ? [bx, bz] : null;
+  }
+  // pull a grid route onto the real street centre lines: it turns at the crossroads instead of cutting
+  // corners through buildings
+  onRoads(pts, mask) {
+    const out = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, az] = pts[i - 1], [bx, bz] = pts[i], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 6));
+      for (let k = 1; k <= n; k++) out.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
+    }
+    for (let i = 1; i < out.length - 1; i++) { const q = this.nearestRoad(out[i][0], out[i][1], 12, (mask & PATH) !== 0); if (q) out[i] = q; }
+    return simplify(out, 1.2);
   }
 }
 

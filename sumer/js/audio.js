@@ -143,6 +143,37 @@ export class Sound {
   ding() { this.tone(1318, 0.35, 0.12); this.tone(1760, 0.5, 0.08, 'sine', 0.06); }
   cash() { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, 0.25, 0.1, 'triangle', i * 0.07)); this.burst(5000, 2, 0.12, 0.05); }
   shutter() { this.burst(3000, 2, 0.04, 0.2); this.burst(1500, 2, 0.06, 0.12); }
+  // police siren: the European two-tone (hi-lo), louder as the nearest police car gets closer
+  siren(on, dist) {
+    const ctx = this.ctx; if (!ctx) return;
+    const t = ctx.currentTime;
+    if (on && !this.sir) {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 466;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 0.9;
+      const g = ctx.createGain(); g.gain.value = 0;
+      o.connect(bp); bp.connect(g); g.connect(this.master); o.start();
+      this.sir = { o, g };
+    } else if (!on && this.sir) {
+      const s = this.sir; this.sir = null;
+      s.g.gain.setTargetAtTime(0, t, 0.15);
+      setTimeout(() => { try { s.o.stop(); } catch { /* stopped */ } }, 900);
+      return;
+    }
+    if (this.sir) {
+      const hi = (t % 1.1) < 0.55;
+      this.sir.o.frequency.setTargetAtTime(hi ? 622 : 466, t, 0.012);
+      this.sir.g.gain.setTargetAtTime(0.1 * Math.min(1, Math.max(0.05, 1 - dist / 380)), t, 0.1);
+    }
+  }
+  chirp() { // a short "whoop" when the police notice you
+    const ctx = this.ctx; if (!ctx) return;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(380, t); o.frequency.exponentialRampToValueAtTime(1250, t + 0.35); o.frequency.exponentialRampToValueAtTime(600, t + 0.6);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1000; bp.Q.value = 0.8;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.65);
+    o.connect(bp); bp.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.7);
+  }
   sad() { this.tone(392, 0.3, 0.1, 'triangle'); this.tone(330, 0.45, 0.1, 'triangle', 0.25); }
 
   chime() {

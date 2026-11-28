@@ -9,6 +9,7 @@ import { chunkIndex } from './data.js';
 const SPEC = [{ vmax: 46, acc: 5.0 }, { vmax: 54, acc: 5.6 }, { vmax: 50, acc: 5.2 }, { vmax: 45, acc: 4.6 }, { vmax: 41, acc: 4.0 }];
 const KEEP_LEFT = 6; // cars you leave behind stay (the oldest goes when you leave more)
 
+export { SPEC };
 export class Driving {
   constructor(scene, city, cars, life, forest, U, sound) {
     this.scene = scene; this.city = city; this.cars = cars; this.life = life; this.forest = forest; this.U = U; this.sound = sound;
@@ -111,32 +112,37 @@ export class Driving {
     }
   }
 
-  // push one circle out of everything solid; returns the push and the hardest normal
-  push(cx, cz, r, acc) {
+  // push one circle out of everything solid; returns the push and the hardest normal (and what it was)
+  push(cx, cz, r, acc, extra, people = true, ghost = false) {
     let px = 0, pz = 0;
-    const add = (dx, dz, pen) => { px += dx * pen; pz += dz * pen; if (pen > acc.pen) { acc.pen = pen; acc.nx = dx; acc.nz = dz; } };
+    const add = (dx, dz, pen, kind) => { px += dx * pen; pz += dz * pen; if (pen > acc.pen) { acc.pen = pen; acc.nx = dx; acc.nz = dz; acc.kind = kind; } };
     this.city.edgesNear(cx, cz, r + 0.5, (x1, z1, x2, z2) => {
       const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz; if (l2 < 1e-6) return;
       const t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cz - z1) * dz) / l2));
       const qx = x1 + dx * t, qz = z1 + dz * t; let ex = cx - qx, ez = cz - qz; const d = Math.hypot(ex, ez);
-      if (d < r && d > 1e-5) add(ex / d, ez / d, r - d);
+      if (d < r && d > 1e-5) add(ex / d, ez / d, r - d, 'wall');
     });
-    const circle = (tx, tz, rr) => { const ex = cx - tx, ez = cz - tz, d = Math.hypot(ex, ez), m = rr + r; if (d < m && d > 1e-4) add(ex / d, ez / d, m - d); };
-    this.forest.trunksNear(cx, cz, circle);
+    const circle = (tx, tz, rr, kind = 'car') => {
+      if (kind === 'person' && !people) return;
+      const ex = cx - tx, ez = cz - tz, d = Math.hypot(ex, ez), m = rr + r; if (d < m && d > 1e-4) add(ex / d, ez / d, m - d, kind);
+    };
+    if (extra) extra(cx, cz, circle);
+    if (ghost) return [px, pz];               // squeezing past: only walls (and the extra circles) count
+    this.forest.trunksNear(cx, cz, (x, z, rr) => circle(x, z, rr, 'tree'));
     this.leftColliders(cx, cz, circle);
     for (const R of this.city.rasters.values()) {
       if (!R.colliders || cx < R.ox - 4 || cx > R.ox + 254 || cz < R.oz - 4 || cz > R.oz + 254) continue;
       const C = R.colliders;
-      for (let i = 0; i < C.length; i += 3) if (Math.abs(C[i] - cx) < 3 && Math.abs(C[i + 1] - cz) < 3) circle(C[i], C[i + 1], C[i + 2]);
+      for (let i = 0; i < C.length; i += 3) if (Math.abs(C[i] - cx) < 3 && Math.abs(C[i + 1] - cz) < 3) circle(C[i], C[i + 1], C[i + 2], 'car');
     }
-    if (this.life) this.life.colliders(cx, cz, circle, true);
+    if (this.life) this.life.colliders(cx, cz, circle);
     return [px, pz];
   }
 
-  update(dt, inp, player, camera) {
-    const c = this.car; if (!c) return;
-    dt = Math.min(dt, 0.05);
-    const T = CAR_TYPES[c.t], S = SPEC[c.t], wb = T.L - T.fo - T.ro;
+  // one physics step for any car (yours or a police car). inp: {x steer right +, y throttle + / brake -, jump handbrake}.
+  // Returns the hardest hit: {impact m/s, kind 'wall' | 'tree' | 'car' | 'person' | 'police' | 'player'}
+  step(c, inp, dt, extra, people = true, ghost = false) {
+    const T = CAR_TYPES[c.t], S = c.spec || SPEC[c.t], wb = T.L - T.fo - T.ro;
     // steering: less at speed; the heading turns with the front wheels
     const sp = Math.hypot(c.vx, c.vz);
     const target = -inp.x * 0.6 / (1 + sp / 13);
@@ -160,11 +166,11 @@ export class Driving {
     const ox = c.x, oz = c.z;
     c.x += c.vx * dt; c.z += c.vz * dt;
     const cc = carCircles(c.t), r = T.W / 2 + 0.04;
-    const acc = { pen: 0, nx: 0, nz: 0 };
+    const acc = { pen: 0, nx: 0, nz: 0, kind: null };
     for (let it = 0; it < 3; it++) {
       let sx = 0, sz = 0, n = 0;
       for (const k of [-1, 0, 1]) {
-        const [px, pz] = this.push(c.x + fx * cc.off * k, c.z + fz * cc.off * k, r, acc);
+        const [px, pz] = this.push(c.x + fx * cc.off * k, c.z + fz * cc.off * k, r, acc, extra, people, ghost);
         if (px || pz) { sx += px; sz += pz; n++; }
       }
       if (!n) break;
@@ -173,15 +179,16 @@ export class Driving {
     // the sea, ponds, piers and rocks stop the car
     for (const k of [1, 0, -1]) {
       const s = this.city.surfaceAt(c.x + fx * (T.L / 2) * k, c.z + fz * (T.L / 2) * k);
-      if (s === 0 || s === 8 || s === 10 || s === 11) { c.x = ox; c.z = oz; acc.pen = 1; acc.nx = -Math.sign(c.vF) * fx; acc.nz = -Math.sign(c.vF) * fz; break; }
+      if (s === 0 || s === 8 || s === 10 || s === 11) { c.x = ox; c.z = oz; acc.pen = 1; acc.nx = -Math.sign(c.vF) * fx; acc.nz = -Math.sign(c.vF) * fz; acc.kind = 'wall'; break; }
     }
     const A = this.city.h.area;
     c.x = Math.min(A[2] - 5, Math.max(A[0] + 5, c.x)); c.z = Math.min(A[3] - 5, Math.max(A[1] + 5, c.z));
-    if (acc.pen > 0) { // lose the speed that went into the wall; a crash sound for a hard hit
+    let impact = 0;
+    if (acc.pen > 0) { // lose the speed that went into the obstacle
       const vn = c.vx * acc.nx + c.vz * acc.nz;
       if (vn < 0) {
         c.vx -= acc.nx * vn * 1.25; c.vz -= acc.nz * vn * 1.25;
-        if (-vn > 3) { this.sound.crash(Math.min(1, -vn / 18)); this.shake = Math.min(1, -vn / 15); }
+        impact = -vn;
         c.vF = c.vx * fx + c.vz * fz;
       }
     }
@@ -192,10 +199,35 @@ export class Driving {
     c.roll += (Math.max(-0.06, Math.min(0.06, c.vF * c.vF / wb * Math.tan(c.steer) * 0.0035)) - c.roll) * Math.min(1, dt * 6);
     c.mesh.position.set(c.x, c.y, c.z);
     c.mesh.rotation.set(c.roll, c.ry, c.pitch, 'YXZ');
+    return { impact, kind: acc.kind };
+  }
+
+  update(dt, inp, player, camera) {
+    const c = this.car; if (!c) return;
+    dt = Math.min(dt, 0.05);
+    const hit = this.step(c, inp, dt, this.extra);
+    if (hit.impact > 3) { this.sound.crash(Math.min(1, hit.impact / 18)); this.shake = Math.min(1, hit.impact / 15); }
+    if (hit.impact > 0 && this.onHit) this.onHit(hit);
     // the walker rides along (minimap, places, sounds use the player position)
     player.pos.set(c.x, c.y, c.z); player.feet = c.y; player.yaw = this.camYaw - Math.PI / 2; player.speed = Math.abs(c.vF);
-    this.sound.engine(Math.abs(c.vF), thr, c.slip, S.vmax);
+    this.sound.engine(Math.abs(c.vF), Math.max(0, inp.y), c.slip, SPEC[c.t].vmax);
     this.camera(dt, inp, camera);
+  }
+
+  // the police keep the car (busted)
+  impound(player) {
+    const c = this.car; if (!c) return;
+    this.scene.remove(c.mesh); c.mesh.material.dispose();
+    this.car = null;
+    this.sound.engineOff();
+    player.body.visible = player.mode === 'third';
+  }
+
+  // circles of the car you drive (police cars bump into it)
+  carColliders(x, z, fn) {
+    const c = this.car; if (!c || Math.abs(c.x - x) > 7 || Math.abs(c.z - z) > 7) return;
+    const cc = carCircles(c.t), fx = Math.cos(c.ry), fz = -Math.sin(c.ry);
+    for (const k of [-1, 0, 1]) fn(c.x + fx * cc.off * k, c.z + fz * cc.off * k, CAR_TYPES[c.t].W / 2, 'player');
   }
 
   camera(dt, inp, cam) {
@@ -221,7 +253,7 @@ export class Driving {
     this.camYaw += d * Math.min(1, dt * 3.2);
     this.orbit -= inp.lookX; if (!inp.lookX) this.orbit *= Math.exp(-dt * 0.8);
     this.orbitT = Math.max(-0.3, Math.min(0.6, (this.orbitT || 0.12) - inp.lookY));
-    const yaw = this.camYaw + this.orbit;
+    const yaw = this.camYaw + this.orbit + (inp.back ? Math.PI : 0); // hold B: look back
     const dist = 5.4 + T.L * 0.35 + Math.min(2.5, sp * 0.05), hgt = 1.6 + T.H * 0.55 + this.orbitT * 4;
     // the camera stays on an arc behind the car (never a straight cut through a corner); a wall in the
     // way shortens the arm at once, and it grows back slowly when the way is clear
@@ -237,7 +269,8 @@ export class Driving {
     this.camPos.set(c.x + bx * this.camD, c.y + hgt + lift, c.z + bz * this.camD);
     cam.position.copy(this.camPos);
     cam.position.x += (Math.random() - 0.5) * sh; cam.position.y += (Math.random() - 0.5) * sh;
-    cam.lookAt(c.x + fx * 2.5, c.y + 1.1 + T.H * 0.2, c.z + fz * 2.5);
+    const ls = inp.back ? -1 : 1;
+    cam.lookAt(c.x + fx * 2.5 * ls, c.y + 1.1 + T.H * 0.2, c.z + fz * 2.5 * ls);
   }
 
   speedKmh() { return this.car ? Math.abs(this.car.vF) * 3.6 : 0; }

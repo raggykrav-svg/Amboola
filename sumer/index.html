@@ -102,6 +102,17 @@ input[type=range]{width:150px;accent-color:var(--sea)}
 #camflash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:12;transition:opacity .5s}
 #camflash.on{opacity:.85;transition:none}
 #tAct{position:absolute;right:calc(96px + env(safe-area-inset-right));bottom:calc(150px + env(safe-area-inset-bottom));pointer-events:auto;width:72px;height:72px;border-radius:50%;font-size:30px}
+/* police */
+#wanted{position:absolute;right:calc(14px + env(safe-area-inset-right));top:calc(262px + env(safe-area-inset-top));font-size:22px;letter-spacing:2px;line-height:1;color:rgba(255,255,255,.3);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:5px 10px}
+#wanted b{color:#ffcf3d;font-weight:400}
+#wanted.lost b{animation:blink .6s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+#bustbar{position:absolute;left:50%;top:calc(30% + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(14,30,80,.85);border:2px solid #6f95ff;border-radius:14px;padding:10px 16px;font-weight:800;text-align:center;min-width:260px}
+#bustbar i{display:block;height:6px;margin-top:8px;border-radius:4px;background:linear-gradient(90deg,#3f74ff,#ff4a4a);width:0}
+#busted{position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(10,20,60,.35),rgba(5,10,30,.85));pointer-events:none;opacity:0;transition:opacity .4s}
+#busted.on{opacity:1}
+#busted .st{font-family:var(--head);font-weight:700;font-size:clamp(64px,14vw,140px);color:#fff;letter-spacing:.06em;padding:0 .3em;border:8px solid #fff;border-radius:18px;transform:rotate(-6deg);text-shadow:0 6px 30px rgba(60,100,255,.8);box-shadow:0 0 60px rgba(60,100,255,.5)}
+#busted .sm{margin-top:28px;font-weight:800;font-size:18px;text-align:center;padding:0 16px}
 /* touch */
 #touch{position:fixed;inset:0;z-index:11;pointer-events:none}
 #stick{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(26px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);pointer-events:auto}
@@ -136,6 +147,7 @@ input[type=range]{width:150px;accent-color:var(--sea)}
   #tools{bottom:auto;top:calc(150px + env(safe-area-inset-top))} #tools .tb{width:44px;height:44px;font-size:19px}
   #hint{bottom:calc(186px + env(safe-area-inset-bottom))}
   #money{top:calc(118px + env(safe-area-inset-top));font-size:17px}
+  #wanted{top:calc(200px + env(safe-area-inset-top));font-size:20px}
   #job{top:calc(124px + env(safe-area-inset-top));width:calc(100vw - 28px)}
   #speedo{bottom:calc(250px + env(safe-area-inset-bottom))} #speedo b{font-size:40px}
   #prompt{bottom:calc(300px + env(safe-area-inset-bottom));font-size:13px;white-space:normal;max-width:calc(100vw - 32px);text-align:center}
@@ -182,6 +194,8 @@ input[type=range]{width:150px;accent-color:var(--sea)}
   <div id="money">€0<span class="plus" id="plus"></span></div>
   <div id="job" class="hide"><div class="jt" id="jt"></div><div class="jr" id="jr"></div><div class="jx" id="jx"></div></div>
   <div id="speedo" class="hide"><b id="kmh">0</b><span>KM/H</span></div>
+  <div id="wanted" class="hide"></div>
+  <div id="bustbar" class="hide">🚔 The police are stopping you: drive away!<i id="bustfill"></i></div>
   <div id="prompt" class="hide"></div>
   <div id="cross"></div>
   <div id="hint">Click to look around · <b>WASD</b> walk · <b>E</b> get in a car · <b>Shift</b> run · <b>M</b> map · <b>C</b> camera · <b>T</b> time · <b>F</b> drone</div>
@@ -197,6 +211,7 @@ input[type=range]{width:150px;accent-color:var(--sea)}
 </div>
 
 <div id="camflash"></div>
+<div id="busted"><div class="st">BUSTED</div><div class="sm" id="bustmsg"></div></div>
 <div id="touch" class="hide">
   <div id="stick"><div id="knob"></div></div>
   <div id="tbtns">
@@ -246,9 +261,10 @@ input[type=range]{width:150px;accent-color:var(--sea)}
     <tr><td>Walk</td><td><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> or arrows · phone: the round stick</td></tr>
     <tr><td>Run</td><td>hold <span class="kbd">Shift</span> · phone: 🏃</td></tr>
     <tr><td>Jump</td><td><span class="kbd">Space</span> · phone: ⤒</td></tr>
-    <tr><td>Cars</td><td><span class="kbd">E</span> next to a parked car: get in or out · drive with <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> · <span class="kbd">Space</span> handbrake · <span class="kbd">G</span> horn · <span class="kbd">C</span> driver's seat · phone: 🚗</td></tr>
+    <tr><td>Cars</td><td><span class="kbd">E</span> next to a parked car: get in or out · drive with <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> · <span class="kbd">Space</span> handbrake · <span class="kbd">G</span> horn · hold <span class="kbd">B</span> look back · <span class="kbd">C</span> driver's seat · phone: 🚗</td></tr>
     <tr><td>Jobs</td><td>Walk or drive into a glowing marker (🚕 taxi, 🥙 souvlaki, 🏁 race) and press <span class="kbd">E</span>. The GPS line on the map shows the way. <span class="kbd">J</span> stops a job</td></tr>
     <tr><td>Money</td><td>Jobs and new places pay euros. Speed cameras (real ones) fine you above 70 km/h</td></tr>
+    <tr><td>Police</td><td>Crash hard, hit a police car, or speed past a camera or a patrol and you get ★ stars: police cars chase you. Get out of their sight to lose them. If they stop you, you are busted: a fine, and they keep the car</td></tr>
     <tr><td>Map</td><td><span class="kbd">M</span>: jump to any place in the city</td></tr>
     <tr><td>View</td><td><span class="kbd">C</span>: your eyes / behind you</td></tr>
     <tr><td>Drone</td><td><span class="kbd">F</span>: fly over the city (<span class="kbd">E</span> up, <span class="kbd">Q</span> down)</td></tr>

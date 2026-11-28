@@ -16,6 +16,7 @@ import { CarField, CAR_TYPES } from './cars.js';
 import { Router } from './route.js';
 import { Driving } from './drive.js';
 import { Jobs } from './jobs.js';
+import { Police } from './police.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -26,10 +27,10 @@ const params = new URLSearchParams(location.search);
 const isTouch = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 
 const QUALITY = {
-  low: { post: false, ao: false, msaa: 0, leafy: false, carNear: 0, carFar: 160, pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
-  medium: { post: true, ao: true, aoScale: 0.5, aoSamples: 8, msaa: 2, leafy: true, carNear: 55, carFar: 200, pixelRatio: 1, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
-  high: { post: true, ao: true, aoScale: 0.5, aoSamples: 12, msaa: 4, leafy: true, carNear: 75, carFar: 280, pixelRatio: 1.25, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
-  ultra: { post: true, ao: true, aoScale: 0.75, aoSamples: 16, msaa: 4, leafy: true, carNear: 110, carFar: 380, pixelRatio: 1.5, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
+  low: { policeMax: 2, patrols: 1, post: false, ao: false, msaa: 0, leafy: false, carNear: 0, carFar: 160, pixelRatio: 1, shadows: 0, shadowSize: 0, viewDist: 1700, detailDist: 250, treeDist: 240, treeNear: 90, gardenDist: 170, gardenStep: 11, treeCapNear: 2500, treeCapFar: 5000, balconies: false, roofProps: false, cars: true, fog: 1.7, people: 25, traffic: 10, peopleDist: 110, trafficDist: 200 },
+  medium: { policeMax: 3, patrols: 2, post: true, ao: true, aoScale: 0.5, aoSamples: 8, msaa: 2, leafy: true, carNear: 55, carFar: 200, pixelRatio: 1, shadows: 1024, shadowSize: 70, viewDist: 2600, detailDist: 380, treeDist: 380, treeNear: 130, gardenDist: 270, gardenStep: 9, treeCapNear: 5000, treeCapFar: 9000, balconies: true, roofProps: true, cars: true, fog: 1.2, people: 60, traffic: 24, peopleDist: 130, trafficDist: 240 },
+  high: { policeMax: 4, patrols: 2, post: true, ao: true, aoScale: 0.5, aoSamples: 12, msaa: 4, leafy: true, carNear: 75, carFar: 280, pixelRatio: 1.25, shadows: 2048, shadowSize: 95, viewDist: 3800, detailDist: 520, treeDist: 540, treeNear: 170, gardenDist: 380, gardenStep: 8, treeCapNear: 8000, treeCapFar: 15000, balconies: true, roofProps: true, cars: true, fog: 1.0, people: 110, traffic: 40, peopleDist: 150, trafficDist: 280 },
+  ultra: { policeMax: 5, patrols: 3, post: true, ao: true, aoScale: 0.75, aoSamples: 16, msaa: 4, leafy: true, carNear: 110, carFar: 380, pixelRatio: 1.5, shadows: 4096, shadowSize: 130, viewDist: 5600, detailDist: 760, treeDist: 720, treeNear: 230, gardenDist: 520, gardenStep: 7, treeCapNear: 12000, treeCapFar: 22000, balconies: true, roofProps: true, cars: true, fog: 0.8, people: 160, traffic: 60, peopleDist: 170, trafficDist: 320 },
 };
 const settings = Object.assign({ quality: isTouch ? 'low' : 'high', sound: true, vol: 0.8, sens: 1, invert: false, fov: 72, fps: false }, store.get('settings', {}));
 if (params.get('q') && QUALITY[params.get('q')]) settings.quality = params.get('q');
@@ -57,7 +58,7 @@ const camera = new THREE.PerspectiveCamera(settings.fov, innerWidth / innerHeigh
 scene.add(camera);
 scene.userData.camera = camera;
 
-let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life, carField, router, driving, jobs;
+let data, city, env, mats, forest, player, painter, minimap, bigmap, props, life, carField, router, driving, jobs, police;
 const sound = new Sound(); sound.on = settings.sound; sound.vol = settings.vol;
 let state = 'loading';  // loading | title | play | menu | map
 let landmarks = [];
@@ -110,6 +111,10 @@ async function boot() {
     driving = new Driving(scene, city, carField, life, forest, mats.U, sound);
     player.extra = (x, z, fn) => driving.leftColliders(x, z, fn);
     jobs = new Jobs({ scene, city, router, driving, player, sound, wallet, store, ui: { toast: showToast, flash, cameraFlash } });
+    police = new Police({ scene, city, router, driving, player, sound, wallet, jobs, life, U: mats.U, q: Q, ui: { flash, busted: showBusted } });
+    jobs.police = police;
+    driving.extra = (x, z, fn) => police.colliders(x, z, fn);
+    driving.onHit = (hit) => police.crash(hit);
     $('money').firstChild.textContent = '€' + wallet.money.toLocaleString('en');
     painter = new MapPainter(city);
     minimap = new Minimap($('mini'), painter, $('north'));
@@ -210,7 +215,7 @@ function pause() {
   if (state !== 'play') return;
   state = 'menu';
   const t = $('pstats');
-  t.innerHTML = `<tr><td>Places found</td><td>${found.size} of ${landmarks.length}</td></tr><tr><td>Walked</td><td>${(stats.walked / 1000).toFixed(2)} km</td></tr><tr><td>Swims in the sea</td><td>${stats.swims}</td></tr><tr><td>Where you are</td><td>${$('street').textContent}${$('district').textContent ? ', ' + $('district').textContent : ''}</td></tr>`;
+  t.innerHTML = `<tr><td>Places found</td><td>${found.size} of ${landmarks.length}</td></tr><tr><td>Walked</td><td>${(stats.walked / 1000).toFixed(2)} km</td></tr><tr><td>Swims in the sea</td><td>${stats.swims}</td></tr>${police && police.wanted ? `<tr><td>Wanted</td><td>${'★'.repeat(police.wanted)}</td></tr>` : ''}<tr><td>Where you are</td><td>${$('street').textContent}${$('district').textContent ? ', ' + $('district').textContent : ''}</td></tr>`;
   $('pJobRow').classList.toggle('hide', !(jobs && jobs.job));
   $('pause').classList.remove('hide');
   if (document.pointerLockElement) document.exitPointerLock();
@@ -233,6 +238,7 @@ $('mapclose').onclick = closeMap;
 $('mapgo').onclick = () => goTo(bigmap.sel);
 function goTo(s) {
   if (!s) return;
+  if (police && police.wanted) { closeMap(); flash('🚨 You can’t use the map to escape the police!'); return; }
   bigmap.hide();
   if (jobs && jobs.job) jobs.stop('Job stopped: you used the map');
   if (driving && driving.car) driving.exit(player, true);
@@ -300,6 +306,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyG' && driving.car) sound.horn(true);
   if (e.code === 'KeyJ' && jobs.job) jobs.stop('Job stopped');
   if (e.code === 'KeyF' && driving.car) { flash('Get out of the car first (E)'); return; }
+  if (e.code === 'KeyF' && police.wanted) { flash('🚨 Not now: the police are after you'); return; }
   if (e.code === 'KeyF') { player.setMode(player.mode === 'drone' ? 'first' : 'drone'); flash(player.mode === 'drone' ? 'Drone view: fly with WASD, E up, Q down' : 'Walking'); }
   if (e.code === 'KeyM') openMap();
   if (e.code === 'KeyT') $('tTime').onclick();
@@ -353,6 +360,7 @@ function readInput(dt) {
   mouseDX = mouseDY = 0; touchIn.lookX = touchIn.lookY = 0;
   x += touchIn.x; y += touchIn.y;
   let up = k('KeyE') || k('PageUp'), down = k('KeyQ') || k('PageDown') || k('ControlLeft');
+  let back = k('KeyB');
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   for (const p of pads) {
     if (!p || !p.connected) continue;
@@ -360,14 +368,14 @@ function readInput(dt) {
     x += dz(p.axes[0]); y -= dz(p.axes[1]);
     lookX += dz(p.axes[2] || 0) * 2.6 * dt * sens; lookY += dz(p.axes[3] || 0) * 2.0 * dt * sens * inv;
     const b = (i) => p.buttons[i] && p.buttons[i].pressed;
-    if (b(0)) jump = true; if (b(1) || b(10)) run = true; if (b(5)) up = true; if (b(4)) down = true;
+    if (b(0)) jump = true; if (b(1) || b(10)) run = true; if (b(5)) up = true; if (b(4)) down = true; if (b(12)) back = true;
     const press = (i) => b(i) && !padPrev[i];
     y += ((p.buttons[7] && p.buttons[7].value) || 0) - ((p.buttons[6] && p.buttons[6].value) || 0);
     if (press(3)) interact(); if (press(11)) cycleView(); if (press(2)) openMap(); if (press(9)) pause(); if (press(8)) $('tTime').onclick();
     padPrev = p.buttons.map((q) => q.pressed);
   }
   const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
-  return { x, y, run, jump, lookX, lookY, up, down };
+  return { x, y, run, jump, lookX, lookY, up, down, back };
 }
 
 // ---------------------------------------------------------------- HUD logic
@@ -443,6 +451,7 @@ function updateHud(dt) {
     minimap.range = player.mode === 'drone' ? 420 : 120;
   }
   minimap.draw(px, pz, player.yaw, landmarks, found, targetLandmark(), mapExtras());
+  policeHud();
   if (driving.car) $('kmh').textContent = Math.round(driving.speedKmh());
 }
 // what can be done here: get in/out of a car, start a job
@@ -472,11 +481,30 @@ function jobHud() {
 }
 function mapExtras() {
   if (!jobs) return null;
-  return { route: jobs.route, goal: jobs.target, markers: jobs.job ? [] : jobs.givers };
+  return { route: jobs.route, goal: jobs.target, markers: jobs.job ? [] : jobs.givers, police: police ? police.cars.map((p) => ({ x: p.c.x, z: p.c.z, chase: p.mode === 'chase' })) : [] };
 }
 function showToast(icon, kind, name, desc) {
   $('tic').textContent = icon; $('toast').querySelector('.k').textContent = kind; $('tname').textContent = name; $('tdesc').textContent = desc;
   const t = $('toast'); t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 5000);
+}
+let lastStars = -1, lastLost = null;
+function policeHud() {
+  const w = police.wanted, lost = w > 0 && !police.seen;
+  if (w !== lastStars || lost !== lastLost) {
+    lastStars = w; lastLost = lost;
+    $('wanted').classList.toggle('hide', !w);
+    $('wanted').classList.toggle('lost', lost);
+    $('wanted').innerHTML = '<b>' + '★'.repeat(w) + '</b>' + '★'.repeat(5 - w);
+  }
+  if (!(police.busting > 0) && !(police.afterBust > 0)) $('busted').classList.remove('on');
+  const b = police.bustT;
+  $('bustbar').classList.toggle('hide', !(b > 0.05));
+  if (b > 0.05) $('bustfill').style.width = Math.min(100, b / 3 * 100) + '%';
+}
+function showBusted(fine) {
+  sound.siren(false, 0); sound.sad();
+  $('bustmsg').textContent = (fine ? `Fine €${fine} · ` : '') + 'The police keep the car. You walk out of Limassol Central Police station.';
+  $('busted').classList.add('on'); // policeHud takes it away when the police let you go
 }
 function cameraFlash() { const f = $('camflash'); f.classList.add('on'); setTimeout(() => f.classList.remove('on'), 80); }
 let toastT = 0;
@@ -514,6 +542,7 @@ function tick(dt) {
     else { player.update(dt, inp); stats.walked += player.walked - before; }
     life.update(dt, player.pos.x, player.pos.z, player.mode !== 'drone', !!driving.car);
     jobs.update(dt);
+    police.update(dt);
     stats.played += dt;
     updateHud(dt);
   } else { mouseDX = mouseDY = 0; }
@@ -537,7 +566,7 @@ if (settings.fps) $('fps').classList.remove('hide');
 
 // debug / test handle
 window.sumer = {
-  get city() { return city; }, get player() { return player; }, get life() { return life; }, get cars() { return carField; }, get driving() { return driving; }, get jobs() { return jobs; }, get router() { return router; }, wallet, interact: () => interact(), get env() { return env; }, get forest() { return forest; },
+  get city() { return city; }, get player() { return player; }, get life() { return life; }, get cars() { return carField; }, get driving() { return driving; }, get jobs() { return jobs; }, get police() { return police; }, get router() { return router; }, wallet, interact: () => interact(), get env() { return env; }, get forest() { return forest; },
   scene, camera, renderer, setTime, startPlay, openMap, closeMap, pause, resume, found, stats,
   state: () => state, tick: (dt) => { tick(dt); draw(); }, step: (dt) => tick(dt), render: () => draw(), get post() { return post; },
   hud: () => { streetT = 0; hudT = 0; updateHud(0.01); },

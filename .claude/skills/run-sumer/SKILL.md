@@ -29,6 +29,7 @@ Custom steps: pass a JSON list as the 2nd argument. Each step can have `eval` (J
 | `__getIn(x, z)` | walk to the parked car nearest (x, z) and press E; returns the car |
 | `__drive(['KeyW', 'KeyA'], secs)` | hold driving keys; returns km/h, the top speed reached, position, street |
 | `__startJob('taxi' \| 'food' \| 'race')` | walk into a job marker and press E |
+| `__pol()` / `__run(secs, every)` | police state: stars, seen, lost/bust timers, each police car `[mode, metres from you, km/h]`; `__run` steps the game and samples it |
 | `__carAt(...__jobGoal())` | put the car, stopped, at the job's current goal: steps a job forward (pickup, drop, delivery, checkpoint) |
 
 Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18`; the beach under the ONE tower `1990, -1180, -0.75, 0.42`; Dasoudi beach `3990, -1930, -2.0`; old town street at night `46, -277, 0` with `sumer.setTime('night')`.
@@ -68,6 +69,14 @@ Good spots: the Molos `352, 196, -0.785`; Agia Napa Cathedral `230, 170, 0, 0.18
 - `js/jobs.js` (`Jobs`): markers (taxi near the Old Port, souvlaki in the old town, race on the seafront), job states, payments to `wallet` (localStorage `sumer.money`), the GPS route (refreshed when you are 25 m off it), and the 36 real speed cameras (point type 7 in the city file): above 70 km/h within 22 m, one fine per pass.
 - E (or the phone's 🚗 button, or gamepad Y) does the first of: start the job at a marker, get out, get into the nearest car. Map teleport stops a job and leaves the car.
 - People wait and traffic brakes when you drive at them (`life.update(..., inCar)`); people are solid for the car (no running anyone over).
+
+## Police (js/police.js)
+
+- Stars (`police.wanted`, 0-5) come from: a speed camera above 100 km/h, hitting a car above 9 m/s (`driving.onHit` → `police.crash`), hitting a police car, speeding (> 80 km/h) where a patrol sees you, and 45 s of being seen in a chase. Each reason has an 8 s cooldown.
+- Patrol cars (`q.patrols`) drive to random spots; chase cars (`stars + 1` from 3 stars, up to `q.policeMax`) spawn 130-240 m away out of sight. They follow `router.route` (A* on the street grid, then pulled onto the street centre lines by `onRoads`, which keeps them out of building corners), drive straight at you only in the last 22 m, brake for the sharpest bend within braking distance (`turnAhead`), do three-point turns when you are behind them, and squeeze past parked cars and trees for 3 s (`ghost`) when they make no progress for 3.5 s. A chase car that gets no closer for 15 s is replaced.
+- They know where you are while they see you (line of sight over the 1 m raster, < 95 m) and for a few seconds after; then they search where they saw you last (`police.last`). You lose them after being unseen and away from that spot (60 + 15 × stars m) for 4 + 2 × stars s.
+- Busted: a chase car within 7.5 m (8.5 m on foot) while you are below 2.5 m/s for 3 s. The car is impounded, the fine is 50 € a star, and after 1.8 s (game time, not a timer) you walk out of Limassol Central Police HQ (OpenStreetMap). Map teleport and the drone are blocked while wanted.
+- Things that went wrong while building it: parked cars used to sit inside junctions and blocked every turn (city.js now keeps parked cars 4 m clear of other streets); real-time `setTimeout`s for the bust sequence never fired inside a fast-forwarded test, so game timers drive it.
 
 ## Rebuilding the city data
 

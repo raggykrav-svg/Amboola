@@ -36,8 +36,11 @@ A walking game in a 3D copy of **Limassol, Cyprus**, made from the real map. It 
   - 🥙 **Souvlaki to go** (old town): 4 deliveries; the faster, the bigger the tip.
   - 🏁 **Seafront race**: from the Molos to the ONE tower through the checkpoints; beat the par time.
 - Finding a new place pays €25 too. The **36 real speed cameras** of Limassol (from OpenStreetMap) flash and fine you above 70 km/h.
+- **Police** (white Cyprus police cars with the blue stripe, ΑΣΤΥΝΟΜΙΑ · POLICE and flashing blue lights) patrol the city. Crash hard into cars, hit a police car, race past a speed camera above 100 km/h or speed in front of a patrol and you get **★ wanted stars**: police cars come after you with sirens, along the real streets, and more stars bring more cars. Hold **B** to look back. Get out of their sight and away from where they last saw you to lose them; if they box you in until you stop, you are **BUSTED**: a fine (€50 a star), they keep the car, and you walk out of the real Limassol Central Police station. No weapons.
 
-![Driving the taxi in the Old Port](media/taxi.jpg)
+| ![Driving the taxi in the Old Port](media/taxi.jpg) | ![A Cyprus police car](media/police.jpg) |
+|---|---|
+| The taxi job in the Old Port | A Limassol police car |
 
 ## The game
 

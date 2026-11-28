@@ -67,7 +67,7 @@ await page.evaluate(fs.readFileSync(path.join(HERE, 'helpers.js'), 'utf8'));
 for (const s of steps) {
   if (s.eval) {
     const code = s.eval.startsWith('@') ? fs.readFileSync(s.eval.slice(1), 'utf8') : s.eval;
-    try { const v = await page.evaluate(code); if (v !== undefined) console.log('eval', JSON.stringify(v).slice(0, 1500)); } catch (e) { console.log('eval error', e.message.slice(0, 400)); }
+    try { const v = await page.evaluate(code); if (v !== undefined) console.log('eval', JSON.stringify(v).slice(0, +(process.env.MAXOUT || 1500))); } catch (e) { console.log('eval error', e.message.slice(0, 400)); }
   }
   if (s.press) await page.keyboard.press(s.press);
   await page.waitForTimeout(s.wait ?? 300);

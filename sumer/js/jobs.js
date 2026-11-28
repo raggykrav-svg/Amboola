@@ -176,7 +176,10 @@ export class Jobs {
     if (this.inCar() && !this.camCool) for (const c of this.cams) {
       if (Math.abs(c.x - p.x) > 22 || Math.abs(c.z - p.z) > 22 || Math.hypot(c.x - p.x, c.z - p.z) > 22) continue;
       const kmh = this.speed() * 3.6;
-      if (kmh > 70) { this.camCool = 8; const fine = kmh > 100 ? 60 : 30; this.wallet.add(-fine, 'fine'); this.ui.cameraFlash(); this.sound.shutter(); this.ui.flash(`📸 Speed camera: ${Math.round(kmh)} km/h · fine €${fine}`); }
+      if (kmh > 70) {
+        this.camCool = 8; const fine = kmh > 100 ? 60 : 30; this.wallet.add(-fine, 'fine'); this.ui.cameraFlash(); this.sound.shutter(); this.ui.flash(`📸 Speed camera: ${Math.round(kmh)} km/h · fine €${fine}`);
+        if (kmh > 100 && this.police) setTimeout(() => this.police.addWanted(1, `The speed camera called the police (${Math.round(kmh)} km/h)`, 'camera'), 1500);
+      }
       break;
     }
     const j = this.job; if (!j) { this.updateRoute(dt); return; }
