@@ -804,7 +804,7 @@ const VENUES = [
       { t: 'drop', s: 170, ang: 5, vmax: 11, spend: 4, name: 'Obsidian drop' },
       { t: 'kick', s: 265, lip: 2.4, ang: 30, vmax: 14, canyon: { depth: 32 }, name: 'Crater gap', crowd: 1 },
       { t: 'kick', s: 385, lip: 2.6, ang: 26, vmax: 10, spend: 6, name: 'Mega Sender', crowd: 1 },
-      { t: 'drop', s: 495, ang: 4, vmax: 12, spend: 8, name: 'The Abyss' },
+      { t: 'drop', s: 480, ang: 4, vmax: 12, spend: 8, name: 'The Abyss' },
       { t: 'kick', s: 690, lip: 2.6, ang: 32, vmax: 14, land: 1.8, spend: 4, name: 'Volcano flip', crowd: 2 },
       { t: 'finish', s: 1e9, end: 64 },
     ],
@@ -2375,7 +2375,7 @@ function ik2(a, c, l1, l2, pole, b, cOut) {
 //  the ground. Yaw follows the steering on the ground (bicycle model) and is free in the air.
 //  Tyres: grip circle per wheel; the lateral force stops sideways sliding up to the grip limit.
 // =====================================================================================================
-const BK = { m: 95, Ip: 30, ax: [-0.62, 0.66], ay: -0.66, r: 0.37, trav: [0.21, 0.2], k: [9400, 8800], c: [1150, 980], kb: 160000, cb: 5200, cda: 0.62, crr: 0.045, mu: 1.05, pmax: 950 };
+const BK = { m: 95, Ip: 30, ax: [-0.62, 0.66], ay: -0.66, r: 0.37, trav: [0.21, 0.2], k: [9400, 8800], c: [1150, 980], kb: 160000, cb: 5200, cda: 0.5, crr: 0.045, mu: 1.05, pmax: 1900 };
 const SURF_MU = [0.9, 1.05, 1.12];            // natural ground, track dirt, wood
 const B = {
   p: V3(), v: V3(), yaw: 0, pitch: 0, roll: 0, wp: 0, wy: 0,
@@ -2423,7 +2423,7 @@ function bikeStep(h, inp) {
   _F.set(0, -BK.m * GRAV, 0);
   let tq = 0, contacts = 0;
   const sp = B.v.length();
-  _F.addScaledVector(B.v, -0.5 * 1.2 * BK.cda * sp * (inp.tuck ? 0.7 : 1));
+  _F.addScaledVector(B.v, -0.5 * 1.2 * BK.cda * sp * (inp.tuck ? 0.55 : 1));
   _wv.copy(rt).multiplyScalar(B.wp); _wv.y += B.wy;
   // riders get behind the saddle on steep ground: the wheels move forward relative to the body
   const shift = clamp(-Math.sin(B.pitch) * 0.32, -0.1, 0.22) + CTL.brake * 0.1;
@@ -2459,7 +2459,7 @@ function bikeStep(h, inp) {
     const vt = _vc.dot(_t), vl = _vc.dot(_l);
     const lim = BK.mu * SURF_MU[GW.surf] * Fs;
     let Fl = 0;
-    if (w === 0 && inp.pedal > 0) Fl += inp.pedal * Math.min(BK.pmax / Math.max(2.5, vt), 650);
+    if (w === 0 && inp.pedal > 0) Fl += inp.pedal * Math.min(BK.pmax * (0.5 + 0.5 * smooth(8, 14, Math.abs(vt))) / Math.max(2.5, vt), 650);   // full power only at speed (no loop-outs at the start)
     if (inp.brake > 0) { const bf = Math.min(inp.brake * (w === 1 ? 0.42 : 0.52) * 1.1 * Fs, inp.brake * BK.m * GRAV * (w === 1 ? 0.26 : 0.34)); Fl -= Math.sign(vt) * Math.min(bf, Math.abs(vt) * BK.m * 0.5 / h); }
     Fl -= BK.crr * Fs * Math.tanh(vt / 0.4);
     Fl = clamp(Fl, -lim, lim);
@@ -2617,8 +2617,8 @@ function prepareControls(dt) {
       const hold = holdSpeed(F, lerp(F.lo, F.hi, 0.45)), holdLo = holdSpeed(F, F.lo + 0.2);
       if (sp > hold + 0.3) CTL.brake = Math.max(CTL.brake, clamp((sp - hold) * 0.8, 0, 1));
       if (ASSIST.level === 2 && sp < holdLo && F.sR - B.s > 3) CTL.pedal = Math.max(CTL.pedal, 1);
-    }
-    const top = ASSIST.level === 2 ? 16 : 20;
+    } else if (F && F.sR - B.s < 110 && sp > F.hi + 3) CTL.brake = Math.max(CTL.brake, clamp((sp - F.hi - 3) * 0.4, 0, 1));
+    const top = ASSIST.level === 2 ? 20 : 26;
     if (sp > top) CTL.brake = Math.max(CTL.brake, clamp((sp - top) * 0.5, 0, 1));
   }
   // pop: hold to load the suspension, let go to jump
@@ -2900,9 +2900,10 @@ function botControls() {
   const tp = trackPoint(Math.min(T.L - 1, B.s + la), {});
   const want = Math.atan2(tp.x - B.p.x, tp.z - B.p.z), err = wrapA(want - B.yaw);
   const steer = clamp(-err * 3.2 - B.u * 0.08, -1, 1);
-  let target = 15, v = sp;
+  let target = 16, v = sp;
   const F = nextFeature(B.s);
   if (F && F.sR - B.s < 60) target = holdSpeed(F, lerp(F.lo, F.hi, RIDE.botAim ?? 0.5));
+  else if (F && F.sR - B.s < 110) target = Math.min(target, F.hi + 3);   // don't arrive far too fast
   const k = Math.round(B.s / DS);
   const ka = Math.min(T.n - 1, k + Math.round(la / DS)), kk = Math.abs(T.K[ka]); if (kk > 1e-3 && T.FEAT[ka] < 0) target = Math.min(target, Math.sqrt(8 / kk));
   return { steer, fwd: v < target - 0.4 ? 1 : 0, back: v > target + 0.3 ? clamp((v - target) * 0.6, 0.2, 1) : 0 };
