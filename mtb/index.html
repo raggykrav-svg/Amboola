@@ -295,7 +295,7 @@
   <div class="titleL">
     <div class="logo big"><span>Amboola</span><b>MTB</b></div>
     <div class="tag">Big Mountain Finals</div>
-    <p class="lede">Seven finals on seven mountains: a red desert ridge, a steep pine forest, the Alps, a smoking volcano, a frozen peak, a green gorge and a pink mesa at dusk. Huge jumps, cliff drops and tricks. Land it clean, or the helicopter takes you to the hospital.</p>
+    <p class="lede">Eight finals on eight mountains: a red desert ridge, a steep pine forest, the Alps, a smoking volcano, a frozen peak, a green gorge, a pink mesa at dusk and the knife-edge ridges of Thunder Ridge. Huge jumps, cliff drops and tricks. Land it clean, or the helicopter takes you to the hospital.</p>
     <div class="menu">
       <button class="btn primary big" data-act="finals">Finals</button>
       <button class="btn big" data-act="free">Free ride</button>
@@ -920,6 +920,46 @@ const VENUES = [
     ],
     veg: 'desert', tape: false,
   },
+  {
+    id: 'ridge', name: 'Thunder Ridge', kind: 'freeride', short: 'Big-mountain freeride final', seed: 12611,
+    blurb: 'Knife-edge ridges of pale desert shale, the steepest mountain in the game. Huge drops, a canyon gap, a wooden drop, The Cliff and a flip off the final ridge.',
+    look: { sunEl: 48, sunAz: 200, turb: 2.2, ray: 1.1, mie: 0.004, mieG: 0.8, cloud: 0.15, cloudTint: '#fff8ee', exposure: 0.8,
+      fog: '#e6d3bc', fogD: 0.0003, hemiSky: '#bcd2ff', hemiGround: '#a4774f', hemiI: 0.62, sunI: 3.4, sunCol: '#fff2de', envGround: '#7a5434' },
+    pal: { g1: '#b98a64', g2: '#d4ab82', r1: '#8c5a40', r2: '#b07a58', r3: '#e8d2b4', d1: '#a8774f', d2: '#c99a6e', strata: 1, snow: 0, flowers: 0 },
+    knots: [[-600, 150], [-170, 300], [-60, 330], [0, 322], [160, 264], [320, 208], [480, 152], [620, 100], [740, 55], [840, 20], [905, 4], [960, 0], [2600, 0]],
+    terrain(x, z) {
+      const N = this.N; let h = this.macro(z);
+      const mount = smooth(985, 850, z);
+      h += mount * N.fbm(x / 420 + 6.1, 0.3, 2) * 46;
+      h += mount * (N.ridge(x / 80 + N(z / 240, 5.2) * 0.8, z / 380, 2) - 0.55) * 62;
+      h += mount * N.fbm(x / 30, z / 30, 3) * 4.5;
+      const st = 7.5, tf = h / st, fl = Math.floor(tf);
+      h = lerp(h, (fl + smooth(0.64, 0.95, tf - fl)) * st, 0.6 * mount);
+      h += (1 - mount) * N(x / 70, z / 70) * 1.1;
+      const side = Math.min(1, smooth(300, 560, Math.abs(x - 10)) + smooth(1350, 1750, z));
+      if (side > 0.001) {
+        const m = N(x / 500 + 1.9, z / 500 - 6.6);
+        let mh = smooth(0.05, 0.2, m) * (170 + 90 * N(x / 300, z / 300)) + N.fbm(x / 60, z / 60, 2) * 6;
+        const t2 = mh / 10, f2 = Math.floor(t2); mh = (f2 + smooth(0.55, 0.9, t2 - f2)) * 10 * 0.7 + mh * 0.3;
+        h = Math.max(h, lerp(h, mh, side));
+      }
+      return h;
+    },
+    hw: 2.8, mg: 8, spur: [[24, 330, 14], [380, 820, 12]],
+    pts: [[0, -26], [0, 0], [-6, 45], [8, 100], [28, 155], [34, 215], [18, 275], [-8, 330], [-28, 390], [-30, 455], [-12, 515], [12, 575], [22, 640], [10, 705], [-12, 765], [-22, 825], [-20, 885], [-16, 950], [-16, 1010], [-16, 1075]],
+    feats: [
+      { t: 'start', s: 0, len: 12, h: 3.6, roll: 18 },
+      { t: 'drop', s: 70, ang: 4, vmax: 10, spend: 5, name: 'Ridge drop' },
+      { t: 'kick', s: 160, lip: 1.8, ang: 28, vmax: 14, name: 'Shale kicker' },
+      { t: 'kick', s: 355, lip: 2.4, ang: 32, vmax: 14, canyon: { depth: 40 }, name: 'Canyon gap', crowd: 1 },
+      { t: 'kick', s: 470, lip: 2, ang: 22, vmax: 13, wood: true, spend: 6, name: 'Wooden drop', crowd: 1 },
+      { t: 'drop', s: 575, ang: 4, vmax: 12, spend: 10, name: 'The Cliff', crowd: 1 },
+      { t: 'kick', s: 720, lip: 2, ang: 30, vmax: 14, spend: 5, name: 'Ridge step-down' },
+      { t: 'kick', s: 860, lip: 2.6, ang: 35, vmax: 14, land: 1.8, spend: 3, name: 'Final flip', crowd: 2 },
+      { t: 'finish', s: 1e9, end: 64 },
+    ],
+    veg: 'desert', tape: false,
+  },
 ];
 const VBY = Object.fromEntries(VENUES.map(v => [v.id, v]));
 
@@ -1167,7 +1207,8 @@ function sim1D(P, i0, v0, i1, opt = {}) {
     }
     const cs = 1 / Math.sqrt(1 + m1 * m1), sn = m1 * cs, Ls = DS / cs;
     let a = -GRAV * sn - SIM.crr * GRAV * cs - SIM.kd * v * v;
-    if (opt.pedal && v < 15 && sn > -0.12) a += 560 / (95 * Math.max(v, 2));   // the bike pedals hard (conservative)
+    if (opt.pedal === 'par') { if (v < 11 && sn > -0.12) a += 260 / (95 * Math.max(v, 2)); }   // a steady rider (par time and rivals)
+    else if (opt.pedal && v < 15 && sn > -0.12) a += 560 / (95 * Math.max(v, 2));   // the bike pedals hard (conservative)
     v = Math.sqrt(Math.max(0.3, v * v + 2 * a * Ls));
     const k = Math.abs(T.K[i]); if (k > 1e-4) v = Math.min(v, Math.sqrt(SIM.alat / k));
     if (opt.cap && opt.cap[i] > 0) v = Math.min(v, opt.cap[i]);
@@ -1328,9 +1369,9 @@ function buildFeatures(V) {
   }
   // speed along the whole track (for banking) and the par time
   T.VSIM = new Float32Array(n);
-  const r = sim1D(P, 2, 1.5, Math.round(T.finishS / DS), { pedal: true, cap: T.CAP, log: T.VSIM });
+  sim1D(P, 2, 1.5, Math.round(T.finishS / DS), { pedal: true, cap: T.CAP, log: T.VSIM });
   for (let i = 1; i < n; i++) if (!T.VSIM[i]) T.VSIM[i] = T.VSIM[i - 1];
-  T.par = r.t;
+  T.par = sim1D(P, 2, 1.5, Math.round(T.finishS / DS), { pedal: 'par', cap: T.CAP }).t;
   // split points at a quarter, half and three quarters, outside any jump
   T.splits = [0.27, 0.52, 0.77].map(fr => {
     let s = T.finishS * fr;
