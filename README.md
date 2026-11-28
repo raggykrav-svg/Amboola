@@ -12,6 +12,27 @@ Free, in your browser: no download, no install, no account. It works on computer
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
+## 🚵 New: Amboola MTB, big-mountain bike finals
+
+A separate game in this repo (the racing game is unchanged): a mountain bike game with three finals on three mountains, huge jumps and cliff drops, tricks, and crashes that depend on how you fall. Fall very hard and the rescue helicopter flies you to the hospital.
+
+**▶ Play: [raggykrav-svg.github.io/Amboola/mtb/](https://raggykrav-svg.github.io/Amboola/mtb/)** · the whole game is [`mtb/index.html`](mtb/index.html)
+
+![A superman over the red desert in front of the crowd](media/mtb-hero.jpg)
+![The pine forest, the Alps finish and the desert canyon](media/mtb-tracks.jpg)
+![A crash, the rescue helicopter in the canyon, and the hospital with the X-ray](media/mtb-crash.jpg)
+
+- **Three finals:** **Red Rock Ridge**, a freeride final on red sandstone ridges in the desert, scored by five judges: cliff drops, a canyon gap, a wooden step-down called The Sender, The Big One and a flip jump in front of the crowd. **Black Pine Valley**, a downhill final through a steep pine forest, timed: rock gardens, roots, a road gap lined with fans and a wooden Big Hit. **Alpenglow**, the world final in the Alps: big berms, a glacier drop, a ski-road gap and the final jump in front of the grandstand. All three are original tracks in the style of the big freeride and downhill finals.
+- **Big jumps that work:** every kicker and drop is shaped for the speed you can carry into it, and its landing is built so every speed in a window lands softly. Before each jump a **speed check** bar shows that window: pedal if you are too slow, brake if you are too fast. Too slow and you case the landing; too fast and you overshoot to the flat.
+- **Tricks:** backflips and front flips (S or W in the air: pull back on the lip for a backflip), 360s and 720s (A and D), superman (J), no-hander (K) and tailwhip (L), and combos like a 360 tailwhip. Land straight and with the tricks finished: Perfect, Clean or Sketchy.
+- **How you fall matters:** when you crash, the rider and the bike tumble down the hill on their own (ragdoll physics), and every body part that hits the ground counts. The game names the crash (over the bars, cased it, looped out, landed sideways, overshot to flat, washed out, hit a tree, into the canyon) and shows a body map. A few scrapes: get back on. A sprain: the medics patch you up. A broken bone or a concussion: the rescue helicopter winches you up on a stretcher and flies you to the **hospital**, where you see your X-ray with the cracked bones, casts, a sling or a leg in traction, a heart monitor, balloons and a get-well card.
+- **Finals:** two runs, the best one counts, against nine rival riders. Split times in the downhill, judges' points in the freeride, then the leaderboard and gold, silver or bronze. Your best times, medals, backflips and hospital visits are saved.
+- **Free ride:** ride any mountain with no clock.
+- **Controls:** W pedal, S brake, A and D steer, Space hold and let go to jump (pop), Shift tuck, R back on the track, C camera (chase, close, helmet, TV), Esc pause. Gamepads work (triggers pedal and brake). On phones: a joystick (push up to pedal, down to brake) and Jump, Superman, No hands and Tailwhip buttons.
+- **Riding help** (⚙ Settings): Light steers along the line when you let go, brakes to the right speed before jumps and levels the bike in the air; Strong also pedals for you; Off is all you.
+- **Rider and bike:** your name, race number and the colours of your jersey, helmet and bike.
+- **Graphics and sound:** Low, Medium, High and Ultra. Everything is made in code: the mountains, the tracks, the trees, the crowd, the bike and the rider. The sound is made in code too: tyres, the freehub buzz, wind, landings, the crowd, air horns and cowbells, the start beeps, the helicopter and the heart monitor, plus a commentator voice you can switch off.
+
 ## 🏡 New: Villa Oliva, a house to walk through
 
 A separate game in this repo (the racing game is unchanged): walk through a white Mediterranean villa and its olive garden.
