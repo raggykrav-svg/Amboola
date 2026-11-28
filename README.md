@@ -12,6 +12,42 @@ Free, in your browser: no download, no install, no account. It works on computer
 
 Everything is in one file, `index.html`: the city, the cars, the physics and the sound. No build step and no install.
 
+## 🚵 New: Amboola MTB, big-mountain bike finals
+
+A separate game in this repo (the racing game is unchanged): a mountain bike game with five finals on five mountains, huge jumps and cliff drops, tricks, and crashes that depend on how you fall. Fall very hard and the rescue helicopter flies you to the hospital.
+
+**▶ Play: [raggykrav-svg.github.io/Amboola/mtb/](https://raggykrav-svg.github.io/Amboola/mtb/)** · the whole game is [`mtb/index.html`](mtb/index.html)
+
+![A superman over the red desert in front of the crowd](media/mtb-hero.jpg)
+![The pine forest, the Alps finish and the desert canyon](media/mtb-tracks.jpg)
+![A crash, the rescue helicopter in the canyon, and the hospital with the X-ray](media/mtb-crash.jpg)
+
+- **Three finals:** **Red Rock Ridge**, a freeride final on red sandstone ridges in the desert, scored by five judges: cliff drops, a canyon gap, a wooden step-down called The Sender, The Big One and a flip jump in front of the crowd. **Black Pine Valley**, a downhill final through a steep pine forest, timed: rock gardens, roots, a road gap lined with fans and a wooden Big Hit. **Alpenglow**, the world final in the Alps: big berms, a glacier drop, a ski-road gap and the final jump in front of the grandstand. **Fire Mountain**, a mega freeride final on a smoking volcano at sunset: a 2-second crater gap, the Mega Sender and The Abyss. **Frozen Peak**, a downhill race on packed snow: cornice drops, a piste gap and a Big Air finale. All five are original tracks in the style of the big freeride and downhill finals.
+- **Big jumps that work:** every kicker and drop is shaped for the speed you can carry into it, and its landing is built so every speed in a window lands softly. Before each jump a **speed check** bar shows that window: pedal if you are too slow, brake if you are too fast. Too slow and you case the landing; too fast and you overshoot to the flat.
+- **Tricks:** backflips and front flips (S or W in the air: pull back on the lip for a backflip), 360s and 720s (A and D), superman (J), no-hander (K) and tailwhip (L), and combos like a 360 tailwhip. Land straight and with the tricks finished: Perfect, Clean or Sketchy.
+- **How you fall matters:** when you crash, the rider and the bike tumble down the hill on their own (ragdoll physics), and every body part that hits the ground counts. The game names the crash (over the bars, cased it, looped out, landed sideways, overshot to flat, washed out, hit a tree, into the canyon) and shows a body map. A few scrapes: get back on. A sprain: the medics patch you up. A broken bone or a concussion: the rescue helicopter winches you up on a stretcher and flies you to the **hospital**, where you see your X-ray with the cracked bones, casts, a sling or a leg in traction, a heart monitor, balloons and a get-well card.
+- **Finals:** two runs, the best one counts, against nine rival riders. Split times in the downhill, judges' points in the freeride, then the leaderboard and gold, silver or bronze. Your best times, medals, backflips and hospital visits are saved.
+- **It feels fast:** the camera drops low and close as you speed up, the view widens, the ground rumbles through the bike (more in rock gardens), the edges blur, white speed lines rush past and the wind roars. Speed lines can be switched off in ⚙ Settings.
+- **Free ride:** ride any mountain with no clock.
+- **Controls:** W pedal, S brake, A and D steer, Space hold and let go to jump (pop), Shift tuck, R back on the track, C camera (chase, close, helmet, TV), Esc pause. Gamepads work (triggers pedal and brake). On phones: a joystick (push up to pedal, down to brake) and Jump, Superman, No hands and Tailwhip buttons.
+- **Riding help** (⚙ Settings): Light steers along the line when you let go, brakes to the right speed before jumps and levels the bike in the air; Strong also pedals for you; Off is all you.
+- **Rider and bike:** your name, race number and the colours of your jersey, helmet and bike.
+- **Graphics and sound:** Low, Medium, High and Ultra. Everything is made in code: the mountains, the tracks, the trees, the crowd, the bike and the rider. The sound is made in code too: tyres, the freehub buzz, wind, landings, the crowd, air horns and cowbells, the start beeps, the helicopter and the heart monitor, plus a commentator voice you can switch off.
+
+## 🏡 New: Villa Oliva, a house to walk through
+
+A separate game in this repo (the racing game is unchanged): walk through a white Mediterranean villa and its olive garden.
+
+**▶ Play: [raggykrav-svg.github.io/Amboola/villa/](https://raggykrav-svg.github.io/Amboola/villa/)** · the whole game is [`villa/index.html`](villa/index.html)
+
+![Villa Oliva living room](media/villa-living.jpg)
+![Aerial by day, plunge pool at dusk, lap pool at night, aerial at night](media/villa-views.jpg)
+
+- **The house:** round entrance atrium under a glass dome, living room with folding glass doors, dining room, kitchen with island, study, floating oak stairs, master bedroom with balcony, bathroom with a freestanding tub, children's room and a roof terrace.
+- **The garden:** lap pool, plunge pool, swimming pond with a pool house, citrus walk, tennis court, giant chess, greenhouse, swing, sandbox, play tower with slide, fire pit, dining deck with string lights, guest house, gym and garage, parking with four cars, olive trees, cypresses, lavender and 3D grass.
+- **Controls:** W A S D walk, mouse looks (click to lock), Shift runs, Space jumps, E sits (sofas, benches, the swing), N changes the time of day, M opens the map (tap a place to go there), V flies the drone. On phones: left thumb walks, right thumb looks.
+- **Graphics:** Low, Medium, High and Ultra in ⚙ Settings. At dusk the lamps, pool lights, path lights, string lights and the fire come on.
+
 ## The title screen 🏁
 
 ![The title screen, Settings and Challenges](media/title-screen.jpg)
