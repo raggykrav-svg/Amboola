@@ -114,9 +114,15 @@ export const MAT = {
   paint: {},
 };
 // car paint; the vertex colour carries the baked ambient occlusion (white on procedural cars)
+// shiny clear-coat paint (a glossy lacquer layer over metallic paint) on Medium and High
+let clearcoat = 1;
 export function paintMat(hex) {
-  if (!MAT.paint[hex]) MAT.paint[hex] = new THREE.MeshStandardMaterial({ color: hex, vertexColors: true, roughness: 0.22, metalness: 0.55, envMapIntensity: 1.3 });
+  if (!MAT.paint[hex]) MAT.paint[hex] = new THREE.MeshPhysicalMaterial({ color: hex, vertexColors: true, roughness: 0.32, metalness: 0.6, envMapIntensity: 1.5, clearcoat, clearcoatRoughness: 0.05 });
   return MAT.paint[hex];
+}
+export function setPaintQuality(hi) {
+  clearcoat = hi ? 1 : 0;
+  for (const m of Object.values(MAT.paint)) m.clearcoat = clearcoat;
 }
 
 export function mesh(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = false; return m; }

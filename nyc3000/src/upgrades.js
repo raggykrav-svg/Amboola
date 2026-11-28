@@ -73,7 +73,7 @@ export function applyToCar(g, v, again) {
       v.glow.scale.set(v.def.bike ? 1.2 : 2.8, v.def.bike ? 2.6 : 5.2, 1);
       v.mesh.add(v.glow);
     }
-    v.glow.material.color.set(u.glow).multiplyScalar(1.4);
+    v.glow.material.color.set(u.glow).multiplyScalar(1.4); v.cityGlow = false; v.glow.visible = true;
   }
   if (u.paint && v.owned && !v.def.police && v.type !== 'taxi' && (again || v.paintJob !== u.paint)) { repaint(v, u.paint); v.paintJob = u.paint; }
 }

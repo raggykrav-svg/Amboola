@@ -59,6 +59,10 @@ The people, cars, landmark skyscrapers and rooftop props are modelled in [Blende
 | ![Before](screenshots/54-graphics-before.jpg) | ![After](screenshots/55-graphics-after.jpg) |
 | **Wet streets at night** | **Wet streets in the day** |
 | ![Wet street](screenshots/56-wet-street.jpg) | ![Wet street, day](screenshots/57-wet-street-day.jpg) |
+| **Shiny clear-coat cars with underglow** | **Headlights and brake lights at night** |
+| ![Shiny cars](screenshots/58-shiny-cars.jpg) | ![Headlights](screenshots/59-headlights.jpg) |
+| **Cars at night** | **Cars in the day** |
+| ![Cars at night](screenshots/60-cars-night.jpg) | ![Cars in the day](screenshots/61-cars-day.jpg) |
 
 ## Run it
 
@@ -304,7 +308,7 @@ All graphics settings change live, even from the pause menu, and they're saved i
 | Shadows | On or off. |
 | Neon glow (bloom) | The glow around neon lights. Turn it off for more speed. |
 | Wet street reflections | The rainy streets mirror the neon signs, billboards, lamps and cars, with ripples while it rains (puddles are sharp, damp asphalt is blurry). It draws the city a second time at half size, so it's on in **High** only; turn it on in Medium if your graphics card is fast. |
-| Extra effects | A film look (colour grading, a vignette, a little lens fringing and film grain), smooth edges (multisampling) and soft light beams under the street lamps at night. Needs Neon glow on. On in Medium and High. |
+| Extra effects | A film look (colour grading, a vignette, a little lens fringing and film grain), smooth edges (multisampling), soft light beams under the street lamps at night, and for the cars: **clear-coat paint** (a glossy lacquer layer), **headlight beams** with a pool of light on the road, and **neon underglow** on some of the city's cars at night. Needs Neon glow on. On in Medium and High. |
 | View distance | 250–1200 m. Fog and distance culling follow it. |
 | Rain | Off, light, medium or storm. |
 | Time of day | Day + night (a day lasts 20 minutes), always day or always night. |
@@ -313,7 +317,7 @@ All graphics settings change live, even from the pause menu, and they're saved i
 | Show FPS counter | Top right. |
 | Mouse sensitivity, Invert Y, Volume | Controls and sound. |
 
-**Low** uses 60% resolution with no shadows, no bloom, no reflections or extra effects, 380 m view, light rain and fewer cars and people. On every preset the ground has glossy puddles, and there are stars in the night sky. The game picks Low by itself on machines with 4 or fewer CPU cores or 4 GB or less of memory.
+**Low** uses 60% resolution with no shadows, no bloom, no reflections or extra effects, 380 m view, light rain and fewer cars and people. On every preset the ground has glossy puddles, there are stars in the night sky, and cars have glowing **tail lights** that get brighter when they brake. Shiny things (car paint, glass, chrome, the wet ground) reflect a little neon city at night and a blue sky with a sun in the day. The game picks Low by itself on machines with 4 or fewer CPU cores or 4 GB or less of memory.
 
 ## Using your own concept art for the title and menu
 

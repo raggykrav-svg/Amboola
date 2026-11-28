@@ -23,6 +23,8 @@ import { renderShop, renderChallenges, renderProfile } from './shop.js';
 import { MapScreen } from './mapscreen.js';
 import { DayNight } from './daynight.js';
 import { Graphics } from './gfx.js';
+import { CarFX, makeCityEnvironment } from './carfx.js';
+import { setPaintQuality } from './parts.js';
 import * as MODELS from './models.js';
 
 const $ = id => document.getElementById(id);
@@ -76,7 +78,11 @@ function makeEnvironment() {
   pm.dispose();
   return tex;
 }
-scene.environment = makeEnvironment();
+// what shiny things (car paint, glass, chrome, wet ground) reflect: a neon city at night, a blue sky by day
+const envNight = makeCityEnvironment(renderer, false), envDay = makeCityEnvironment(renderer, true);
+void makeEnvironment;
+scene.environment = envNight;
+const carfx = new CarFX(scene); // headlights, tail lights and underglow
 
 // multisampled, so edges stay smooth when the post effects are on
 const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: 4 }));
@@ -322,6 +328,7 @@ function applySettings() {
   audio.setRain && audio.setRain(settings.rain);
   if (city) city.bbInterval = settings.preset === 'low' ? 0.5 : 0.12;
   gfx.apply(settings);
+  setPaintQuality(!!settings.post && settings.bloom);
   fpsInterval = settings.fpsCap ? 1000 / settings.fpsCap : 0;
 }
 function resize() {
@@ -451,6 +458,10 @@ function frame(now) {
     rain.update(dt, camera.position);
   }
   if (rain.mesh) rain.mesh.visible = !(game && game.interior); // no rain indoors
+  if (dayNight && dayNight.cur.hemi !== undefined) {
+    const env = dayNight.daylight > 0.5 ? envDay : envNight; if (scene.environment !== env) scene.environment = env;
+    if (state !== 'pause') carfx.update(dt, game && (state === 'play' || state === 'pause') ? game : null, camera, 1 - dayNight.daylight, !!settings.post && settings.bloom, !!settings.post);
+  }
   if (dayNight && dayNight.cur.hemi !== undefined) gfx.update(dt, { night: 1 - dayNight.daylight, rain: settings.rain > 0, inside: !!(game && game.interior), fog: scene.fog.density });
   if (bgFlags.menu && inMenu) { renderer.setClearColor(0x000000); renderer.clear(); return; }
   if (useBloom) { renderPass.scene = scene; renderPass.camera = camera; composer.render(dt); }
