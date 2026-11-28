@@ -253,6 +253,7 @@
   .helpText p { margin: 0; }
   .helpText b { color: var(--ink); }
 
+  #speedLines { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 9; pointer-events: none; }
   #fade { position: fixed; inset: 0; z-index: 35; background: #000; opacity: 0; pointer-events: none; transition: opacity .45s; }
   #fade.white { background: #fff; }
   #toast { position: fixed; left: 50%; top: calc(70px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 45; pointer-events: none;
@@ -294,7 +295,7 @@
   <div class="titleL">
     <div class="logo big"><span>Amboola</span><b>MTB</b></div>
     <div class="tag">Big Mountain Finals</div>
-    <p class="lede">Three finals on three mountains: a red desert ridge, a steep pine forest and the Alps. Huge jumps, cliff drops and tricks. Land it clean, or the helicopter takes you to the hospital.</p>
+    <p class="lede">Five finals on five mountains: a red desert ridge, a steep pine forest, the Alps, a smoking volcano and a frozen peak. Huge jumps, cliff drops and tricks. Land it clean, or the helicopter takes you to the hospital.</p>
     <div class="menu">
       <button class="btn primary big" data-act="finals">Finals</button>
       <button class="btn big" data-act="free">Free ride</button>
@@ -390,6 +391,7 @@
 <div id="setPanel" class="panel hidden" role="dialog" aria-label="Settings"></div>
 <div id="riderPanel" class="panel hidden" role="dialog" aria-label="Rider and bike"></div>
 <div id="helpPanel" class="panel hidden" role="dialog" aria-label="How to play"></div>
+<canvas id="speedLines" aria-hidden="true"></canvas>
 <div id="fade"></div>
 <div id="toast"></div>
 
@@ -680,15 +682,15 @@ const VENUES = [
     pts: [[0, -26], [0, 0], [4, 40], [-6, 95], [-24, 150], [-30, 210], [-14, 270], [12, 325], [30, 385], [32, 450], [16, 515], [-6, 575], [-14, 640], [-4, 705], [16, 765], [28, 825], [30, 885], [30, 950], [30, 1010], [30, 1075]],
     feats: [
       { t: 'start', s: 0, len: 12, h: 3.2, roll: 16 },
-      { t: 'kick', s: 74, lip: 1.4, ang: 22, vmax: 11, name: 'Warm-up kicker' },
+      { t: 'kick', s: 74, lip: 1.4, ang: 22, vmax: 12.5, name: 'Warm-up kicker' },
       { t: 'drop', s: 150, ang: 4, vmax: 9, spend: 3, name: 'First drop' },
-      { t: 'kick', s: 238, lip: 1.8, ang: 22, vmax: 11.5, spend: 3, name: 'Ridge step-down' },
-      { t: 'kick', s: 336, lip: 2.2, ang: 25, vmax: 13, canyon: { depth: 26 }, name: 'Canyon gap', crowd: 1 },
-      { t: 'kick', s: 446, lip: 2.4, ang: 26, vmax: 13, wood: true, spend: 4, name: 'The Sender', crowd: 1 },
+      { t: 'kick', s: 238, lip: 1.8, ang: 22, vmax: 13, spend: 3, name: 'Ridge step-down' },
+      { t: 'kick', s: 336, lip: 2.2, ang: 25, vmax: 15, canyon: { depth: 26 }, name: 'Canyon gap', crowd: 1 },
+      { t: 'kick', s: 446, lip: 2.4, ang: 26, vmax: 14.5, wood: true, spend: 4, name: 'The Sender', crowd: 1 },
       { t: 'drop', s: 562, ang: 4, vmax: 10, spend: 7, name: 'The Big One' },
-      { t: 'kick', s: 660, lip: 1.5, ang: 22, vmax: 11, name: 'Spine kicker' },
+      { t: 'kick', s: 660, lip: 1.5, ang: 22, vmax: 12.5, name: 'Spine kicker' },
       { t: 'drop', s: 745, ang: 6, vmax: 9.5, spend: 2.5, name: 'Ledge drop' },
-      { t: 'kick', s: 880, lip: 2.6, ang: 33, vmax: 14, land: 1.6, spend: 3, name: 'Flip jump', crowd: 2 },
+      { t: 'kick', s: 880, lip: 2.6, ang: 33, vmax: 16, land: 1.6, spend: 3, name: 'Flip jump', crowd: 2 },
       { t: 'finish', s: 1e9, end: 64 },
     ],
     veg: 'desert', tape: false,
@@ -718,18 +720,18 @@ const VENUES = [
     feats: [
       { t: 'start', s: 0, len: 10, h: 2.6, roll: 14 },
       { t: 'rock', s: 50, len: 42, amp: 0.13 },
-      { t: 'kick', s: 125, lip: 1.4, ang: 20, vmax: 11.5, name: 'First hit' },
+      { t: 'kick', s: 125, lip: 1.4, ang: 20, vmax: 13, name: 'First hit' },
       { t: 'drop', s: 205, ang: 4, vmax: 9, spend: 2.5, name: 'Rock drop' },
       { t: 'roots', s: 300, len: 40 },
-      { t: 'kick', s: 395, lip: 1.8, ang: 22, vmax: 12, spend: 2.5, name: 'Step-down' },
+      { t: 'kick', s: 395, lip: 1.8, ang: 22, vmax: 12.5, spend: 2.5, name: 'Step-down' },
       { t: 'rock', s: 500, len: 52, amp: 0.17 },
-      { t: 'kick', s: 640, lip: 2.2, ang: 24, vmax: 13, road: true, name: 'Road gap', crowd: 2 },
+      { t: 'kick', s: 640, lip: 2.2, ang: 24, vmax: 14, road: true, name: 'Road gap', crowd: 2 },
       { t: 'kick', s: 760, lip: 2.4, ang: 25, vmax: 10.6, wood: true, name: 'The Big Hit', crowd: 1 },
       { t: 'drop', s: 852, ang: 5, vmax: 9.5, spend: 4, name: 'Cliff drop' },
       { t: 'roots', s: 930, len: 35 },
       { t: 'rock', s: 975, len: 40, amp: 0.15 },
-      { t: 'kick', s: 1045, lip: 2, ang: 22, vmax: 12, name: 'Tabletop' },
-      { t: 'kick', s: 1150, lip: 2.6, ang: 26, vmax: 14, spend: 0.5, name: 'Finish jump', crowd: 2 },
+      { t: 'kick', s: 1045, lip: 2, ang: 22, vmax: 13.5, name: 'Tabletop' },
+      { t: 'kick', s: 1150, lip: 2.6, ang: 26, vmax: 16, spend: 0.5, name: 'Finish jump', crowd: 2 },
       { t: 'finish', s: 1e9, end: 70 },
     ],
     veg: 'forest', tape: true,
@@ -758,16 +760,85 @@ const VENUES = [
     pts: [[0, -26], [0, 0], [18, 60], [56, 108], [106, 140], [156, 176], [182, 232], [172, 296], [134, 346], [80, 382], [32, 422], [2, 476], [-8, 540], [10, 602], [48, 650], [92, 690], [118, 746], [114, 810], [86, 860], [42, 900], [8, 950], [-6, 1010], [6, 1074], [38, 1120], [66, 1170], [76, 1234], [66, 1298], [48, 1348], [40, 1400], [40, 1460], [40, 1530], [40, 1600], [40, 1680]],
     feats: [
       { t: 'start', s: 0, len: 12, h: 3, roll: 16 },
-      { t: 'kick', s: 138, lip: 1.4, ang: 20, vmax: 12, name: 'Alp kicker' },
+      { t: 'kick', s: 138, lip: 1.4, ang: 20, vmax: 13.5, name: 'Alp kicker' },
       { t: 'roots', s: 230, len: 40 },
-      { t: 'kick', s: 330, lip: 1.8, ang: 22, vmax: 12, spend: 2.5, name: 'Step-down' },
+      { t: 'kick', s: 330, lip: 1.8, ang: 22, vmax: 13.5, spend: 2.5, name: 'Step-down' },
       { t: 'rock', s: 420, len: 50, amp: 0.15 },
       { t: 'drop', s: 560, ang: 5, vmax: 10, spend: 4, name: 'Glacier drop' },
-      { t: 'kick', s: 700, lip: 2.2, ang: 24, vmax: 13.5, road: true, name: 'Ski road gap', crowd: 2 },
+      { t: 'kick', s: 700, lip: 2.2, ang: 24, vmax: 15.5, road: true, name: 'Ski road gap', crowd: 2 },
       { t: 'roots', s: 820, len: 40 },
-      { t: 'kick', s: 950, lip: 2, ang: 24, vmax: 13, wood: true, spend: 2.5, name: 'Wooden step-down', crowd: 1 },
+      { t: 'kick', s: 950, lip: 2, ang: 24, vmax: 14.5, wood: true, spend: 2.5, name: 'Wooden step-down', crowd: 1 },
       { t: 'rock', s: 1060, len: 40, amp: 0.13 },
-      { t: 'kick', s: 1250, lip: 2.4, ang: 25, vmax: 14, name: 'Final jump 1', crowd: 2 },
+      { t: 'kick', s: 1250, lip: 2.4, ang: 25, vmax: 16, name: 'Final jump 1', crowd: 2 },
+      { t: 'finish', s: 1e9, end: 70 },
+    ],
+    veg: 'alpine', tape: true,
+  },
+  {
+    id: 'volcano', name: 'Fire Mountain', kind: 'freeride', short: 'Mega freeride final', seed: 8117,
+    blurb: 'Black lava ridges on a smoking volcano at sunset. The biggest jumps in the game: a crater gap, the Mega Sender and The Abyss.',
+    look: { sunEl: 14, sunAz: 250, turb: 6, ray: 2.6, mie: 0.008, mieG: 0.86, cloud: 0.35, cloudTint: '#ffb88a', exposure: 0.95,
+      fog: '#c98a6e', fogD: 0.0004, hemiSky: '#ffc9a8', hemiGround: '#3a2018', hemiI: 0.6, sunI: 3.0, sunCol: '#ffb070', envGround: '#2a1a14' },
+    pal: { g1: '#3b3431', g2: '#564842', r1: '#2a2422', r2: '#4a3a33', r3: '#a8401e', d1: '#6e4c3a', d2: '#8c6450', strata: 0.9, snow: 0, flowers: 0 },
+    knots: [[-600, 120], [-170, 252], [-60, 274], [0, 266], [160, 220], [320, 172], [480, 124], [620, 78], [740, 40], [840, 14], [905, 3], [960, 0], [2600, 0]],
+    terrain(x, z) {
+      const N = this.N; let h = this.macro(z);
+      const mount = smooth(985, 850, z);
+      h += mount * N.fbm(x / 420 + 1.3, 0.2, 2) * 40;
+      h += mount * (N.ridge(x / 88 + N(z / 250, 3.1) * 0.7, z / 380, 2) - 0.55) * 46;
+      h += mount * N.fbm(x / 30, z / 30, 3) * 4;
+      const st = 8, tf = h / st, fl = Math.floor(tf);
+      h = lerp(h, (fl + smooth(0.6, 0.95, tf - fl)) * st, 0.5 * mount);
+      h += (1 - mount) * N(x / 60, z / 60) * 1.4;
+      const dc = Math.hypot(x - 60, z + 1100);                       // the smoking cone behind the start
+      h = Math.max(h, 760 - dc * 0.75 - smooth(120, 0, dc) * 160);
+      h += smooth(380, 700, Math.abs(x - 10)) * (90 + N.ridge(z / 500, x / 600, 2) * 160);
+      h += smooth(1350, 1800, z) * (110 + N(x / 400, 2.2) * 60);
+      return h;
+    },
+    hw: 3.0, mg: 8, spur: [[24, 330, 12], [380, 700, 10]],
+    pts: [[0, -26], [0, 0], [-6, 50], [8, 110], [26, 170], [30, 235], [12, 300], [-14, 360], [-26, 425], [-16, 490], [8, 550], [24, 615], [20, 680], [2, 745], [-8, 810], [0, 870], [6, 930], [6, 990], [6, 1060]],
+    feats: [
+      { t: 'start', s: 0, len: 12, h: 3.4, roll: 18 },
+      { t: 'kick', s: 80, lip: 1.6, ang: 26, vmax: 14, name: 'Lava kicker' },
+      { t: 'drop', s: 170, ang: 5, vmax: 11, spend: 4, name: 'Obsidian drop' },
+      { t: 'kick', s: 265, lip: 2.4, ang: 30, vmax: 14, canyon: { depth: 32 }, name: 'Crater gap', crowd: 1 },
+      { t: 'kick', s: 385, lip: 2.6, ang: 26, vmax: 10, spend: 6, name: 'Mega Sender', crowd: 1 },
+      { t: 'drop', s: 495, ang: 4, vmax: 12, spend: 8, name: 'The Abyss' },
+      { t: 'kick', s: 690, lip: 2.6, ang: 32, vmax: 14, land: 1.8, spend: 4, name: 'Volcano flip', crowd: 2 },
+      { t: 'finish', s: 1e9, end: 64 },
+    ],
+    veg: 'desert', tape: false,
+  },
+  {
+    id: 'snow', name: 'Frozen Peak', kind: 'dh', short: 'Snow downhill final', seed: 9203,
+    blurb: 'A downhill race on packed snow under a blue sky. Cornice drops, a piste gap and a Big Air finale into the ski village.',
+    look: { sunEl: 30, sunAz: 140, turb: 2, ray: 1.4, mie: 0.004, mieG: 0.8, cloud: 0.25, cloudTint: '#ffffff', exposure: 0.78,
+      fog: '#d6e4f2', fogD: 0.0005, hemiSky: '#dceaff', hemiGround: '#b8c4d4', hemiI: 0.7, sunI: 3.1, sunCol: '#fff8ee', envGround: '#9aa8b8' },
+    pal: { g1: '#e9eff6', g2: '#d5dfea', r1: '#5d6168', r2: '#7c8088', r3: '#a4a8ae', d1: '#9aa6b4', d2: '#bcc6d2', strata: 0.3, snow: 0, flowers: 0 },
+    knots: [[-900, 560], [-200, 470], [0, 440], [300, 356], [600, 272], [900, 188], [1200, 100], [1400, 38], [1500, 11], [1580, 2], [1650, 0], [2800, -10]],
+    terrain(x, z) {
+      const N = this.N; let h = this.macro(z);
+      const sl = smooth(1720, 1580, z);
+      h += sl * N.fbm(x / 230 + 2, z / 230, 3) * 30;
+      h += sl * (N.ridge(x / 150 + N(z / 380, 1.2) * 0.5, z / 480, 2) - 0.5) * 20;
+      h += N.fbm(x / 45, z / 45, 3) * 3;
+      h += smooth(-350, -1400, z) * (1000 + N.ridge(x / 650, 2.1, 3) * 1200);
+      h += smooth(700, 1500, Math.abs(x + 40)) * (520 + N.ridge(z / 600, x / 900, 3) * 950);
+      h += smooth(2000, 2900, z) * 420 * (0.5 + N(x / 800, 3.7));
+      return h;
+    },
+    hw: 3.2, mg: 8,
+    pts: [[0, -26], [0, 0], [-18, 60], [-56, 108], [-104, 142], [-150, 182], [-172, 240], [-160, 302], [-120, 350], [-66, 386], [-22, 428], [4, 482], [10, 546], [-8, 606], [-46, 652], [-88, 694], [-112, 750], [-106, 814], [-76, 862], [-34, 902], [-2, 952], [10, 1012], [-4, 1076], [-34, 1122], [-60, 1172], [-68, 1236], [-58, 1300], [-44, 1350], [-40, 1400], [-40, 1460], [-40, 1530], [-40, 1600], [-40, 1680]],
+    feats: [
+      { t: 'start', s: 0, len: 12, h: 3, roll: 16 },
+      { t: 'kick', s: 140, lip: 1.6, ang: 24, vmax: 14, name: 'Ice kicker' },
+      { t: 'rock', s: 230, len: 40, amp: 0.12 },
+      { t: 'kick', s: 335, lip: 2, ang: 28, vmax: 15, spend: 3, name: 'Cornice step-down' },
+      { t: 'drop', s: 560, ang: 6, vmax: 12, spend: 5, name: 'Cornice drop' },
+      { t: 'kick', s: 700, lip: 2.4, ang: 28, vmax: 16, road: true, name: 'Piste gap', crowd: 2 },
+      { t: 'kick', s: 950, lip: 2.4, ang: 28, vmax: 15, wood: true, spend: 3, name: 'Snow Sender', crowd: 1 },
+      { t: 'kick', s: 1250, lip: 2.8, ang: 30, vmax: 9.5, spend: 1.5, name: 'Big Air finale', crowd: 2 },
       { t: 'finish', s: 1e9, end: 70 },
     ],
     veg: 'alpine', tape: true,
@@ -2743,8 +2814,9 @@ function chaseCam(dt, close) {
   if (CAM.snap) CAM.yaw = head;
   CAM.yaw = dampA(CAM.yaw, head, B.air ? 1.5 : 3.6, dt);
   const sy = Math.sin(CAM.yaw), cy = Math.cos(CAM.yaw);
-  const dist = (close ? 3.4 : 5.4) + Math.min(close ? 1.5 : 3.5, vh * 0.1) + (B.air ? 1.0 : 0);
-  const hgt = (close ? 1.45 : 2.1) + (B.air ? 0.7 : 0);
+  // low and tight at speed: the ground rushes past
+  const dist = (close ? 3.1 : 4.6) + Math.min(1.0, vh * 0.025) + (B.air ? 1.0 : 0);
+  const hgt = (close ? 1.35 : 1.85) - Math.min(0.35, vh * 0.014) + (B.air ? 0.7 : 0);
   const want = V3(B.p.x - sy * dist, B.p.y + hgt, B.p.z - cy * dist);
   // stay above the ground, and above any hill between the camera and the rider
   let gy = heightAt(want.x, want.z, 1e9);
@@ -2753,7 +2825,7 @@ function chaseCam(dt, close) {
   const look = V3(B.p.x + sy * 4, B.p.y + 0.55, B.p.z + cy * 4);
   if (B.air && B.landAt) look.lerp(V3(B.landAt.x, B.landAt.y + 1, B.landAt.z), 0.25);
   if (CAM.snap) { CAM.pos.copy(want); CAM.look.copy(look); CAM.snap = false; }
-  CAM.pos.lerp(want, 1 - Math.exp(-8 * dt));
+  CAM.pos.lerp(want, 1 - Math.exp(-(8 + vh * 0.25) * dt));
   CAM.look.lerp(look, 1 - Math.exp(-12 * dt));
   camera.position.copy(CAM.pos); camera.lookAt(CAM.look);
 }
@@ -2797,11 +2869,17 @@ function droneCam(dt) {
 function updateRideCamera(dt) {
   if (CAM.mode === 9) return;                     // free camera (tests and screenshots)
   let fov = 68;
-  if (CAM.mode === 0 || CAM.mode === 1) { chaseCam(dt, CAM.mode === 1); fov = 66 + Math.min(14, speedNow() * 0.45); }
-  else if (CAM.mode === 2) { helmetCam(dt); fov = 80 + Math.min(10, speedNow() * 0.3); }
+  const spd = speedNow();
+  if (CAM.mode === 0 || CAM.mode === 1) { chaseCam(dt, CAM.mode === 1); fov = 62 + clamp((spd - 4) * 1.35, 0, 28); }
+  else if (CAM.mode === 2) { helmetCam(dt); fov = 78 + clamp((spd - 4) * 0.9, 0, 18); }
   else { tvCam(dt); fov = camera.fov; }
+  // rumble of the ground through the bike, more on rocks and roots
+  if (CAM.mode !== 3 && !B.air && B.contacts && spd > 5) {
+    const fl = T.FL[Math.round(B.s / DS)] || 0, k = (spd - 5) * 0.0022 * ((fl & (F_ROUGH | F_ROOTS)) ? 2.2 : 1);
+    camera.position.x += (Math.random() - 0.5) * k; camera.position.y += (Math.random() - 0.5) * k;
+  }
   if (CAM.shake > 0) { camera.position.x += (Math.random() - 0.5) * CAM.shake * 0.12; camera.position.y += (Math.random() - 0.5) * CAM.shake * 0.12; CAM.shake = Math.max(0, CAM.shake - dt * 3); }
-  if (CAM.mode !== 3) camera.fov = damp(camera.fov, fov, 3, dt);
+  if (CAM.mode !== 3) camera.fov = damp(camera.fov, fov, 4, dt);
   camera.updateProjectionMatrix();
 }
 
@@ -3391,7 +3469,7 @@ function audioUpdate() {
   const sp = live ? speedNow() : 0, grounded = live && !B.air && B.contacts > 0, wood = B.gsurf[0] === 2;
   N.tg.gain.setTargetAtTime(grounded ? Math.min(0.3, sp * 0.02) * (wood ? 1.4 : 1) * (GAME.mode === 'title' ? 0.35 : 1) : 0, t, 0.05);
   N.tf.frequency.setTargetAtTime(wood ? 240 + sp * 10 : 380 + sp * 32, t, 0.05);
-  N.wg.gain.setTargetAtTime(Math.min(0.22, sp * sp * 0.0006) * (B.air ? 1.5 : 1) * (GAME.mode === 'title' ? 0.3 : 1), t, 0.1);
+  N.wg.gain.setTargetAtTime(Math.min(0.34, sp * sp * 0.0009) * (B.air ? 1.5 : 1) * (GAME.mode === 'title' ? 0.3 : 1), t, 0.1);
   N.wf.frequency.setTargetAtTime(280 + sp * 55, t, 0.1);
   N.hg.gain.setTargetAtTime(grounded && sp > 1.5 && CTL.pedal < 0.1 ? 0.035 : 0, t, 0.04);
   N.hub.frequency.setTargetAtTime(Math.max(30, sp / (TAU * BK.r) * 54), t, 0.03);
@@ -4000,6 +4078,7 @@ function openSettings() {
     <div class="field"><div class="lab"><span>Speed in</span></div>${segHTML('units', [['kmh', 'km/h'], ['mph', 'mph']], UNITS.mph ? 'mph' : 'kmh')}</div>
     <div class="field"><div class="lab"><span>Sound</span><b>${Math.round(AU.vol * 100)}%</b></div><input type="range" min="0" max="1" step="0.05" value="${AU.vol}" data-vol></div>
     <div class="field"><div class="lab"><span>Commentator voice</span></div>${segHTML('voice', [[1, 'On'], [0, 'Off']], VOICE.on ? 1 : 0)}</div>
+    <div class="field"><div class="lab"><span>Speed lines</span></div>${segHTML('lines', [[1, 'On'], [0, 'Off']], SL.on ? 1 : 0)}</div>
     <div class="field"><div class="lab"><span>Show FPS</span></div>${segHTML('fps', [[1, 'On'], [0, 'Off']], store.get('fps', 0))}</div>`;
   p.classList.remove('hidden');
   p.querySelector('[data-close]').onclick = () => p.classList.add('hidden');
@@ -4012,6 +4091,7 @@ function openSettings() {
     if (k === 'cam') { CAM.mode = +v; store.set('cam', +v); CAM.snap = true; }
     if (k === 'units') { UNITS.mph = v === 'mph'; store.set('units', v); $('hudUnit').textContent = spdUnit(); }
     if (k === 'voice') { VOICE.on = v === '1'; store.set('voice', VOICE.on); }
+    if (k === 'lines') { SL.on = v === '1'; store.set('lines', SL.on); }
     if (k === 'fps') { store.set('fps', +v); $('fps').classList.toggle('hidden', v !== '1'); }
   }));
 }
@@ -4172,16 +4252,37 @@ function render() {
   render.vegT = (render.vegT || 0) - dt; if (render.vegT <= 0) { render.vegT = 0.3; updateVegLOD(camera.position); }
   if (gradePass) {
     gradePass.uniforms.uTime.value = G.uTime.value;
-    gradePass.uniforms.uBlur.value = Q.blur && GAME.mode === 'ride' && !CR.on && CAM.mode !== 3 ? clamp((speedNow() - 11) / 14, 0, 0.9) : 0;
+    gradePass.uniforms.uBlur.value = Q.blur && GAME.mode === 'ride' && !CR.on && CAM.mode !== 3 ? clamp((speedNow() - 7) / 11, 0, 1.15) : 0;
     gradePass.uniforms.uRed.value = CR.on && CR.t < 1.2 ? (1 - CR.t / 1.2) * 0.35 : 0;
   }
   composer.render();
+}
+// speed lines: white streaks rushing out from the middle of the screen when you go fast
+const SL = { cv: null, g: null, lines: [], on: store.get('lines', true) };
+function speedLines(dt) {
+  if (!SL.cv) { SL.cv = $('speedLines'); SL.g = SL.cv.getContext('2d'); }
+  const cv = SL.cv, w = innerWidth, h = innerHeight;
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  const g = SL.g; g.clearRect(0, 0, w, h);
+  const sp = GAME.mode === 'ride' && !CR.on && CAM.mode !== 3 && SL.on ? speedNow() : 0, k = clamp((sp - 9) / 12, 0, 1);
+  if (k <= 0 && !SL.lines.length) return;
+  const want = Math.round(k * 70);
+  while (SL.lines.length < want) SL.lines.push({ a: Math.random() * TAU, r: 0.25 + Math.random() * 0.6, l: 0.05 + Math.random() * 0.12 });
+  if (SL.lines.length > want) SL.lines.length = want;
+  const cx = w / 2, cy = h * 0.52, R = Math.hypot(w, h) * 0.55;
+  g.lineCap = 'round';
+  for (const L of SL.lines) {
+    L.r += dt * (0.9 + sp * 0.09); if (L.r > 1.1) { L.r = 0.25 + Math.random() * 0.15; L.a = Math.random() * TAU; }
+    const c = Math.cos(L.a), s2 = Math.sin(L.a), r0 = L.r * R, r1 = (L.r + L.l) * R;
+    g.strokeStyle = `rgba(255,255,255,${(0.08 + 0.28 * k) * smooth(0.25, 0.45, L.r)})`; g.lineWidth = 1 + 2.2 * k * L.r;
+    g.beginPath(); g.moveTo(cx + c * r0, cy + s2 * r0); g.lineTo(cx + c * r1, cy + s2 * r1); g.stroke();
+  }
 }
 function frame(t) {
   requestAnimationFrame(frame);
   if (paused) return;
   const dt = Math.min(0.05, Math.max(0.001, (t - last) / 1000 || 1 / 60)); last = t;
-  tick(dt); render();
+  tick(dt); render(); speedLines(dt);
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { if (!$('fps').classList.contains('hidden')) $('fps').textContent = Math.round(fpsN / fpsAcc) + ' fps'; fpsAcc = fpsN = 0; }
 }
 
